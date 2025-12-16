@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 interface SessionTimer {
-  interval: NodeJS.Timeout;
+  connectedTime: Date;
   minutes: number;
+  interval: NodeJS.Timeout;
 }
 
 @Injectable()
 export class CharacterService {
-  private sessionTimers = new Map<string, SessionTimer>();
+  private readonly sessionTimers = new Map<string, SessionTimer>();
 
   public startSessionTimer(
     socketId: string,
@@ -18,13 +19,19 @@ export class CharacterService {
     }
 
     const timer: SessionTimer = {
+      connectedTime: new Date(),
       minutes: 0,
-      interval: setInterval(() => {
-        timer.minutes += 1;
-        onMinute(timer.minutes);
-      }, 60_000),
+      interval: setInterval(() => this.handleTimer(timer, onMinute), 60_000),
     };
 
     this.sessionTimers.set(socketId, timer);
+  }
+
+  private handleTimer(
+    timer: SessionTimer,
+    onMinute: (minutes: number) => void,
+  ) {
+    timer.minutes += 1;
+    onMinute(timer.minutes);
   }
 }
