@@ -4,7 +4,7 @@ import {MoveReq} from "./dto/move.dto";
 
 @WebSocketGateway()
 export class CharacterGateway {
-  @SubscribeMessage('move')
+  @SubscribeMessage('moving')
   handleMove(
     @MessageBody()
     data: MoveReq,
