@@ -12,8 +12,6 @@ export class CharacterGateway {
   ) {
     client.to(data.roomId).emit('moved', {
       userId: client.id,
-      x: data.x,
-      y: data.y,
       direction: data.direction,
     });
   }
