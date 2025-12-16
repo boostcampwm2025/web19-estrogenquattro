@@ -1,4 +1,4 @@
-import {Direction} from "../types/direction.type";
+import { Direction } from '../types/direction.type';
 
 export class MoveReq {
   roomId: string;
