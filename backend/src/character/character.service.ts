@@ -27,6 +27,17 @@ export class CharacterService {
     this.sessionTimers.set(socketId, timer);
   }
 
+  public stopSessionTimer(socketId: string) {
+    const timer = this.sessionTimers.get(socketId);
+
+    if (!timer) {
+      return;
+    }
+
+    clearInterval(timer.interval);
+    this.sessionTimers.delete(socketId);
+  }
+
   private handleTimer(
     timer: SessionTimer,
     onMinute: (minutes: number) => void,

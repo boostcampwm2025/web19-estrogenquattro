@@ -45,7 +45,7 @@ describe('CharacterService', () => {
   });
 
   it('여러 socketId는 각각 독립적인 타이머를 가질 수 있다.', () => {
-    //givne
+    //given
     const cb1 = jest.fn();
     const cb2 = jest.fn();
 
@@ -57,5 +57,20 @@ describe('CharacterService', () => {
     //then
     expect(cb1).toHaveBeenCalledWith(1);
     expect(cb2).toHaveBeenCalledWith(1);
+  });
+
+  it('stopSessionTimer는 타이머를 정리하고 콜백 호출을 중단한다', () => {
+    //given
+    const socketId = 'socket-3';
+    const onMinute = jest.fn();
+
+    //when
+    service.startSessionTimer(socketId, onMinute);
+    jest.advanceTimersByTime(60_000);
+    service.stopSessionTimer(socketId);
+    jest.advanceTimersByTime(60_000);
+
+    //then
+    expect(onMinute).toHaveBeenCalledTimes(1);
   });
 });

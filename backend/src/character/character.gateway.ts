@@ -1,6 +1,7 @@
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
@@ -9,7 +10,7 @@ import { MoveReq } from './dto/move.dto';
 import { CharacterService } from './character.service';
 
 @WebSocketGateway()
-export class CharacterGateway {
+export class CharacterGateway implements OnGatewayDisconnect {
   constructor(private readonly characterService: CharacterService) {}
 
   @SubscribeMessage('moving')
@@ -30,6 +31,10 @@ export class CharacterGateway {
       client.id,
       this.createTimerCallback(client),
     );
+  }
+
+  handleDisconnect(client: Socket) {
+    this.characterService.stopSessionTimer(client.id);
   }
 
   private createTimerCallback(client: Socket) {
