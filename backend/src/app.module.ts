@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CharacterModule } from './character/character.module';
-import { CharacterGateway } from './character/character.gateway';
+import { PlayerModule } from './player/player.module';
+import { PlayerGateway } from './player/player.gateway';
+import { PlayTimeService } from './player/player.play-time-service';
 
 @Module({
-  imports: [CharacterModule],
+  imports: [PlayerModule],
   controllers: [AppController],
-  providers: [AppService, CharacterGateway],
+  providers: [AppService, PlayerGateway, PlayTimeService],
 })
 export class AppModule {}
