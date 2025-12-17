@@ -9,13 +9,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
-import { CharacterService } from './character.service';
+import { PlayTimeService } from './player.play-time-service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class CharacterGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
-  constructor(private readonly characterService: CharacterService) {}
+export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(private readonly playTimeService: PlayTimeService) {}
   @WebSocketServer()
   server: Server;
 
@@ -41,7 +39,7 @@ export class CharacterGateway
     if (player) {
       this.players.delete(client.id);
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
-      this.characterService.stopSessionTimer(client.id);
+      this.playTimeService.stopTimer(client.id);
     }
     console.log(`Client disconnected: ${client.id}`);
   }
@@ -79,6 +77,11 @@ export class CharacterGateway
       x: data.x,
       y: data.y,
     });
+
+    this.playTimeService.startTimer(
+      client.id,
+      this.createTimerCallback(client),
+    );
   }
 
   @SubscribeMessage('moving')
@@ -103,14 +106,6 @@ export class CharacterGateway
       direction: data.direction,
       timestamp: data.timestamp,
     });
-  }
-
-  @SubscribeMessage('joining')
-  handleJoinRoom(@ConnectedSocket() client: Socket) {
-    this.characterService.startSessionTimer(
-      client.id,
-      this.createTimerCallback(client),
-    );
   }
 
   private createTimerCallback(client: Socket) {

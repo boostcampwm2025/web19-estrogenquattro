@@ -1,10 +1,10 @@
-import { PlayerService } from './player.service';
+import { PlayTimeService } from './player.play-time-service';
 
 describe('PlayerService', () => {
-  let service: PlayerService;
+  let service: PlayTimeService;
 
   beforeEach(() => {
-    service = new PlayerService();
+    service = new PlayTimeService();
     jest.useFakeTimers();
   });
 
@@ -18,7 +18,7 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startSessionTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute);
 
     // then
     jest.advanceTimersByTime(60_000);
@@ -36,8 +36,8 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startSessionTimer(socketId, onMinute);
-    service.startSessionTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute);
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -50,8 +50,8 @@ describe('PlayerService', () => {
     const cb2 = jest.fn();
 
     //when
-    service.startSessionTimer('socket-1', cb1);
-    service.startSessionTimer('socket-2', cb2);
+    service.startTimer('socket-1', cb1);
+    service.startTimer('socket-2', cb2);
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -65,9 +65,9 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startSessionTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute);
     jest.advanceTimersByTime(60_000);
-    service.stopSessionTimer(socketId);
+    service.stopTimer(socketId);
     jest.advanceTimersByTime(60_000);
 
     //then

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { CharacterGateway } from './character.gateway';
-import { CharacterService } from './character.service';
+import { PlayerGateway } from './player.gateway';
+import { PlayTimeService } from './player.play-time-service';
 
 @Module({
-  providers: [CharacterGateway, CharacterService]
+  providers: [PlayerGateway, PlayTimeService],
 })
-export class CharacterModule {}
+export class PlayerModule {}
