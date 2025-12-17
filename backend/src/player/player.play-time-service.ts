@@ -1,24 +1,21 @@
 import { Injectable } from '@nestjs/common';
 
-interface SessionTimer {
+interface PlayTimer {
   connectedTime: Date;
   minutes: number;
   interval: NodeJS.Timeout;
 }
 
 @Injectable()
-export class CharacterService {
-  private readonly sessionTimers = new Map<string, SessionTimer>();
+export class PlayTimeService {
+  private readonly sessionTimers = new Map<string, PlayTimer>();
 
-  public startSessionTimer(
-    socketId: string,
-    onMinute: (minutes: number) => void,
-  ) {
+  public startTimer(socketId: string, onMinute: (minutes: number) => void) {
     if (this.sessionTimers.has(socketId)) {
       return;
     }
 
-    const timer: SessionTimer = {
+    const timer: PlayTimer = {
       connectedTime: new Date(),
       minutes: 0,
       interval: setInterval(() => this.handleTimer(timer, onMinute), 60_000),
@@ -27,7 +24,7 @@ export class CharacterService {
     this.sessionTimers.set(socketId, timer);
   }
 
-  public stopSessionTimer(socketId: string) {
+  public stopTimer(socketId: string) {
     const timer = this.sessionTimers.get(socketId);
 
     if (!timer) {
@@ -38,10 +35,7 @@ export class CharacterService {
     this.sessionTimers.delete(socketId);
   }
 
-  private handleTimer(
-    timer: SessionTimer,
-    onMinute: (minutes: number) => void,
-  ) {
+  private handleTimer(timer: PlayTimer, onMinute: (minutes: number) => void) {
     timer.minutes += 1;
     onMinute(timer.minutes);
   }

@@ -1,10 +1,10 @@
-import { CharacterService } from './character.service';
+import { PlayerService } from './player.service';
 
-describe('CharacterService', () => {
-  let service: CharacterService;
+describe('PlayerService', () => {
+  let service: PlayerService;
 
   beforeEach(() => {
-    service = new CharacterService();
+    service = new PlayerService();
     jest.useFakeTimers();
   });
 
