@@ -1,4 +1,4 @@
-import { emitEvent } from "../SocketManager";
+import { emitEvent } from "../../lib/socket";
 
 export default class Player {
   private scene: Phaser.Scene;

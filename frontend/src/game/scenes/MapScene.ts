@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import Player from "../players/Player";
 import RemotePlayer from "../players/RemotePlayer";
-import { connectSocket, getSocket } from "../SocketManager";
+import { connectSocket, getSocket } from "../../lib/socket";
 
 interface PlayerData {
   userId: string;
