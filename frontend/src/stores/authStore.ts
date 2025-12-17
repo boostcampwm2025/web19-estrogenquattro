@@ -33,7 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         set({ user: null, isAuthenticated: false, isLoading: false });
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
