@@ -111,7 +111,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private createTimerCallback(client: Socket) {
     return (minutes: number) => {
       // roomId는 추후 방 배정 이후 수정 필요
-      client.to('roomId').emit('timerUpdated', {
+      const player = this.players.get(client.id);
+      client.to(player!.roomId).emit('timerUpdated', {
         userId: client.id,
         minutes,
       });
