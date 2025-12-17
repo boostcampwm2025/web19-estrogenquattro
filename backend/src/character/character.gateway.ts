@@ -1,6 +1,11 @@
-import {ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway} from '@nestjs/websockets';
-import {Socket} from "socket.io";
-import {MoveReq} from "./dto/move.dto";
+import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+} from '@nestjs/websockets';
+import { Socket } from 'socket.io';
+import { MoveReq } from './dto/move.dto';
 
 @WebSocketGateway()
 export class CharacterGateway {
