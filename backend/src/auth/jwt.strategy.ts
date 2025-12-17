@@ -26,6 +26,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   validate(payload: JwtPayload) {
     const user = this.userStore.findByGithubId(payload.sub);
-    return user;
+    return user || false;
   }
 }
