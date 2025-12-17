@@ -24,9 +24,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       (profile.username && profile.username.trim()) ||
       (profile.displayName && profile.displayName.trim()) ||
       `github-${profile.id}`;
-    this.logger.log(
-      `GitHub OAuth validated - username: ${username}`,
-    );
+    this.logger.log(`GitHub OAuth validated - username: ${username}`);
 
     const user = this.userStore.findOrCreate({
       githubId: profile.id,
