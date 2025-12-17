@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
+import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
 
@@ -42,8 +43,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   > = new Map();
 
-  async handleConnection(client: Socket) {
-    const isValid = await this.wsJwtGuard.verifyClient(client);
+  handleConnection(client: Socket) {
+    const isValid = this.wsJwtGuard.verifyClient(client);
 
     if (!isValid) {
       this.logger.warn(`Connection rejected (unauthorized): ${client.id}`);
@@ -51,9 +52,9 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.logger.log(
-      `Client connected: ${client.id} (user: ${client.data.user.username})`,
-    );
+    const data = client.data as { user: User };
+    const user = data.user;
+    this.logger.log(`Client connected: ${client.id} (user: ${user.username})`);
   }
 
   handleDisconnect(client: Socket) {
@@ -73,7 +74,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = data.roomId || 'default-room';
-    client.join(roomId);
+    void client.join(roomId);
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {

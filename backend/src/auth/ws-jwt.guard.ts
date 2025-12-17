@@ -12,9 +12,10 @@ export class WsJwtGuard implements CanActivate {
     private userStore: UserStore,
   ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const client: Socket = context.switchToWs().getClient();
-    const user = client.data?.user;
+    const data = client.data as { user?: unknown };
+    const user = data?.user;
 
     if (!user) {
       throw new WsException('Unauthorized');
@@ -27,7 +28,7 @@ export class WsJwtGuard implements CanActivate {
    * Socket.io handshake 시 JWT 검증
    * handleConnection에서 호출하여 사용
    */
-  async verifyClient(client: Socket): Promise<boolean> {
+  verifyClient(client: Socket): boolean {
     try {
       const token = this.extractToken(client);
 
