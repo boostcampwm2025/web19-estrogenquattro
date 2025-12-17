@@ -52,3 +52,20 @@ sequenceDiagram
 - **Backend**: httpOnly 쿠키에 JWT 저장 (XSS 방지)
 - **Frontend**: Zustand store로 인증 상태 관리
 - **보호된 페이지**: AuthGuard 컴포넌트로 비로그인 시 /login으로 리다이렉트
+
+## 로깅 포인트
+
+디버깅 시 확인할 수 있는 로그:
+
+```
+1. [GithubStrategy] GitHub OAuth validated - username: {username}
+2. [GithubStrategy] User stored/found - username: {username}
+3. [AuthController] GitHub callback - username: {username}
+4. [AuthController] JWT token generated for user: {username}
+5. [AuthController] Setting cookie with options: {...}
+6. [AuthController] Redirecting to: {frontendUrl}/auth/callback
+7. [JwtStrategy] Extracting token from cookies: found/not found
+8. [JwtStrategy] Validating payload for user: {username}
+9. [JwtStrategy] User found: yes/no
+10. [AuthController] /me called - username: {username}
+```
