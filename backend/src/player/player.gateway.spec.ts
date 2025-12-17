@@ -3,6 +3,7 @@ import { PlayerGateway } from './player.gateway';
 import { PlayTimeService } from './player.play-time-service';
 import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
+import { GithubPollService } from '../github/github.poll-service';
 
 describe('PlayerGateway', () => {
   let gateway: PlayerGateway;
@@ -22,6 +23,11 @@ describe('PlayerGateway', () => {
     stopTimer: jest.fn(),
   };
 
+  const mockGithubPollService = {
+    subscribeGithubEvent: jest.fn(),
+    unsubscribeGithubEvent: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -29,6 +35,10 @@ describe('PlayerGateway', () => {
         {
           provide: PlayTimeService,
           useValue: mockPlayTimeService,
+        },
+        {
+          provide: GithubPollService,
+          useValue: mockGithubPollService,
         },
       ],
     }).compile();

@@ -18,7 +18,7 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute, new Date());
 
     // then
     jest.advanceTimersByTime(60_000);
@@ -36,8 +36,8 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute);
-    service.startTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute, new Date());
+    service.startTimer(socketId, onMinute, new Date());
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -50,8 +50,8 @@ describe('PlayerService', () => {
     const cb2 = jest.fn();
 
     //when
-    service.startTimer('socket-1', cb1);
-    service.startTimer('socket-2', cb2);
+    service.startTimer('socket-1', cb1, new Date());
+    service.startTimer('socket-2', cb2, new Date());
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -65,7 +65,7 @@ describe('PlayerService', () => {
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute);
+    service.startTimer(socketId, onMinute, new Date());
     jest.advanceTimersByTime(60_000);
     service.stopTimer(socketId);
     jest.advanceTimersByTime(60_000);
