@@ -138,6 +138,10 @@ export class MapScene extends Phaser.Scene {
   }
 
   setupControls() {
+    const mapImage = this.children.getByName(
+      "mapImage",
+    ) as Phaser.GameObjects.Image;
+    const mapWidth = mapImage.width;
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.gridKey = this.input.keyboard.addKey(
@@ -145,7 +149,10 @@ export class MapScene extends Phaser.Scene {
       );
     }
 
-    // 마우스 휠 줌
+    // 프로그레스바 생성
+    createProgressBar(this, mapWidth);
+
+    // 마우스 휠로 확대/축소
     this.input.on("wheel", this.handleZoom, this);
   }
 
@@ -249,11 +256,6 @@ export class MapScene extends Phaser.Scene {
       });
       this.load.start();
     }
-    // 프로그레스바 생성
-    createProgressBar(this, mapWidth);
-
-    // 마우스 휠로 확대/축소
-    this.input.on("wheel", this.handleZoom, this);
   }
 
   setInitialZoom(mapWidth: number, mapHeight: number) {
