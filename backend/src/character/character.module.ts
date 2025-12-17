@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import {CharacterGateway} from "./character.gateway";
+import { CharacterGateway } from './character.gateway';
 
 @Module({
-  providers: [CharacterGateway]
+  providers: [CharacterGateway],
 })
 export class CharacterModule {}
