@@ -33,7 +33,7 @@ export const disconnectSocket = () => {
 
 export const getSocket = () => socket;
 
-export const emitEvent = (event: string, data: any) => {
+export const emitEvent = (event: string, data: unknown) => {
   if (socket && socket.connected) {
     socket.emit(event, data);
   }
