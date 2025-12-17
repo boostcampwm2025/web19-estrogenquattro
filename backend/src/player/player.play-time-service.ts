@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 interface PlayTimer {
-  connectedTime: Date;
+  connectedAt: Date;
   minutes: number;
   interval: NodeJS.Timeout;
 }
@@ -10,13 +10,16 @@ interface PlayTimer {
 export class PlayTimeService {
   private readonly sessionTimers = new Map<string, PlayTimer>();
 
-  public startTimer(socketId: string, onMinute: (minutes: number) => void) {
+  public startTimer(
+    socketId: string,
+    onMinute: (minutes: number) => void,
+    connectedAt: Date,
+  ) {
     if (this.sessionTimers.has(socketId)) {
       return;
     }
-
     const timer: PlayTimer = {
-      connectedTime: new Date(),
+      connectedAt,
       minutes: 0,
       interval: setInterval(() => this.handleTimer(timer, onMinute), 60_000),
     };
