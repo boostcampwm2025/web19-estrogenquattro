@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { createProgressBar } from "@/game/ui/createProgressBar";
 
 export class MapScene extends Phaser.Scene {
   private minZoom: number = 0.7;
@@ -107,6 +108,9 @@ export class MapScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     middleText.setName("mapText");
+
+    // 프로그레스바 생성
+    createProgressBar(this, mapWidth);
 
     // 마우스 휠로 확대/축소
     this.input.on("wheel", this.handleZoom, this);
