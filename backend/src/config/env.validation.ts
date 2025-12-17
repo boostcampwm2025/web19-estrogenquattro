@@ -4,7 +4,7 @@ export const envValidationSchema = Joi.object({
   // 필수 환경변수
   GITHUB_CLIENT_ID: Joi.string().required(),
   GITHUB_CLIENT_SECRET: Joi.string().required(),
-  JWT_SECRET: Joi.string().required(),
+  JWT_SECRET: Joi.string().min(32).required(),
 
   // 선택 환경변수 (기본값 있음)
   PORT: Joi.number().default(8080),
