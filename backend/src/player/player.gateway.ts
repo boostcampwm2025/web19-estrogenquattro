@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,12 +9,23 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+})
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly playTimeService: PlayTimeService) {}
+  private readonly logger = new Logger(PlayerGateway.name);
+
+  constructor(
+    private readonly playTimeService: PlayTimeService,
+    private readonly wsJwtGuard: WsJwtGuard,
+  ) {}
   @WebSocketServer()
   server: Server;
 
@@ -30,8 +42,18 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   > = new Map();
 
-  handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+  async handleConnection(client: Socket) {
+    const isValid = await this.wsJwtGuard.verifyClient(client);
+
+    if (!isValid) {
+      this.logger.warn(`Connection rejected (unauthorized): ${client.id}`);
+      client.disconnect();
+      return;
+    }
+
+    this.logger.log(
+      `Client connected: ${client.id} (user: ${client.data.user.username})`,
+    );
   }
 
   handleDisconnect(client: Socket) {
@@ -41,7 +63,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.playTimeService.stopTimer(client.id);
     }
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('joining')
