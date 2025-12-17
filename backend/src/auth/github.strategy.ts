@@ -18,9 +18,14 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   }
 
   validate(accessToken: string, refreshToken: string, profile: Profile) {
+    const username =
+      (profile.username && profile.username.trim()) ||
+      (profile.displayName && profile.displayName.trim()) ||
+      `github-${profile.id}`;
+
     const user = this.userStore.findOrCreate({
       githubId: profile.id,
-      username: profile.username || profile.displayName,
+      username,
       avatarUrl: profile.photos?.[0]?.value || '',
     });
 
