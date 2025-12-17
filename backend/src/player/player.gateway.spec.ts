@@ -54,7 +54,6 @@ describe('PlayerGateway', () => {
     expect(toMock).toHaveBeenCalledWith('room-1');
     expect(emitMock).toHaveBeenCalledWith('moved', {
       userId: clientMock.id,
-      roomId: 'room-1',
       x: 125.23113,
       y: 24.11231,
       isMoving: true,
