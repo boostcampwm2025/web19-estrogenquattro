@@ -9,11 +9,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
+import { PlayTimeService } from './player.play-time-service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class CharacterGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(private readonly playTimeService: PlayTimeService) {}
   @WebSocketServer()
   server: Server;
 
@@ -39,6 +39,7 @@ export class CharacterGateway
     if (player) {
       this.players.delete(client.id);
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
+      this.playTimeService.stopTimer(client.id);
     }
     console.log(`Client disconnected: ${client.id}`);
   }
@@ -76,6 +77,11 @@ export class CharacterGateway
       x: data.x,
       y: data.y,
     });
+
+    this.playTimeService.startTimer(
+      client.id,
+      this.createTimerCallback(client),
+    );
   }
 
   @SubscribeMessage('moving')
@@ -100,5 +106,16 @@ export class CharacterGateway
       direction: data.direction,
       timestamp: data.timestamp,
     });
+  }
+
+  private createTimerCallback(client: Socket) {
+    return (minutes: number) => {
+      // roomId는 추후 방 배정 이후 수정 필요
+      const player = this.players.get(client.id);
+      client.to(player!.roomId).emit('timerUpdated', {
+        userId: client.id,
+        minutes,
+      });
+    };
   }
 }
