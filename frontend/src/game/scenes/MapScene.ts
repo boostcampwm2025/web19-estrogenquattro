@@ -233,6 +233,19 @@ export class MapScene extends Phaser.Scene {
         this.otherPlayers.delete(data.userId);
       }
     });
+
+    // 5. 타이머 업데이트
+    socket.on("timerUpdated", (data: { userId: string; minutes: number }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.updateTimer(data.minutes);
+      }
+
+      // 내 플레이어인 경우
+      if (this.player && data.userId === this.player.id) {
+        this.player.updateTimer(data.minutes);
+      }
+    });
   }
 
   addRemotePlayer(data: PlayerData) {
