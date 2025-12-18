@@ -182,11 +182,18 @@ export class GithubPollService {
       return { status: 'no_changes' };
     }
 
-    // 이벤트 필터링
+    // 응답 상세 로깅
     const latestEventTime = events[0]?.created_at;
-    this.logger.debug(
-      `[${username}] Events: ${events.length}, Latest: ${latestEventTime}, lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
+    const oldestEventTime = events[events.length - 1]?.created_at;
+    this.logger.log(
+      `[${username}] Response: ${events.length} events, ` +
+        `Latest: ${latestEventTime}, Oldest: ${oldestEventTime}, ` +
+        `lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
     );
+
+    // 상위 5개 이벤트 타입과 시간 로깅
+    const top5 = events.slice(0, 5).map((e) => `${e.type}@${e.created_at}`);
+    this.logger.debug(`[${username}] Top 5 events: ${top5.join(', ')}`);
 
     const newEvents = events.filter(
       (event) => new Date(event.created_at) > schedule.lastProcessedAt,
