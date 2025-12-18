@@ -151,14 +151,16 @@ export class GithubPollService {
     if (!schedule) return { status: 'error' };
 
     const { accessToken } = schedule;
-    const url = `https://api.github.com/users/${username}/events`;
 
-    // OAuth 토큰 없이 요청 (캐시 우회 테스트)
-    // Rate limit: 60 req/hour (인증 없음) vs 5000 req/hour (인증 있음)
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
-      // Authorization: `Bearer ${accessToken}`, // 일시적으로 비활성화
+      Authorization: `Bearer ${accessToken}`,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
     };
+
+    // URL에 timestamp 추가로 캐시 우회
+    const url = `https://api.github.com/users/${username}/events?_=${Date.now()}`;
 
     const res = await fetch(url, { headers });
 
