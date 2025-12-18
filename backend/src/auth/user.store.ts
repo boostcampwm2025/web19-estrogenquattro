@@ -17,6 +17,8 @@ export class UserStore {
   findOrCreate(user: User): User {
     const existingUser = this.findByGithubId(user.githubId);
     if (existingUser) {
+      // 재로그인 시 accessToken 업데이트
+      existingUser.accessToken = user.accessToken;
       return existingUser;
     }
     return this.save(user);

@@ -71,7 +71,12 @@ export default class RemotePlayer {
     this.timerText.setShadow(1, 1, "#000000", 2, false, true);
 
     // 7. 컨테이너 추가
-    this.container.add([this.faceSprite, borderGraphics, this.timerText, nameTag]);
+    this.container.add([
+      this.faceSprite,
+      borderGraphics,
+      this.timerText,
+      nameTag,
+    ]);
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
 
     // 7. 물리 엔진 적용

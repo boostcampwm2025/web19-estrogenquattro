@@ -16,6 +16,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       clientID: configService.getOrThrow<string>('GITHUB_CLIENT_ID'),
       clientSecret: configService.getOrThrow<string>('GITHUB_CLIENT_SECRET'),
       callbackURL: configService.getOrThrow<string>('GITHUB_CALLBACK_URL'),
+      scope: ['repo'], // private repo 활동 감지를 위한 권한
     });
   }
 
@@ -30,6 +31,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       githubId: profile.id,
       username,
       avatarUrl: profile.photos?.[0]?.value || '',
+      accessToken,
     });
 
     this.logger.log(`User stored/found - username: ${user.username}`);

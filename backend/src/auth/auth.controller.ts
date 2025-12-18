@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import { GithubGuard } from './github.guard';
 import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
+import type { UserInfo } from './user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -54,9 +55,10 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtGuard)
   me(@Req() req: Request) {
-    const user = req.user as User;
-    this.logger.log(`/me called - username: ${user.username}`);
-    return req.user;
+    const { githubId, username, avatarUrl } = req.user as User;
+    const userInfo: UserInfo = { githubId, username, avatarUrl };
+    this.logger.log(`/me called - username: ${userInfo.username}`);
+    return userInfo;
   }
 
   @Get('logout')

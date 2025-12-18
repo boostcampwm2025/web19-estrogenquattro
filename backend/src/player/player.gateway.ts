@@ -13,6 +13,7 @@ import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
+import { GithubPollService } from '../github/github.poll-service';
 
 @WebSocketGateway({
   cors: {
@@ -25,6 +26,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private readonly playTimeService: PlayTimeService,
+    private readonly githubService: GithubPollService,
     private readonly wsJwtGuard: WsJwtGuard,
   ) {}
   @WebSocketServer()
@@ -63,6 +65,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.players.delete(client.id);
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.playTimeService.stopTimer(client.id);
+      this.githubService.unsubscribeGithubEvent(client.id);
     }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
@@ -101,9 +104,22 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       y: data.y,
     });
 
+    const connectedAt = new Date();
     this.playTimeService.startTimer(
       client.id,
       this.createTimerCallback(client),
+      connectedAt,
+    );
+
+    // client.data에서 OAuth 인증된 사용자 정보 추출
+    const userData = client.data as { user: User };
+    const { username, accessToken } = userData.user;
+    this.githubService.subscribeGithubEvent(
+      connectedAt,
+      client.id,
+      roomId,
+      username,
+      accessToken,
     );
   }
 

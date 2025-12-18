@@ -4,6 +4,7 @@ import { PlayTimeService } from './player.play-time-service';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
+import { GithubPollService } from '../github/github.poll-service';
 
 describe('PlayerGateway', () => {
   let gateway: PlayerGateway;
@@ -23,6 +24,11 @@ describe('PlayerGateway', () => {
     stopTimer: jest.fn(),
   };
 
+  const mockGithubPollService = {
+    subscribeGithubEvent: jest.fn(),
+    unsubscribeGithubEvent: jest.fn(),
+  };
+
   const mockWsJwtGuard = {
     verifyClient: jest.fn().mockReturnValue(true),
   };
@@ -34,6 +40,10 @@ describe('PlayerGateway', () => {
         {
           provide: PlayTimeService,
           useValue: mockPlayTimeService,
+        },
+        {
+          provide: GithubPollService,
+          useValue: mockGithubPollService,
         },
         {
           provide: WsJwtGuard,
