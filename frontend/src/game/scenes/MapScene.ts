@@ -22,7 +22,6 @@ import {
 } from "@/game/ui/createContributionList";
 
 interface GithubEventData {
-  clientId: string;
   username: string;
   pushCount: number;
   pullRequestCount: number;
