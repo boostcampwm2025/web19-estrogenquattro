@@ -7,11 +7,14 @@ const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시 (rate limit)
 
 interface PollingSchedule {
   timeout: NodeJS.Timeout;
-  lastProcessedAt: Date;
   username: string;
   accessToken: string;
   roomId: string;
   clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
+  // 커밋 수 기반 추적 (GraphQL API는 날짜별 집계라 시간 비교 불가)
+  lastCommitCounts: Map<string, number>; // repo -> commitCount
+  lastPRCount: number;
+  isFirstPoll: boolean; // 첫 폴링은 알림 안 보냄 (기준점 설정용)
 }
 
 interface GithubEvent {
@@ -57,21 +60,18 @@ export class GithubPollService {
       void this.handlePoll(username);
     }, 1000);
 
-    // lastProcessedAt을 5분 전으로 설정하여 접속 전 이벤트도 감지
-    const fiveMinutesAgo = new Date(connectedAt.getTime() - 5 * 60 * 1000);
-
     this.pollingSchedules.set(username, {
       timeout,
-      lastProcessedAt: fiveMinutesAgo,
       username,
       accessToken,
       roomId,
       clientIds: new Set([clientId]),
+      lastCommitCounts: new Map(),
+      lastPRCount: 0,
+      isFirstPoll: true, // 첫 폴링은 기준점 설정용
     });
 
-    this.logger.log(
-      `GitHub polling started for user: ${username} (lastProcessedAt: ${fiveMinutesAgo.toISOString()})`,
-    );
+    this.logger.log(`GitHub polling started for user: ${username}`);
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -214,6 +214,11 @@ export class GithubPollService {
 
     const json = await res.json();
 
+    // GraphQL 응답 전체 로깅 (디버깅용)
+    this.logger.debug(
+      `[${username}] GraphQL Raw Response:\n${JSON.stringify(json, null, 2)}`,
+    );
+
     if (json.errors) {
       this.logger.error(`GitHub GraphQL error: ${JSON.stringify(json.errors)}`);
       return { status: 'error' };
@@ -225,82 +230,80 @@ export class GithubPollService {
       return { status: 'no_changes' };
     }
 
-    // 커밋 기여 파싱
-    const commitContributions: { occurredAt: string; commitCount: number; repo: string }[] = [];
+    // 커밋 기여 파싱 - 리포지토리별 총 커밋 수 계산
+    const currentCommitCounts = new Map<string, number>();
     for (const repo of contributionsCollection.commitContributionsByRepository || []) {
       const repoName = `${repo.repository.owner.login}/${repo.repository.name}`;
+      let totalCommits = 0;
       for (const node of repo.contributions.nodes || []) {
-        commitContributions.push({
-          occurredAt: node.occurredAt,
-          commitCount: node.commitCount,
-          repo: repoName,
-        });
+        totalCommits += node.commitCount;
+      }
+      currentCommitCounts.set(repoName, totalCommits);
+    }
+
+    // PR 기여 파싱 - 총 개수
+    const currentPRCount =
+      contributionsCollection.pullRequestContributions?.nodes?.length || 0;
+
+    this.logger.log(
+      `[${username}] GraphQL Response: ${currentCommitCounts.size} repos, ` +
+        `total commits: ${[...currentCommitCounts.values()].reduce((a, b) => a + b, 0)}, ` +
+        `PRs: ${currentPRCount}, isFirstPoll: ${schedule.isFirstPoll}`,
+    );
+
+    // 상위 3개 리포지토리 로깅
+    const sortedRepos = [...currentCommitCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    if (sortedRepos.length > 0) {
+      const top3Log = sortedRepos.map(([repo, count]) => {
+        const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+        const diff = count - prevCount;
+        return `${repo}: ${count} commits (${diff >= 0 ? '+' : ''}${diff})`;
+      });
+      this.logger.log(`[${username}] Top repos:\n  - ${top3Log.join('\n  - ')}`);
+    }
+
+    // 첫 폴링이면 기준점만 설정하고 알림 안 보냄
+    if (schedule.isFirstPoll) {
+      schedule.lastCommitCounts = currentCommitCounts;
+      schedule.lastPRCount = currentPRCount;
+      schedule.isFirstPoll = false;
+      this.logger.log(`[${username}] First poll - baseline set, no notification`);
+      return { status: 'no_changes' };
+    }
+
+    // 새로운 커밋 수 계산 (커밋 수 증가분)
+    let newCommitCount = 0;
+    for (const [repo, count] of currentCommitCounts) {
+      const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+      if (count > prevCount) {
+        newCommitCount += count - prevCount;
       }
     }
 
-    // PR 기여 파싱
-    const prContributions: { occurredAt: string }[] =
-      contributionsCollection.pullRequestContributions?.nodes || [];
+    // 새로운 PR 수 계산
+    const newPRCount = Math.max(0, currentPRCount - schedule.lastPRCount);
 
-    // 최신 시간 찾기
-    const allTimes = [
-      ...commitContributions.map(c => c.occurredAt),
-      ...prContributions.map(p => p.occurredAt),
-    ].filter(Boolean);
+    // 기준점 갱신
+    schedule.lastCommitCounts = currentCommitCounts;
+    schedule.lastPRCount = currentPRCount;
 
-    if (allTimes.length === 0) {
-      this.logger.debug(`[${username}] No contributions found`);
+    if (newCommitCount === 0 && newPRCount === 0) {
+      this.logger.debug(`[${username}] No new contributions`);
       return { status: 'no_changes' };
     }
 
-    const latestTime = allTimes.sort().reverse()[0];
-
     this.logger.log(
-      `[${username}] GraphQL Response: ${commitContributions.length} commit contributions, ` +
-        `${prContributions.length} PR contributions, Latest: ${latestTime}, ` +
-        `lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
-    );
-
-    // 상위 3개 커밋 로깅
-    const top3Commits = commitContributions
-      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
-      .slice(0, 3);
-    if (top3Commits.length > 0) {
-      const top3Log = top3Commits.map(c => `${c.commitCount} commits on ${c.repo} @ ${c.occurredAt}`);
-      this.logger.log(`[${username}] Top 3 commits:\n  - ${top3Log.join('\n  - ')}`);
-    }
-
-    // 새로운 기여 필터링
-    const newCommits = commitContributions.filter(
-      c => new Date(c.occurredAt) > schedule.lastProcessedAt
-    );
-    const newPRs = prContributions.filter(
-      p => new Date(p.occurredAt) > schedule.lastProcessedAt
-    );
-
-    if (newCommits.length === 0 && newPRs.length === 0) {
-      this.logger.debug(
-        `[${username}] All contributions filtered out (older than lastProcessedAt)`,
-      );
-      return { status: 'no_changes' };
-    }
-
-    const pushCount = newCommits.reduce((sum, c) => sum + c.commitCount, 0);
-    const prCount = newPRs.length;
-
-    // lastProcessedAt을 최신 시간으로 갱신
-    schedule.lastProcessedAt = new Date(latestTime);
-
-    this.logger.log(
-      `[${username}] New contributions detected! Commits: ${pushCount}, PR: ${prCount}`,
+      `[${username}] New contributions detected! Commits: +${newCommitCount}, PRs: +${newPRCount}`,
     );
 
     return {
       status: 'new_events',
       data: {
         username,
-        pushCount,
-        pullRequestCount: prCount,
+        pushCount: newCommitCount,
+        pullRequestCount: newPRCount,
       },
     };
   }
