@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlayerGateway } from './player.gateway';
 import { PlayTimeService } from './player.play-time-service';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
 
@@ -22,6 +23,10 @@ describe('PlayerGateway', () => {
     stopTimer: jest.fn(),
   };
 
+  const mockWsJwtGuard = {
+    verifyClient: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -29,6 +34,10 @@ describe('PlayerGateway', () => {
         {
           provide: PlayTimeService,
           useValue: mockPlayTimeService,
+        },
+        {
+          provide: WsJwtGuard,
+          useValue: mockWsJwtGuard,
         },
       ],
     }).compile();
