@@ -234,6 +234,12 @@ export class MapScene extends Phaser.Scene {
       });
     });
 
+    // 다른 탭에서 접속하여 현재 세션이 종료됨
+    socket.on("session_replaced", () => {
+      socket.disconnect();
+      this.showSessionEndedOverlay();
+    });
+
     // 1. 기존 유저 싱크
     socket.on("players_synced", (players: PlayerData[]) => {
       players.forEach((data) => {
@@ -394,6 +400,38 @@ export class MapScene extends Phaser.Scene {
     this.gridVisible = !this.gridVisible;
     const grid = this.children.getByName("grid") as Phaser.GameObjects.Graphics;
     if (grid) grid.setVisible(this.gridVisible);
+  }
+
+  showSessionEndedOverlay() {
+    // 게임 일시정지
+    this.scene.pause();
+
+    // 반투명 배경
+    const overlay = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0x000000,
+      0.7,
+    );
+    overlay.setScrollFactor(0);
+    overlay.setDepth(1000);
+
+    // 메시지 텍스트
+    const text = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      "다른 탭에서 접속하여\n현재 세션이 종료되었습니다.",
+      {
+        fontSize: "24px",
+        color: "#ffffff",
+        align: "center",
+      },
+    );
+    text.setOrigin(0.5);
+    text.setScrollFactor(0);
+    text.setDepth(1001);
   }
 
   update() {
