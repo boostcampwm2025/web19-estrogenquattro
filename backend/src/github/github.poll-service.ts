@@ -214,11 +214,6 @@ export class GithubPollService {
 
     const json = await res.json();
 
-    // GraphQL 응답 전체 로깅 (디버깅용)
-    this.logger.debug(
-      `[${username}] GraphQL Raw Response:\n${JSON.stringify(json, null, 2)}`,
-    );
-
     if (json.errors) {
       this.logger.error(`GitHub GraphQL error: ${JSON.stringify(json.errors)}`);
       return { status: 'error' };
