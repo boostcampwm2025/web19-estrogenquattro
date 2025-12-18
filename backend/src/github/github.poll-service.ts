@@ -2,8 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GithubGateway } from './github.gateway';
 
 // 폴링 간격 설정 (밀리초)
-const POLL_INTERVAL_FAST = 10_000; // 304 응답 시 (변경 없음)
-const POLL_INTERVAL_SLOW = 60_000; // 200 응답 시 (새 데이터)
+const POLL_INTERVAL = 30_000; // 30초마다 폴링
 const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시 (rate limit)
 
 interface PollingSchedule {
@@ -28,7 +27,6 @@ export class GithubPollService {
 
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
-  private readonly etagMap = new Map<string, string>(); // username -> etag
 
   subscribeGithubEvent(
     connectedAt: Date,
@@ -48,21 +46,26 @@ export class GithubPollService {
       return;
     }
 
-    // 첫 폴링은 빠르게 시작
+    // 첫 폴링은 바로 시작
     const timeout = setTimeout(() => {
       void this.handlePoll(username);
-    }, POLL_INTERVAL_FAST);
+    }, 1000);
+
+    // lastProcessedAt을 5분 전으로 설정하여 접속 전 이벤트도 감지
+    const fiveMinutesAgo = new Date(connectedAt.getTime() - 5 * 60 * 1000);
 
     this.pollingSchedules.set(username, {
       timeout,
-      lastProcessedAt: connectedAt,
+      lastProcessedAt: fiveMinutesAgo,
       username,
       accessToken,
       roomId,
       clientIds: new Set([clientId]),
     });
 
-    this.logger.log(`GitHub polling started for user: ${username}`);
+    this.logger.log(
+      `GitHub polling started for user: ${username} (lastProcessedAt: ${fiveMinutesAgo.toISOString()})`,
+    );
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -105,21 +108,21 @@ export class GithubPollService {
     let nextInterval: number;
     switch (result.status) {
       case 'new_events':
-        nextInterval = POLL_INTERVAL_SLOW; // 새 데이터 → 60초 대기
+        nextInterval = POLL_INTERVAL;
         this.githubGateway.castGithubEventToRoom(result.data!, schedule.roomId);
         break;
       case 'no_changes':
-        nextInterval = POLL_INTERVAL_FAST; // 변경 없음 → 10초 후 재시도
+        nextInterval = POLL_INTERVAL;
         break;
       case 'rate_limited':
-        nextInterval = result.retryAfter || POLL_INTERVAL_BACKOFF; // 429 → 백오프
+        nextInterval = result.retryAfter || POLL_INTERVAL_BACKOFF;
         this.logger.warn(
           `Rate limited for user: ${schedule.username}, retry after ${nextInterval}ms`,
         );
         break;
       case 'error':
       default:
-        nextInterval = POLL_INTERVAL_SLOW; // 에러 → 60초 후 재시도
+        nextInterval = POLL_INTERVAL;
         break;
     }
 
@@ -143,36 +146,17 @@ export class GithubPollService {
 
     const { accessToken } = schedule;
     const url = `https://api.github.com/users/${username}/events`;
-    const lastETag = this.etagMap.get(username);
 
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${accessToken}`,
     };
 
-    if (lastETag) {
-      headers['If-None-Match'] = lastETag;
-    }
-
     const res = await fetch(url, { headers });
 
     this.logger.log(
-      `[GitHub Poll] ${username} - ${JSON.stringify({
-        status: res.status,
-        etag: res.headers.get('ETag'),
-        rateLimit: {
-          limit: res.headers.get('X-RateLimit-Limit'),
-          remaining: res.headers.get('X-RateLimit-Remaining'),
-          used: res.headers.get('X-RateLimit-Used'),
-        },
-      })}`,
+      `[GitHub Poll] ${username} - HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
     );
-
-    // 304 Not Modified - 변경 없음, rate limit 미차감
-    if (res.status === 304) {
-      this.logger.debug(`No changes for user: ${username}`);
-      return { status: 'no_changes' };
-    }
 
     // 429 Too Many Requests - rate limit 초과
     if (res.status === 429) {
@@ -180,7 +164,7 @@ export class GithubPollService {
       let retryAfter = POLL_INTERVAL_BACKOFF;
 
       if (resetHeader) {
-        const resetTime = parseInt(resetHeader, 10) * 1000; // Unix timestamp → ms
+        const resetTime = parseInt(resetHeader, 10) * 1000;
         retryAfter = Math.max(resetTime - Date.now(), POLL_INTERVAL_BACKOFF);
       }
 
@@ -192,19 +176,13 @@ export class GithubPollService {
       return { status: 'error' };
     }
 
-    // ETag 저장
-    const newETag = res.headers.get('ETag');
-    if (newETag) {
-      this.etagMap.set(username, newETag);
-    }
-
     const events = (await res.json()) as GithubEvent[];
     if (events.length === 0) {
       this.logger.debug(`[${username}] No events in response`);
       return { status: 'no_changes' };
     }
 
-    // 이벤트 필터링 디버깅
+    // 이벤트 필터링
     const latestEventTime = events[0]?.created_at;
     this.logger.debug(
       `[${username}] Events: ${events.length}, Latest: ${latestEventTime}, lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
@@ -215,7 +193,9 @@ export class GithubPollService {
     );
 
     if (newEvents.length === 0) {
-      this.logger.debug(`[${username}] All events filtered out (older than lastProcessedAt)`);
+      this.logger.debug(
+        `[${username}] All events filtered out (older than lastProcessedAt)`,
+      );
       return { status: 'no_changes' };
     }
 
@@ -224,7 +204,12 @@ export class GithubPollService {
       (e) => e.type === 'PullRequestEvent',
     ).length;
 
+    // lastProcessedAt을 최신 이벤트 시간으로 갱신
     schedule.lastProcessedAt = new Date(events[0].created_at);
+
+    this.logger.log(
+      `[${username}] New events detected! Push: ${pushCount}, PR: ${prCount}`,
+    );
 
     return {
       status: 'new_events',
