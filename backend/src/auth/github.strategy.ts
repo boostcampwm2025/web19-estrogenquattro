@@ -30,6 +30,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       githubId: profile.id,
       username,
       avatarUrl: profile.photos?.[0]?.value || '',
+      accessToken,
     });
 
     this.logger.log(`User stored/found - username: ${user.username}`);

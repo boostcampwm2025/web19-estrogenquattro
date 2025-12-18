@@ -110,7 +110,17 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.createTimerCallback(client),
       connectedAt,
     );
-    this.githubService.subscribeGithubEvent(connectedAt, client.id, roomId);
+
+    // client.data에서 OAuth 인증된 사용자 정보 추출
+    const userData = client.data as { user: User };
+    const { username, accessToken } = userData.user;
+    this.githubService.subscribeGithubEvent(
+      connectedAt,
+      client.id,
+      roomId,
+      username,
+      accessToken,
+    );
   }
 
   @SubscribeMessage('moving')

@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { GithubGateway } from './github.gateway';
 
 interface PollingSchedule {
   interval: NodeJS.Timeout;
   lastProcessedAt: Date;
+  username: string;
+  accessToken: string;
 }
 
 interface GithubEvent {
@@ -13,12 +15,19 @@ interface GithubEvent {
 
 @Injectable()
 export class GithubPollService {
+  private readonly logger = new Logger(GithubPollService.name);
+
   constructor(private readonly githubGateway: GithubGateway) {}
 
-  private readonly testUsers = ['songhaechan'];
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
 
-  subscribeGithubEvent(connectedAt: Date, clientId: string, roomId: string) {
+  subscribeGithubEvent(
+    connectedAt: Date,
+    clientId: string,
+    roomId: string,
+    username: string,
+    accessToken: string,
+  ) {
     if (this.pollingSchedules.has(clientId)) return;
 
     const interval = setInterval(() => {
@@ -28,7 +37,11 @@ export class GithubPollService {
     this.pollingSchedules.set(clientId, {
       interval,
       lastProcessedAt: connectedAt,
+      username,
+      accessToken,
     });
+
+    this.logger.log(`GitHub polling started for user: ${username}`);
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -50,12 +63,24 @@ export class GithubPollService {
     const schedule = this.pollingSchedules.get(clientId);
     if (!schedule) return;
 
-    const username = this.testUsers[0];
+    const { username, accessToken } = schedule;
     const url = `https://api.github.com/users/${username}/events`;
 
     const res = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    // 로깅 추가 (Phase 1 테스트용)
+    this.logger.log('[GitHub Poll]', {
+      url,
+      status: res.status,
+      rateLimit: {
+        limit: res.headers.get('X-RateLimit-Limit'),
+        remaining: res.headers.get('X-RateLimit-Remaining'),
+        used: res.headers.get('X-RateLimit-Used'),
       },
     });
 
