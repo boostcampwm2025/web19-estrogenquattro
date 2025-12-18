@@ -12,6 +12,7 @@ import { envValidationSchema } from './config/env.validation';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.production', '.env.local', '.env'],
       validationSchema: envValidationSchema,
     }),
     PlayerModule,
