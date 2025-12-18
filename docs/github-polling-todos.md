@@ -7,7 +7,8 @@
 
 - Public API → OAuth 토큰 인증 API로 전환
 - ETag를 활용한 Conditional Request로 Rate Limit 최적화
-- 폴링 주기 단축 (60초 → 10~30초)으로 실시간성 향상
+- 동적 폴링 전략으로 실시간성 향상 (304→10초, 200→60초)
+- GitHub 커밋에 따라 프로그레스바 연동
 
 ---
 
@@ -15,206 +16,130 @@
 
 | 항목 | 현재 | 목표 |
 |------|------|------|
-| 사용자 식별 | 하드코딩 (`songhaechan`) | 로그인한 사용자의 username |
-| API 인증 | Public API (인증X) | OAuth Access Token |
-| Rate Limit | 60 req/hour (비인증) | 5,000 req/hour (인증) |
-| 폴링 주기 | 60초 | 10~30초 |
-| ETag 최적화 | 미적용 | 적용 |
+| 사용자 식별 | ~~하드코딩~~ | ✅ 로그인한 사용자의 username |
+| API 인증 | ~~Public API~~ | ✅ OAuth Access Token (`repo` scope) |
+| Rate Limit | ~~60 req/hour~~ | ✅ 5,000 req/hour (인증) |
+| 폴링 주기 | ~~60초 고정~~ | ✅ 동적 (10초~60초) |
+| ETag 최적화 | ~~미적용~~ | ✅ 적용 |
+| 429 에러 처리 | ~~미적용~~ | ✅ 백오프 전략 |
+| 프로그레스바 | ~~임시 로직 (2초마다 10%)~~ | ✅ GitHub 커밋 연동 |
 
 ---
 
-## Phase 1: OAuth 토큰 연동
+## Phase 1: OAuth 토큰 연동 ✅
 
-| 순서 | 작업 | 테스트 방법 | 상태 |
-|:---:|------|-------------|:---:|
-| 1 | `GithubPollService`에서 사용자별 Access Token 조회 | 콘솔에 토큰 로깅 후 확인 | ✅ |
-| 2 | API 호출 시 `Authorization: Bearer {token}` 헤더 추가 | 네트워크 탭에서 Request Headers 확인 | ✅ |
-| 3 | 하드코딩된 username → JWT에서 추출한 username으로 변경 | 네트워크 탭에서 API URL 확인 | ✅ |
+| 순서 | 작업 | 상태 |
+|:---:|------|:---:|
+| 1 | `GithubPollService`에서 사용자별 Access Token 조회 | ✅ |
+| 2 | API 호출 시 `Authorization: Bearer {token}` 헤더 추가 | ✅ |
+| 3 | 하드코딩된 username → JWT에서 추출한 username으로 변경 | ✅ |
 
-### 코드 품질 체크
+---
 
-| 항목 | 명령어 | 상태 |
-|:---:|--------|:---:|
-| Lint | `npm run lint` | ✅ |
-| Format | `npm run format` | ✅ |
-| Build | `npm run build` | ✅ |
-| Test | `npm run test` | ✅ |
+## Phase 2: ETag Conditional Request 구현 ✅
 
-### 보안 체크
+| 순서 | 작업 | 상태 |
+|:---:|------|:---:|
+| 4 | `etagMap: Map<username, string>` 추가 | ✅ |
+| 5 | 응답 헤더에서 ETag 추출 및 저장 | ✅ |
+| 6 | 요청 시 `If-None-Match: {etag}` 헤더 추가 | ✅ |
+| 7 | 304 응답 처리 (변경 없음 → Rate Limit 미차감) | ✅ |
 
-| 항목 | 확인 내용 | 상태 |
-|:---:|----------|:---:|
-| 토큰 저장 | accessToken이 메모리(UserStore)에만 저장되는지 | ✅ |
-| 로그 노출 | accessToken이 로그에 출력되지 않는지 | ✅ |
-| 클라이언트 전송 | accessToken이 Socket/API 응답에 포함되지 않는지 | ✅ (수정됨) |
-| JWT 포함 여부 | JWT payload에 accessToken이 포함되지 않는지 | ✅ |
+---
 
-### 테스트: OAuth 토큰 적용 확인
+## Phase 3: 동적 폴링 전략 ✅
 
-```
-1. 브라우저 개발자 도구 > Network 탭 열기
-2. GitHub 로그인 후 방 입장
-3. 백엔드 로그에서 GitHub API 호출 확인
-4. 응답 헤더의 X-RateLimit-Limit 확인
-   - 60 → Public API (실패)
-   - 5000 → 인증 API (성공)
+| 순서 | 작업 | 상태 |
+|:---:|------|:---:|
+| 8 | 동적 폴링 전략 구현 (응답에 따라 간격 조절) | ✅ |
+| 9 | 429 에러 처리 및 백오프 전략 | ✅ |
+
+### 동적 폴링 구현
+
+```typescript
+// github.poll-service.ts
+const POLL_INTERVAL_FAST = 10_000;    // 304 응답 시 (변경 없음)
+const POLL_INTERVAL_SLOW = 60_000;    // 200 응답 시 (새 데이터)
+const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시 (rate limit)
+
+switch (result.status) {
+  case 'no_changes':    nextInterval = POLL_INTERVAL_FAST; break;
+  case 'new_events':    nextInterval = POLL_INTERVAL_SLOW; break;
+  case 'rate_limited':  nextInterval = retryAfter || POLL_INTERVAL_BACKOFF; break;
+}
 ```
 
 ---
 
-## Phase 2: ETag Conditional Request 구현
+## Phase 4: 프로그레스바 GitHub 커밋 연동 ✅
 
-| 순서 | 작업 | 테스트 방법 | 상태 |
-|:---:|------|-------------|:---:|
-| 4 | `etagMap: Map<userId, string>` 추가 | - | ✅ |
-| 5 | 응답 헤더에서 ETag 추출 및 저장 | 로그에서 ETag 값 확인 | ✅ |
-| 6 | 요청 시 `If-None-Match: {etag}` 헤더 추가 | 네트워크 탭에서 Request Headers 확인 | ✅ |
-| 7 | 304 응답 처리 (변경 없음 → API 호출 스킵) | 로그에서 304 응답 확인 | ✅ |
+> 관련 PR: [#31 feat: 맵 중앙에 프로그레스바 UI 구현](https://github.com/boostcampwm2025/web19-estrogenquattro/pull/31)
 
-### 코드 품질 체크
+| 순서 | 작업 | 상태 |
+|:---:|------|:---:|
+| 10 | 프론트엔드에서 `github_event` Socket 이벤트 리스너 추가 | ✅ |
+| 11 | 임시 프로그레스 로직 제거 | ✅ |
+| 12 | GitHub 커밋 이벤트 수신 시 프로그레스바 업데이트 | ✅ |
+| 13 | 프로그레스바 증가 로직 설계 (커밋당 증가량 등) | ✅ |
 
-| 항목 | 명령어 | 상태 |
-|:---:|--------|:---:|
-| Lint | `npm run lint` | ✅ |
-| Format | `npm run format` | ✅ |
-| Build | `npm run build` | ✅ |
-| Test | `npm run test` | ✅ |
-
-### 보안 체크
-
-| 항목 | 확인 내용 | 상태 |
-|:---:|----------|:---:|
-| ETag 노출 | ETag 값이 클라이언트에 불필요하게 전송되지 않는지 | ✅ |
-| 에러 정보 | 304/에러 응답 시 민감 정보가 로그에 노출되지 않는지 | ✅ |
-
-### 테스트: ETag 동작 확인
+### 연동 흐름
 
 ```
-1. 브라우저 Network 탭 또는 백엔드 로그 확인
-2. 첫 번째 폴링: 200 OK + 데이터 반환
+GitHub 커밋 → 백엔드 폴링 감지 → WebSocket 이벤트 전송 → 프론트엔드 프로그레스바 업데이트
+```
+
+### 프로그레스바 규칙
+
+| 항목 | 결정 |
+|------|------|
+| 커밋당 증가량 | **2%** |
+| PR당 증가량 | **5%** |
+| 100% 도달 시 | **리셋 (0%로 초기화)** |
+| 합산 방식 | **같은 방 사용자들의 커밋 합산** (room 브로드캐스트) |
+
+---
+
+## Phase 5: 개인 기여 표시 ✅
+
+| 순서 | 작업 | 상태 |
+|:---:|------|:---:|
+| 14 | `GithubEventData`에 username 필드 추가 | ✅ |
+| 15 | 프론트엔드 기여도 UI 컴포넌트 생성 (`createContributionList.ts`) | ✅ |
+| 16 | MapScene에서 기여도 추적 및 표시 | ✅ |
+
+### 기여도 표시 규칙
+
+| 항목 | 결정 |
+|------|------|
+| 표시 위치 | 프로그레스바 아래 |
+| 표시 형식 | `username:숫자` (예: heisjun:5, fpg123:3) |
+| 최대 표시 | 상위 5명 (기여도 순 정렬) |
+| 리셋 | 프로그레스바 리셋 시 기여도는 유지 |
+
+---
+
+## 테스트 방법
+
+### ETag 동작 확인
+
+```
+1. 백엔드 로그 확인
+2. 첫 번째 폴링: status: 200, ETag 값 반환
 3. GitHub 활동 없이 대기
-4. 두 번째 폴링: 304 Not Modified (rate limit 미차감)
+4. 두 번째 폴링: status: 304 (Rate Limit 미차감)
 5. GitHub에서 커밋 푸시
-6. 세 번째 폴링: 200 OK + 새 데이터 반환
+6. 세 번째 폴링: status: 200, 새 ETag
 ```
 
-### 테스트: Rate Limit 절약 확인
-
-```
-응답 헤더 확인:
-- X-RateLimit-Limit: 5000
-- X-RateLimit-Remaining: 남은 횟수
-- X-RateLimit-Used: 사용한 횟수
-
-304 응답 시 X-RateLimit-Used가 증가하지 않으면 성공
-```
-
----
-
-## Phase 3: 폴링 주기 최적화
-
-| 순서 | 작업 | 테스트 방법 | 상태 |
-|:---:|------|-------------|:---:|
-| 8 | 폴링 주기를 환경변수로 분리 (`GITHUB_POLL_INTERVAL`) | .env 변경 후 재시작하여 확인 | ⬜ |
-| 9 | 폴링 주기 60초 → 30초로 단축 | 네트워크 탭에서 요청 간격 확인 | ⬜ |
-| 10 | (선택) ETag 기반 adaptive polling 구현 | - | ⬜ |
-
-### 코드 품질 체크
-
-| 항목 | 명령어 | 상태 |
-|:---:|--------|:---:|
-| Lint | `npm run lint` | ⬜ |
-| Format | `npm run format` | ⬜ |
-| Build | `npm run build` | ⬜ |
-| Test | `npm run test` | ⬜ |
-
-### 보안 체크
-
-| 항목 | 확인 내용 | 상태 |
-|:---:|----------|:---:|
-| 환경변수 | 폴링 주기 환경변수가 적절한 범위로 제한되는지 | ⬜ |
-| DoS 방지 | 너무 짧은 폴링 주기 설정 방지 (최소값 검증) | ⬜ |
-
-### 테스트: 실시간성 확인
-
-```
-1. 방 입장 후 Network 탭 열기
-2. GitHub에서 커밋 푸시
-3. 폴링 주기(30초) 내에 이벤트 수신 확인
-4. 프론트엔드에서 이벤트 표시 확인
-```
-
----
-
-## Phase 4: 프론트엔드 이벤트 표시
-
-| 순서 | 작업 | 테스트 방법 | 상태 |
-|:---:|------|-------------|:---:|
-| 11 | Socket 이벤트 리스너 추가 (`githubEvent`) | 콘솔에서 이벤트 수신 로그 확인 | ⬜ |
-| 12 | 이벤트 데이터를 화면에 표시 | UI에서 Push/PR 카운트 확인 | ⬜ |
-
-### 코드 품질 체크
-
-| 항목 | 명령어 | 상태 |
-|:---:|--------|:---:|
-| Lint | `npm run lint` | ⬜ |
-| Format | `npm run format` | ⬜ |
-| Build | `npm run build` | ⬜ |
-| Test | `npm run test` | ⬜ |
-
-### 보안 체크
-
-| 항목 | 확인 내용 | 상태 |
-|:---:|----------|:---:|
-| XSS 방지 | GitHub 이벤트 데이터가 적절히 이스케이프되어 렌더링되는지 | ⬜ |
-| 데이터 검증 | Socket으로 수신한 이벤트 데이터의 타입/형식 검증 | ⬜ |
-
-### 테스트: E2E 흐름
+### 프로그레스바 연동 확인
 
 ```
 1. 로그인 → 방 입장
 2. GitHub에서 커밋 푸시
-3. 30초 이내에 화면에서 Push 카운트 증가 확인
-4. PR 생성 후 PR 카운트 증가 확인
+3. 10~60초 이내에 프로그레스바 증가 확인 (동적 폴링)
+   - 첫 폴링 후 304 응답 시: 10초 후 재시도
+   - 새 이벤트 감지 시: 60초 후 재시도
 ```
-
----
-
-## 네트워크 탭 분석 가이드
-
-### 백엔드 로깅 추가 (임시)
-
-`github.poll-service.ts`에 다음 로그 추가:
-
-```typescript
-console.log('[GitHub Poll]', {
-  url,
-  status: res.status,
-  etag: res.headers.get('ETag'),
-  rateLimit: {
-    limit: res.headers.get('X-RateLimit-Limit'),
-    remaining: res.headers.get('X-RateLimit-Remaining'),
-    used: res.headers.get('X-RateLimit-Used'),
-  },
-});
-```
-
-### 확인할 응답 헤더
-
-| 헤더 | 설명 | 기대값 |
-|------|------|--------|
-| `X-RateLimit-Limit` | 시간당 최대 요청 수 | 5000 (인증) |
-| `X-RateLimit-Remaining` | 남은 요청 수 | - |
-| `X-RateLimit-Used` | 사용한 요청 수 | 304시 증가 안함 |
-| `ETag` | 응답 식별자 | 저장하여 다음 요청에 사용 |
-
-### 확인할 요청 헤더
-
-| 헤더 | 설명 |
-|------|------|
-| `Authorization` | `Bearer {access_token}` |
-| `If-None-Match` | 이전 응답의 ETag 값 |
-| `Accept` | `application/vnd.github+json` |
 
 ---
 

@@ -54,6 +54,8 @@ GET /users/{username}/events
 | (없음) | public 레포 활동만 |
 | `repo` | public + private 레포 활동 |
 
+**현재 설정**: `repo` scope 사용 (private 레포 활동 감지 가능)
+
 ---
 
 ## Rate Limit
@@ -209,20 +211,99 @@ ETag와 Rate Limit은 **독립적으로 동작**합니다.
 
 | 항목 | 권장값 | 비고 |
 |------|--------|------|
-| Polling 주기 | **30초** | 안전하고 실시간성 균형 |
+| Polling 주기 | **동적** | 응답 상태에 따라 10초~60초 조절 |
 | ETag 캐싱 | 필수 | Rate Limit 절약 |
+| 429 처리 | 필수 | 백오프 전략으로 ban 방지 |
+
+---
+
+## 동적 폴링 전략
+
+### 응답 상태에 따른 폴링 간격
+
+고정 간격 대신 **응답 상태에 따라 동적으로 폴링 간격을 조절**합니다.
+
+| 응답 | 다음 폴링 간격 | 이유 |
+|------|---------------|------|
+| 304 (변경 없음) | **10초** | Rate Limit 미차감이므로 빠르게 새 이벤트 감지 |
+| 200 (새 데이터) | **60초** | GitHub 권장 간격 준수 |
+| 429 (Rate Limit) | **X-RateLimit-Reset 또는 120초** | 백오프로 ban 방지 |
+| 에러 | **60초** | 안전하게 재시도 |
+
+### 왜 동적 폴링인가?
+
+| 전략 | 장점 | 단점 |
+|------|------|------|
+| 고정 30초 | 단순함 | 새 이벤트 감지 느림 or GitHub 권장 미준수 |
+| **동적** | 빠른 감지 + GitHub 권장 준수 | 구현 복잡도 약간 증가 |
+
+### 구현 방식
+
+`setInterval` 대신 `setTimeout` 체인 방식으로 구현:
+
+```typescript
+// 폴링 간격 설정
+const POLL_INTERVAL_FAST = 10_000;    // 304 응답 시
+const POLL_INTERVAL_SLOW = 60_000;    // 200 응답 시
+const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시
+
+// 응답에 따라 다음 폴링 스케줄링
+switch (result.status) {
+  case 'no_changes':    nextInterval = POLL_INTERVAL_FAST; break;
+  case 'new_events':    nextInterval = POLL_INTERVAL_SLOW; break;
+  case 'rate_limited':  nextInterval = retryAfter || POLL_INTERVAL_BACKOFF; break;
+}
+setTimeout(() => poll(), nextInterval);
+```
+
+---
+
+## 429 에러 처리
+
+### GitHub Rate Limit 초과 시
+
+Rate Limit을 초과하면 GitHub은 **403 또는 429** 응답을 반환합니다.
+
+**⚠️ 중요**: 공식 문서에 따르면 "Continuing to make requests while you are rate limited may result in the **banning** of your integration."
+
+### 처리 방법
+
+```typescript
+if (res.status === 429) {
+  const resetHeader = res.headers.get('X-RateLimit-Reset');
+  let retryAfter = 120_000; // 기본 2분 백오프
+
+  if (resetHeader) {
+    const resetTime = parseInt(resetHeader, 10) * 1000;
+    retryAfter = Math.max(resetTime - Date.now(), 120_000);
+  }
+
+  // retryAfter 후 재시도
+}
+```
+
+### 관련 헤더
+
+| 헤더 | 설명 |
+|------|------|
+| `X-RateLimit-Limit` | 시간당 최대 요청 수 |
+| `X-RateLimit-Remaining` | 남은 요청 수 |
+| `X-RateLimit-Reset` | Rate Limit 초기화 시간 (UTC epoch seconds) |
+| `Retry-After` | 재시도까지 대기 시간 (초) |
 
 ---
 
 ## 폴링 주기 설계 근거
 
-### 왜 30초인가?
+### 고정 주기 비교 (참고용)
 
 | 주기 | 장점 | 단점 |
 |------|------|------|
 | 10초 | 빠른 반응 | Rate Limit 소모 큼, GitHub 권장 미준수 |
-| **30초** | 실시간성과 안정성 균형 | - |
+| 30초 | 실시간성과 안정성 균형 | - |
 | 60초 | GitHub 권장, 안전 | 반응 느림 |
+
+→ **현재는 동적 폴링으로 이 trade-off를 해결**
 
 ### GitHub API 제약 사항
 
@@ -299,11 +380,14 @@ flowchart TB
 
     Client <-->|OAuth Token| Backend
     Client <-->|WebSocket| Backend
-    Backend -->|Polling 30초 + ETag| GitHub
+    Backend -->|동적 폴링 + ETag| GitHub
 ```
 
-1. 사용자 OAuth 로그인 → 토큰 저장
-2. 백엔드에서 주기적으로 `/users/{username}/events` 호출
+1. 사용자 OAuth 로그인 → 토큰 저장 (`repo` scope로 private 레포 접근)
+2. 백엔드에서 동적 간격으로 `/users/{username}/events` 호출
+   - 304 응답 → 10초 후 재시도
+   - 200 응답 → 60초 후 재시도
+   - 429 응답 → 백오프 후 재시도
 3. 새 이벤트 감지 시 WebSocket으로 클라이언트에 전송
 4. ETag로 불필요한 rate limit 소모 방지
 
