@@ -10,6 +10,9 @@ import { GithubPollService } from './github/github.poll-service';
 import { GithubGateway } from './github/github.gateway';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './config/logger.winston';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -17,6 +20,13 @@ import { envValidationSchema } from './config/env.validation';
       isGlobal: true,
       envFilePath: ['.env.production', '.env.local', '.env'],
       validationSchema: envValidationSchema,
+    }),
+    WinstonModule.forRoot(winstonConfig),
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
     }),
     PlayerModule,
     GithubModule,
