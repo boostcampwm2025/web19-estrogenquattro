@@ -7,6 +7,8 @@ import { PlayerGateway } from './player/player.gateway';
 import { PlayTimeService } from './player/player.play-time-service';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './config/logger.winston';
 
 @Module({
   imports: [
@@ -15,6 +17,7 @@ import { envValidationSchema } from './config/env.validation';
       envFilePath: ['.env.production', '.env.local', '.env'],
       validationSchema: envValidationSchema,
     }),
+    WinstonModule.forRoot(winstonConfig),
     PlayerModule,
     AuthModule,
   ],
