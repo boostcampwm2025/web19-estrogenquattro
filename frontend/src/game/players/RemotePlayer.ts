@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { formatPlayTime } from "@/utils/timeFormat";
 
 export default class RemotePlayer {
   private scene: Phaser.Scene;
@@ -6,6 +7,7 @@ export default class RemotePlayer {
   private body: Phaser.Physics.Arcade.Body;
   private maskShape: Phaser.GameObjects.Graphics;
   private faceSprite: Phaser.GameObjects.Image;
+  private timerText: Phaser.GameObjects.Text;
   public id: string;
 
   constructor(
@@ -47,17 +49,29 @@ export default class RemotePlayer {
     borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     // 5. 닉네임 표시
-    /*  const nameTag = scene.add
-      .text(0, -70, username, {
-        fontSize: "16px",
+    const nameTag = scene.add
+      .text(0, 30, username, {
+        fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5); */
+      .setOrigin(0.5);
 
-    // 6. 컨테이너 추가
-    this.container.add([this.faceSprite, borderGraphics]);
+    // 6. 접속 시간 표시
+    this.timerText = scene.add
+      .text(0, -35, formatPlayTime(0), {
+        fontSize: "12px",
+        color: "#ffffff",
+        fontFamily: "Arial, sans-serif",
+      })
+      .setOrigin(0.5);
+
+    this.timerText.setStroke("#000000", 4);
+    this.timerText.setShadow(1, 1, "#000000", 2, false, true);
+
+    // 7. 컨테이너 추가
+    this.container.add([this.faceSprite, borderGraphics, this.timerText, nameTag]);
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
 
     // 7. 물리 엔진 적용
@@ -129,6 +143,13 @@ export default class RemotePlayer {
     if (this.container && this.maskShape) {
       this.maskShape.x = this.container.x;
       this.maskShape.y = this.container.y;
+    }
+  }
+
+  // 접속 시간 업데이트
+  updateTimer(minutes: number) {
+    if (this.timerText) {
+      this.timerText.setText(formatPlayTime(minutes));
     }
   }
 

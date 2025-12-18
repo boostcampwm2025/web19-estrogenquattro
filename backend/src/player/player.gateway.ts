@@ -151,6 +151,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return (minutes: number) => {
       // roomId는 추후 방 배정 이후 수정 필요
       const player = this.players.get(client.id);
+
+      // 같은 방의 모든 유저에게 전송 (자기 자신 포함)
       this.server.to(player!.roomId).emit('timerUpdated', {
         userId: client.id,
         minutes,
