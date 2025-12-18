@@ -48,8 +48,17 @@ export default class Player {
     borderGraphics.lineStyle(4, 0xffffff, 1);
     borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
+    const nameTag = scene.add
+      .text(0, 30, username, {
+        fontSize: "12px",
+        color: "#ffffff",
+        backgroundColor: "#00000088",
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5);
+
     // 5. 컨테이너 추가
-    this.container.add([faceSprite, borderGraphics]);
+    this.container.add([faceSprite, borderGraphics, nameTag]);
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
 
     // 6. 물리 엔진 적용

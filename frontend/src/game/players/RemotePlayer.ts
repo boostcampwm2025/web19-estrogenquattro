@@ -47,17 +47,17 @@ export default class RemotePlayer {
     borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     // 5. 닉네임 표시
-    /*  const nameTag = scene.add
-      .text(0, -70, username, {
-        fontSize: "16px",
+    const nameTag = scene.add
+      .text(0, 30, username, {
+        fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5); */
+      .setOrigin(0.5);
 
     // 6. 컨테이너 추가
-    this.container.add([this.faceSprite, borderGraphics]);
+    this.container.add([this.faceSprite, borderGraphics, nameTag]);
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
 
     // 7. 물리 엔진 적용
