@@ -24,14 +24,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: "/github-image/:path*",
-        destination: "https://github.com/:path*",
-      },
-    ];
-  },
 };
 
 export default nextConfig;

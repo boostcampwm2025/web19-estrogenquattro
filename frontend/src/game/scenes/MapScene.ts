@@ -26,6 +26,7 @@ export class MapScene extends Phaser.Scene {
 
   // Remote Players
   private otherPlayers: Map<string, RemotePlayer> = new Map();
+  private username: string = "";
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -39,7 +40,13 @@ export class MapScene extends Phaser.Scene {
     this.load.tilemapTiledJSON("tilemap", "/assets/map.json");
 
     // Default Face
-    this.load.image("face", `/github-image/heisjun.png`);
+    const username = this.username || "boostcampwm2025";
+    this.load.image("face", `/api/github-profile/${username}`);
+  }
+
+  init() {
+    const user = this.registry.get("user");
+    this.username = user?.username;
   }
 
   create() {
@@ -119,7 +126,7 @@ export class MapScene extends Phaser.Scene {
 
     const socket = getSocket();
     const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
-    const GITHUB_USERNAME = "heisjun"; // [TODO] 실제 로그인 정보 연동
+    const GITHUB_USERNAME = this.username;
 
     // Player 인스턴스 생성
     this.player = new Player(
@@ -179,7 +186,7 @@ export class MapScene extends Phaser.Scene {
     const socket = connectSocket();
     if (!socket) return;
 
-    const GITHUB_USERNAME = "heisjun"; // [TODO]
+    const GITHUB_USERNAME = this.username;
 
     // 소켓 연결 시 내 플레이어 ID 업데이트 (Ghost Player 방지)
     socket.on("connect", () => {
@@ -264,11 +271,8 @@ export class MapScene extends Phaser.Scene {
     );
     this.otherPlayers.set(data.userId, remotePlayer);
 
-    // 이미지 로드 (필요시)
     if (!this.textures.exists(username)) {
-      const imageUrl = username.startsWith("heisjun")
-        ? `/github-image/boostcampwm2025.png`
-        : `/github-image/${username}.png`;
+      const imageUrl = `/api/github-profile/${username}`;
 
       this.load.image(username, imageUrl);
       this.load.once(`filecomplete-image-${username}`, () => {
