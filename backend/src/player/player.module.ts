@@ -7,7 +7,7 @@ import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
 
 @Module({
-  imports: [GithubModule],
+  imports: [GithubModule, AuthModule],
   providers: [PlayerGateway, PlayTimeService, GithubPollService, GithubGateway],
 })
 export class PlayerModule {}
