@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlayerGateway } from './player.gateway';
 import { PlayTimeService } from './player.play-time-service';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
@@ -28,6 +29,10 @@ describe('PlayerGateway', () => {
     unsubscribeGithubEvent: jest.fn(),
   };
 
+  const mockWsJwtGuard = {
+    verifyClient: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -39,6 +44,10 @@ describe('PlayerGateway', () => {
         {
           provide: GithubPollService,
           useValue: mockGithubPollService,
+        },
+        {
+          provide: WsJwtGuard,
+          useValue: mockWsJwtGuard,
         },
       ],
     }).compile();

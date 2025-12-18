@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,15 +9,25 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
+import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
 import { GithubPollService } from '../github/github.poll-service';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+})
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(PlayerGateway.name);
+
   constructor(
     private readonly playTimeService: PlayTimeService,
     private readonly githubService: GithubPollService,
+    private readonly wsJwtGuard: WsJwtGuard,
   ) {}
   @WebSocketServer()
   server: Server;
@@ -35,7 +46,17 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   > = new Map();
 
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    const isValid = this.wsJwtGuard.verifyClient(client);
+
+    if (!isValid) {
+      this.logger.warn(`Connection rejected (unauthorized): ${client.id}`);
+      client.disconnect();
+      return;
+    }
+
+    const data = client.data as { user: User };
+    const user = data.user;
+    this.logger.log(`Client connected: ${client.id} (user: ${user.username})`);
   }
 
   handleDisconnect(client: Socket) {
@@ -46,7 +67,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.playTimeService.stopTimer(client.id);
       this.githubService.unsubscribeGithubEvent(client.id);
     }
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('joining')
@@ -56,7 +77,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = data.roomId || 'default-room';
-    client.join(roomId);
+    void client.join(roomId);
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
