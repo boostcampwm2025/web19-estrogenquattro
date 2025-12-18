@@ -108,7 +108,12 @@ export class GithubPollService {
 
   private async pollGithubEvents(clientId: string): Promise<{
     status: 'new_events' | 'no_changes' | 'rate_limited' | 'error';
-    data?: { clientId: string; username: string; pushCount: number; pullRequestCount: number };
+    data?: {
+      clientId: string;
+      username: string;
+      pushCount: number;
+      pullRequestCount: number;
+    };
     retryAfter?: number;
   }> {
     const schedule = this.pollingSchedules.get(clientId);

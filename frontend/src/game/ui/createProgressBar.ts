@@ -90,7 +90,10 @@ export function createProgressBar(
   /**
    * 애니메이션과 함께 프로그레스 값 설정
    */
-  const animateToProgress = (targetProgress: number, onComplete?: () => void) => {
+  const animateToProgress = (
+    targetProgress: number,
+    onComplete?: () => void,
+  ) => {
     scene.tweens.add({
       targets: { value: progress },
       value: targetProgress,
