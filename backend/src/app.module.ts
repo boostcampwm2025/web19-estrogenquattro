@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './config/logger.winston';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -18,6 +19,12 @@ import { winstonConfig } from './config/logger.winston';
       validationSchema: envValidationSchema,
     }),
     WinstonModule.forRoot(winstonConfig),
+    PrometheusModule.register({
+      path: '/metrics',
+      defaultMetrics: {
+        enabled: true,
+      },
+    }),
     PlayerModule,
     AuthModule,
   ],
