@@ -9,7 +9,7 @@ export const winstonConfig: winston.LoggerOptions = {
             level: 'debug',
             format: winston.format.combine(
               winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-              utilities.format.nestLike('web19', {
+              utilities.format.nestLike('EstrogenQuattro', {
                 prettyPrint: true,
                 colors: true,
                 appName: true,
