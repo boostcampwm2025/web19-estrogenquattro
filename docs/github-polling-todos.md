@@ -66,26 +66,26 @@
 
 | 순서 | 작업 | 테스트 방법 | 상태 |
 |:---:|------|-------------|:---:|
-| 4 | `etagMap: Map<userId, string>` 추가 | - | ⬜ |
-| 5 | 응답 헤더에서 ETag 추출 및 저장 | 로그에서 ETag 값 확인 | ⬜ |
-| 6 | 요청 시 `If-None-Match: {etag}` 헤더 추가 | 네트워크 탭에서 Request Headers 확인 | ⬜ |
-| 7 | 304 응답 처리 (변경 없음 → API 호출 스킵) | 로그에서 304 응답 확인 | ⬜ |
+| 4 | `etagMap: Map<userId, string>` 추가 | - | ✅ |
+| 5 | 응답 헤더에서 ETag 추출 및 저장 | 로그에서 ETag 값 확인 | ✅ |
+| 6 | 요청 시 `If-None-Match: {etag}` 헤더 추가 | 네트워크 탭에서 Request Headers 확인 | ✅ |
+| 7 | 304 응답 처리 (변경 없음 → API 호출 스킵) | 로그에서 304 응답 확인 | ✅ |
 
 ### 코드 품질 체크
 
 | 항목 | 명령어 | 상태 |
 |:---:|--------|:---:|
-| Lint | `npm run lint` | ⬜ |
-| Format | `npm run format` | ⬜ |
-| Build | `npm run build` | ⬜ |
-| Test | `npm run test` | ⬜ |
+| Lint | `npm run lint` | ✅ |
+| Format | `npm run format` | ✅ |
+| Build | `npm run build` | ✅ |
+| Test | `npm run test` | ✅ |
 
 ### 보안 체크
 
 | 항목 | 확인 내용 | 상태 |
 |:---:|----------|:---:|
-| ETag 노출 | ETag 값이 클라이언트에 불필요하게 전송되지 않는지 | ⬜ |
-| 에러 정보 | 304/에러 응답 시 민감 정보가 로그에 노출되지 않는지 | ⬜ |
+| ETag 노출 | ETag 값이 클라이언트에 불필요하게 전송되지 않는지 | ✅ |
+| 에러 정보 | 304/에러 응답 시 민감 정보가 로그에 노출되지 않는지 | ✅ |
 
 ### 테스트: ETag 동작 확인
 
