@@ -1,16 +1,31 @@
 import * as Phaser from "phaser";
+import Player from "../players/Player";
+import RemotePlayer from "../players/RemotePlayer";
+import { connectSocket, getSocket } from "../../lib/socket";
+
+interface PlayerData {
+  userId: string;
+  username?: string;
+  x: number;
+  y: number;
+  isMoving?: boolean;
+  direction?: string;
+  timestamp?: number;
+}
 import { createProgressBar } from "@/game/ui/createProgressBar";
 
 export class MapScene extends Phaser.Scene {
   private minZoom: number = 0.7;
   private maxZoom: number = 2;
-  private player?: Phaser.Physics.Arcade.Sprite;
+  private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private tileSize: number = 32;
-  private isMoving: boolean = false;
-  private walls: Phaser.GameObjects.Rectangle[] = [];
+  private walls?: Phaser.Physics.Arcade.StaticGroup;
   private gridVisible: boolean = true;
   private gridKey?: Phaser.Input.Keyboard.Key;
+
+  // Remote Players
+  private otherPlayers: Map<string, RemotePlayer> = new Map();
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -18,29 +33,54 @@ export class MapScene extends Phaser.Scene {
 
   preload() {
     // 맵 이미지와 Tiled JSON 로드
+    // 외부 이미지(깃허브)를 로드하려면 CORS 권한이 필요
+    this.load.crossOrigin = "anonymous";
     this.load.image("tiles", "/assets/tempMap1.png");
     this.load.tilemapTiledJSON("tilemap", "/assets/map.json");
+
+    // Default Face
+    this.load.image("face", `/github-image/heisjun.png`);
   }
 
   create() {
-    // 맵 좌상단에 맞춰서 표시
+    // 1. Map & Grid Setup
+    this.setupMap();
+
+    // 2. Player Setup
+    this.setupPlayer();
+
+    // 3. Controls Setup
+    this.setupControls();
+
+    // 4. Camera Setup
+    this.setupCamera();
+
+    // 5. Socket Logic Setup
+    this.setupSocket();
+
+    // 6. Draw Grid (Visual)
+    this.drawGrid();
+  }
+
+  setupMap() {
+    // 맵 이미지 배치
     const mapImage = this.add.image(0, 0, "tiles");
     mapImage.setOrigin(0, 0);
     mapImage.setName("mapImage");
 
-    // 맵 크기
-    const mapWidth = mapImage.width;
-    const mapHeight = mapImage.height;
+    // 맵 크기에 맞게 월드 경계 설정 (Physics World Bounds)
+    this.physics.world.setBounds(0, 0, mapImage.width, mapImage.height);
 
     // Tiled 맵 로드
     const map = this.make.tilemap({ key: "tilemap" });
 
+    // Physics Wall Group 생성
+    this.walls = this.physics.add.staticGroup();
+
     // Tiled JSON에서 충돌 영역 로드
     const collisionLayer = map.getObjectLayer("Collisions");
-
     if (collisionLayer) {
       collisionLayer.objects.forEach((obj) => {
-        // class="wall" 또는 type="wall"인 오브젝트만 처리
         const isWall =
           ("class" in obj && obj.class === "wall") || obj.type === "wall";
 
@@ -54,16 +94,22 @@ export class MapScene extends Phaser.Scene {
             0xff0000,
             0,
           );
+          // 보이지 않는 벽으로 설정
           wall.setVisible(false);
-
-          // 배열에 추가
-          this.physics.add.existing(wall, true);
-          this.walls.push(wall);
+          this.walls?.add(wall);
         }
       });
     }
+  }
 
-    // 임시 플레이어 생성 (그리드 중앙)
+  setupPlayer() {
+    const mapImage = this.children.getByName(
+      "mapImage",
+    ) as Phaser.GameObjects.Image;
+    const mapWidth = mapImage.width;
+    const mapHeight = mapImage.height;
+
+    // 시작 위치 (중앙)
     const startX =
       Math.floor(mapWidth / 2 / this.tileSize) * this.tileSize +
       this.tileSize / 2;
@@ -71,43 +117,37 @@ export class MapScene extends Phaser.Scene {
       Math.floor(mapHeight / 2 / this.tileSize) * this.tileSize +
       this.tileSize / 2;
 
-    this.player = this.physics.add.sprite(startX, startY, "");
+    const socket = getSocket();
+    const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
+    const GITHUB_USERNAME = "heisjun"; // [TODO] 실제 로그인 정보 연동
 
-    // 플레이어를 파란색 원으로 표시 (임시)
-    const playerGraphics = this.add.graphics();
-    playerGraphics.fillStyle(0x0000ff, 1);
-    playerGraphics.fillCircle(0, 0, 16);
-    playerGraphics.generateTexture("player", 32, 32);
-    playerGraphics.destroy();
-    this.player.setTexture("player");
-
-    // 키보드 입력 설정
-    this.cursors = this.input.keyboard?.createCursorKeys();
-
-    // 그리드 토글 키 설정 (G 키)
-    this.gridKey = this.input.keyboard?.addKey(
-      Phaser.Input.Keyboard.KeyCodes.G,
+    // Player 인스턴스 생성
+    this.player = new Player(
+      this,
+      startX,
+      startY,
+      GITHUB_USERNAME,
+      myId,
+      "room-1",
     );
 
-    // 카메라 범위를 맵 크기로 제한
-    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+    // 충돌 설정
+    if (this.walls && this.player) {
+      this.physics.add.collider(this.player.getContainer(), this.walls);
+    }
+  }
 
-    // 카메라를 맵 중앙으로 이동
-    this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
-
-    // 초기 줌 레벨 설정 (공백 최소화)
-    this.setInitialZoom(mapWidth, mapHeight);
-
-    this.drawGrid();
-
-    // 테스트용 텍스트 (맵 중앙에 배치)
-    const middleText = this.add
-      .text(mapWidth / 2, mapHeight / 2, "Map Scene", {
-        fontSize: "32px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5);
-    middleText.setName("mapText");
+  setupControls() {
+    const mapImage = this.children.getByName(
+      "mapImage",
+    ) as Phaser.GameObjects.Image;
+    const mapWidth = mapImage.width;
+    if (this.input.keyboard) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.gridKey = this.input.keyboard.addKey(
+        Phaser.Input.Keyboard.KeyCodes.G,
+      );
+    }
 
     // 프로그레스바 생성
     createProgressBar(this, mapWidth);
@@ -116,16 +156,121 @@ export class MapScene extends Phaser.Scene {
     this.input.on("wheel", this.handleZoom, this);
   }
 
+  setupCamera() {
+    const mapImage = this.children.getByName(
+      "mapImage",
+    ) as Phaser.GameObjects.Image;
+    if (mapImage) {
+      this.cameras.main.setBounds(0, 0, mapImage.width, mapImage.height);
+      this.cameras.main.centerOn(mapImage.width / 2, mapImage.height / 2);
+      if (this.player) {
+        this.cameras.main.startFollow(
+          this.player.getContainer(),
+          true,
+          0.05,
+          0.05,
+        );
+      }
+      this.setInitialZoom(mapImage.width, mapImage.height);
+    }
+  }
+
+  setupSocket() {
+    const socket = connectSocket();
+    if (!socket) return;
+
+    const GITHUB_USERNAME = "heisjun"; // [TODO]
+
+    // 소켓 연결 시 내 플레이어 ID 업데이트 (Ghost Player 방지)
+    socket.on("connect", () => {
+      if (this.player && socket.id) {
+        this.player.id = socket.id;
+      }
+
+      // Join Event (재연결 시에도 다시 join 필요할 수 있음)
+      socket.emit("joining", {
+        x: this.player?.getContainer().x,
+        y: this.player?.getContainer().y,
+        username: GITHUB_USERNAME,
+        roomId: "room-1",
+      });
+    });
+
+    // 1. 기존 유저 싱크
+    socket.on("players_synced", (players: PlayerData[]) => {
+      players.forEach((data) => {
+        this.addRemotePlayer(data);
+      });
+    });
+
+    // 2. 새 유저 입장
+    socket.on("player_joined", (data: PlayerData) => {
+      this.addRemotePlayer(data);
+    });
+
+    // 3. 유저 이동
+    socket.on("moved", (data: PlayerData) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (
+        remotePlayer &&
+        data.isMoving !== undefined &&
+        data.direction !== undefined
+      ) {
+        remotePlayer.updateState({
+          x: data.x,
+          y: data.y,
+          isMoving: data.isMoving,
+          direction: data.direction,
+        });
+      }
+    });
+
+    // 4. 유저 퇴장
+    socket.on("player_left", (data: { userId: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.destroy();
+        this.otherPlayers.delete(data.userId);
+      }
+    });
+  }
+
+  addRemotePlayer(data: PlayerData) {
+    if (this.otherPlayers.has(data.userId)) return;
+    // 내 아이디면 스킵
+    if (this.player && this.player.id === data.userId) return;
+
+    const username = data.username || "unknown";
+    const remotePlayer = new RemotePlayer(
+      this,
+      data.x,
+      data.y,
+      username,
+      data.userId,
+      username,
+    );
+    this.otherPlayers.set(data.userId, remotePlayer);
+
+    // 이미지 로드 (필요시)
+    if (!this.textures.exists(username)) {
+      const imageUrl = username.startsWith("heisjun")
+        ? `/github-image/boostcampwm2025.png`
+        : `/github-image/${username}.png`;
+
+      this.load.image(username, imageUrl);
+      this.load.once(`filecomplete-image-${username}`, () => {
+        remotePlayer.updateFaceTexture(username);
+      });
+      this.load.start();
+    }
+  }
+
   setInitialZoom(mapWidth: number, mapHeight: number) {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
-
-    // 화면을 꽉 채우는 줌 레벨 계산 (공백 최소화)
     const zoomX = screenWidth / mapWidth;
     const zoomY = screenHeight / mapHeight;
     const initialZoom = Math.max(zoomX, zoomY);
-
-    // 초기 줌 적용
     this.cameras.main.setZoom(initialZoom);
   }
 
@@ -146,136 +291,53 @@ export class MapScene extends Phaser.Scene {
   }
 
   drawGrid() {
-    // 기존 그리드 제거
     const existingGraphics = this.children.getByName("grid");
-    if (existingGraphics) {
-      existingGraphics.destroy();
-    }
+    if (existingGraphics) existingGraphics.destroy();
 
     const mapImage = this.children.getByName(
       "mapImage",
     ) as Phaser.GameObjects.Image;
     if (!mapImage) return;
 
-    // 맵 전체 크기에 맞춰 그리드 그리기
     const width = mapImage.width;
     const height = mapImage.height;
-    const tileSize = 32;
+    const cols = Math.ceil(width / this.tileSize);
+    const rows = Math.ceil(height / this.tileSize);
 
-    // 그리드 계산
-    const cols = Math.ceil(width / tileSize);
-    const rows = Math.ceil(height / tileSize);
-
-    // 그리드 그리기
     const graphics = this.add.graphics();
     graphics.setName("grid");
     graphics.lineStyle(1, 0x00ff00, 0.3);
 
-    // 세로 선
     for (let x = 0; x <= cols; x++) {
-      graphics.moveTo(x * tileSize, 0);
-      graphics.lineTo(x * tileSize, height);
+      graphics.moveTo(x * this.tileSize, 0);
+      graphics.lineTo(x * this.tileSize, height);
     }
-
-    // 가로 선
     for (let y = 0; y <= rows; y++) {
-      graphics.moveTo(0, y * tileSize);
-      graphics.lineTo(width, y * tileSize);
+      graphics.moveTo(0, y * this.tileSize);
+      graphics.lineTo(width, y * this.tileSize);
     }
-
     graphics.strokePath();
+    graphics.setVisible(this.gridVisible);
+  }
+
+  toggleGrid() {
+    this.gridVisible = !this.gridVisible;
+    const grid = this.children.getByName("grid") as Phaser.GameObjects.Graphics;
+    if (grid) grid.setVisible(this.gridVisible);
   }
 
   update() {
     if (!this.player || !this.cursors) return;
 
-    // G 키로 그리드 토글
+    // Grid Toggle
     if (this.gridKey && Phaser.Input.Keyboard.JustDown(this.gridKey)) {
       this.toggleGrid();
     }
 
-    // 이동 중이면 입력 무시
-    if (this.isMoving) return;
+    // Player Update
+    this.player.update(this.cursors);
 
-    let targetX = this.player.x;
-    let targetY = this.player.y;
-
-    // 방향키 입력 체크
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
-      targetX -= this.tileSize;
-    } else if (Phaser.Input.Keyboard.JustDown(this.cursors.right)) {
-      targetX += this.tileSize;
-    } else if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
-      targetY -= this.tileSize;
-    } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
-      targetY += this.tileSize;
-    }
-
-    // 이동할 위치가 변경되었는지 확인
-    if (targetX !== this.player.x || targetY !== this.player.y) {
-      // 충돌 체크
-      if (this.canMoveTo(targetX, targetY)) {
-        this.moveToTile(targetX, targetY);
-      }
-    }
-  }
-
-  toggleGrid() {
-    this.gridVisible = !this.gridVisible;
-
-    const grid = this.children.getByName("grid");
-    if (grid instanceof Phaser.GameObjects.Graphics) {
-      grid.setVisible(this.gridVisible);
-    }
-  }
-
-  canMoveTo(x: number, y: number): boolean {
-    // 각 벽과 충돌 체크
-    for (const wall of this.walls) {
-      const wallBody = wall.body as Phaser.Physics.Arcade.StaticBody;
-      if (!wallBody) continue;
-
-      // 플레이어의 바운딩 박스 (16px 반지름)
-      const playerLeft = x - 16;
-      const playerRight = x + 16;
-      const playerTop = y - 16;
-      const playerBottom = y + 16;
-
-      // 벽의 바운딩 박스
-      const wallLeft = wallBody.x;
-      const wallRight = wallBody.x + wallBody.width;
-      const wallTop = wallBody.y;
-      const wallBottom = wallBody.y + wallBody.height;
-
-      // AABB 충돌 체크
-      if (
-        playerLeft < wallRight &&
-        playerRight > wallLeft &&
-        playerTop < wallBottom &&
-        playerBottom > wallTop
-      ) {
-        return false; // 충돌 발생
-      }
-    }
-
-    return true; // 이동 가능
-  }
-
-  moveToTile(targetX: number, targetY: number) {
-    if (!this.player) return;
-
-    this.isMoving = true;
-
-    // Tween을 사용한 부드러운 이동
-    this.tweens.add({
-      targets: this.player,
-      x: targetX,
-      y: targetY,
-      duration: 150, // 이동 시간 (ms)
-      ease: "Linear",
-      onComplete: () => {
-        this.isMoving = false;
-      },
-    });
+    // Remote Players Update
+    this.otherPlayers.forEach((p) => p.update());
   }
 }
