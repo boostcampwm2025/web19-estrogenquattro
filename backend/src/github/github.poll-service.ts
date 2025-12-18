@@ -17,6 +17,12 @@ interface PollingSchedule {
 interface GithubEvent {
   type: string;
   created_at: string;
+  repo?: {
+    name: string;
+  };
+  actor?: {
+    login: string;
+  };
 }
 
 @Injectable()
@@ -191,9 +197,11 @@ export class GithubPollService {
         `lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
     );
 
-    // 상위 5개 이벤트 타입과 시간 로깅
-    const top5 = events.slice(0, 5).map((e) => `${e.type}@${e.created_at}`);
-    this.logger.debug(`[${username}] Top 5 events: ${top5.join(', ')}`);
+    // 상위 3개 이벤트 상세 로깅 (actor, repo 포함)
+    const top3 = events.slice(0, 3).map((e) =>
+      `${e.type} by ${e.actor?.login} on ${e.repo?.name} @ ${e.created_at}`
+    );
+    this.logger.log(`[${username}] Top 3 events:\n  - ${top3.join('\n  - ')}`);
 
     const newEvents = events.filter(
       (event) => new Date(event.created_at) > schedule.lastProcessedAt,
