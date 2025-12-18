@@ -152,19 +152,43 @@ export class GithubPollService {
 
     const { accessToken } = schedule;
 
+    // GraphQL API 사용 (REST API 캐시 문제 우회)
+    const query = `
+      query($username: String!) {
+        user(login: $username) {
+          contributionsCollection {
+            commitContributionsByRepository(maxRepositories: 10) {
+              repository {
+                name
+                owner { login }
+              }
+              contributions(last: 10) {
+                nodes {
+                  occurredAt
+                  commitCount
+                }
+              }
+            }
+            pullRequestContributions(last: 10) {
+              nodes {
+                occurredAt
+              }
+            }
+          }
+        }
+      }
+    `;
+
     const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      Pragma: 'no-cache',
-      'If-None-Match': '', // ETag 캐시 강제 무효화
-      'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT', // 오래된 날짜로 강제 갱신
     };
 
-    // timestamp 추가로 CDN 캐시도 우회
-    const url = `https://api.github.com/users/${username}/events?_=${Date.now()}`;
-
-    const res = await fetch(url, { headers });
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables: { username } }),
+    });
 
     this.logger.log(
       `[GitHub Poll] ${username} - HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
@@ -188,48 +212,87 @@ export class GithubPollService {
       return { status: 'error' };
     }
 
-    const events = (await res.json()) as GithubEvent[];
-    if (events.length === 0) {
-      this.logger.debug(`[${username}] No events in response`);
+    const json = await res.json();
+
+    if (json.errors) {
+      this.logger.error(`GitHub GraphQL error: ${JSON.stringify(json.errors)}`);
+      return { status: 'error' };
+    }
+
+    const contributionsCollection = json.data?.user?.contributionsCollection;
+    if (!contributionsCollection) {
+      this.logger.debug(`[${username}] No contributions data`);
       return { status: 'no_changes' };
     }
 
-    // 응답 상세 로깅
-    const latestEventTime = events[0]?.created_at;
-    const oldestEventTime = events[events.length - 1]?.created_at;
+    // 커밋 기여 파싱
+    const commitContributions: { occurredAt: string; commitCount: number; repo: string }[] = [];
+    for (const repo of contributionsCollection.commitContributionsByRepository || []) {
+      const repoName = `${repo.repository.owner.login}/${repo.repository.name}`;
+      for (const node of repo.contributions.nodes || []) {
+        commitContributions.push({
+          occurredAt: node.occurredAt,
+          commitCount: node.commitCount,
+          repo: repoName,
+        });
+      }
+    }
+
+    // PR 기여 파싱
+    const prContributions: { occurredAt: string }[] =
+      contributionsCollection.pullRequestContributions?.nodes || [];
+
+    // 최신 시간 찾기
+    const allTimes = [
+      ...commitContributions.map(c => c.occurredAt),
+      ...prContributions.map(p => p.occurredAt),
+    ].filter(Boolean);
+
+    if (allTimes.length === 0) {
+      this.logger.debug(`[${username}] No contributions found`);
+      return { status: 'no_changes' };
+    }
+
+    const latestTime = allTimes.sort().reverse()[0];
+
     this.logger.log(
-      `[${username}] Response: ${events.length} events, ` +
-        `Latest: ${latestEventTime}, Oldest: ${oldestEventTime}, ` +
+      `[${username}] GraphQL Response: ${commitContributions.length} commit contributions, ` +
+        `${prContributions.length} PR contributions, Latest: ${latestTime}, ` +
         `lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
     );
 
-    // 상위 3개 이벤트 상세 로깅 (actor, repo 포함)
-    const top3 = events.slice(0, 3).map((e) =>
-      `${e.type} by ${e.actor?.login} on ${e.repo?.name} @ ${e.created_at}`
-    );
-    this.logger.log(`[${username}] Top 3 events:\n  - ${top3.join('\n  - ')}`);
+    // 상위 3개 커밋 로깅
+    const top3Commits = commitContributions
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+      .slice(0, 3);
+    if (top3Commits.length > 0) {
+      const top3Log = top3Commits.map(c => `${c.commitCount} commits on ${c.repo} @ ${c.occurredAt}`);
+      this.logger.log(`[${username}] Top 3 commits:\n  - ${top3Log.join('\n  - ')}`);
+    }
 
-    const newEvents = events.filter(
-      (event) => new Date(event.created_at) > schedule.lastProcessedAt,
+    // 새로운 기여 필터링
+    const newCommits = commitContributions.filter(
+      c => new Date(c.occurredAt) > schedule.lastProcessedAt
+    );
+    const newPRs = prContributions.filter(
+      p => new Date(p.occurredAt) > schedule.lastProcessedAt
     );
 
-    if (newEvents.length === 0) {
+    if (newCommits.length === 0 && newPRs.length === 0) {
       this.logger.debug(
-        `[${username}] All events filtered out (older than lastProcessedAt)`,
+        `[${username}] All contributions filtered out (older than lastProcessedAt)`,
       );
       return { status: 'no_changes' };
     }
 
-    const pushCount = newEvents.filter((e) => e.type === 'PushEvent').length;
-    const prCount = newEvents.filter(
-      (e) => e.type === 'PullRequestEvent',
-    ).length;
+    const pushCount = newCommits.reduce((sum, c) => sum + c.commitCount, 0);
+    const prCount = newPRs.length;
 
-    // lastProcessedAt을 최신 이벤트 시간으로 갱신
-    schedule.lastProcessedAt = new Date(events[0].created_at);
+    // lastProcessedAt을 최신 시간으로 갱신
+    schedule.lastProcessedAt = new Date(latestTime);
 
     this.logger.log(
-      `[${username}] New events detected! Push: ${pushCount}, PR: ${prCount}`,
+      `[${username}] New contributions detected! Commits: ${pushCount}, PR: ${prCount}`,
     );
 
     return {
