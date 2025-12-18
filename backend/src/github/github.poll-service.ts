@@ -152,13 +152,17 @@ export class GithubPollService {
 
     const { accessToken } = schedule;
 
-    // 인증 없이 요청 (캐시 문제 우회)
-    // TODO: rate limit 관리 필요 (60회/시간)
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${accessToken}`,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
+      'If-None-Match': '', // ETag 캐시 강제 무효화
+      'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT', // 오래된 날짜로 강제 갱신
     };
 
-    const url = `https://api.github.com/users/${username}/events`;
+    // timestamp 추가로 CDN 캐시도 우회
+    const url = `https://api.github.com/users/${username}/events?_=${Date.now()}`;
 
     const res = await fetch(url, { headers });
 
