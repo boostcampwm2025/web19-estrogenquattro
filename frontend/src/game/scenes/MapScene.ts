@@ -12,7 +12,25 @@ interface PlayerData {
   direction?: string;
   timestamp?: number;
 }
-import { createProgressBar } from "@/game/ui/createProgressBar";
+import {
+  createProgressBar,
+  ProgressBarController,
+} from "@/game/ui/createProgressBar";
+import {
+  createContributionList,
+  ContributionController,
+} from "@/game/ui/createContributionList";
+
+interface GithubEventData {
+  clientId: string;
+  username: string;
+  pushCount: number;
+  pullRequestCount: number;
+}
+
+// 프로그레스 증가량 설정
+const PROGRESS_PER_COMMIT = 2; // 커밋당 2%
+const PROGRESS_PER_PR = 5; // PR당 5%
 
 export class MapScene extends Phaser.Scene {
   private minZoom: number = 0.7;
@@ -26,6 +44,12 @@ export class MapScene extends Phaser.Scene {
 
   // Remote Players
   private otherPlayers: Map<string, RemotePlayer> = new Map();
+
+  // Progress Bar
+  private progressBarController?: ProgressBarController;
+
+  // Contribution List
+  private contributionController?: ContributionController;
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -150,7 +174,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     // 프로그레스바 생성
-    createProgressBar(this, mapWidth);
+    this.progressBarController = createProgressBar(this, mapWidth);
+
+    // 기여도 리스트 생성 (프로그레스바 아래)
+    this.contributionController = createContributionList(this, mapWidth, 50);
 
     // 마우스 휠로 확대/축소
     this.input.on("wheel", this.handleZoom, this);
@@ -231,6 +258,22 @@ export class MapScene extends Phaser.Scene {
       if (remotePlayer) {
         remotePlayer.destroy();
         this.otherPlayers.delete(data.userId);
+      }
+    });
+
+    // 5. GitHub 이벤트 수신 → 프로그레스바 & 기여도 업데이트
+    socket.on("github_event", (data: GithubEventData) => {
+      const progressIncrement =
+        data.pushCount * PROGRESS_PER_COMMIT +
+        data.pullRequestCount * PROGRESS_PER_PR;
+
+      if (progressIncrement > 0) {
+        // 프로그레스바 업데이트
+        this.progressBarController?.addProgress(progressIncrement);
+
+        // 기여도 업데이트 (커밋 + PR 합산)
+        const totalCount = data.pushCount + data.pullRequestCount;
+        this.contributionController?.addContribution(data.username, totalCount);
       }
     });
   }
