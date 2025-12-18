@@ -156,16 +156,17 @@ export class GithubPollService {
 
     const res = await fetch(url, { headers });
 
-    this.logger.log('[GitHub Poll]', {
-      url,
-      status: res.status,
-      etag: res.headers.get('ETag'),
-      rateLimit: {
-        limit: res.headers.get('X-RateLimit-Limit'),
-        remaining: res.headers.get('X-RateLimit-Remaining'),
-        used: res.headers.get('X-RateLimit-Used'),
-      },
-    });
+    this.logger.log(
+      `[GitHub Poll] ${username} - ${JSON.stringify({
+        status: res.status,
+        etag: res.headers.get('ETag'),
+        rateLimit: {
+          limit: res.headers.get('X-RateLimit-Limit'),
+          remaining: res.headers.get('X-RateLimit-Remaining'),
+          used: res.headers.get('X-RateLimit-Used'),
+        },
+      })}`,
+    );
 
     // 304 Not Modified - 변경 없음, rate limit 미차감
     if (res.status === 304) {
@@ -198,13 +199,25 @@ export class GithubPollService {
     }
 
     const events = (await res.json()) as GithubEvent[];
-    if (events.length === 0) return { status: 'no_changes' };
+    if (events.length === 0) {
+      this.logger.debug(`[${username}] No events in response`);
+      return { status: 'no_changes' };
+    }
+
+    // 이벤트 필터링 디버깅
+    const latestEventTime = events[0]?.created_at;
+    this.logger.debug(
+      `[${username}] Events: ${events.length}, Latest: ${latestEventTime}, lastProcessedAt: ${schedule.lastProcessedAt.toISOString()}`,
+    );
 
     const newEvents = events.filter(
       (event) => new Date(event.created_at) > schedule.lastProcessedAt,
     );
 
-    if (newEvents.length === 0) return { status: 'no_changes' };
+    if (newEvents.length === 0) {
+      this.logger.debug(`[${username}] All events filtered out (older than lastProcessedAt)`);
+      return { status: 'no_changes' };
+    }
 
     const pushCount = newEvents.filter((e) => e.type === 'PushEvent').length;
     const prCount = newEvents.filter(
