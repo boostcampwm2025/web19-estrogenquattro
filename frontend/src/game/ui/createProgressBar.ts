@@ -1,16 +1,37 @@
 import * as Phaser from "phaser";
 
+export interface ProgressBarController {
+  /**
+   * 프로그레스를 특정 양만큼 증가시킵니다.
+   * @param amount - 증가시킬 양 (%)
+   */
+  addProgress: (amount: number) => void;
+  /**
+   * 프로그레스를 0으로 리셋합니다.
+   */
+  reset: () => void;
+  /**
+   * 현재 프로그레스 값을 반환합니다.
+   */
+  getProgress: () => number;
+}
+
 /**
  * 맵 상단 중앙에 프로그레스바를 생성합니다.
  *
  * @param scene - Phaser Scene 인스턴스
  * @param mapWidth - 맵의 너비 (프로그레스바 중앙 정렬에 사용)
+ * @returns 프로그레스바를 제어할 수 있는 컨트롤러
  *
  * @remarks
- * - 현재는 2초마다 10%씩 자동 증가하는 임시 로직이 포함되어 있습니다.
- * - 추후 API 연동 시 자동 증가 로직을 제거하고 외부에서 progress를 제어해야 합니다.
+ * - 프로그레스바 규칙:
+ *   - 커밋당 증가량: 5%
+ *   - 100% 도달 시: 리셋 (0%로 초기화)
  */
-export function createProgressBar(scene: Phaser.Scene, mapWidth: number) {
+export function createProgressBar(
+  scene: Phaser.Scene,
+  mapWidth: number,
+): ProgressBarController {
   const config = {
     width: 384,
     height: 24,
@@ -44,8 +65,8 @@ export function createProgressBar(scene: Phaser.Scene, mapWidth: number) {
   const progressBar = scene.add.graphics();
 
   /**
-   * progrss bar 갱신 함수
-   *  */
+   * 프로그레스 바 갱신 함수
+   */
   const updateBar = () => {
     progressBar.clear();
 
@@ -66,46 +87,60 @@ export function createProgressBar(scene: Phaser.Scene, mapWidth: number) {
 
   updateBar();
 
-  // 추후 API 동작과 연계할 부분
-  // 현재는 임시로 2초마다 progress 증가
-  scene.time.addEvent({
-    delay: 2000,
-    loop: true,
-    callback: () => {
-      scene.tweens.add({
-        targets: { value: progress },
-        value: Math.min(progress + 10, 100),
-        duration: 300,
-        ease: "Cubic.easeOut",
-        onUpdate: (tween) => {
-          const value = tween.getValue();
+  /**
+   * 애니메이션과 함께 프로그레스 값 설정
+   */
+  const animateToProgress = (targetProgress: number, onComplete?: () => void) => {
+    scene.tweens.add({
+      targets: { value: progress },
+      value: targetProgress,
+      duration: 300,
+      ease: "Cubic.easeOut",
+      onUpdate: (tween) => {
+        const value = tween.getValue();
+        if (typeof value === "number") {
+          progress = value;
+          updateBar();
+        }
+      },
+      onComplete: () => {
+        onComplete?.();
+      },
+    });
+  };
 
-          if (typeof value === "number") {
-            progress = value;
-            updateBar();
-          }
-        },
-        onComplete: () => {
-          if (progress >= 100) {
-            scene.time.delayedCall(100, () => {
-              scene.tweens.add({
-                targets: { value: progress },
-                value: 0,
-                duration: 200,
-                ease: "Linear",
-                onUpdate: (tween) => {
-                  const value = tween.getValue();
+  /**
+   * 프로그레스를 특정 양만큼 증가시킵니다.
+   * 100%에 도달하면 자동으로 리셋됩니다.
+   */
+  const addProgress = (amount: number) => {
+    const newProgress = Math.min(progress + amount, 100);
 
-                  if (typeof value === "number") {
-                    progress = value;
-                    updateBar();
-                  }
-                },
-              });
-            });
-          }
-        },
-      });
-    },
-  });
+    animateToProgress(newProgress, () => {
+      if (progress >= 100) {
+        // 100% 도달 시 잠시 후 리셋
+        scene.time.delayedCall(100, () => {
+          animateToProgress(0);
+        });
+      }
+    });
+  };
+
+  /**
+   * 프로그레스를 0으로 리셋합니다.
+   */
+  const reset = () => {
+    animateToProgress(0);
+  };
+
+  /**
+   * 현재 프로그레스 값을 반환합니다.
+   */
+  const getProgress = () => progress;
+
+  return {
+    addProgress,
+    reset,
+    getProgress,
+  };
 }
