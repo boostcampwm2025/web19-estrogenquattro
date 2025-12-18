@@ -55,7 +55,7 @@ export class AuthController {
   @UseGuards(JwtGuard)
   me(@Req() req: Request) {
     const user = req.user as User;
-    this.logger.log(`/me called - username: ${user?.username}`);
+    this.logger.log(`/me called - username: ${user.username}`);
     return req.user;
   }
 
