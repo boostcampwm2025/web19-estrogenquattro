@@ -157,10 +157,18 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomState = this.githubGateway.getRoomState(roomId);
     client.emit('github_state', roomState);
 
-    // 새 클라이언트에게 자신의 누적 접속시간 전송
-    const userMinutes = this.playTimeService.getUserMinutes(username);
-    if (userMinutes > 0) {
-      client.emit('timerUpdated', { userId: client.id, minutes: userMinutes });
+    // 새 클라이언트에게 같은 방의 모든 사용자 접속시간 전송
+    const roomPlayers = Array.from(this.players.values()).filter(
+      (p) => p.roomId === roomId,
+    );
+    for (const player of roomPlayers) {
+      const minutes = this.playTimeService.getUserMinutes(player.username);
+      if (minutes > 0) {
+        client.emit('timerUpdated', {
+          userId: player.socketId,
+          minutes,
+        });
+      }
     }
   }
 
