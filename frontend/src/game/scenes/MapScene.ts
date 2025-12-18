@@ -176,17 +176,24 @@ export class MapScene extends Phaser.Scene {
   }
 
   setupSocket() {
-    const socket = connectSocket("http://localhost:8080");
+    const socket = connectSocket();
     if (!socket) return;
 
     const GITHUB_USERNAME = "heisjun"; // [TODO]
 
-    // Join Event
-    socket.emit("joining", {
-      x: this.player?.getContainer().x,
-      y: this.player?.getContainer().y,
-      username: GITHUB_USERNAME,
-      roomId: "room-1",
+    // 소켓 연결 시 내 플레이어 ID 업데이트 (Ghost Player 방지)
+    socket.on("connect", () => {
+      if (this.player && socket.id) {
+        this.player.id = socket.id;
+      }
+
+      // Join Event (재연결 시에도 다시 join 필요할 수 있음)
+      socket.emit("joining", {
+        x: this.player?.getContainer().x,
+        y: this.player?.getContainer().y,
+        username: GITHUB_USERNAME,
+        roomId: "room-1",
+      });
     });
 
     // 1. 기존 유저 싱크
