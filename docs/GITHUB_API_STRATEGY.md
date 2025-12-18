@@ -73,6 +73,26 @@ GET /users/{username}/events
 
 → 각 사용자 본인 토큰 사용 시 사용자 수 무관하게 확장 가능
 
+### OAuth App별 Rate Limit 분리
+
+GitHub Rate Limit은 **OAuth App 단위로 분리**됩니다.
+
+```
+사용자 A의 Rate Limit:
+├── 우리 서비스 OAuth App    → 5,000/hour (독립)
+├── 다른 서비스 B OAuth App  → 5,000/hour (독립)
+└── 다른 서비스 C OAuth App  → 5,000/hour (독립)
+```
+
+| 시나리오 | 우리 서비스 영향 |
+|----------|-----------------|
+| 사용자가 다른 서비스에서 GitHub API 많이 사용 | ❌ 영향 없음 |
+| 사용자가 GitHub CLI로 API 많이 사용 | ❌ 영향 없음 |
+| 사용자가 Personal Access Token(PAT) 직접 사용 | ❌ 영향 없음 (OAuth와 별개) |
+
+**핵심**: 우리 서비스의 OAuth App으로 발급받은 토큰은 우리 서비스에서만 사용되므로,
+다른 서비스가 사용자의 Rate Limit을 소모하지 않습니다.
+
 ---
 
 ## 최적화: Conditional Request (ETag)
