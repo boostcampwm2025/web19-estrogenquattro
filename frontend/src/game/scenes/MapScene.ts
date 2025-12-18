@@ -27,6 +27,11 @@ interface GithubEventData {
   pullRequestCount: number;
 }
 
+interface GithubStateData {
+  progress: number;
+  contributions: Record<string, number>;
+}
+
 // 프로그레스 증가량 설정
 const PROGRESS_PER_COMMIT = 2; // 커밋당 2%
 const PROGRESS_PER_PR = 5; // PR당 5%
@@ -280,7 +285,13 @@ export class MapScene extends Phaser.Scene {
       }
     });
 
-    // 6. GitHub 이벤트 수신 → 프로그레스바 & 기여도 업데이트
+    // 6. GitHub 초기 상태 수신 (새로고침 시 복원용)
+    socket.on("github_state", (data: GithubStateData) => {
+      this.progressBarController?.setProgress(data.progress);
+      this.contributionController?.setContributions(data.contributions);
+    });
+
+    // 7. GitHub 이벤트 수신 → 프로그레스바 & 기여도 업데이트
     socket.on("github_event", (data: GithubEventData) => {
       const progressIncrement =
         data.pushCount * PROGRESS_PER_COMMIT +
