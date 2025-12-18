@@ -1,10 +1,12 @@
 import { emitEvent } from "../../lib/socket";
+import { formatPlayTime } from "@/utils/timeFormat";
 
 export default class Player {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
   private body: Phaser.Physics.Arcade.Body;
   private maskShape: Phaser.GameObjects.Graphics;
+  private timerText: Phaser.GameObjects.Text;
   private speed: number = 300;
   public id: string;
   private roomId: string;
@@ -57,8 +59,21 @@ export default class Player {
       })
       .setOrigin(0.5);
 
-    // 5. 컨테이너 추가
-    this.container.add([faceSprite, borderGraphics, nameTag]);
+    // 5. 접속 시간 표시
+    this.timerText = scene.add
+      .text(0, -35, formatPlayTime(0), {
+        fontSize: "12px",
+        color: "#ffffff",
+        fontFamily: "Arial, sans-serif",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    this.timerText.setStroke("#000000", 4);
+    this.timerText.setShadow(1, 1, "#000000", 2, false, true);
+
+    // 6. 컨테이너 추가
+    this.container.add([faceSprite, borderGraphics, this.timerText, nameTag]);
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
 
     // 6. 물리 엔진 적용
@@ -155,6 +170,13 @@ export default class Player {
       x: this.container.x,
       y: this.container.y,
     };
+  }
+
+  // 접속 시간 업데이트
+  updateTimer(minutes: number) {
+    if (this.timerText) {
+      this.timerText.setText(formatPlayTime(minutes));
+    }
   }
 
   destroy() {
