@@ -2,22 +2,44 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GithubGateway } from './github.gateway';
 
 // 폴링 간격 설정 (밀리초)
-const POLL_INTERVAL_FAST = 10_000; // 304 응답 시 (변경 없음)
-const POLL_INTERVAL_SLOW = 60_000; // 200 응답 시 (새 데이터)
+const POLL_INTERVAL = 30_000; // 30초마다 폴링
 const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시 (rate limit)
 
 interface PollingSchedule {
   timeout: NodeJS.Timeout;
-  lastProcessedAt: Date;
   username: string;
   accessToken: string;
   roomId: string;
   clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
+  // 커밋 수 기반 추적 (GraphQL API는 날짜별 집계라 시간 비교 불가)
+  lastCommitCounts: Map<string, number>; // repo -> commitCount
+  lastPRCount: number;
+  isFirstPoll: boolean; // 첫 폴링은 알림 안 보냄 (기준점 설정용)
 }
 
-interface GithubEvent {
-  type: string;
-  created_at: string;
+// GraphQL 응답 타입
+interface GraphQLResponse {
+  errors?: Array<{ message: string }>;
+  data?: {
+    user?: {
+      contributionsCollection?: ContributionsCollection;
+    };
+  };
+}
+
+interface ContributionsCollection {
+  commitContributionsByRepository?: Array<{
+    repository: {
+      owner: { login: string };
+      name: string;
+    };
+    contributions: {
+      nodes?: Array<{ commitCount: number }>;
+    };
+  }>;
+  pullRequestContributions?: {
+    nodes?: Array<unknown>;
+  };
 }
 
 @Injectable()
@@ -28,7 +50,6 @@ export class GithubPollService {
 
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
-  private readonly etagMap = new Map<string, string>(); // username -> etag
 
   subscribeGithubEvent(
     connectedAt: Date,
@@ -48,18 +69,20 @@ export class GithubPollService {
       return;
     }
 
-    // 첫 폴링은 빠르게 시작
+    // 첫 폴링은 바로 시작
     const timeout = setTimeout(() => {
       void this.handlePoll(username);
-    }, POLL_INTERVAL_FAST);
+    }, 1000);
 
     this.pollingSchedules.set(username, {
       timeout,
-      lastProcessedAt: connectedAt,
       username,
       accessToken,
       roomId,
       clientIds: new Set([clientId]),
+      lastCommitCounts: new Map(),
+      lastPRCount: 0,
+      isFirstPoll: true, // 첫 폴링은 기준점 설정용
     });
 
     this.logger.log(`GitHub polling started for user: ${username}`);
@@ -105,21 +128,21 @@ export class GithubPollService {
     let nextInterval: number;
     switch (result.status) {
       case 'new_events':
-        nextInterval = POLL_INTERVAL_SLOW; // 새 데이터 → 60초 대기
+        nextInterval = POLL_INTERVAL;
         this.githubGateway.castGithubEventToRoom(result.data!, schedule.roomId);
         break;
       case 'no_changes':
-        nextInterval = POLL_INTERVAL_FAST; // 변경 없음 → 10초 후 재시도
+        nextInterval = POLL_INTERVAL;
         break;
       case 'rate_limited':
-        nextInterval = result.retryAfter || POLL_INTERVAL_BACKOFF; // 429 → 백오프
+        nextInterval = result.retryAfter || POLL_INTERVAL_BACKOFF;
         this.logger.warn(
           `Rate limited for user: ${schedule.username}, retry after ${nextInterval}ms`,
         );
         break;
       case 'error':
       default:
-        nextInterval = POLL_INTERVAL_SLOW; // 에러 → 60초 후 재시도
+        nextInterval = POLL_INTERVAL;
         break;
     }
 
@@ -142,36 +165,48 @@ export class GithubPollService {
     if (!schedule) return { status: 'error' };
 
     const { accessToken } = schedule;
-    const url = `https://api.github.com/users/${username}/events`;
-    const lastETag = this.etagMap.get(username);
+
+    // GraphQL API 사용 (REST API 캐시 문제 우회)
+    const query = `
+      query($username: String!) {
+        user(login: $username) {
+          contributionsCollection {
+            commitContributionsByRepository(maxRepositories: 10) {
+              repository {
+                name
+                owner { login }
+              }
+              contributions(last: 10) {
+                nodes {
+                  occurredAt
+                  commitCount
+                }
+              }
+            }
+            pullRequestContributions(last: 10) {
+              nodes {
+                occurredAt
+              }
+            }
+          }
+        }
+      }
+    `;
 
     const headers: Record<string, string> = {
-      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     };
 
-    if (lastETag) {
-      headers['If-None-Match'] = lastETag;
-    }
-
-    const res = await fetch(url, { headers });
-
-    this.logger.log('[GitHub Poll]', {
-      url,
-      status: res.status,
-      etag: res.headers.get('ETag'),
-      rateLimit: {
-        limit: res.headers.get('X-RateLimit-Limit'),
-        remaining: res.headers.get('X-RateLimit-Remaining'),
-        used: res.headers.get('X-RateLimit-Used'),
-      },
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables: { username } }),
     });
 
-    // 304 Not Modified - 변경 없음, rate limit 미차감
-    if (res.status === 304) {
-      this.logger.debug(`No changes for user: ${username}`);
-      return { status: 'no_changes' };
-    }
+    this.logger.log(
+      `[GitHub Poll] ${username} - HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
+    );
 
     // 429 Too Many Requests - rate limit 초과
     if (res.status === 429) {
@@ -179,7 +214,7 @@ export class GithubPollService {
       let retryAfter = POLL_INTERVAL_BACKOFF;
 
       if (resetHeader) {
-        const resetTime = parseInt(resetHeader, 10) * 1000; // Unix timestamp → ms
+        const resetTime = parseInt(resetHeader, 10) * 1000;
         retryAfter = Math.max(resetTime - Date.now(), POLL_INTERVAL_BACKOFF);
       }
 
@@ -191,34 +226,98 @@ export class GithubPollService {
       return { status: 'error' };
     }
 
-    // ETag 저장
-    const newETag = res.headers.get('ETag');
-    if (newETag) {
-      this.etagMap.set(username, newETag);
+    const json = (await res.json()) as GraphQLResponse;
+
+    if (json.errors) {
+      this.logger.error(`GitHub GraphQL error: ${JSON.stringify(json.errors)}`);
+      return { status: 'error' };
     }
 
-    const events = (await res.json()) as GithubEvent[];
-    if (events.length === 0) return { status: 'no_changes' };
+    const contributionsCollection = json.data?.user?.contributionsCollection;
+    if (!contributionsCollection) {
+      this.logger.debug(`[${username}] No contributions data`);
+      return { status: 'no_changes' };
+    }
 
-    const newEvents = events.filter(
-      (event) => new Date(event.created_at) > schedule.lastProcessedAt,
+    // 커밋 기여 파싱 - 리포지토리별 총 커밋 수 계산
+    const currentCommitCounts = new Map<string, number>();
+    for (const repo of contributionsCollection.commitContributionsByRepository ||
+      []) {
+      const repoName = `${repo.repository.owner.login}/${repo.repository.name}`;
+      let totalCommits = 0;
+      for (const node of repo.contributions.nodes || []) {
+        totalCommits += node.commitCount;
+      }
+      currentCommitCounts.set(repoName, totalCommits);
+    }
+
+    // PR 기여 파싱 - 총 개수
+    const currentPRCount =
+      contributionsCollection.pullRequestContributions?.nodes?.length || 0;
+
+    this.logger.log(
+      `[${username}] GraphQL Response: ${currentCommitCounts.size} repos, ` +
+        `total commits: ${[...currentCommitCounts.values()].reduce((a, b) => a + b, 0)}, ` +
+        `PRs: ${currentPRCount}, isFirstPoll: ${schedule.isFirstPoll}`,
     );
 
-    if (newEvents.length === 0) return { status: 'no_changes' };
+    // 상위 3개 리포지토리 로깅
+    const sortedRepos = [...currentCommitCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    if (sortedRepos.length > 0) {
+      const top3Log = sortedRepos.map(([repo, count]) => {
+        const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+        const diff = count - prevCount;
+        return `${repo}: ${count} commits (${diff >= 0 ? '+' : ''}${diff})`;
+      });
+      this.logger.log(
+        `[${username}] Top repos:\n  - ${top3Log.join('\n  - ')}`,
+      );
+    }
 
-    const pushCount = newEvents.filter((e) => e.type === 'PushEvent').length;
-    const prCount = newEvents.filter(
-      (e) => e.type === 'PullRequestEvent',
-    ).length;
+    // 첫 폴링이면 기준점만 설정하고 알림 안 보냄
+    if (schedule.isFirstPoll) {
+      schedule.lastCommitCounts = currentCommitCounts;
+      schedule.lastPRCount = currentPRCount;
+      schedule.isFirstPoll = false;
+      this.logger.log(
+        `[${username}] First poll - baseline set, no notification`,
+      );
+      return { status: 'no_changes' };
+    }
 
-    schedule.lastProcessedAt = new Date(events[0].created_at);
+    // 새로운 커밋 수 계산 (커밋 수 증가분)
+    let newCommitCount = 0;
+    for (const [repo, count] of currentCommitCounts) {
+      const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+      if (count > prevCount) {
+        newCommitCount += count - prevCount;
+      }
+    }
+
+    // 새로운 PR 수 계산
+    const newPRCount = Math.max(0, currentPRCount - schedule.lastPRCount);
+
+    // 기준점 갱신
+    schedule.lastCommitCounts = currentCommitCounts;
+    schedule.lastPRCount = currentPRCount;
+
+    if (newCommitCount === 0 && newPRCount === 0) {
+      this.logger.debug(`[${username}] No new contributions`);
+      return { status: 'no_changes' };
+    }
+
+    this.logger.log(
+      `[${username}] New contributions detected! Commits: +${newCommitCount}, PRs: +${newPRCount}`,
+    );
 
     return {
       status: 'new_events',
       data: {
         username,
-        pushCount,
-        pullRequestCount: prCount,
+        pushCount: newCommitCount,
+        pullRequestCount: newPRCount,
       },
     };
   }
