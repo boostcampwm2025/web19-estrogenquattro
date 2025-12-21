@@ -5,6 +5,7 @@ import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
+import { GithubGateway } from '../github/github.gateway';
 
 describe('PlayerGateway', () => {
   let gateway: PlayerGateway;
@@ -29,6 +30,14 @@ describe('PlayerGateway', () => {
     unsubscribeGithubEvent: jest.fn(),
   };
 
+  const mockGithubGateway = {
+    getRoomState: jest.fn().mockReturnValue({
+      gaugePercentage: 0,
+      contributions: [],
+    }),
+    castGithubEventToRoom: jest.fn(),
+  };
+
   const mockWsJwtGuard = {
     verifyClient: jest.fn().mockReturnValue(true),
   };
@@ -44,6 +53,10 @@ describe('PlayerGateway', () => {
         {
           provide: GithubPollService,
           useValue: mockGithubPollService,
+        },
+        {
+          provide: GithubGateway,
+          useValue: mockGithubGateway,
         },
         {
           provide: WsJwtGuard,

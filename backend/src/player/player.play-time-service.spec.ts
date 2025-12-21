@@ -15,10 +15,11 @@ describe('PlayerService', () => {
   it('1분마다 onMinute 콜백이 호출된다', () => {
     //given
     const socketId = 'socket-1';
+    const username = 'testuser';
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute, new Date());
+    service.startTimer(socketId, username, onMinute, new Date());
 
     // then
     jest.advanceTimersByTime(60_000);
@@ -33,11 +34,12 @@ describe('PlayerService', () => {
   it('같은 socketId로 여러 번 호출해도 타이머는 하나만 생성된다', () => {
     //given
     const socketId = 'socket-2';
+    const username = 'testuser';
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute, new Date());
-    service.startTimer(socketId, onMinute, new Date());
+    service.startTimer(socketId, username, onMinute, new Date());
+    service.startTimer(socketId, username, onMinute, new Date());
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -50,8 +52,8 @@ describe('PlayerService', () => {
     const cb2 = jest.fn();
 
     //when
-    service.startTimer('socket-1', cb1, new Date());
-    service.startTimer('socket-2', cb2, new Date());
+    service.startTimer('socket-1', 'user1', cb1, new Date());
+    service.startTimer('socket-2', 'user2', cb2, new Date());
     jest.advanceTimersByTime(60_000);
 
     //then
@@ -62,10 +64,11 @@ describe('PlayerService', () => {
   it('stopSessionTimer는 타이머를 정리하고 콜백 호출을 중단한다', () => {
     //given
     const socketId = 'socket-3';
+    const username = 'testuser';
     const onMinute = jest.fn();
 
     //when
-    service.startTimer(socketId, onMinute, new Date());
+    service.startTimer(socketId, username, onMinute, new Date());
     jest.advanceTimersByTime(60_000);
     service.stopTimer(socketId);
     jest.advanceTimersByTime(60_000);

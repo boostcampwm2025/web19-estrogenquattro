@@ -7,6 +7,11 @@ export interface ProgressBarController {
    */
   addProgress: (amount: number) => void;
   /**
+   * 프로그레스를 특정 값으로 설정합니다.
+   * @param value - 설정할 값 (0-100)
+   */
+  setProgress: (value: number) => void;
+  /**
    * 프로그레스를 0으로 리셋합니다.
    */
   reset: () => void;
@@ -130,6 +135,14 @@ export function createProgressBar(
   };
 
   /**
+   * 프로그레스를 특정 값으로 설정합니다. (초기화용)
+   */
+  const setProgress = (value: number) => {
+    progress = Math.max(0, Math.min(100, value));
+    updateBar();
+  };
+
+  /**
    * 프로그레스를 0으로 리셋합니다.
    */
   const reset = () => {
@@ -143,6 +156,7 @@ export function createProgressBar(
 
   return {
     addProgress,
+    setProgress,
     reset,
     getProgress,
   };

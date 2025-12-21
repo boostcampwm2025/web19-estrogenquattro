@@ -8,6 +8,11 @@ export interface ContributionController {
    */
   addContribution: (username: string, count: number) => void;
   /**
+   * 기여도를 일괄 설정합니다. (초기화용)
+   * @param data - { username: count } 형태의 객체
+   */
+  setContributions: (data: Record<string, number>) => void;
+  /**
    * 모든 기여도를 초기화합니다.
    */
   reset: () => void;
@@ -73,6 +78,17 @@ export function createContributionList(
   };
 
   /**
+   * 기여도 일괄 설정 (초기화용)
+   */
+  const setContributions = (data: Record<string, number>) => {
+    contributions.clear();
+    for (const [username, count] of Object.entries(data)) {
+      contributions.set(username, count);
+    }
+    updateDisplay();
+  };
+
+  /**
    * 기여도 초기화
    */
   const reset = () => {
@@ -82,6 +98,7 @@ export function createContributionList(
 
   return {
     addContribution,
+    setContributions,
     reset,
   };
 }
