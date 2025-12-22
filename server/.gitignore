@@ -2,7 +2,7 @@
 node_modules/
 
 # Build output
-dist/
+# dist/ 포함 (서버 메모리 부족으로 로컬 빌드 필요)
 
 # Environment files
 .env
