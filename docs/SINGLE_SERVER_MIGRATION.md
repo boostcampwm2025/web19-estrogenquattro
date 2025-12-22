@@ -1431,7 +1431,7 @@ git commit -m "docs: 마이그레이션 체크리스트 업데이트 (Phase X.X 
 | **1.2** | 페이지 마이그레이션 | `feat: React Router 및 페이지 마이그레이션` | [x] |
 | **1.3** | 게임 코드 이동 | `feat: Phaser 게임 코드 이동` | [x] |
 | **A** | 🧪 프론트엔드 + 기존 백엔드 테스트 | - | [x] |
-| **2.1** | Express 프로젝트 생성 | `setting: Express 프로젝트 초기 설정` | [ ] |
+| **2.1** | Express 프로젝트 생성 | `setting: Express 프로젝트 초기 설정` | [x] |
 | **2.2** | 인증 시스템 마이그레이션 | `feat: GitHub OAuth 인증 마이그레이션` | [ ] |
 | **B** | 🧪 OAuth 로그인 테스트 | - | [ ] |
 | **2.3** | Socket.io 핸들러 마이그레이션 | `feat: Socket.io 핸들러 마이그레이션` | [ ] |
