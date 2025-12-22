@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import passport from 'passport';
 import { config } from './config/env.js';
 import { logger } from './config/logger.js';
+import { setupAuthRoutes } from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,8 +40,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// TODO: 인증 라우트 추가 (Phase 2.2)
-// setupAuthRoutes(app);
+// 인증 라우트
+setupAuthRoutes(app);
 
 // TODO: Socket.io 핸들러 추가 (Phase 2.3)
 // setupSocketHandlers(io);
