@@ -63,9 +63,9 @@ export class MapScene extends Phaser.Scene {
     this.load.image("tiles", "/assets/tempMap1.png");
     this.load.tilemapTiledJSON("tilemap", "/assets/map.json");
 
-    // Default Face - GitHub 프로필 이미지 직접 호출 (CORS 허용됨)
+    // Default Face - 백엔드 프록시를 통해 GitHub 프로필 이미지 로드
     const username = this.username || "boostcampwm2025";
-    this.load.image("face", `https://github.com/${username}.png`);
+    this.load.image("face", `/api/github-profile/${username}`);
   }
 
   init() {
@@ -327,8 +327,8 @@ export class MapScene extends Phaser.Scene {
     this.otherPlayers.set(data.userId, remotePlayer);
 
     if (!this.textures.exists(username)) {
-      // GitHub 프로필 이미지 직접 호출 (CORS 허용됨)
-      const imageUrl = `https://github.com/${username}.png`;
+      // 백엔드 프록시를 통해 GitHub 프로필 이미지 로드
+      const imageUrl = `/api/github-profile/${username}`;
 
       this.load.image(username, imageUrl);
       this.load.once(`filecomplete-image-${username}`, () => {

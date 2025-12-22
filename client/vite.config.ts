@@ -16,6 +16,7 @@ export default defineConfig({
       '/auth/github': 'http://localhost:8080',
       '/auth/me': 'http://localhost:8080',
       '/auth/logout': 'http://localhost:8080',
+      '/api/github-profile': 'http://localhost:8080',
       '/socket.io': {
         target: 'http://localhost:8080',
         ws: true,
