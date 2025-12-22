@@ -20,7 +20,7 @@
     "build": "pnpm build:client && pnpm build:server",
     "build:client": "cd client && pnpm build",
     "build:server": "cd server && pnpm build",
-    "start:prod": "node server/dist/index.js",
+    "start:prod": "NODE_ENV=production node server/dist/index.js",
     "typecheck": "cd client && pnpm typecheck && cd ../server && pnpm typecheck",
 
     "install:new": "cd client && pnpm install && cd ../server && pnpm install",

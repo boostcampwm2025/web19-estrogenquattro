@@ -7,7 +7,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../..');
 
-// .env.local 우선, 없으면 .env 로드
+// NODE_ENV에 따라 환경변수 파일 로드 (Vite 스타일)
+// 우선순위: .env.{NODE_ENV}.local > .env.{NODE_ENV} > .env.local > .env
+const nodeEnv = process.env.NODE_ENV || 'development';
+dotenv.config({ path: path.join(rootDir, `.env.${nodeEnv}.local`) });
+dotenv.config({ path: path.join(rootDir, `.env.${nodeEnv}`) });
 dotenv.config({ path: path.join(rootDir, '.env.local') });
 dotenv.config({ path: path.join(rootDir, '.env') });
 
