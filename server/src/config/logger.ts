@@ -11,18 +11,14 @@ const devFormat = printf(({ level, message, timestamp, ...meta }) => {
 export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   transports: [
-    // 콘솔 출력 (개발 환경에서만)
-    ...(process.env.NODE_ENV !== 'production'
-      ? [
-          new winston.transports.Console({
-            format: combine(
-              colorize(),
-              timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-              devFormat,
-            ),
-          }),
-        ]
-      : []),
+    // 콘솔 출력 (항상 활성화)
+    new winston.transports.Console({
+      format: combine(
+        colorize(),
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        devFormat,
+      ),
+    }),
 
     // 파일 출력
     new winston.transports.File({

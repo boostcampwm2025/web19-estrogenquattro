@@ -83,9 +83,12 @@ if (config.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../../client/dist');
   app.use(express.static(clientPath));
 
-  // SPA 폴백
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/auth') || req.path.startsWith('/api')) {
+  // SPA 폴백 (Express 5에서는 *path 문법 사용)
+  // 백엔드 API 경로만 제외 (/auth/github, /auth/me, /auth/logout, /api/*)
+  app.get('/{*path}', (req, res, next) => {
+    const backendPaths = ['/auth/github', '/auth/me', '/auth/logout', '/api/', '/health'];
+    const isBackendPath = backendPaths.some(p => req.path.startsWith(p));
+    if (isBackendPath) {
       return next();
     }
     res.sendFile(path.join(clientPath, 'index.html'));
