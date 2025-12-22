@@ -80,7 +80,7 @@ export function setupAuthRoutes(app: Express): void {
 
       const cookieOptions = {
         httpOnly: true,
-        secure: config.NODE_ENV === 'production',
+        secure: config.FRONTEND_URL.startsWith('https://'),
         sameSite: 'lax' as const,
         maxAge: 24 * 60 * 60 * 1000, // 1일
         path: '/',

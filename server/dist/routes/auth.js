@@ -40,7 +40,7 @@ export function setupAuthRoutes(app) {
         logger.info(`JWT token generated for user: ${user.username}`);
         const cookieOptions = {
             httpOnly: true,
-            secure: config.NODE_ENV === 'production',
+            secure: config.FRONTEND_URL.startsWith('https://'),
             sameSite: 'lax',
             maxAge: 24 * 60 * 60 * 1000, // 1일
             path: '/',
