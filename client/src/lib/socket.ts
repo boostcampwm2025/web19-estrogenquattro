@@ -1,13 +1,11 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
-
 let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    socket = io(SOCKET_URL, {
+    // 현재 페이지와 같은 호스트 사용
+    socket = io({
       transports: ["websocket"],
       withCredentials: true,
       autoConnect: false,

@@ -1,7 +1,5 @@
 import { create } from "zustand";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
 interface User {
   sub: string;
   username: string;
@@ -23,7 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchUser: async () => {
     try {
       set({ isLoading: true });
-      const response = await fetch(`${API_URL}/auth/me`, {
+      const response = await fetch("/auth/me", {
         credentials: "include",
       });
 
@@ -40,6 +38,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    window.location.href = `${API_URL}/auth/logout`;
+    window.location.href = "/auth/logout";
   },
 }));
