@@ -41,6 +41,37 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// GitHub 프로필 이미지 프록시
+app.get('/api/github-profile/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const githubUrl = `https://github.com/${username}.png`;
+    const response = await fetch(githubUrl, {
+      method: 'GET',
+      redirect: 'follow',
+    });
+
+    if (!response.ok) {
+      res.status(response.status).send(`GitHub Error: ${response.status}`);
+      return;
+    }
+
+    const imageBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get('Content-Type') || 'image/png';
+
+    res.set({
+      'Content-Type': contentType,
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=3600',
+    });
+
+    res.send(Buffer.from(imageBuffer));
+  } catch (error) {
+    logger.error('GitHub Profile Proxy Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // 인증 라우트
 setupAuthRoutes(app);
 

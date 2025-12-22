@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
 import { userStore } from '../services/userStore.js';
 import { playTimeService } from '../services/playTimeService.js';
+import { githubPollService } from '../services/githubPollService.js';
 import { logger } from '../config/logger.js';
 import type { User, JwtPayload } from '../services/types.js';
 
@@ -185,8 +186,17 @@ export function setupSocketHandlers(io: Server): void {
           connectedAt,
         );
 
-        // TODO: GitHub 폴링 서비스 구독 (Phase 2.4)
-        // githubPollService.subscribe(...)
+        // GitHub 폴링 서비스 구독
+        githubPollService.subscribe(
+          socket.id,
+          roomId,
+          username,
+          accessToken,
+          (event) => {
+            updateRoomState(roomId, event);
+            io.to(roomId).emit('github_event', event);
+          },
+        );
 
         // 새 클라이언트에게 현재 룸의 기여 상태 전송
         socket.emit('github_state', getRoomState(roomId));
@@ -248,8 +258,8 @@ export function setupSocketHandlers(io: Server): void {
         io.to(player.roomId).emit('player_left', { userId: socket.id });
         playTimeService.stopTimer(socket.id);
 
-        // TODO: GitHub 폴링 서비스 구독 해제 (Phase 2.4)
-        // githubPollService.unsubscribe(socket.id);
+        // GitHub 폴링 서비스 구독 해제
+        githubPollService.unsubscribe(socket.id);
 
         // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
         if (userSockets.get(player.username) === socket.id) {
