@@ -1,18 +1,24 @@
 import * as Phaser from "phaser";
+import { MapScene } from "./scenes/MapScene";
 
-// Placeholder - will be replaced in Phase 1.3
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: "game-container",
-  width: 800,
-  height: 600,
-  backgroundColor: "#1a1a2e",
-  scene: {
-    create: function () {
-      this.add.text(400, 300, "Game Loading...", {
-        fontSize: "24px",
-        color: "#ffffff",
-      }).setOrigin(0.5);
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    width: "100%",
+    height: "100%",
+  },
+  audio: {
+    noAudio: true,
+  },
+  backgroundColor: "#000000",
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { x: 0, y: 0 },
+      debug: true,
     },
   },
+  scene: [MapScene],
 };
