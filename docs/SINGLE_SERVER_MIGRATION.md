@@ -1406,21 +1406,37 @@ export function setupSocketHandlers(io: Server) {
 
 ## 9. 통합 및 배포
 
-### 9.1 최종 체크리스트
+### 9.1 문서 업데이트 규칙
+
+> **중요:** 각 Phase 또는 테스트 포인트 완료 시 이 문서의 체크리스트도 함께 업데이트합니다.
+
+커밋 컨벤션은 [docs/conventions/COMMIT_CONVENTION.md](./conventions/COMMIT_CONVENTION.md) 참조
+
+```bash
+# 단계 완료 후
+# 1. 코드 커밋
+git commit -m "setting: ..." 또는 "feat: ..."
+
+# 2. 이 문서의 체크리스트 업데이트 ([ ] → [x])
+# 3. 문서 커밋
+git commit -m "docs: 마이그레이션 체크리스트 업데이트 (Phase X.X 완료)"
+```
+
+### 9.2 최종 체크리스트
 
 | Phase | 항목 | 커밋 메시지 | 완료 |
 |-------|------|------------|------|
-| **사전** | main에서 브랜치 분기 | - | [ ] |
-| **1.1** | Vite 프로젝트 생성 | `feat(client): Vite + React 프로젝트 초기 설정` | [ ] |
-| **1.2** | 페이지 마이그레이션 | `feat(client): React Router 및 페이지 마이그레이션` | [ ] |
-| **1.3** | 게임 코드 이동 | `feat(client): Phaser 게임 코드 이동` | [ ] |
+| **사전** | deploy/test-all-prs에서 브랜치 분기 | - | [x] |
+| **1.1** | Vite 프로젝트 생성 | `setting: Vite + React 프로젝트 초기 설정` | [x] |
+| **1.2** | 페이지 마이그레이션 | `feat: React Router 및 페이지 마이그레이션` | [ ] |
+| **1.3** | 게임 코드 이동 | `feat: Phaser 게임 코드 이동` | [ ] |
 | **A** | 🧪 프론트엔드 + 기존 백엔드 테스트 | - | [ ] |
-| **2.1** | Express 프로젝트 생성 | `feat(server): Express 프로젝트 초기 설정` | [ ] |
-| **2.2** | 인증 시스템 마이그레이션 | `feat(server): GitHub OAuth 인증 마이그레이션` | [ ] |
+| **2.1** | Express 프로젝트 생성 | `setting: Express 프로젝트 초기 설정` | [ ] |
+| **2.2** | 인증 시스템 마이그레이션 | `feat: GitHub OAuth 인증 마이그레이션` | [ ] |
 | **B** | 🧪 OAuth 로그인 테스트 | - | [ ] |
-| **2.3** | Socket.io 핸들러 마이그레이션 | `feat(server): Socket.io 핸들러 마이그레이션` | [ ] |
+| **2.3** | Socket.io 핸들러 마이그레이션 | `feat: Socket.io 핸들러 마이그레이션` | [ ] |
 | **C** | 🧪 실시간 이동 동기화 테스트 | - | [ ] |
-| **2.4** | GitHub 폴링 마이그레이션 | `feat(server): GitHub 폴링 서비스 마이그레이션` | [ ] |
+| **2.4** | GitHub 폴링 마이그레이션 | `feat: GitHub 폴링 서비스 마이그레이션` | [ ] |
 | **D** | 🧪 GitHub 커밋 감지 테스트 | - | [ ] |
 | **3.1** | 정적 파일 서빙 설정 | `feat: 정적 파일 서빙 및 SPA 폴백 설정` | [ ] |
 | **3.2** | 빌드 스크립트 작성 | `chore: 빌드 스크립트 추가` | [ ] |
