@@ -9,6 +9,7 @@ import passport from 'passport';
 import { config } from './config/env.js';
 import { logger } from './config/logger.js';
 import { setupAuthRoutes } from './routes/auth.js';
+import { setupSocketHandlers } from './socket/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,8 +44,8 @@ app.get('/health', (_req, res) => {
 // 인증 라우트
 setupAuthRoutes(app);
 
-// TODO: Socket.io 핸들러 추가 (Phase 2.3)
-// setupSocketHandlers(io);
+// Socket.io 핸들러
+setupSocketHandlers(io);
 
 // 정적 파일 서빙 (프로덕션)
 if (config.NODE_ENV === 'production') {
