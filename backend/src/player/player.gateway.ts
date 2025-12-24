@@ -14,6 +14,7 @@ import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
 import { GithubPollService } from '../github/github.poll-service';
+import { GithubGateway } from '../github/github.gateway';
 
 @WebSocketGateway({
   cors: {
@@ -27,6 +28,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly playTimeService: PlayTimeService,
     private readonly githubService: GithubPollService,
+    private readonly githubGateway: GithubGateway,
     private readonly wsJwtGuard: WsJwtGuard,
   ) {}
   @WebSocketServer()
@@ -104,16 +106,18 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       y: data.y,
     });
 
+    // client.data에서 OAuth 인증된 사용자 정보 추출
+    const userData = client.data as { user: User };
+    const { username, accessToken } = userData.user;
+
     const connectedAt = new Date();
     this.playTimeService.startTimer(
       client.id,
+      username,
       this.createTimerCallback(client),
       connectedAt,
     );
 
-    // client.data에서 OAuth 인증된 사용자 정보 추출
-    const userData = client.data as { user: User };
-    const { username, accessToken } = userData.user;
     this.githubService.subscribeGithubEvent(
       connectedAt,
       client.id,
@@ -121,6 +125,16 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       username,
       accessToken,
     );
+
+    // 새 클라이언트에게 현재 룸의 기여 상태 전송
+    const roomState = this.githubGateway.getRoomState(roomId);
+    client.emit('github_state', roomState);
+
+    // 새 클라이언트에게 자신의 누적 접속시간 전송
+    const userMinutes = this.playTimeService.getUserMinutes(username);
+    if (userMinutes > 0) {
+      client.emit('timerUpdated', { userId: client.id, minutes: userMinutes });
+    }
   }
 
   @SubscribeMessage('moving')

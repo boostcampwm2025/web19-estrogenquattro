@@ -11,10 +11,12 @@ interface PollingSchedule {
   accessToken: string;
   roomId: string;
   clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
-  // 커밋 수 기반 추적 (GraphQL API는 날짜별 집계라 시간 비교 불가)
+}
+
+// 기준점 저장 (새로고침해도 유지)
+interface UserBaseline {
   lastCommitCounts: Map<string, number>; // repo -> commitCount
   lastPRCount: number;
-  isFirstPoll: boolean; // 첫 폴링은 알림 안 보냄 (기준점 설정용)
 }
 
 // GraphQL 응답 타입
@@ -51,6 +53,9 @@ export class GithubPollService {
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
 
+  // username -> 기준점 (새로고침해도 유지)
+  private readonly userBaselines = new Map<string, UserBaseline>();
+
   subscribeGithubEvent(
     connectedAt: Date,
     clientId: string,
@@ -80,12 +85,20 @@ export class GithubPollService {
       accessToken,
       roomId,
       clientIds: new Set([clientId]),
-      lastCommitCounts: new Map(),
-      lastPRCount: 0,
-      isFirstPoll: true, // 첫 폴링은 기준점 설정용
     });
 
-    this.logger.log(`GitHub polling started for user: ${username}`);
+    // 기준점이 없으면 새로 생성 (있으면 유지 - 새로고침 시 복원)
+    const hasBaseline = this.userBaselines.has(username);
+    if (!hasBaseline) {
+      this.userBaselines.set(username, {
+        lastCommitCounts: new Map(),
+        lastPRCount: 0,
+      });
+    }
+
+    this.logger.log(
+      `GitHub polling started for user: ${username} (baseline: ${hasBaseline ? 'restored' : 'new'})`,
+    );
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -163,6 +176,9 @@ export class GithubPollService {
   }> {
     const schedule = this.pollingSchedules.get(username);
     if (!schedule) return { status: 'error' };
+
+    const baseline = this.userBaselines.get(username);
+    if (!baseline) return { status: 'error' };
 
     const { accessToken } = schedule;
 
@@ -255,10 +271,13 @@ export class GithubPollService {
     const currentPRCount =
       contributionsCollection.pullRequestContributions?.nodes?.length || 0;
 
+    // 기준점이 비어있으면 첫 폴링 (새로고침 후에도 기존 기준점이 있으면 false)
+    const isFirstPoll = baseline.lastCommitCounts.size === 0;
+
     this.logger.log(
       `[${username}] GraphQL Response: ${currentCommitCounts.size} repos, ` +
         `total commits: ${[...currentCommitCounts.values()].reduce((a, b) => a + b, 0)}, ` +
-        `PRs: ${currentPRCount}, isFirstPoll: ${schedule.isFirstPoll}`,
+        `PRs: ${currentPRCount}, isFirstPoll: ${isFirstPoll}`,
     );
 
     // 상위 3개 리포지토리 로깅
@@ -267,7 +286,7 @@ export class GithubPollService {
       .slice(0, 3);
     if (sortedRepos.length > 0) {
       const top3Log = sortedRepos.map(([repo, count]) => {
-        const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+        const prevCount = baseline.lastCommitCounts.get(repo) || 0;
         const diff = count - prevCount;
         return `${repo}: ${count} commits (${diff >= 0 ? '+' : ''}${diff})`;
       });
@@ -277,10 +296,9 @@ export class GithubPollService {
     }
 
     // 첫 폴링이면 기준점만 설정하고 알림 안 보냄
-    if (schedule.isFirstPoll) {
-      schedule.lastCommitCounts = currentCommitCounts;
-      schedule.lastPRCount = currentPRCount;
-      schedule.isFirstPoll = false;
+    if (isFirstPoll) {
+      baseline.lastCommitCounts = currentCommitCounts;
+      baseline.lastPRCount = currentPRCount;
       this.logger.log(
         `[${username}] First poll - baseline set, no notification`,
       );
@@ -290,18 +308,18 @@ export class GithubPollService {
     // 새로운 커밋 수 계산 (커밋 수 증가분)
     let newCommitCount = 0;
     for (const [repo, count] of currentCommitCounts) {
-      const prevCount = schedule.lastCommitCounts.get(repo) || 0;
+      const prevCount = baseline.lastCommitCounts.get(repo) || 0;
       if (count > prevCount) {
         newCommitCount += count - prevCount;
       }
     }
 
     // 새로운 PR 수 계산
-    const newPRCount = Math.max(0, currentPRCount - schedule.lastPRCount);
+    const newPRCount = Math.max(0, currentPRCount - baseline.lastPRCount);
 
     // 기준점 갱신
-    schedule.lastCommitCounts = currentCommitCounts;
-    schedule.lastPRCount = currentPRCount;
+    baseline.lastCommitCounts = currentCommitCounts;
+    baseline.lastPRCount = currentPRCount;
 
     if (newCommitCount === 0 && newPRCount === 0) {
       this.logger.debug(`[${username}] No new contributions`);
