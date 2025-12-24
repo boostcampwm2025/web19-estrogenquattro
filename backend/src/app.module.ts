@@ -3,11 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
-import { PlayerGateway } from './player/player.gateway';
-import { PlayTimeService } from './player/player.play-time-service';
 import { GithubModule } from './github/github.module';
-import { GithubPollService } from './github/github.poll-service';
-import { GithubGateway } from './github/github.gateway';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
 import { WinstonModule } from 'nest-winston';
@@ -33,12 +29,6 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    PlayerGateway,
-    PlayTimeService,
-    GithubPollService,
-    GithubGateway,
-  ],
+  providers: [AppService],
 })
 export class AppModule {}

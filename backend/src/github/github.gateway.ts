@@ -2,7 +2,6 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 
 export interface GithubEventData {
-  clientId: string;
   username: string;
   pushCount: number;
   pullRequestCount: number;

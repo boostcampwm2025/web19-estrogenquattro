@@ -12,6 +12,7 @@ interface PollingSchedule {
   username: string;
   accessToken: string;
   roomId: string;
+  clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
 }
 
 interface GithubEvent {
@@ -25,6 +26,7 @@ export class GithubPollService {
 
   constructor(private readonly githubGateway: GithubGateway) {}
 
+  // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
   private readonly etagMap = new Map<string, string>(); // username -> etag
 
@@ -35,48 +37,69 @@ export class GithubPollService {
     username: string,
     accessToken: string,
   ) {
-    if (this.pollingSchedules.has(clientId)) return;
+    const existingSchedule = this.pollingSchedules.get(username);
+
+    // 이미 해당 username에 대한 폴링이 있으면 clientId만 추가
+    if (existingSchedule) {
+      existingSchedule.clientIds.add(clientId);
+      this.logger.log(
+        `Client ${clientId} joined existing poll for user: ${username}`,
+      );
+      return;
+    }
 
     // 첫 폴링은 빠르게 시작
     const timeout = setTimeout(() => {
-      void this.handlePoll(clientId);
+      void this.handlePoll(username);
     }, POLL_INTERVAL_FAST);
 
-    this.pollingSchedules.set(clientId, {
+    this.pollingSchedules.set(username, {
       timeout,
       lastProcessedAt: connectedAt,
       username,
       accessToken,
       roomId,
+      clientIds: new Set([clientId]),
     });
 
     this.logger.log(`GitHub polling started for user: ${username}`);
   }
 
   unsubscribeGithubEvent(clientId: string) {
-    const schedule = this.pollingSchedules.get(clientId);
-    if (!schedule) return;
+    // clientId로 해당하는 username 찾기
+    for (const [username, schedule] of this.pollingSchedules) {
+      if (schedule.clientIds.has(clientId)) {
+        schedule.clientIds.delete(clientId);
 
-    clearTimeout(schedule.timeout);
-    this.pollingSchedules.delete(clientId);
-    this.logger.log(`GitHub polling stopped for user: ${schedule.username}`);
-    // etagMap은 username 기준이므로 재접속 시 ETag 재사용 위해 유지
+        // 더 이상 연결된 클라이언트가 없으면 폴링 중지
+        if (schedule.clientIds.size === 0) {
+          clearTimeout(schedule.timeout);
+          this.pollingSchedules.delete(username);
+          this.logger.log(`GitHub polling stopped for user: ${username}`);
+        } else {
+          this.logger.log(
+            `Client ${clientId} left poll for user: ${username} (${schedule.clientIds.size} remaining)`,
+          );
+        }
+        return;
+      }
+    }
   }
 
-  private scheduleNextPoll(clientId: string, interval: number) {
-    const schedule = this.pollingSchedules.get(clientId);
+  private scheduleNextPoll(username: string, interval: number) {
+    const schedule = this.pollingSchedules.get(username);
     if (!schedule) return;
 
     schedule.timeout = setTimeout(() => {
-      void this.handlePoll(clientId);
+      void this.handlePoll(username);
     }, interval);
   }
 
-  private async handlePoll(clientId: string) {
-    const schedule = this.pollingSchedules.get(clientId);
+  private async handlePoll(username: string) {
+    const schedule = this.pollingSchedules.get(username);
     if (!schedule) return;
 
-    const result = await this.pollGithubEvents(clientId);
+    const result = await this.pollGithubEvents(username);
 
     // 다음 폴링 간격 결정
     let nextInterval: number;
@@ -101,25 +124,24 @@ export class GithubPollService {
     }
 
     this.logger.debug(
-      `Next poll for ${schedule.username} in ${nextInterval / 1000}s (status: ${result.status})`,
+      `Next poll for ${username} in ${nextInterval / 1000}s (status: ${result.status})`,
     );
-    this.scheduleNextPoll(clientId, nextInterval);
+    this.scheduleNextPoll(username, nextInterval);
   }
 
-  private async pollGithubEvents(clientId: string): Promise<{
+  private async pollGithubEvents(username: string): Promise<{
     status: 'new_events' | 'no_changes' | 'rate_limited' | 'error';
     data?: {
-      clientId: string;
       username: string;
       pushCount: number;
       pullRequestCount: number;
     };
     retryAfter?: number;
   }> {
-    const schedule = this.pollingSchedules.get(clientId);
+    const schedule = this.pollingSchedules.get(username);
     if (!schedule) return { status: 'error' };
 
-    const { username, accessToken } = schedule;
+    const { accessToken } = schedule;
     const url = `https://api.github.com/users/${username}/events`;
     const lastETag = this.etagMap.get(username);
 
@@ -194,8 +216,7 @@ export class GithubPollService {
     return {
       status: 'new_events',
       data: {
-        clientId,
-        username: schedule.username,
+        username,
         pushCount,
         pullRequestCount: prCount,
       },
