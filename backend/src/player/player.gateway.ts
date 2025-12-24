@@ -47,6 +47,9 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   > = new Map();
 
+  // username -> socketId 매핑 (중복 접속 방지용)
+  private userSockets: Map<string, string> = new Map();
+
   handleConnection(client: Socket) {
     const isValid = this.wsJwtGuard.verifyClient(client);
 
@@ -68,6 +71,11 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.playTimeService.stopTimer(client.id);
       this.githubService.unsubscribeGithubEvent(client.id);
+
+      // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
+      if (this.userSockets.get(player.username) === client.id) {
+        this.userSockets.delete(player.username);
+      }
     }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
@@ -79,13 +87,36 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = data.roomId || 'default-room';
+
+    // client.data에서 OAuth 인증된 사용자 정보 추출
+    const userData = client.data as { user: User };
+    const { username, accessToken } = userData.user;
+
+    // 같은 username으로 이미 접속한 세션이 있으면 이전 세션 종료
+    const existingSocketId = this.userSockets.get(username);
+    if (existingSocketId && existingSocketId !== client.id) {
+      const existingSocket = this.server.sockets.sockets.get(existingSocketId);
+      if (existingSocket) {
+        this.logger.log(
+          `Disconnecting previous session for ${username}: ${existingSocketId}`,
+        );
+        existingSocket.emit('session_replaced', {
+          message: '다른 탭에서 접속하여 현재 세션이 종료됩니다.',
+        });
+        existingSocket.disconnect(true);
+      }
+    }
+
+    // username -> socketId 매핑 저장
+    this.userSockets.set(username, client.id);
+
     void client.join(roomId);
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
       userId: client.id, // 소켓 ID를 유저 ID로 사용 (임시)
-      username: data.username || 'Tester', // 유저네임 저장
+      username: username,
       roomId: roomId,
       x: data.x,
       y: data.y,
@@ -101,14 +132,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //남들이 볼 내 캐릭터 그리기
     client.to(roomId).emit('player_joined', {
       userId: client.id,
-      username: data.username || 'Tester',
+      username: username,
       x: data.x,
       y: data.y,
     });
-
-    // client.data에서 OAuth 인증된 사용자 정보 추출
-    const userData = client.data as { user: User };
-    const { username, accessToken } = userData.user;
 
     const connectedAt = new Date();
     this.playTimeService.startTimer(
@@ -130,10 +157,18 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomState = this.githubGateway.getRoomState(roomId);
     client.emit('github_state', roomState);
 
-    // 새 클라이언트에게 자신의 누적 접속시간 전송
-    const userMinutes = this.playTimeService.getUserMinutes(username);
-    if (userMinutes > 0) {
-      client.emit('timerUpdated', { userId: client.id, minutes: userMinutes });
+    // 새 클라이언트에게 같은 방의 모든 사용자 접속시간 전송
+    const roomPlayers = Array.from(this.players.values()).filter(
+      (p) => p.roomId === roomId,
+    );
+    for (const player of roomPlayers) {
+      const minutes = this.playTimeService.getUserMinutes(player.username);
+      if (minutes > 0) {
+        client.emit('timerUpdated', {
+          userId: player.socketId,
+          minutes,
+        });
+      }
     }
   }
 
