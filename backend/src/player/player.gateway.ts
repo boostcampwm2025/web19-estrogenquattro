@@ -137,10 +137,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       y: data.y,
     });
 
-    // client.data에서 OAuth 인증된 사용자 정보 추출
-    const userData = client.data as { user: User };
-    const { username, accessToken } = userData.user;
-
     const connectedAt = new Date();
     this.playTimeService.startTimer(
       client.id,
