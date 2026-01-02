@@ -3,6 +3,7 @@ import { formatPlayTime } from "@/utils/timeFormat";
 
 export default class Player {
   private scene: Phaser.Scene;
+  private bodySprite: Phaser.GameObjects.Sprite; // 몸통 스프라이트 추가
   private container: Phaser.GameObjects.Container;
   private body: Phaser.Physics.Arcade.Body;
   private maskShape: Phaser.GameObjects.Graphics;
@@ -16,7 +17,6 @@ export default class Player {
     isMoving: false,
     direction: "stop",
   };
-
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -32,9 +32,14 @@ export default class Player {
     // 1. 컨테이너 생성
     this.container = scene.add.container(x, y);
 
+    // 2. 몸통 스프라이트 생성
+    this.bodySprite = scene.add.sprite(0, 5, "body");
+    // 초기 애니메이션
+    this.bodySprite.setFrame(0); // 0번 프레임(Down 정지)
+
     // 3. 얼굴 & 마스크
-    const FACE_RADIUS = 20;
-    const FACE_Y_OFFSET = 0; // 몸통이 없으므로 중앙 정렬
+    const FACE_RADIUS = 17;
+    const FACE_Y_OFFSET = 0; // 얼굴 위치
 
     this.maskShape = scene.make.graphics({});
     this.maskShape.fillStyle(0xffffff);
@@ -47,11 +52,11 @@ export default class Player {
 
     // 4. 테두리
     const borderGraphics = scene.add.graphics();
-    borderGraphics.lineStyle(4, 0xffffff, 1);
+    borderGraphics.lineStyle(2, 0xffffff, 1);
     borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     const nameTag = scene.add
-      .text(0, 30, username, {
+      .text(0, 50, username, {
         fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
@@ -72,9 +77,16 @@ export default class Player {
     this.timerText.setStroke("#000000", 4);
     this.timerText.setShadow(1, 1, "#000000", 2, false, true);
 
-    // 6. 컨테이너 추가
-    this.container.add([faceSprite, borderGraphics, this.timerText, nameTag]);
-    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
+    // 6. 컨테이너 추가 (순서 중요: 먼저 추가된 것이 뒤에 깔림)
+
+    this.container.add([
+      this.bodySprite,
+      faceSprite,
+      borderGraphics,
+      this.timerText,
+      nameTag,
+    ]);
+    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 4);
 
     // 6. 물리 엔진 적용
     scene.physics.world.enable(this.container);
@@ -136,6 +148,19 @@ export default class Player {
       if (hDir && vDir) currentDirection = `${hDir}-${vDir}`;
       else if (hDir) currentDirection = hDir;
       else if (vDir) currentDirection = vDir;
+    }
+
+    // 애니메이션 업데이트
+    if (this.bodySprite) {
+      if (isMoving) {
+        // 대각선 이동 시 하나만 선택 (좌/우 우선)
+        if (hDir === "left") this.bodySprite.play("walk-left", true);
+        else if (hDir === "right") this.bodySprite.play("walk-right", true);
+        else if (vDir === "up") this.bodySprite.play("walk-up", true);
+        else if (vDir === "down") this.bodySprite.play("walk-down", true);
+      } else {
+        this.bodySprite.stop();
+      }
     }
 
     // 이전 상태와 비교 (State Change Detection)
