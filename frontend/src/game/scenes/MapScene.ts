@@ -67,6 +67,12 @@ export class MapScene extends Phaser.Scene {
     this.load.image("tiles", "/assets/tempMap1.png");
     this.load.tilemapTiledJSON("tilemap", "/assets/map.json");
 
+    // Body Sprite Sheet
+    this.load.spritesheet("body", "/assets/body.png", {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+
     // Default Face
     const username = this.username || "boostcampwm2025";
     this.load.image("face", `/api/github-profile/${username}`);
@@ -81,20 +87,62 @@ export class MapScene extends Phaser.Scene {
     // 1. Map & Grid Setup
     this.setupMap();
 
-    // 2. Player Setup
+    // 2. Anims Setup
+    this.createAnimations();
+
     this.setupPlayer();
 
-    // 3. Controls Setup
     this.setupControls();
 
-    // 4. Camera Setup
     this.setupCamera();
 
-    // 5. Socket Logic Setup
     this.setupSocket();
 
-    // 6. Draw Grid (Visual)
     this.drawGrid();
+  }
+
+  createAnimations() {
+    const FRAME_RATE = 10;
+
+    // 아래쪽 방향
+    if (!this.anims.exists("walk-down")) {
+      this.anims.create({
+        key: "walk-down",
+        frames: this.anims.generateFrameNumbers("body", { start: 0, end: 3 }),
+        frameRate: FRAME_RATE,
+        repeat: -1,
+      });
+    }
+
+    // 왼쪽 방향
+    if (!this.anims.exists("walk-left")) {
+      this.anims.create({
+        key: "walk-left",
+        frames: this.anims.generateFrameNumbers("body", { start: 4, end: 7 }),
+        frameRate: FRAME_RATE,
+        repeat: -1,
+      });
+    }
+
+    // 오른쪽 방향
+    if (!this.anims.exists("walk-right")) {
+      this.anims.create({
+        key: "walk-right",
+        frames: this.anims.generateFrameNumbers("body", { start: 8, end: 11 }),
+        frameRate: FRAME_RATE,
+        repeat: -1,
+      });
+    }
+
+    // 위쪽 방향
+    if (!this.anims.exists("walk-up")) {
+      this.anims.create({
+        key: "walk-up",
+        frames: this.anims.generateFrameNumbers("body", { start: 12, end: 15 }),
+        frameRate: FRAME_RATE,
+        repeat: -1,
+      });
+    }
   }
 
   setupMap() {
