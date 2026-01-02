@@ -86,12 +86,15 @@ export default class Player {
       this.timerText,
       nameTag,
     ]);
-    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 4);
+    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
 
     // 6. 물리 엔진 적용
     scene.physics.world.enable(this.container);
     this.body = this.container.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
+
+    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
+    this.body.setOffset(0, 10);
   }
 
   update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
