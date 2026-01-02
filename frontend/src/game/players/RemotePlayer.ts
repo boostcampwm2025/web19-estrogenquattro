@@ -3,6 +3,7 @@ import { formatPlayTime } from "@/utils/timeFormat";
 
 export default class RemotePlayer {
   private scene: Phaser.Scene;
+  private bodySprite: Phaser.GameObjects.Sprite;
   private container: Phaser.GameObjects.Container;
   private body: Phaser.Physics.Arcade.Body;
   private maskShape: Phaser.GameObjects.Graphics;
@@ -24,8 +25,12 @@ export default class RemotePlayer {
     // 1. 컨테이너 생성
     this.container = scene.add.container(x, y);
 
-    // 2. 얼굴 & 마스크
-    const FACE_RADIUS = 20;
+    // 2. 몸통 스프라이트 생성
+    this.bodySprite = scene.add.sprite(0, 5, "body");
+    this.bodySprite.setFrame(0);
+
+    // 3. 얼굴 & 마스크
+    const FACE_RADIUS = 17;
     const FACE_Y_OFFSET = 0;
 
     this.maskShape = scene.make.graphics({});
@@ -45,12 +50,12 @@ export default class RemotePlayer {
 
     // 4. 테두리
     const borderGraphics = scene.add.graphics();
-    borderGraphics.lineStyle(4, 0xffffff, 1);
+    borderGraphics.lineStyle(2, 0xffffff, 1);
     borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     // 5. 닉네임 표시
     const nameTag = scene.add
-      .text(0, 30, username, {
+      .text(0, 50, username, {
         fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
@@ -72,17 +77,21 @@ export default class RemotePlayer {
 
     // 7. 컨테이너 추가
     this.container.add([
+      this.bodySprite,
       this.faceSprite,
       borderGraphics,
       this.timerText,
       nameTag,
     ]);
-    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
+    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
 
     // 7. 물리 엔진 적용
     scene.physics.world.enable(this.container);
     this.body = this.container.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
+
+    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
+    this.body.setOffset(0, 10);
   }
 
   // 얼굴 텍스처 업데이트
@@ -127,11 +136,25 @@ export default class RemotePlayer {
 
     if (state.isMoving) {
       // 방향 문자열 파싱해서 속도 적용
-      if (state.direction.includes("left")) this.body.setVelocityX(-SPEED);
-      if (state.direction.includes("right")) this.body.setVelocityX(SPEED);
-      if (state.direction.includes("up")) this.body.setVelocityY(-SPEED);
-      if (state.direction.includes("down")) this.body.setVelocityY(SPEED);
+      if (state.direction.includes("left")) {
+        this.body.setVelocityX(-SPEED);
+        this.bodySprite.play("walk-left", true);
+      }
+      if (state.direction.includes("right")) {
+        this.body.setVelocityX(SPEED);
+        this.bodySprite.play("walk-right", true);
+      }
+      if (state.direction.includes("up")) {
+        this.body.setVelocityY(-SPEED);
+        this.bodySprite.play("walk-up", true);
+      }
+      if (state.direction.includes("down")) {
+        this.body.setVelocityY(SPEED);
+        this.bodySprite.play("walk-down", true);
+      }
     } else {
+      // 멈췄을 때
+      this.bodySprite.stop();
       // 멈췄을 때는 좌표 강제 동기화 (정확한 위치 안착)
       this.container.setPosition(state.x, state.y);
     }
