@@ -6,6 +6,7 @@ import { Socket } from 'socket.io';
 import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
+import { RoomService } from '../room/room.service';
 
 describe('PlayerGateway', () => {
   let gateway: PlayerGateway;
@@ -42,6 +43,12 @@ describe('PlayerGateway', () => {
     verifyClient: jest.fn().mockReturnValue(true),
   };
 
+  const mockRoomService = {
+    getRoomIdBySocketId: jest.fn().mockReturnValue('room-1'),
+    join: jest.fn(),
+    exit: jest.fn(),
+  } as unknown as RoomService;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,6 +68,10 @@ describe('PlayerGateway', () => {
         {
           provide: WsJwtGuard,
           useValue: mockWsJwtGuard,
+        },
+        {
+          provide: RoomService,
+          useValue: mockRoomService,
         },
       ],
     }).compile();
