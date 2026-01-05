@@ -6,4 +6,3 @@ import { RoomService } from './room.service';
   exports: [RoomService],
 })
 export class RoomModule {}
-
