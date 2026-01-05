@@ -1,14 +1,7 @@
 import { emitEvent } from "../../lib/socket";
-import { formatPlayTime } from "@/utils/timeFormat";
+import BasePlayer from "./BasePlayer";
 
-export default class Player {
-  private scene: Phaser.Scene;
-  private container: Phaser.GameObjects.Container;
-  private body: Phaser.Physics.Arcade.Body;
-  private maskShape: Phaser.GameObjects.Graphics;
-  private timerText: Phaser.GameObjects.Text;
-  private speed: number = 300;
-  public id: string;
+export default class Player extends BasePlayer {
   private roomId: string;
 
   // 이전 프레임의 상태 저장용
@@ -25,65 +18,18 @@ export default class Player {
     id: string,
     roomId: string,
   ) {
-    this.scene = scene;
-    this.id = id;
+    // 부모 생성자 호출 (공통 렌더링 & 물리 설정 처리)
+    // Local player는 자신의 GitHub ID를 texture key로 사용
+    const texture = username;
+    super(scene, x, y, username, id, texture);
     this.roomId = roomId;
-
-    // 1. 컨테이너 생성
-    this.container = scene.add.container(x, y);
-
-    // 3. 얼굴 & 마스크
-    const FACE_RADIUS = 20;
-    const FACE_Y_OFFSET = 0; // 몸통이 없으므로 중앙 정렬
-
-    this.maskShape = scene.make.graphics({});
-    this.maskShape.fillStyle(0xffffff);
-    this.maskShape.fillCircle(0, 0, FACE_RADIUS);
-    const mask = this.maskShape.createGeometryMask();
-
-    const faceSprite = scene.add.image(0, FACE_Y_OFFSET, "face");
-    faceSprite.setDisplaySize(FACE_RADIUS * 2, FACE_RADIUS * 2);
-    faceSprite.setMask(mask);
-
-    // 4. 테두리
-    const borderGraphics = scene.add.graphics();
-    borderGraphics.lineStyle(4, 0xffffff, 1);
-    borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
-
-    const nameTag = scene.add
-      .text(0, 30, username, {
-        fontSize: "12px",
-        color: "#ffffff",
-        backgroundColor: "#00000088",
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0.5);
-
-    // 5. 접속 시간 표시
-    this.timerText = scene.add
-      .text(0, -35, formatPlayTime(0), {
-        fontSize: "12px",
-        color: "#ffffff",
-        fontFamily: "Arial, sans-serif",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-
-    this.timerText.setStroke("#000000", 4);
-    this.timerText.setShadow(1, 1, "#000000", 2, false, true);
-
-    // 6. 컨테이너 추가
-    this.container.add([faceSprite, borderGraphics, this.timerText, nameTag]);
-    this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 2);
-
-    // 6. 물리 엔진 적용
-    scene.physics.world.enable(this.container);
-    this.body = this.container.body as Phaser.Physics.Arcade.Body;
-    this.body.setCollideWorldBounds(true);
   }
 
-  update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
-    if (!this.body) return;
+  update(cursors?: Phaser.Types.Input.Keyboard.CursorKeys) {
+    // 부모 update 호출 (마스크 동기화)
+    super.update();
+
+    if (!this.body || !cursors) return;
 
     // 1. 현재 프레임의 이동 의도 파악
     let velocityX = 0;
@@ -112,12 +58,6 @@ export default class Player {
     // 실제 물리 적용
     this.body.setVelocity(velocityX, velocityY);
 
-    // 마스크 동기화
-    if (this.maskShape) {
-      this.maskShape.x = this.container.x;
-      this.maskShape.y = this.container.y;
-    }
-
     // 2. 상태 변화 감지 및 소켓 전송
     let isMoving = velocityX !== 0 || velocityY !== 0;
 
@@ -136,6 +76,17 @@ export default class Player {
       if (hDir && vDir) currentDirection = `${hDir}-${vDir}`;
       else if (hDir) currentDirection = hDir;
       else if (vDir) currentDirection = vDir;
+    }
+
+    // 애니메이션 업데이트
+    if (isMoving) {
+      // 대각선 이동 시 하나만 선택 (좌/우 우선)
+      if (hDir === "left") this.playAnimation("walk-left");
+      else if (hDir === "right") this.playAnimation("walk-right");
+      else if (vDir === "up") this.playAnimation("walk-up");
+      else if (vDir === "down") this.playAnimation("walk-down");
+    } else {
+      this.stopAnimation();
     }
 
     // 이전 상태와 비교 (State Change Detection)
@@ -162,29 +113,5 @@ export default class Player {
         direction: currentDirection,
       };
     }
-  }
-
-  // 위치 정보 반환 (소켓 전송용)
-  getPosition() {
-    return {
-      x: this.container.x,
-      y: this.container.y,
-    };
-  }
-
-  // 접속 시간 업데이트
-  updateTimer(minutes: number) {
-    if (this.timerText) {
-      this.timerText.setText(formatPlayTime(minutes));
-    }
-  }
-
-  destroy() {
-    this.container.destroy();
-    this.maskShape.destroy();
-  }
-
-  getContainer() {
-    return this.container;
   }
 }
