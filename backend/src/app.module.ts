@@ -9,6 +9,9 @@ import { envValidationSchema } from './config/env.validation';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './config/logger.winston';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { ChatGateway } from './chat/chat.gateway';
+import { ChatModule } from './chat/chat.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
   imports: [
@@ -27,8 +30,10 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     PlayerModule,
     GithubModule,
     AuthModule,
+    ChatModule,
+    RoomModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ChatGateway],
 })
 export class AppModule {}
