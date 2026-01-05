@@ -98,6 +98,8 @@ export class MapScene extends Phaser.Scene {
 
     this.setupSocket();
 
+    this.setupChat();
+
     this.drawGrid();
   }
 
@@ -261,6 +263,71 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
+  setupChat() {
+    const existingInput = document.getElementById("chat-input");
+    if (existingInput) {
+      existingInput.remove();
+    }
+
+    // 2. HTML Input 생성
+    const input = document.createElement("input");
+    input.id = "chat-input";
+    input.type = "text";
+    input.className =
+      "absolute bottom-[100px] left-1/2 -translate-x-1/2 w-[300px] p-[10px] rounded-[20px] border-[2px] border-[#333] bg-white hidden z-[1000] placeholder:text-gray-500 font-sans";
+    input.placeholder = "메시지를 입력하세요 (Enter로 전송)";
+
+    document.body.appendChild(input);
+
+    // 3. Enter 키 이벤트 (Phaser Input) - 채팅창 열기
+    this.input.keyboard?.on("keydown-ENTER", () => {
+      // 이미 포커스된 상태면 무시
+      if (document.activeElement === input) return;
+
+      input.style.display = "block";
+      input.focus();
+      this.input.keyboard!.enabled = false;
+    });
+
+    // 4. Input 내 Enter 키 이벤트 - 채팅 전송
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+
+      if (e.key === "Enter") {
+        if (input.value.trim() !== "") {
+          this.sendChat(input.value);
+        }
+        this.closeChatInput(input);
+      } else if (e.key === "Escape") {
+        this.closeChatInput(input);
+      }
+    });
+
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      input.remove();
+    });
+  }
+
+  closeChatInput(input: HTMLInputElement) {
+    input.value = "";
+    input.style.display = "none";
+    input.blur();
+    this.input.keyboard!.enabled = true; // 게임 키 다시 활성화
+  }
+
+  sendChat(message: string) {
+    if (!this.player) return;
+
+    // 1. 내 캐릭터에 말풍선 표시
+    this.player.showChatBubble(message);
+
+    // 2. 소켓 전송
+    const socket = getSocket();
+    if (socket) {
+      socket.emit("chatting", { message });
+    }
+  }
+
   setupSocket() {
     const socket = connectSocket();
     if (!socket) return;
@@ -358,6 +425,14 @@ export class MapScene extends Phaser.Scene {
         // 기여도 업데이트 (커밋 + PR 합산)
         const totalCount = data.pushCount + data.pullRequestCount;
         this.contributionController?.addContribution(data.username, totalCount);
+      }
+    });
+
+    // 8. 채팅 메시지 수신
+    socket.on("chatted", (data: { userId: string; message: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.showChatBubble(data.message);
       }
     });
   }
