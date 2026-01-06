@@ -87,7 +87,7 @@ export class RoomService {
     if (room) {
       room.size = Math.max(0, room.size - 1);
       if (room.size < room.capacity) {
-        this.removeAvailableRoom(roomId);
+        this.addAvailableRoom(roomId);
       }
     }
     this.socketToRoom.delete(socketId);
