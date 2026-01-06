@@ -50,6 +50,9 @@ export class MapScene extends Phaser.Scene {
   private otherPlayers: Map<string, RemotePlayer> = new Map();
   private username: string = "";
 
+  // Room ID
+  private roomId: string = "";
+
   // Progress Bar
   private progressBarController?: ProgressBarController;
 
@@ -204,14 +207,14 @@ export class MapScene extends Phaser.Scene {
     const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
     const GITHUB_USERNAME = this.username;
 
-    // Player 인스턴스 생성
+    // Player 인스턴스 생성 (roomId는 나중에 서버로부터 받아서 설정)
     this.player = new Player(
       this,
       startX,
       startY,
       GITHUB_USERNAME,
       myId,
-      "room-1",
+      this.roomId || "pending",
     );
 
     // 충돌 설정
@@ -278,8 +281,15 @@ export class MapScene extends Phaser.Scene {
         x: this.player?.getContainer().x,
         y: this.player?.getContainer().y,
         username: GITHUB_USERNAME,
-        roomId: "room-1",
       });
+    });
+
+    // 서버로부터 배정된 roomId 수신
+    socket.on("joined", (data: { roomId: string }) => {
+      this.roomId = data.roomId;
+      if (this.player) {
+        this.player.setRoomId(data.roomId);
+      }
     });
 
     // 다른 탭에서 접속하여 현재 세션이 종료됨
