@@ -7,6 +7,7 @@ import { TaskList } from "./TaskList";
 import { Task } from "./types";
 import { useTasks } from "./hooks/useTasks";
 import { formatTime, formatTaskTime } from "./utils/timeFormat";
+import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 
 const INITIAL_TASKS: Task[] = [
   {
@@ -47,7 +48,7 @@ export default function App() {
     runningTask,
   } = useTasks(INITIAL_TASKS);
 
-  const [focusTime, setFocusTime] = useState(0);
+  const { focusTime, incrementFocusTime } = useFocusTimeStore();
   const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
@@ -56,13 +57,13 @@ export default function App() {
     let interval: number | undefined;
     if (isTimerRunning) {
       interval = window.setInterval(() => {
-        setFocusTime((prev) => prev + 1);
+        incrementFocusTime();
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning]);
+  }, [isTimerRunning, incrementFocusTime]);
 
   // 개별 작업 타이머 (실행 중인 Task의 시간만 증가)
   useEffect(() => {

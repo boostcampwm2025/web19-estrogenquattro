@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import Player from "../players/Player";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
+import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 
 interface PlayerData {
   userId: string;
@@ -66,6 +67,7 @@ export class MapScene extends Phaser.Scene {
     { image: "tiles1", tilemap: "tilemap1" },
     { image: "tiles2", tilemap: "tilemap2" },
   ];
+
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -459,18 +461,6 @@ export class MapScene extends Phaser.Scene {
       }
     });
 
-    // 5. 타이머 업데이트
-    socket.on("timerUpdated", (data: { userId: string; minutes: number }) => {
-      const remotePlayer = this.otherPlayers.get(data.userId);
-      if (remotePlayer) {
-        remotePlayer.updateTimer(data.minutes);
-      }
-
-      // 내 플레이어인 경우
-      if (this.player && data.userId === this.player.id) {
-        this.player.updateTimer(data.minutes);
-      }
-    });
 
     // 6. GitHub 초기 상태 수신 (새로고침 시 복원용)
     socket.on("github_state", (data: GithubStateData) => {
@@ -643,6 +633,12 @@ export class MapScene extends Phaser.Scene {
       if (remaining > 0) {
         this.progressBarController?.addProgress(remaining);
       }
+    }
+
+    // 집중 시간 업데이트
+    const focusTime = useFocusTimeStore.getState().focusTime;
+    if (this.player) {
+      this.player.updateFocusTime(focusTime);
     }
 
     // Player Update
