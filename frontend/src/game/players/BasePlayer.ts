@@ -154,4 +154,57 @@ export default class BasePlayer {
       this.bodySprite.stop();
     }
   }
+
+  // 말풍선 표시
+  showChatBubble(text: string) {
+    // 기존 말풍선 제거
+    const existingBubble = this.container.getByName("chatBubble");
+    if (existingBubble) {
+      existingBubble.destroy();
+    }
+
+    const bubbleContainer = this.scene.add.container(0, -70);
+    bubbleContainer.setName("chatBubble");
+
+    // 텍스트 생성
+    const chatText = this.scene.add.text(0, 0, text, {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "12px",
+      color: "#000000",
+      wordWrap: { width: 150, useAdvancedWrap: true },
+    });
+    chatText.setOrigin(0.5);
+
+    // 말풍선 배경 (둥근 사각형 + 꼬리)
+    const bounds = chatText.getBounds();
+    const padding = 10;
+    const width = bounds.width + padding * 2;
+    const height = bounds.height + padding * 2;
+
+    const bubbleGraphics = this.scene.add.graphics();
+    bubbleGraphics.fillStyle(0xffffff, 1);
+    bubbleGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+    // 말풍선 꼬리
+    bubbleGraphics.fillTriangle(
+      -5,
+      height / 2,
+      5,
+      height / 2,
+      0,
+      height / 2 + 8,
+    );
+
+    bubbleContainer.add([bubbleGraphics, chatText]);
+    this.container.add(bubbleContainer);
+
+    // 5초 후 제거
+    this.scene.time.delayedCall(5000, () => {
+      if (bubbleContainer.active) {
+        bubbleContainer.destroy();
+      }
+    });
+
+    // 말풍선이 맨 위에 오도록 설정
+    this.container.bringToTop(bubbleContainer);
+  }
 }

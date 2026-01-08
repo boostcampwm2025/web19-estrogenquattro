@@ -15,6 +15,7 @@ import { MoveReq } from './dto/move.dto';
 import { PlayTimeService } from './player.play-time-service';
 import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
+import { RoomService } from '../room/room.service';
 
 @WebSocketGateway({
   cors: {
@@ -30,6 +31,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly githubService: GithubPollService,
     private readonly githubGateway: GithubGateway,
     private readonly wsJwtGuard: WsJwtGuard,
+    private readonly roomService: RoomService,
   ) {}
   @WebSocketServer()
   server: Server;
@@ -71,6 +73,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.playTimeService.stopTimer(client.id);
       this.githubService.unsubscribeGithubEvent(client.id);
+      this.roomService.exit(client.id);
 
       // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
       if (this.userSockets.get(player.username) === client.id) {
@@ -83,10 +86,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('joining')
   handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string; roomId: string },
+    data: { x: number; y: number; username: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const roomId = data.roomId || 'default-room';
+    const roomId = this.roomService.randomJoin(client.id);
 
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
@@ -184,9 +187,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       player.x = data.x;
       player.y = data.y;
     }
+    if (!player) return;
 
     // 같은 방 사람들에게만 이동 정보 전송
-    client.to(data.roomId).emit('moved', {
+    client.to(player.roomId).emit('moved', {
       userId: client.id, // 항상 소켓 ID를 기준으로 브로드캐스트
       x: data.x,
       y: data.y,
@@ -198,7 +202,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private createTimerCallback(client: Socket) {
     return (minutes: number) => {
-      // roomId는 추후 방 배정 이후 수정 필요
       const player = this.players.get(client.id);
 
       // 같은 방의 모든 유저에게 전송 (자기 자신 포함)
