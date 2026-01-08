@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { formatPlayTime } from "@/utils/timeFormat";
+import { useUserInfoStore } from "@/stores/userInfoStore";
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -97,6 +98,20 @@ export default class BasePlayer {
     this.body.setCollideWorldBounds(true);
     this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
     this.body.setOffset(0, 10);
+
+    // 9. 인터랙션 설정 (클릭 시 모달 열기)
+
+    this.container.setInteractive(
+      new Phaser.Geom.Rectangle(0, 10, FACE_RADIUS * 2, FACE_RADIUS * 3),
+      Phaser.Geom.Rectangle.Contains,
+    );
+
+    // 인터랙션 영역 시각화 (빨간색 박스)
+    //scene.input.enableDebug(this.container, 0xff0000);
+
+    this.container.on("pointerdown", () => {
+      useUserInfoStore.getState().openModal(this.id, this.username);
+    });
   }
 
   // 공통 update 메서드 (마스크 위치 동기화)
