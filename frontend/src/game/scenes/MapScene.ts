@@ -45,6 +45,7 @@ export class MapScene extends Phaser.Scene {
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private gridVisible: boolean = true;
   private gridKey?: Phaser.Input.Keyboard.Key;
+  private xKey?: Phaser.Input.Keyboard.Key; // 테스트용 키
 
   // Remote Players
   private otherPlayers: Map<string, RemotePlayer> = new Map();
@@ -59,6 +60,13 @@ export class MapScene extends Phaser.Scene {
   // Contribution List
   private contributionController?: ContributionController;
 
+  // Map Management
+  private currentMapIndex: number = 0;
+  private maps = [
+    { image: "tiles1", tilemap: "tilemap1" },
+    { image: "tiles2", tilemap: "tilemap2" },
+  ];
+
   constructor() {
     super({ key: "MogakcoScene" });
   }
@@ -67,8 +75,14 @@ export class MapScene extends Phaser.Scene {
     // 맵 이미지와 Tiled JSON 로드
     // 외부 이미지(깃허브)를 로드하려면 CORS 권한이 필요
     this.load.crossOrigin = "anonymous";
-    this.load.image("tiles", "/assets/tempMap1.png");
-    this.load.tilemapTiledJSON("tilemap", "/assets/map.json");
+
+    // Map 1
+    this.load.image("tiles1", "/assets/tempMap1.png");
+    this.load.tilemapTiledJSON("tilemap1", "/assets/temp1Tilemap.json");
+
+    // Map 2
+    this.load.image("tiles2", "/assets/tempMap2.png");
+    this.load.tilemapTiledJSON("tilemap2", "/assets/temp2Tilemap.json");
 
     // Body Sprite Sheet
     this.load.spritesheet("body", "/assets/body.png", {
@@ -93,15 +107,28 @@ export class MapScene extends Phaser.Scene {
     // 2. Anims Setup
     this.createAnimations();
 
+    // 3. Player Setup
     this.setupPlayer();
 
+    // 4. Collisions Setup
+    this.setupCollisions();
+
+    // 5. Controls Setup
     this.setupControls();
 
+    // 6. UI Setup
+    this.setupUI();
+
+    // 7. Camera Setup
     this.setupCamera();
 
+    // 8. Socket Setup
     this.setupSocket();
 
+    // 9. Grid Setup
     this.drawGrid();
+
+    this.setupChat();
   }
 
   createAnimations() {
@@ -149,16 +176,20 @@ export class MapScene extends Phaser.Scene {
   }
 
   setupMap() {
+    // 현재 맵 인덱스에 따른 맵 로드
+    const currentMap = this.maps[this.currentMapIndex];
+
     // 맵 이미지 배치
-    const mapImage = this.add.image(0, 0, "tiles");
+    const mapImage = this.add.image(0, 0, currentMap.image);
     mapImage.setOrigin(0, 0);
     mapImage.setName("mapImage");
+    mapImage.setDepth(-1); // 맵 zIndex를 가장 낮게
 
     // 맵 크기에 맞게 월드 경계 설정 (Physics World Bounds)
     this.physics.world.setBounds(0, 0, mapImage.width, mapImage.height);
 
     // Tiled 맵 로드
-    const map = this.make.tilemap({ key: "tilemap" });
+    const map = this.make.tilemap({ key: currentMap.tilemap });
 
     // Physics Wall Group 생성
     this.walls = this.physics.add.staticGroup();
@@ -216,33 +247,60 @@ export class MapScene extends Phaser.Scene {
       myId,
       this.roomId || "pending",
     );
-
-    // 충돌 설정
-    if (this.walls && this.player) {
-      this.physics.add.collider(this.player.getContainer(), this.walls);
-    }
   }
 
   setupControls() {
-    const mapImage = this.children.getByName(
-      "mapImage",
-    ) as Phaser.GameObjects.Image;
-    const mapWidth = mapImage.width;
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.gridKey = this.input.keyboard.addKey(
         Phaser.Input.Keyboard.KeyCodes.G,
       );
+      // 테스트용 X 키 (게이지 100% 채우기)
+      this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    }
+
+    // 마우스 휠로 확대/축소
+    this.input.on("wheel", this.handleZoom, this);
+  }
+
+  setupUI() {
+    const mapImage = this.children.getByName(
+      "mapImage",
+    ) as Phaser.GameObjects.Image;
+    const mapWidth = mapImage.width;
+
+    // 기존 UI 제거 (맵 전환 시 중복 방지)
+    if (this.progressBarController) {
+      this.progressBarController.destroy();
+    }
+    if (this.contributionController) {
+      this.contributionController.destroy();
     }
 
     // 프로그레스바 생성
     this.progressBarController = createProgressBar(this, mapWidth);
 
+    // 게이지 100% 도달 시 맵 전환 콜백 등록
+    this.progressBarController.onProgressComplete = () => {
+      this.switchToNextMap();
+    };
+
     // 기여도 리스트 생성 (프로그레스바 아래)
     this.contributionController = createContributionList(this, mapWidth, 50);
+  }
 
-    // 마우스 휠로 확대/축소
-    this.input.on("wheel", this.handleZoom, this);
+  setupCollisions() {
+    // 플레이어 충돌 설정
+    if (this.walls && this.player) {
+      this.physics.add.collider(this.player.getContainer(), this.walls);
+    }
+
+    // 리모트 플레이어들 충돌 설정
+    this.otherPlayers.forEach((remotePlayer) => {
+      if (this.walls) {
+        this.physics.add.collider(remotePlayer.getContainer(), this.walls);
+      }
+    });
   }
 
   setupCamera() {
@@ -261,6 +319,71 @@ export class MapScene extends Phaser.Scene {
         );
       }
       this.setInitialZoom(mapImage.width, mapImage.height);
+    }
+  }
+
+  setupChat() {
+    const existingInput = document.getElementById("chat-input");
+    if (existingInput) {
+      existingInput.remove();
+    }
+
+    // 2. HTML Input 생성
+    const input = document.createElement("input");
+    input.id = "chat-input";
+    input.type = "text";
+    input.className =
+      "absolute bottom-[100px] left-1/2 -translate-x-1/2 w-[300px] p-[10px] rounded-[20px] border-[2px] border-[#333] bg-white hidden z-[1000] placeholder:text-gray-500 font-sans";
+    input.placeholder = "메시지를 입력하세요 (Enter로 전송)";
+
+    document.body.appendChild(input);
+
+    // 3. Enter 키 이벤트 (Phaser Input) - 채팅창 열기
+    this.input.keyboard?.on("keydown-ENTER", () => {
+      // 이미 포커스된 상태면 무시
+      if (document.activeElement === input) return;
+
+      input.style.display = "block";
+      input.focus();
+      this.input.keyboard!.enabled = false;
+    });
+
+    // 4. Input 내 Enter 키 이벤트 - 채팅 전송
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+
+      if (e.key === "Enter") {
+        if (input.value.trim() !== "") {
+          this.sendChat(input.value);
+        }
+        this.closeChatInput(input);
+      } else if (e.key === "Escape") {
+        this.closeChatInput(input);
+      }
+    });
+
+    this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      input.remove();
+    });
+  }
+
+  closeChatInput(input: HTMLInputElement) {
+    input.value = "";
+    input.style.display = "none";
+    input.blur();
+    this.input.keyboard!.enabled = true; // 게임 키 다시 활성화
+  }
+
+  sendChat(message: string) {
+    if (!this.player) return;
+
+    // 1. 내 캐릭터에 말풍선 표시
+    this.player.showChatBubble(message);
+
+    // 2. 소켓 전송
+    const socket = getSocket();
+    if (socket) {
+      socket.emit("chatting", { message });
     }
   }
 
@@ -370,6 +493,14 @@ export class MapScene extends Phaser.Scene {
         this.contributionController?.addContribution(data.username, totalCount);
       }
     });
+
+    // 8. 채팅 메시지 수신
+    socket.on("chatted", (data: { userId: string; message: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.showChatBubble(data.message);
+      }
+    });
   }
 
   addRemotePlayer(data: PlayerData) {
@@ -387,6 +518,11 @@ export class MapScene extends Phaser.Scene {
       username,
     );
     this.otherPlayers.set(data.userId, remotePlayer);
+
+    // 충돌 설정 (새 플레이어 추가 시에만)
+    if (this.walls) {
+      this.physics.add.collider(remotePlayer.getContainer(), this.walls);
+    }
 
     if (!this.textures.exists(username)) {
       const imageUrl = `/api/github-profile/${username}`;
@@ -500,10 +636,62 @@ export class MapScene extends Phaser.Scene {
       this.toggleGrid();
     }
 
+    // 테스트: X 키로 게이지 100% 채우기
+    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
+      const currentProgress = this.progressBarController?.getProgress() || 0;
+      const remaining = 100 - currentProgress;
+      if (remaining > 0) {
+        this.progressBarController?.addProgress(remaining);
+      }
+    }
+
     // Player Update
     this.player.update(this.cursors);
 
     // Remote Players Update
     this.otherPlayers.forEach((p) => p.update());
+  }
+
+  switchToNextMap() {
+    // 다음 맵 인덱스 계산(현재는 임시로 다음 인덱스)
+    this.currentMapIndex = (this.currentMapIndex + 1) % this.maps.length;
+
+    // 페이드아웃 효과
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+
+    this.cameras.main.once("camerafadeoutcomplete", () => {
+      // 기존 맵 제거
+      const oldMapImage = this.children.getByName("mapImage");
+      if (oldMapImage) {
+        oldMapImage.destroy();
+      }
+
+      // 기존 벽 제거
+      this.walls?.clear(true, true);
+
+      // 기존 그리드 제거
+      const oldGrid = this.children.getByName("grid");
+      if (oldGrid) {
+        oldGrid.destroy();
+      }
+
+      // 새 맵 로드
+      this.setupMap();
+
+      // 충돌 재설정
+      this.setupCollisions();
+
+      // UI 재설정 (프로그레스바, 기여도 리스트)
+      this.setupUI();
+
+      // 카메라 재설정
+      this.setupCamera();
+
+      // 그리드 재설정
+      this.drawGrid();
+
+      // 페이드인
+      this.cameras.main.fadeIn(500, 0, 0, 0);
+    });
   }
 }

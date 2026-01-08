@@ -89,6 +89,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     data: { x: number; y: number; username: string },
     @ConnectedSocket() client: Socket,
   ) {
+    const roomId = this.roomService.randomJoin(client.id);
+
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
     const { username, accessToken } = userData.user;
@@ -101,19 +103,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.log(
           `Disconnecting previous session for ${username}: ${existingSocketId}`,
         );
-
-        // 이전 세션 데이터 정리
-        const oldPlayer = this.players.get(existingSocketId);
-        if (oldPlayer) {
-          this.players.delete(existingSocketId);
-          this.server
-            .to(oldPlayer.roomId)
-            .emit('player_left', { userId: existingSocketId });
-          this.playTimeService.stopTimer(existingSocketId);
-          this.githubService.unsubscribeGithubEvent(existingSocketId);
-          this.roomService.exit(existingSocketId);
-        }
-
         existingSocket.emit('session_replaced', {
           message: '다른 탭에서 접속하여 현재 세션이 종료됩니다.',
         });
@@ -123,9 +112,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // username -> socketId 매핑 저장
     this.userSockets.set(username, client.id);
-
-    // 이전 세션 정리 후 방 배정
-    const roomId = this.roomService.randomJoin(client.id);
 
     void client.join(roomId);
 
@@ -139,10 +125,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       y: data.y,
     });
 
-    // 2. 클라이언트에게 배정된 roomId 전송
-    client.emit('joined', { roomId });
-
-    // 3. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
+    // 2. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
     const existingPlayers = Array.from(this.players.values()).filter(
       (p) => p.socketId !== client.id && p.roomId === roomId,
     );

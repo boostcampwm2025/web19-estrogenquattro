@@ -16,6 +16,10 @@ export interface ContributionController {
    * 모든 기여도를 초기화합니다.
    */
   reset: () => void;
+  /**
+   * 기여도 리스트의 모든 요소를 제거합니다.
+   */
+  destroy: () => void;
 }
 
 const MAX_DISPLAY_COUNT = 5; // 상위 5명만 표시
@@ -48,6 +52,7 @@ export function createContributionList(
     },
   );
   contributionText.setOrigin(0.5, 0); // 중앙 정렬
+  contributionText.setDepth(1000); // UI는 항상 최상위
 
   /**
    * 기여도 텍스트 업데이트
@@ -96,9 +101,17 @@ export function createContributionList(
     updateDisplay();
   };
 
+  /**
+   * 기여도 리스트의 모든 요소를 제거합니다.
+   */
+  const destroy = () => {
+    contributionText.destroy();
+  };
+
   return {
     addContribution,
     setContributions,
     reset,
+    destroy,
   };
 }

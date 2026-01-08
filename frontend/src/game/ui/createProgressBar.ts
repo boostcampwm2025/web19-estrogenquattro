@@ -19,6 +19,14 @@ export interface ProgressBarController {
    * 현재 프로그레스 값을 반환합니다.
    */
   getProgress: () => number;
+  /**
+   * 프로그레스가 100%에 도달했을 때 호출되는 콜백
+   */
+  onProgressComplete?: () => void;
+  /**
+   * 프로그레스바의 모든 그래픽 요소를 제거합니다.
+   */
+  destroy: () => void;
 }
 
 /**
@@ -66,8 +74,10 @@ export function createProgressBar(
     config.height,
     config.radius,
   );
+  progressBarBg.setDepth(1000); // UI는 항상 최상위
 
   const progressBar = scene.add.graphics();
+  progressBar.setDepth(1001); // 프로그레스바는 배경보다 위
 
   /**
    * 프로그레스 바 갱신 함수
@@ -119,15 +129,18 @@ export function createProgressBar(
 
   /**
    * 프로그레스를 특정 양만큼 증가시킵니다.
-   * 100%에 도달하면 자동으로 리셋됩니다.
+   * 100%에 도달하면 콜백을 호출하고 자동으로 리셋됩니다.
    */
   const addProgress = (amount: number) => {
     const newProgress = Math.min(progress + amount, 100);
 
     animateToProgress(newProgress, () => {
       if (progress >= 100) {
-        // 100% 도달 시 잠시 후 리셋
-        scene.time.delayedCall(100, () => {
+        // 100% 도달 시 콜백 호출
+        controller.onProgressComplete?.();
+
+        // 잠시 후 리셋
+        scene.time.delayedCall(1000, () => {
           animateToProgress(0);
         });
       }
@@ -154,10 +167,21 @@ export function createProgressBar(
    */
   const getProgress = () => progress;
 
-  return {
+  /**
+   * 프로그레스바의 모든 그래픽 요소를 제거합니다.
+   */
+  const destroy = () => {
+    progressBarBg.destroy();
+    progressBar.destroy();
+  };
+
+  const controller: ProgressBarController = {
     addProgress,
     setProgress,
     reset,
     getProgress,
+    destroy,
   };
+
+  return controller;
 }
