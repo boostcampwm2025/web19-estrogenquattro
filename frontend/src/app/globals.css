@@ -1,13 +1,62 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "NeoDunggeunmo";
+  src: url("/fonts/NeoDunggeunmoPro-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Retro pixel art colors */
+  --retro-bg-primary: #f5deb3;
+  --retro-bg-secondary: #e8d4b8;
+  --retro-border-dark: #8b6f47;
+  --retro-border-darker: #6b5335;
+  --retro-border-darkest: #5d4e37;
+  --retro-border-light: #a0826d;
+  --retro-text-primary: #5d4e37;
+  --retro-text-secondary: #8b6f47;
+  --retro-text-tertiary: #a0826d;
+  --retro-button-bg: #8b6f47;
+  --retro-button-hover: #6b5335;
+  --retro-button-text: #f5deb3;
+  --retro-hover-bg: #d4a574;
+  --retro-hover-darker: #c19a6b;
+  --retro-delete-hover: #8b4513;
+
+  /* Retro shadows */
+  --retro-shadow-sm: 2px 2px 0px 0px #8b6f47;
+  --retro-shadow-md: 2px 2px 0px 0px #6b5335;
+  --retro-shadow-lg: 3px 3px 0px 0px #5d4e37;
+  --retro-shadow-xl: 4px 4px 0px 0px #6b5335;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-retro-bg-primary: var(--retro-bg-primary);
+  --color-retro-bg-secondary: var(--retro-bg-secondary);
+  --color-retro-border-dark: var(--retro-border-dark);
+  --color-retro-border-darker: var(--retro-border-darker);
+  --color-retro-border-darkest: var(--retro-border-darkest);
+  --color-retro-border-light: var(--retro-border-light);
+  --color-retro-text-primary: var(--retro-text-primary);
+  --color-retro-text-secondary: var(--retro-text-secondary);
+  --color-retro-text-tertiary: var(--retro-text-tertiary);
+  --color-retro-button-bg: var(--retro-button-bg);
+  --color-retro-button-hover: var(--retro-button-hover);
+  --color-retro-button-text: var(--retro-button-text);
+  --color-retro-hover-bg: var(--retro-hover-bg);
+  --color-retro-hover-darker: var(--retro-hover-darker);
+  --color-retro-delete-hover: var(--retro-delete-hover);
+  --shadow-retro-sm: var(--retro-shadow-sm);
+  --shadow-retro-md: var(--retro-shadow-md);
+  --shadow-retro-lg: var(--retro-shadow-lg);
+  --shadow-retro-xl: var(--retro-shadow-xl);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -22,5 +71,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "NeoDunggeunmo", sans-serif;
 }
