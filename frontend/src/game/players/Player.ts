@@ -25,6 +25,10 @@ export default class Player extends BasePlayer {
     this.roomId = roomId;
   }
 
+  setRoomId(roomId: string) {
+    this.roomId = roomId;
+  }
+
   update(cursors?: Phaser.Types.Input.Keyboard.CursorKeys) {
     // 부모 update 호출 (마스크 동기화)
     super.update();
