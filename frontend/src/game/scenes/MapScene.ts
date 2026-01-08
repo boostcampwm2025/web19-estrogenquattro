@@ -124,7 +124,7 @@ export class MapScene extends Phaser.Scene {
 
     // 9. Grid Setup
     this.drawGrid();
-    
+
     this.setupChat();
   }
 
