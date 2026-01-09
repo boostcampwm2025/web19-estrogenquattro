@@ -68,7 +68,6 @@ export class MapScene extends Phaser.Scene {
     { image: "tiles2", tilemap: "tilemap2" },
   ];
 
-
   constructor() {
     super({ key: "MogakcoScene" });
   }
@@ -460,7 +459,6 @@ export class MapScene extends Phaser.Scene {
         this.otherPlayers.delete(data.userId);
       }
     });
-
 
     // 6. GitHub 초기 상태 수신 (새로고침 시 복원용)
     socket.on("github_state", (data: GithubStateData) => {
