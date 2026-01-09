@@ -73,6 +73,7 @@ export function TaskList({
               type="text"
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               placeholder="새 작업..."
               className="border-retro-border-dark text-retro-text-primary placeholder:text-retro-text-tertiary flex-1 rounded-none border-2 bg-white px-3 py-2"
               autoFocus

@@ -58,6 +58,7 @@ export function TaskItem({
               type="text"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
               className="border-retro-border-dark text-retro-text-primary h-8 flex-1 rounded-none border-2 bg-white px-2 text-sm"
               autoFocus
             />
