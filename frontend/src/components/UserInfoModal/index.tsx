@@ -15,8 +15,7 @@ const PIXEL_BTN_INACTIVE = "bg-amber-200 text-amber-900 hover:bg-amber-300";
 type TabType = "profile" | "activity" | "pet";
 
 export default function UserInfoModal() {
-  const { isOpen, targetUserId, targetUsername, closeModal } =
-    useUserInfoStore();
+  const { isOpen, targetUsername, closeModal } = useUserInfoStore();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
   // ESC 키로 닫기
