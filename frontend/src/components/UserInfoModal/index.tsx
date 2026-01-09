@@ -29,7 +29,7 @@ export default function UserInfoModal() {
   }, [closeModal]);
 
   useEffect(() => {
-    if (isOpen) setActiveTab("profile");
+    if (!isOpen) setActiveTab("profile");
   }, [isOpen]);
 
   if (!isOpen) return null;
