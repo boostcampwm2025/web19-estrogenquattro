@@ -17,9 +17,14 @@ import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
 import { RoomService } from '../room/room.service';
 
+const frontendUrls = (process.env.FRONTEND_URL || 'http://localhost:8080')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: frontendUrls,
     credentials: true,
   },
 })

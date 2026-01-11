@@ -9,8 +9,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.use(cookieParser());
+  const frontendUrls = configService
+    .getOrThrow<string>('FRONTEND_URL')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: configService.getOrThrow<string>('FRONTEND_URL'),
+    origin: frontendUrls,
     credentials: true,
   });
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
