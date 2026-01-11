@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# Frontend static files (built by Next.js)
+/public
+
 # Logs
 logs
 *.log
