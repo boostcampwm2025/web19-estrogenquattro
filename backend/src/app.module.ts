@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
@@ -26,6 +28,17 @@ import { RoomModule } from './room/room.module';
       defaultMetrics: {
         enabled: true,
       },
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      exclude: [
+        '/api/*path',
+        '/auth/github/*path',
+        '/auth/me',
+        '/auth/logout',
+        '/socket.io/*path',
+        '/metrics/*path',
+      ],
     }),
     PlayerModule,
     GithubModule,
