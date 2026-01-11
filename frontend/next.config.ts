@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
-  output: 'export',
-  distDir: '../backend/public',
+  output: isProd ? 'export' : undefined,
+  distDir: isProd ? '../backend/public' : '.next',
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
