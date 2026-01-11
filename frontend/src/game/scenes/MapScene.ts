@@ -93,7 +93,7 @@ export class MapScene extends Phaser.Scene {
 
     // Default Face
     const username = this.username || "boostcampwm2025";
-    this.load.image("face", `/api/github-profile/${username}`);
+    this.load.image("face", `https://avatars.githubusercontent.com/${username}`);
   }
 
   init() {
@@ -513,7 +513,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     if (!this.textures.exists(username)) {
-      const imageUrl = `/api/github-profile/${username}`;
+      const imageUrl = `https://avatars.githubusercontent.com/${username}`;
 
       this.load.image(username, imageUrl);
       this.load.once(`filecomplete-image-${username}`, () => {
