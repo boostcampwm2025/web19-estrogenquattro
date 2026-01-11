@@ -93,7 +93,10 @@ export class MapScene extends Phaser.Scene {
 
     // Default Face
     const username = this.username || "boostcampwm2025";
-    this.load.image("face", `https://avatars.githubusercontent.com/${username}`);
+    this.load.image(
+      "face",
+      `https://avatars.githubusercontent.com/${username}`,
+    );
   }
 
   init() {
