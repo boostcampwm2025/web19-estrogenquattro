@@ -410,6 +410,7 @@ ServeStaticModule.forRoot({
 - `FRONTEND_URL` 기본값을 `http://localhost:8080`으로 변경
 - `FRONTEND_URL`을 콤마(`,`)로 분리해 CORS 허용 origin 목록으로 사용
 - 로컬 환경에 `FRONTEND_URL=http://localhost:8080` 추가
+- HTTP/Socket.io CORS는 `backend/src/main.ts`에서 공통 처리
 
 ---
 
