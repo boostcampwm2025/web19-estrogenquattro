@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  output: 'export',
+  distDir: '../backend/public',
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -9,20 +10,6 @@ const nextConfig: NextConfig = {
       fs: false,
     };
     return config;
-  },
-  async headers() {
-    return [
-      {
-        source: "/github-image/:path*",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          {
-            key: "Access-Control-Allow-Methods",
-            value: "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-          },
-        ],
-      },
-    ];
   },
 };
 
