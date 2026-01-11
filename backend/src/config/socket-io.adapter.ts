@@ -1,7 +1,7 @@
 import { INestApplicationContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import type { ServerOptions } from 'socket.io';
+import type { Server, ServerOptions } from 'socket.io';
 import { getFrontendUrls } from './frontend-urls';
 
 export class ConfiguredSocketIoAdapter extends IoAdapter {
@@ -12,7 +12,7 @@ export class ConfiguredSocketIoAdapter extends IoAdapter {
     super(app);
   }
 
-  createIOServer(port: number, options?: ServerOptions) {
+  createIOServer(port: number, options?: ServerOptions): Server {
     const frontendUrls = getFrontendUrls(this.configService);
     const baseCors = {
       origin: frontendUrls,
@@ -26,6 +26,6 @@ export class ConfiguredSocketIoAdapter extends IoAdapter {
     return super.createIOServer(port, {
       ...options,
       cors,
-    });
+    }) as Server;
   }
 }
