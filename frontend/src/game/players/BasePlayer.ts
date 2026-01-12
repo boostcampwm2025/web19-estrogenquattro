@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { formatPlayTime } from "@/utils/timeFormat";
+import { formatFocusTime } from "@/utils/timeFormat";
 import { useUserInfoStore } from "@/stores/userInfoStore";
 
 export default class BasePlayer {
@@ -8,7 +8,7 @@ export default class BasePlayer {
   protected bodySprite: Phaser.GameObjects.Sprite;
   protected faceSprite: Phaser.GameObjects.Image;
   protected maskShape: Phaser.GameObjects.Graphics;
-  protected timerText: Phaser.GameObjects.Text;
+  protected focusTimeText: Phaser.GameObjects.Text;
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
 
@@ -69,26 +69,23 @@ export default class BasePlayer {
       })
       .setOrigin(0.5);
 
-    // 6. 접속 시간 표시
-    this.timerText = scene.add
-      .text(0, -35, formatPlayTime(0), {
-        fontSize: "12px",
+    // 6. 집중 시간 표시 (닉네임 아래)
+    this.focusTimeText = scene.add
+      .text(0, 66, formatFocusTime(0), {
+        fontSize: "10px",
         color: "#ffffff",
-        fontFamily: "Arial, sans-serif",
-        fontStyle: "bold",
+        backgroundColor: "#00000088",
+        padding: { x: 4, y: 2 },
       })
       .setOrigin(0.5);
-
-    this.timerText.setStroke("#000000", 4);
-    this.timerText.setShadow(1, 1, "#000000", 2, false, true);
 
     // 7. 컨테이너 추가
     this.container.add([
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
-      this.timerText,
       nameTag,
+      this.focusTimeText,
     ]);
 
     // 8. 물리 엔진 설정
@@ -122,10 +119,10 @@ export default class BasePlayer {
     }
   }
 
-  // 접속 시간 업데이트
-  updateTimer(minutes: number) {
-    if (this.timerText) {
-      this.timerText.setText(formatPlayTime(minutes));
+  // 집중 시간 업데이트
+  updateFocusTime(seconds: number) {
+    if (this.focusTimeText) {
+      this.focusTimeText.setText(formatFocusTime(seconds));
     }
   }
 
