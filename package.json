@@ -7,6 +7,7 @@
      "build:backend": "cd backend && npm run build",
      "build:frontend": "cd frontend && pnpm build",
      "build:all": "npm run build:backend && pnpm run build:frontend",
+     "migration:run": "cd backend && npm run migration:run",
      "deploy": "pnpm install:all && pnpm build:all && pm2 start ecosystem.config.js",
      "deploy:reload": "git pull && pnpm install:all && pnpm build:all && pm2 delete all && pm2 start ecosystem.config.js",
      "start": "pm2 start ecosystem.config.js",
