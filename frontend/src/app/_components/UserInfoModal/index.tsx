@@ -18,18 +18,19 @@ export default function UserInfoModal() {
   const { isOpen, targetUsername, closeModal } = useUserInfoStore();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
+  const handleClose = () => {
+    closeModal();
+    setActiveTab("profile");
+  };
+
   // ESC 키로 닫기
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") handleClose();
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [closeModal]);
-
-  useEffect(() => {
-    if (!isOpen) setActiveTab("profile");
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,7 +46,7 @@ export default function UserInfoModal() {
             </h2>
           </div>
           <button
-            onClick={closeModal}
+            onClick={handleClose}
             className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
           >
             X
