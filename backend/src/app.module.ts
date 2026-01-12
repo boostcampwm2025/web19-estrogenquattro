@@ -12,6 +12,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -26,6 +27,12 @@ import { RoomModule } from './room/room.module';
       defaultMetrics: {
         enabled: true,
       },
+    }),
+    TypeOrmModule.forRoot({
+      type: 'sqlite',
+      database: 'database.sqlite',
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     PlayerModule,
     GithubModule,

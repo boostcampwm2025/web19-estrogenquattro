@@ -5,6 +5,7 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "packageManager": "npm@11.4.2",
   "scripts": {
     "build": "nest build",
     "format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -29,6 +30,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.9",
+    "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.9",
     "@willsoto/nestjs-prometheus": "^6.0.2",
     "cookie-parser": "^1.4.7",
@@ -41,6 +43,8 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.28",
     "winston": "^3.19.0"
   },
   "devDependencies": {
