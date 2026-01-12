@@ -5,7 +5,7 @@ import { PlayerGateway } from './player.gateway';
 import { PlayTimeService } from './player.play-time-service';
 import { GithubModule } from '../github/github.module';
 import { RoomModule } from '../room/room.module';
-import { Player } from './player.entity';
+import { Player } from './entites/player.entity';
 
 @Module({
   imports: [
