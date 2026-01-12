@@ -14,6 +14,7 @@ import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './database/data-source';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { AppDataSource } from './database/data-source';
       },
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: async () => ({
+      useFactory: () => ({
         ...AppDataSource.options,
       }),
     }),
@@ -39,6 +40,7 @@ import { AppDataSource } from './database/data-source';
     AuthModule,
     ChatModule,
     RoomModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],
