@@ -1,5 +1,5 @@
 # compiled output
-/dist
+# /dist  # Commented out for deploy/static-build branch
 /node_modules
 /build
 
