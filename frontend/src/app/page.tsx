@@ -2,7 +2,7 @@ import AuthGuard from "@/_components/AuthGuard";
 import ClientOnly from "@/_components/ClientOnly";
 import Map from "@/_components/Map";
 import TasksMenu from "./_components/TasksMenu/TasksMenu";
-import UserInfoModal from "@/components/UserInfoModal";
+import UserInfoModal from "./_components/UserInfoModal";
 
 export default function Home() {
   return (
