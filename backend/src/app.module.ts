@@ -13,6 +13,7 @@ import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppDataSource } from './database/data-source';
 
 @Module({
   imports: [
@@ -28,11 +29,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         enabled: true,
       },
     }),
-    TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'database.sqlite',
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
+    TypeOrmModule.forRootAsync({
+      useFactory: async () => ({
+        ...AppDataSource.options,
+      }),
     }),
     PlayerModule,
     GithubModule,
