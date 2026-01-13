@@ -17,6 +17,7 @@ import { RoomModule } from './room/room.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import AppDataSource from './database/data-source';
 import { TaskModule } from './task/task.module';
+import { FocusTimeModule } from './focustime/focustime.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { TaskModule } from './task/task.module';
     ChatModule,
     RoomModule,
     TaskModule,
+    FocusTimeModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],
