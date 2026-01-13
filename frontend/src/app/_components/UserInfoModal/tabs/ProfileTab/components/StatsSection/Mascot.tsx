@@ -41,7 +41,7 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
         }}
         onMouseDown={() => setIsPressed(true)}
         onMouseUp={() => setIsPressed(false)}
-        className={`relative size-full cursor-pointer select-none transition-transform ${
+        className={`relative size-full cursor-pointer transition-transform select-none ${
           isHovered ? "translate-y-1" : ""
         } ${isPressed ? "scale-125" : ""} ${shouldBounce ? "animate-bounce-twice" : ""}`}
       >
@@ -49,7 +49,7 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
           src={src}
           alt={alt}
           fill
-          className="select-none object-contain"
+          className="object-contain select-none"
           draggable={false}
         />
       </button>
@@ -60,13 +60,15 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
           isHovered ? "opacity-80" : "opacity-0"
         } ${hasFloated ? "animate-heart-float" : ""}`}
       >
-        <div className={`select-none transition-transform ${isPressed ? "scale-125" : ""}`}>
+        <div
+          className={`transition-transform select-none ${isPressed ? "scale-125" : ""}`}
+        >
           <Image
             src="/assets/heart.png"
             alt="Heart"
             width={24}
             height={24}
-            className="select-none object-contain"
+            className="object-contain select-none"
             draggable={false}
           />
         </div>
