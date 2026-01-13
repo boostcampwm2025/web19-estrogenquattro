@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { formatFocusTime } from "@/utils/timeFormat";
+import { useUserInfoStore } from "@/stores/userInfoStore";
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -10,6 +11,7 @@ export default class BasePlayer {
   protected focusTimeText: Phaser.GameObjects.Text;
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
+  protected bodyGlow: Phaser.FX.Glow | null = null;
 
   public id: string;
   public username: string;
@@ -94,6 +96,42 @@ export default class BasePlayer {
     this.body.setCollideWorldBounds(true);
     this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
     this.body.setOffset(0, 10);
+
+    // 9. 인터랙션 설정 (클릭 시 모달 열기)
+
+    this.container.setInteractive(
+      new Phaser.Geom.Rectangle(0, 10, FACE_RADIUS * 2, FACE_RADIUS * 3),
+      Phaser.Geom.Rectangle.Contains,
+    );
+
+    // 인터랙션 영역 시각화 (빨간색 박스)
+    //scene.input.enableDebug(this.container, 0xff0000);
+
+    // Body Glow Effect 초기화 (비활성 상태로 시작)
+    if (this.bodySprite.preFX) {
+      this.bodyGlow = this.bodySprite.preFX.addGlow(0xffff00, 4, 0, false);
+      this.bodyGlow.active = false;
+    }
+
+    this.container.on("pointerdown", () => {
+      useUserInfoStore.getState().openModal(this.id, this.username);
+    });
+
+    this.container.on("pointerover", () => {
+      this.scene.game.canvas.style.cursor = "pointer";
+      this.borderGraphics.clear();
+      this.borderGraphics.lineStyle(3, 0xffff00, 1);
+      this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
+      if (this.bodyGlow) this.bodyGlow.active = true;
+    });
+
+    this.container.on("pointerout", () => {
+      this.scene.game.canvas.style.cursor = "default";
+      this.borderGraphics.clear();
+      this.borderGraphics.lineStyle(2, 0xffffff, 1);
+      this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
+      if (this.bodyGlow) this.bodyGlow.active = false;
+    });
   }
 
   // 공통 update 메서드 (마스크 위치 동기화)

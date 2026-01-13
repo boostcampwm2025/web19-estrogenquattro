@@ -27,14 +27,15 @@
     "migration:revert": "pnpm run typeorm migration:revert -d src/database/data-source.ts"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.1",
+    "@nestjs/common": "^11.0.2",
     "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^11.0.1",
+    "@nestjs/core": "^11.0.2",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.9",
     "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/serve-static": "^5.0.4",
     "@nestjs/websockets": "^11.1.9",
     "@willsoto/nestjs-prometheus": "^6.0.2",
     "cookie-parser": "^1.4.7",
