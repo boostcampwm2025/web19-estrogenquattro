@@ -14,7 +14,7 @@ export enum FocusStatus {
 
 @Entity('daily_focus_time')
 export class DailyFocusTime {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Player)
@@ -34,6 +34,6 @@ export class DailyFocusTime {
   @Column({ name: 'created_date', type: 'date', nullable: false })
   createdDate: Date;
 
-  @Column({ name: 'last_focus_start_time', type: 'timestamp', nullable: true })
+  @Column({ name: 'last_focus_start_time', type: 'date', nullable: true })
   lastFocusStartTime: Date;
 }
