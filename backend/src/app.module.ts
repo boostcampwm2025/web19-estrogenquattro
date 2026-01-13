@@ -13,7 +13,7 @@ import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './database/data-source';
+import AppDataSource from './database/data-source';
 import { TaskModule } from './task/task.module';
 
 @Module({

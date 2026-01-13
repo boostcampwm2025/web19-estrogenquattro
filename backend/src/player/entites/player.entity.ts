@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('players')
 export class Player {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn()
   id: string;
 
   @Column({ type: 'bigint', name: 'social_id', unique: true, nullable: false })
