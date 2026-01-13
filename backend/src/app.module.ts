@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
@@ -12,6 +14,9 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import AppDataSource from './database/data-source';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -27,11 +32,28 @@ import { RoomModule } from './room/room.module';
         enabled: true,
       },
     }),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        ...AppDataSource.options,
+      }),
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      exclude: [
+        '/api/*path',
+        '/auth/github/*path',
+        '/auth/me',
+        '/auth/logout',
+        '/socket.io/*path',
+        '/metrics/*path',
+      ],
+    }),
     PlayerModule,
     GithubModule,
     AuthModule,
     ChatModule,
     RoomModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],

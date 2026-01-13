@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
-  turbopack: {},
+  output: isProd ? 'export' : undefined,
+  distDir: isProd ? '../backend/public' : '.next',
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -9,20 +12,6 @@ const nextConfig: NextConfig = {
       fs: false,
     };
     return config;
-  },
-  async headers() {
-    return [
-      {
-        source: "/github-image/:path*",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          {
-            key: "Access-Control-Allow-Methods",
-            value: "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-          },
-        ],
-      },
-    ];
   },
 };
 

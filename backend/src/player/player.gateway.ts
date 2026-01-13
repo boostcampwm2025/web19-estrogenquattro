@@ -17,12 +17,7 @@ import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
 import { RoomService } from '../room/room.service';
 
-@WebSocketGateway({
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-  },
-})
+@WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(PlayerGateway.name);
 

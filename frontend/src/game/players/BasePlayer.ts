@@ -11,6 +11,7 @@ export default class BasePlayer {
   protected focusTimeText: Phaser.GameObjects.Text;
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
+  protected bodyGlow: Phaser.FX.Glow | null = null;
 
   public id: string;
   public username: string;
@@ -106,8 +107,30 @@ export default class BasePlayer {
     // 인터랙션 영역 시각화 (빨간색 박스)
     //scene.input.enableDebug(this.container, 0xff0000);
 
+    // Body Glow Effect 초기화 (비활성 상태로 시작)
+    if (this.bodySprite.preFX) {
+      this.bodyGlow = this.bodySprite.preFX.addGlow(0xffff00, 4, 0, false);
+      this.bodyGlow.active = false;
+    }
+
     this.container.on("pointerdown", () => {
       useUserInfoStore.getState().openModal(this.id, this.username);
+    });
+
+    this.container.on("pointerover", () => {
+      this.scene.game.canvas.style.cursor = "pointer";
+      this.borderGraphics.clear();
+      this.borderGraphics.lineStyle(3, 0xffff00, 1);
+      this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
+      if (this.bodyGlow) this.bodyGlow.active = true;
+    });
+
+    this.container.on("pointerout", () => {
+      this.scene.game.canvas.style.cursor = "default";
+      this.borderGraphics.clear();
+      this.borderGraphics.lineStyle(2, 0xffffff, 1);
+      this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
+      if (this.bodyGlow) this.bodyGlow.active = false;
     });
   }
 

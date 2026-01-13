@@ -8,7 +8,9 @@ export const envValidationSchema = Joi.object({
 
   // 선택 환경변수 (기본값 있음)
   PORT: Joi.number().default(8080),
-  FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+  FRONTEND_URL: Joi.string()
+    .pattern(/^[^,]+$/)
+    .default('http://localhost:8080'),
   GITHUB_CALLBACK_URL: Joi.string().default(
     'http://localhost:8080/auth/github/callback',
   ),
