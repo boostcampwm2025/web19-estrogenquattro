@@ -86,3 +86,76 @@ body {
   color: var(--foreground);
   font-family: "NeoDunggeunmo", sans-serif;
 }
+
+@keyframes float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -0.25rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -0.25rem);
+  }
+}
+
+@keyframes wave-up {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes heart-float {
+  0%,
+  100% {
+    transform: translate(-50%, -0.5rem);
+  }
+  50% {
+    transform: translate(-50%, -0.75rem);
+  }
+}
+
+@keyframes bounce-twice {
+  0% {
+    transform: translateY(0);
+  }
+  10% {
+    transform: translateY(-0.5rem);
+  }
+  20% {
+    transform: translateY(0);
+  }
+  30%,
+  40% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@theme {
+  --animate-float-up: float-up 0.3s ease-out forwards;
+  --animate-wave-up: wave-up 0.8s ease-in-out infinite;
+  --animate-heart-float: heart-float 3s ease-in-out infinite;
+  --animate-bounce-twice: bounce-twice 3s ease-in-out;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
