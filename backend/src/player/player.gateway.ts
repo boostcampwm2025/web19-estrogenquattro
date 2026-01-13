@@ -130,26 +130,30 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지
     const roomPlayerIds = this.roomService.getPlayerIds(roomId);
-    const focusStatuses = await this.focusTimeService.findAllStatuses(roomPlayerIds);
+    const focusStatuses =
+      await this.focusTimeService.findAllStatuses(roomPlayerIds);
     // Map playerId -> status info
-    const statusMap = new Map<number, { status: string, lastFocusStartTime: Date | null }>();
-    focusStatuses.forEach(fs => {
-        statusMap.set(fs.player.id, {
-            status: fs.status,
-            lastFocusStartTime: fs.lastFocusStartTime
-        });
+    const statusMap = new Map<
+      number,
+      { status: string; lastFocusStartTime: Date | null }
+    >();
+    focusStatuses.forEach((fs) => {
+      statusMap.set(fs.player.id, {
+        status: fs.status,
+        lastFocusStartTime: fs.lastFocusStartTime,
+      });
     });
 
     // 2. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
     const existingPlayers = Array.from(this.players.values())
       .filter((p) => p.socketId !== client.id && p.roomId === roomId)
       .map((p) => {
-          const status = statusMap.get(p.playerId);
-          return {
-              ...p,
-              status: status?.status ?? 'RESTING',
-              lastFocusStartTime: status?.lastFocusStartTime ?? null,
-          };
+        const status = statusMap.get(p.playerId);
+        return {
+          ...p,
+          status: status?.status ?? 'RESTING',
+          lastFocusStartTime: status?.lastFocusStartTime ?? null,
+        };
       });
 
     //내가 볼 기존 사람들 그리기

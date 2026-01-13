@@ -79,19 +79,14 @@ export class FocusTimeService {
     }
 
     focusTime.status = FocusStatus.RESTING;
-    
+
     return this.focusTimeRepository.save(focusTime);
   }
 
   async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
     if (playerIds.length === 0) return [];
-    
+
     const now = new Date();
-    // Assuming createdDate matches 'now' (today).
-    // Note: TypeORM date comparison might need strictly 'YYYY-MM-DD'.
-    // If 'createdDate' is type 'date', TypeORM usually handles JS Date object by stripping time.
-    // However, to be robust, we pass the Date object.
-    
     return this.focusTimeRepository.find({
       where: {
         player: { id: In(playerIds) },
