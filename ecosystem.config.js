@@ -9,7 +9,7 @@ module.exports = {
     {
       name: 'frontend',
       cwd: './frontend',
-      script: 'npm run dev',
+      script: 'pnpm run dev',
       args: 'start -p 3000',
       instances: 1,
     }
