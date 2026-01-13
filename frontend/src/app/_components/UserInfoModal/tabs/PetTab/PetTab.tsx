@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usePointStore } from "@/stores/pointStore";
 import PetCard from "./components/petCard";
+import PetGacha from "./components/PetGacha";
 
 const PET_EVOLUTION_DATA = [
   {
@@ -58,7 +59,7 @@ export default function PetTab() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 text-amber-900">
+    <div className="flex h-auto flex-col gap-4 text-amber-900">
       <PetCard
         stage={stage}
         exp={exp}
@@ -66,6 +67,7 @@ export default function PetTab() {
         currentStageData={currentStageData}
         onAction={handleAction}
       />
+      <PetGacha />
     </div>
   );
 }
