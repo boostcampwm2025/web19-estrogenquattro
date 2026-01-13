@@ -74,3 +74,26 @@ body {
   color: var(--foreground);
   font-family: "NeoDunggeunmo", sans-serif;
 }
+
+/* Pet Interaction Animation */
+.flying-heart {
+  @apply pointer-events-none absolute text-4xl text-red-500;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  pointer-events: none;
+  animation: float-up 0.8s ease-out forwards;
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translateX(var(--random-x, 0px)) translateY(0) scale(1);
+    z-index: 50;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(var(--random-x, 0px)) translateY(-60px) scale(0.5);
+    z-index: 50;
+  }
+}

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useState } from "react";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -25,13 +26,45 @@ export default function PetCard({
   currentStageData,
   onAction,
 }: PetCardProps) {
+  const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
+
   const isMaxStage = maxExp === 0;
   const isReadyToEvolve = !isMaxStage && exp >= maxExp;
+
+  const handleFeedClick = () => {
+    onAction();
+
+    // 진화/만렙이 아닐 때(밥주기 일 때)만 하트 효과 생성
+    if (!isReadyToEvolve && !isMaxStage) {
+      const id = Date.now();
+      const x = Math.random() * 40 - 20; // -20px ~ +20px
+      setHearts((prev) => [...prev, { id, x }]);
+
+      setTimeout(() => {
+        setHearts((prev) => prev.filter((heart) => heart.id !== id));
+      }, 800);
+    }
+  };
 
   return (
     <div className={`flex gap-6 bg-amber-50 p-4 ${PIXEL_BORDER}`}>
       <div className="flex flex-col items-center justify-center">
         <div className="relative h-32 w-32 drop-shadow-xl">
+          {hearts.map((heart) => (
+            <span
+              key={heart.id}
+              className="flying-heart"
+              style={
+                {
+                  "--random-x": `${heart.x}px`,
+                  left: "50%", // Center origin horizontally
+                  top: "0", // Start from top of container (close to pet head)
+                } as React.CSSProperties
+              }
+            >
+              ❤️
+            </span>
+          ))}
           <Image
             src={currentStageData.image}
             alt={currentStageData.name}
@@ -80,19 +113,21 @@ export default function PetCard({
             </div>
           </div>
 
-          <button
-            onClick={onAction}
-            disabled={isMaxStage}
-            className={`flex h-12 w-1/5 flex-col items-center justify-center rounded text-lg leading-tight font-bold transition-all ${
-              isMaxStage
-                ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
-                : isReadyToEvolve
-                  ? "border-r-4 border-b-4 border-amber-800 bg-amber-600 text-white hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:border-r-0 active:border-b-0"
-                  : PIXEL_BTN
-            }`}
-          >
-            <span>{isReadyToEvolve ? "✨ 진화" : "🍖 밥주기"}</span>
-          </button>
+          <div className="relative flex w-1/5 justify-center">
+            <button
+              onClick={handleFeedClick}
+              disabled={isMaxStage}
+              className={`flex h-12 w-full flex-col items-center justify-center rounded text-lg leading-tight font-bold transition-all ${
+                isMaxStage
+                  ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
+                  : isReadyToEvolve
+                    ? "border-r-4 border-b-4 border-amber-800 bg-amber-600 text-white hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:border-r-0 active:border-b-0"
+                    : PIXEL_BTN
+              }`}
+            >
+              <span>{isReadyToEvolve ? "✨ 진화" : "🍖 밥주기"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
