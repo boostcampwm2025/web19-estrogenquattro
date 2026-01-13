@@ -4,7 +4,7 @@ import { useUserInfoStore } from "@/stores/userInfoStore";
 import { useEffect, useState } from "react";
 import ProfileTab from "./tabs/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
-import PetTab from "./tabs/PetTab";
+import PetTab from "./tabs/PetTab/PetTab";
 
 // Pixel Art Style Constants
 const PIXEL_BORDER = "border-3 border-amber-900";
