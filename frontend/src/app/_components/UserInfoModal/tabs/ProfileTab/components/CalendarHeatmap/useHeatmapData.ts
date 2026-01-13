@@ -13,12 +13,14 @@ interface UseHeatmapDataResult {
 
 export function useHeatmapData(tasks: Task[]): UseHeatmapDataResult {
   const yearData = useMemo(() => {
-    const getTaskCountByDate = (date: Date): number => {
-      return tasks.filter((task) => {
-        if (!task.date) return false;
-        return task.date.toDateString() === date.toDateString();
-      }).length;
-    };
+    const taskCountByDate = new Map<string, number>();
+
+    tasks.forEach((task) => {
+      if (task.date) {
+        const dateKey = task.date.toDateString();
+        taskCountByDate.set(dateKey, (taskCountByDate.get(dateKey) || 0) + 1);
+      }
+    });
 
     const days: DayData[] = [];
     const today = new Date();
@@ -26,9 +28,10 @@ export function useHeatmapData(tasks: Task[]): UseHeatmapDataResult {
     oneYearAgo.setFullYear(today.getFullYear() - 1);
 
     for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
+      const dateKey = d.toDateString();
       days.push({
         date: new Date(d),
-        value: getTaskCountByDate(d),
+        value: taskCountByDate.get(dateKey) || 0,
       });
     }
     return days;

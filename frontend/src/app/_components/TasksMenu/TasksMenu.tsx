@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TaskTimer } from "./TaskTimer";
 import { TaskList } from "./TaskList";
-import { Task } from "./types";
-import { useTasks } from "./hooks/useTasks";
 import { formatTime, formatTaskTime } from "./utils/timeFormat";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "1",
-    text: "API 엔드포인트 상성 문서",
-    completed: false,
-    time: 0,
-    isRunning: false,
-  },
-];
+import { useTasksStore } from "@/stores/useTasksStore";
+import { useShallow } from "zustand/react/shallow";
 
 export default function App() {
   const [isExpanded, setIsExpanded] = useState(true);
+
   const {
     tasks,
     addTask,
@@ -30,9 +21,28 @@ export default function App() {
     toggleTaskTimer,
     stopAllTasks,
     incrementTaskTime,
-    completedCount,
-    runningTask,
-  } = useTasks(INITIAL_TASKS);
+  } = useTasksStore(
+    useShallow((state) => ({
+      tasks: state.tasks,
+      addTask: state.addTask,
+      toggleTask: state.toggleTask,
+      deleteTask: state.deleteTask,
+      editTask: state.editTask,
+      toggleTaskTimer: state.toggleTaskTimer,
+      stopAllTasks: state.stopAllTasks,
+      incrementTaskTime: state.incrementTaskTime,
+    })),
+  );
+
+  const completedCount = useMemo(
+    () => tasks.filter((task) => task.completed).length,
+    [tasks],
+  );
+
+  const runningTask = useMemo(
+    () => tasks.find((task) => task.isRunning),
+    [tasks],
+  );
 
   const { focusTime, incrementFocusTime } = useFocusTimeStore();
   const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
