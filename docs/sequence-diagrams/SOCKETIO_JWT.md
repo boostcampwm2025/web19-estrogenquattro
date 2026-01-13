@@ -79,7 +79,7 @@ const socket = io(API_URL, {
 ## 서버 검증 코드 구조
 
 ```typescript
-@WebSocketGateway({ cors: { origin: FRONTEND_URL, credentials: true } })
+@WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection {
   constructor(private wsJwtGuard: WsJwtGuard) {}
 
@@ -93,3 +93,5 @@ export class PlayerGateway implements OnGatewayConnection {
   }
 }
 ```
+
+> CORS 설정은 `backend/src/main.ts`에서 Socket.io 어댑터로 전역 적용됩니다.

@@ -6,6 +6,7 @@ import { GithubGuard } from './github.guard';
 import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
+import { getFrontendUrls } from '../config/frontend-urls';
 
 @Controller('auth')
 export class AuthController {
@@ -47,7 +48,8 @@ export class AuthController {
 
     res.cookie('access_token', token, cookieOptions);
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL')!;
+    const frontendUrls = getFrontendUrls(this.configService);
+    const frontendUrl = frontendUrls[0];
     this.logger.log(`Redirecting to: ${frontendUrl}/auth/callback`);
     res.redirect(`${frontendUrl}/auth/callback`);
   }
@@ -64,6 +66,7 @@ export class AuthController {
   @Get('logout')
   logout(@Res() res: Response) {
     res.clearCookie('access_token');
-    res.redirect(this.configService.get<string>('FRONTEND_URL')!);
+    const frontendUrls = getFrontendUrls(this.configService);
+    res.redirect(frontendUrls[0]);
   }
 }
