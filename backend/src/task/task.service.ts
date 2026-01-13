@@ -57,22 +57,30 @@ export class TaskService {
   }
 
   async findOneById(id: number): Promise<Task> {
-    const task = await this.taskRepository.findOne({ where: { id } });
+    const task = await this.taskRepository.findOne({
+      where: { id },
+      relations: ['player'],
+    });
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
     return task;
   }
 
-  async toggleCompleteTask(taskId: number): Promise<TaskRes> {
+  async toggleCompleteTask(taskId: number, playerId: number): Promise<TaskRes> {
     const task = await this.findOneById(taskId);
 
-    if (task.completedDate) {
-      task.completedDate = null;
-      task.createdDate = new Date();
-    } else {
-      task.completedDate = new Date();
+    if (task.player.id !== playerId) {
+      throw new NotFoundException(`is not player${playerId}'s Task`);
     }
+
+    if (task.player.id)
+      if (task.completedDate) {
+        task.completedDate = null;
+        task.createdDate = new Date();
+      } else {
+        task.completedDate = new Date();
+      }
 
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);

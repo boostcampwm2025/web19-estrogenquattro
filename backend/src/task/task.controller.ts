@@ -14,6 +14,7 @@ import { CreateTaskReq } from './dto/create-task.req.dto';
 import { TaskListRes } from './dto/task-list.res.dto';
 import { TaskRes } from './dto/task.res.dto';
 import { JwtGuard } from '../auth/jwt.guard';
+import { PlayerId } from '../auth/player-id.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('api/tasks')
@@ -36,7 +37,8 @@ export class TaskController {
   @Patch(':taskId')
   async toggleCompleteTask(
     @Param('taskId', ParseIntPipe) taskId: number,
+    @PlayerId() playerId: number,
   ): Promise<TaskRes> {
-    return this.taskService.toggleCompleteTask(taskId);
+    return this.taskService.toggleCompleteTask(taskId, playerId);
   }
 }
