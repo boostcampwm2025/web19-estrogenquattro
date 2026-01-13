@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
@@ -9,7 +10,7 @@ import { FocusTimeService } from './focustime.service';
 import { User } from '../auth/user.interface';
 
 @WebSocketGateway()
-export class FocusTimeGateway {
+export class FocusTimeGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(FocusTimeGateway.name);
 
   constructor(private readonly focusTimeService: FocusTimeService) {}
@@ -64,6 +65,25 @@ export class FocusTimeGateway {
     } else {
       this.logger.warn(
         `User ${user.username} sent resting but is not in any room`,
+      );
+    }
+  }
+
+  async handleDisconnect(@ConnectedSocket() client: Socket) {
+    const user = client.data.user as User;
+
+    if (!user) {
+      return;
+    }
+
+    try {
+      await this.focusTimeService.startResting(user.playerId);
+      this.logger.log(
+        `User ${user.username} disconnected. Setting status to RESTING.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error handling disconnect for user ${user.username}: ${error.message}`,
       );
     }
   }
