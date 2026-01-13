@@ -71,7 +71,9 @@ export default function UserInfoModal() {
           />
         </div>
 
-        <div className={`my-2 bg-white/50 p-4 ${PIXEL_BORDER} h-[500px]`}>
+        <div
+          className={`my-2 bg-white/50 p-4 ${PIXEL_BORDER} retro-scrollbar h-[500px] overflow-y-auto`}
+        >
           {activeTab === "profile" && <ProfileTab />}
           {activeTab === "activity" && <ActivityTab />}
           {activeTab === "pet" && <PetTab />}

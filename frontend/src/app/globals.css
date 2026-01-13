@@ -97,3 +97,18 @@ body {
     z-index: 50;
   }
 }
+
+/* 스크롤바 커스텀 */
+.retro-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+.retro-scrollbar::-webkit-scrollbar-track {
+  background: #f5deb3;
+}
+.retro-scrollbar::-webkit-scrollbar-thumb {
+  background: #8b6f47;
+  border: 2px solid #f5deb3;
+}
+.retro-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b5335;
+}
