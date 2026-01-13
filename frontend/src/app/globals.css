@@ -100,17 +100,17 @@ body {
 
 /* 갸차 스프라이트 애니메이션 */
 .gacha-egg {
-  width: 90px;
+  width: 105px;
   height: 100px;
   background-image: url("/assets/pets/spritePetEgg.png");
-  background-size: 100% 500%; /* 총 5프레임 시트이미지 */
+  background-size: 100% 800%; /* 총 8프레임 시트이미지 */
   background-position: 0 0; /* 첫 프레임 부터 시작 */
   background-repeat: no-repeat;
   image-rendering: pixelated;
 }
 
 .gacha-egg.animating {
-  animation: egg-hatch 4s steps(4) forwards;
+  animation: egg-hatch 4s steps(7) forwards;
 }
 
 @keyframes egg-hatch {
