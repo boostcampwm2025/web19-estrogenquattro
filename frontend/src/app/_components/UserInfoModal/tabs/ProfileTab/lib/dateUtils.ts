@@ -12,7 +12,10 @@ export function isSameDay(date1: Date, date2?: Date): boolean {
   return date1.toDateString() === date2.toDateString();
 }
 
-export function getDateRange(daysAgo: number): { startDate: Date; endDate: Date } {
+export function getDateRange(daysAgo: number): {
+  startDate: Date;
+  endDate: Date;
+} {
   const endDate = new Date();
   const startDate = new Date(endDate);
   startDate.setDate(endDate.getDate() - daysAgo);
