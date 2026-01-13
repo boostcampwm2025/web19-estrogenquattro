@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useState } from "react";
+import { usePointStore } from "@/stores/pointStore";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -27,6 +28,7 @@ export default function PetCard({
   onAction,
 }: PetCardProps) {
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
+  const points = usePointStore((state) => state.points);
 
   const isMaxStage = maxExp === 0;
   const isReadyToEvolve = !isMaxStage && exp >= maxExp;
@@ -116,16 +118,16 @@ export default function PetCard({
           <div className="relative flex w-1/5 justify-center">
             <button
               onClick={handleFeedClick}
-              disabled={isMaxStage}
+              disabled={isMaxStage || (!isReadyToEvolve && points < 10)}
               className={`flex h-12 w-full flex-col items-center justify-center rounded text-lg leading-tight font-bold transition-all ${
-                isMaxStage
+                isMaxStage || (!isReadyToEvolve && points < 10)
                   ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
                   : isReadyToEvolve
                     ? "border-r-4 border-b-4 border-amber-800 bg-amber-600 text-white hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:border-r-0 active:border-b-0"
                     : PIXEL_BTN
               }`}
             >
-              <span>{isReadyToEvolve ? "✨ 진화" : "🍖 밥주기"}</span>
+              <span>{isReadyToEvolve ? "✨ 진화" : "밥주기 (10 P)"}</span>
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePointStore } from "@/stores/pointStore";
 import PetCard from "./components/petCard";
 
 const PET_EVOLUTION_DATA = [
@@ -19,7 +20,7 @@ const PET_EVOLUTION_DATA = [
   {
     stage: 3,
     name: "시니어GO",
-    description: "모든 성장을 마친 전설적인 펫입니다. 위엄이 느껴집니다.",
+    description: "모든 성장을 마친 고인물 펫입니다. 위엄이 느껴집니다.",
     image: "/assets/pets/pet3.png",
     maxExp: 0, // 0을 MAX level로 판단
   },
@@ -28,6 +29,7 @@ const PET_EVOLUTION_DATA = [
 export default function PetTab() {
   const [stage, setStage] = useState(1);
   const [exp, setExp] = useState(0);
+  const usePoints = usePointStore((state) => state.subtractPoints);
 
   // 현재 단계 데이터 가져오기
   const currentStageData =
@@ -39,12 +41,18 @@ export default function PetTab() {
 
   const handleAction = () => {
     if (isReadyToEvolve) {
-      // 진화 로직
+      // 진화 로직 (포인트 소모 없음)
       setStage((prev) => Math.min(prev + 1, PET_EVOLUTION_DATA.length));
       setExp(0);
     } else {
-      // 밥주기 로직 (만렙이면 경험치 안 오름)
+      // 밥주기 로직 (10 포인트 소모)
       if (isMaxStage) return;
+
+      if (!usePoints(10)) {
+        alert("포인트가 부족합니다! (필요: 10 P)");
+        return;
+      }
+
       setExp((prev) => Math.min(prev + 10, maxExp));
     }
   };
