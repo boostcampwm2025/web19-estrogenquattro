@@ -36,6 +36,7 @@ import { TaskModule } from './task/task.module';
       useFactory: () => ({
         ...AppDataSource.options,
       }),
+    }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
       exclude: [
