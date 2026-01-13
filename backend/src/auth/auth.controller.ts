@@ -8,6 +8,7 @@ import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
 import { getFrontendUrls } from '../config/frontend-urls';
 import { PlayerService } from '../player/player.service';
+import { UserStore } from './user.store';
 
 @Controller('auth')
 export class AuthController {
@@ -17,6 +18,7 @@ export class AuthController {
     private jwtService: JwtService,
     private configService: ConfigService,
     private playerService: PlayerService,
+    private userStore: UserStore,
   ) {}
 
   @Get('github')
@@ -30,14 +32,11 @@ export class AuthController {
   async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     this.logger.log(`GitHub callback - username: ${user.username}`);
-    await this.playerService.findOrCreateBySocialId(
-      Number(user.githubId),
-      user.username,
-    );
 
     const token = this.jwtService.sign({
       sub: user.githubId,
       username: user.username,
+      playerId: user.playerId,
     });
     this.logger.log(`JWT token generated for user: ${user.username}`);
 
@@ -63,8 +62,8 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtGuard)
   me(@Req() req: Request) {
-    const { githubId, username, avatarUrl } = req.user as User;
-    const userInfo: UserInfo = { githubId, username, avatarUrl };
+    const { githubId, username, avatarUrl, playerId } = req.user as User;
+    const userInfo: UserInfo = { githubId, username, avatarUrl, playerId };
     this.logger.log(`/me called - username: ${userInfo.username}`);
     return userInfo;
   }
