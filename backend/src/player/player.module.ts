@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { PlayerGateway } from './player.gateway';
@@ -12,8 +12,8 @@ import { Player } from './entites/player.entity';
   imports: [
     TypeOrmModule.forFeature([Player]),
     GithubModule,
-    AuthModule,
     RoomModule,
+    forwardRef(() => AuthModule),
   ],
   providers: [PlayerGateway, PlayTimeService, PlayerService],
   exports: [TypeOrmModule, PlayerService],
