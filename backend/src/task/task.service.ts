@@ -67,22 +67,53 @@ export class TaskService {
     return task;
   }
 
-  async toggleCompleteTask(taskId: number, playerId: number): Promise<TaskRes> {
+  async completeTask(taskId: number, playerId: number): Promise<TaskRes> {
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {
       throw new NotFoundException(`is not player${playerId}'s Task`);
     }
 
-    if (task.player.id)
-      if (task.completedDate) {
-        task.completedDate = null;
-        task.createdDate = new Date();
-      } else {
-        task.completedDate = new Date();
-      }
-
+    task.completedDate = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
+  }
+
+  async uncompleteTask(taskId: number, playerId: number): Promise<TaskRes> {
+    const task = await this.findOneById(taskId);
+
+    if (task.player.id !== playerId) {
+      throw new NotFoundException(`is not player${playerId}'s Task`);
+    }
+
+    task.completedDate = null;
+    const saved = await this.taskRepository.save(task);
+    return TaskRes.of(saved);
+  }
+
+  async updateTask(
+    taskId: number,
+    description: string,
+    playerId: number,
+  ): Promise<TaskRes> {
+    const task = await this.findOneById(taskId);
+
+    if (task.player.id !== playerId) {
+      throw new NotFoundException(`is not player${playerId}'s Task`);
+    }
+
+    task.description = description;
+    const saved = await this.taskRepository.save(task);
+    return TaskRes.of(saved);
+  }
+
+  async deleteTask(taskId: number, playerId: number): Promise<void> {
+    const task = await this.findOneById(taskId);
+
+    if (task.player.id !== playerId) {
+      throw new NotFoundException(`is not player${playerId}'s Task`);
+    }
+
+    await this.taskRepository.remove(task);
   }
 }

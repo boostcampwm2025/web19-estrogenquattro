@@ -7,10 +7,12 @@ import {
   Query,
   ParseIntPipe,
   Patch,
+  Delete,
   UseGuards,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskReq } from './dto/create-task.req.dto';
+import { UpdateTaskReq } from './dto/update-task.req.dto';
 import { TaskListRes } from './dto/task-list.res.dto';
 import { TaskRes } from './dto/task.res.dto';
 import { JwtGuard } from '../auth/jwt.guard';
@@ -34,11 +36,36 @@ export class TaskController {
     return this.taskService.getTasks(playerId, date);
   }
 
-  @Patch(':taskId')
-  async toggleCompleteTask(
+  @Patch('completion/:taskId')
+  async completeTask(
     @Param('taskId', ParseIntPipe) taskId: number,
     @PlayerId() playerId: number,
   ): Promise<TaskRes> {
-    return this.taskService.toggleCompleteTask(taskId, playerId);
+    return this.taskService.completeTask(taskId, playerId);
+  }
+
+  @Patch('uncompletion/:taskId')
+  async uncompleteTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @PlayerId() playerId: number,
+  ): Promise<TaskRes> {
+    return this.taskService.uncompleteTask(taskId, playerId);
+  }
+
+  @Patch(':taskId')
+  async updateTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Body() dto: UpdateTaskReq,
+    @PlayerId() playerId: number,
+  ): Promise<TaskRes> {
+    return this.taskService.updateTask(taskId, dto.description, playerId);
+  }
+
+  @Delete(':taskId')
+  async deleteTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @PlayerId() playerId: number,
+  ): Promise<void> {
+    return this.taskService.deleteTask(taskId, playerId);
   }
 }
