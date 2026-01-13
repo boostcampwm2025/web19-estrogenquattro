@@ -35,7 +35,7 @@ $ pnpm install
 
 ```bash
 # development
-$ pnpm run start
+$ pnpm start
 
 # watch mode
 $ pnpm run start:dev
@@ -48,7 +48,7 @@ $ pnpm run start:prod
 
 ```bash
 # unit tests
-$ pnpm run test
+$ pnpm test
 
 # e2e tests
 $ pnpm run test:e2e
@@ -64,7 +64,7 @@ When you're ready to deploy your NestJS application to production, there are som
 If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
 ```bash
-$ pnpm install -g @nestjs/mau
+$ pnpm add -g @nestjs/mau
 $ mau deploy
 ```
 
