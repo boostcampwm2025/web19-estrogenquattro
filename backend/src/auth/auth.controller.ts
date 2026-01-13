@@ -7,8 +7,6 @@ import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
 import { getFrontendUrls } from '../config/frontend-urls';
-import { PlayerService } from '../player/player.service';
-import { UserStore } from './user.store';
 
 @Controller('auth')
 export class AuthController {
@@ -17,8 +15,6 @@ export class AuthController {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
-    private playerService: PlayerService,
-    private userStore: UserStore,
   ) {}
 
   @Get('github')
