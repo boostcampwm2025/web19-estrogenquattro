@@ -10,12 +10,14 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
   const dailyTasks = getTasksByDate(tasks, selectedDate);
 
   const formatSelectedDate = () => {
-    return selectedDate.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-    });
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1;
+    const day = selectedDate.getDate();
+    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekday = weekdays[selectedDate.getDay()];
+
+    // 일자를 항상 2자리로 표시하여 너비 고정
+    return `${year} ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
   };
 
   return (
