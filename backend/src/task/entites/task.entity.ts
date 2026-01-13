@@ -1,14 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Player } from '../../player/entites/player.entity';
 
 @Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn()
   id: string;
 
-  @Column({ type: 'bigint', name: 'player_id', nullable: true })
-  playerId: string;
+  @ManyToOne(() => Player)
+  player: Player;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   description: string;
 
   @Column({ type: 'int', name: 'duration_minutes', default: 0 })
