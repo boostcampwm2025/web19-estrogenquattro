@@ -17,4 +17,23 @@ export class PlayerService {
     }
     return player;
   }
+
+  async findBySocialId(socialId: number): Promise<Player | null> {
+    return this.playerRepository.findOne({ where: { socialId } });
+  }
+
+  async findOrCreateBySocialId(
+    socialId: number,
+    nickname: string,
+  ): Promise<Player> {
+    const existing = await this.findBySocialId(socialId);
+    if (existing) return existing;
+
+    const player = this.playerRepository.create({
+      socialId,
+      nickname,
+      totalPoint: 0,
+    });
+    return this.playerRepository.save(player);
+  }
 }

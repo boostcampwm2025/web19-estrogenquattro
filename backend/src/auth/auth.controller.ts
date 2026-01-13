@@ -7,6 +7,7 @@ import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
 import { getFrontendUrls } from '../config/frontend-urls';
+import { PlayerService } from '../player/player.service';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +16,7 @@ export class AuthController {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    private playerService: PlayerService,
   ) {}
 
   @Get('github')
@@ -25,9 +27,13 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(GithubGuard)
-  githubCallback(@Req() req: Request, @Res() res: Response) {
+  async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     this.logger.log(`GitHub callback - username: ${user.username}`);
+    await this.playerService.findOrCreateBySocialId(
+      Number(user.githubId),
+      user.username,
+    );
 
     const token = this.jwtService.sign({
       sub: user.githubId,
