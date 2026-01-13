@@ -1,0 +1,76 @@
+"use client";
+
+import Image from "next/image";
+import { useState, useEffect } from "react";
+
+interface MascotProps {
+  src: string;
+  alt?: string;
+}
+
+export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasFloated, setHasFloated] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const [shouldBounce, setShouldBounce] = useState(false);
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!hasFloated) {
+      setHasFloated(true);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShouldBounce(true);
+      setTimeout(() => setShouldBounce(false), 3000);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="group relative size-full">
+      {/* 마스코트 */}
+      <button
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsPressed(false);
+        }}
+        onMouseDown={() => setIsPressed(true)}
+        onMouseUp={() => setIsPressed(false)}
+        className={`relative size-full cursor-pointer select-none transition-transform ${
+          isHovered ? "translate-y-1" : ""
+        } ${isPressed ? "scale-125" : ""} ${shouldBounce ? "animate-bounce-twice" : ""}`}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          className="select-none object-contain"
+          draggable={false}
+        />
+      </button>
+
+      {/* hover시 하트 애니메이션 */}
+      <div
+        className={`pointer-events-none absolute top-0 left-1/2 transition-opacity duration-500 ${
+          isHovered ? "opacity-80" : "opacity-0"
+        } ${hasFloated ? "animate-heart-float" : ""}`}
+      >
+        <div className={`select-none transition-transform ${isPressed ? "scale-125" : ""}`}>
+          <Image
+            src="/assets/heart.png"
+            alt="Heart"
+            width={24}
+            height={24}
+            className="select-none object-contain"
+            draggable={false}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
