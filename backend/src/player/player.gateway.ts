@@ -16,6 +16,9 @@ import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
 import { RoomService } from '../room/room.service';
 
+import { PlayerService } from './player.service';
+import { FocusTimeService } from '../focustime/focustime.service';
+
 @WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(PlayerGateway.name);
@@ -25,6 +28,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly githubGateway: GithubGateway,
     private readonly wsJwtGuard: WsJwtGuard,
     private readonly roomService: RoomService,
+    private readonly playerService: PlayerService,
+    private readonly focusTimeService: FocusTimeService,
   ) {}
   @WebSocketServer()
   server: Server;
@@ -39,6 +44,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId: string;
       x: number;
       y: number;
+      playerId: number;
     }
   > = new Map();
 
@@ -66,6 +72,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.githubService.unsubscribeGithubEvent(client.id);
       this.roomService.exit(client.id);
+      this.roomService.removePlayer(player.roomId, player.playerId);
 
       // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
       if (this.userSockets.get(player.username) === client.id) {
@@ -76,7 +83,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('joining')
-  handleJoin(
+  async handleJoin(
     @MessageBody()
     data: { x: number; y: number; username: string },
     @ConnectedSocket() client: Socket,
@@ -85,7 +92,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
-    const { username, accessToken } = userData.user;
+    const { username, accessToken, playerId } = userData.user;
+
+    // RoomService에 플레이어 등록
+    this.roomService.addPlayer(roomId, playerId);
 
     // 같은 username으로 이미 접속한 세션이 있으면 이전 세션 종료
     const existingSocketId = this.userSockets.get(username);
@@ -115,12 +125,33 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId: roomId,
       x: data.x,
       y: data.y,
+      playerId: playerId,
+    });
+
+    // 2. 방에 있는 플레이어들의 Focus 상태 감지
+    const roomPlayerIds = this.roomService.getPlayerIds(roomId);
+    const focusStatuses = await this.focusTimeService.findAllStatuses(roomPlayerIds);
+    // Map playerId -> status info
+    const statusMap = new Map<number, { status: string, lastFocusStartTime: Date | null }>();
+    focusStatuses.forEach(fs => {
+        statusMap.set(fs.player.id, {
+            status: fs.status,
+            lastFocusStartTime: fs.lastFocusStartTime
+        });
     });
 
     // 2. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
-    const existingPlayers = Array.from(this.players.values()).filter(
-      (p) => p.socketId !== client.id && p.roomId === roomId,
-    );
+    const existingPlayers = Array.from(this.players.values())
+      .filter((p) => p.socketId !== client.id && p.roomId === roomId)
+      .map((p) => {
+          const status = statusMap.get(p.playerId);
+          return {
+              ...p,
+              status: status?.status ?? 'RESTING',
+              lastFocusStartTime: status?.lastFocusStartTime ?? null,
+          };
+      });
+
     //내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
 
@@ -131,6 +162,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: data.x,
       y: data.y,
     });
+
+    // 4. Update FocusTime
+    const player = await this.playerService.findOneById(userData.user.playerId);
+    await this.focusTimeService.findOrCreate(player);
 
     const connectedAt = new Date();
 
