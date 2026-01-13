@@ -7,12 +7,15 @@ import {
   Query,
   ParseIntPipe,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskReq } from './dto/create-task.req.dto';
 import { TaskListRes } from './dto/task-list.res.dto';
 import { TaskRes } from './dto/task.res.dto';
+import { JwtGuard } from '../auth/jwt.guard';
 
+@UseGuards(JwtGuard)
 @Controller('api/tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
