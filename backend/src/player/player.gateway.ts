@@ -12,7 +12,6 @@ import { Server, Socket } from 'socket.io';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
-import { PlayTimeService } from './player.play-time-service';
 import { GithubPollService } from '../github/github.poll-service';
 import { GithubGateway } from '../github/github.gateway';
 import { RoomService } from '../room/room.service';
@@ -22,7 +21,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(PlayerGateway.name);
 
   constructor(
-    private readonly playTimeService: PlayTimeService,
     private readonly githubService: GithubPollService,
     private readonly githubGateway: GithubGateway,
     private readonly wsJwtGuard: WsJwtGuard,
@@ -66,7 +64,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (player) {
       this.players.delete(client.id);
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
-      this.playTimeService.stopTimer(client.id);
       this.githubService.unsubscribeGithubEvent(client.id);
       this.roomService.exit(client.id);
 
@@ -136,12 +133,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     const connectedAt = new Date();
-    this.playTimeService.startTimer(
-      client.id,
-      username,
-      this.createTimerCallback(client),
-      connectedAt,
-    );
 
     this.githubService.subscribeGithubEvent(
       connectedAt,
@@ -154,20 +145,6 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 새 클라이언트에게 현재 룸의 기여 상태 전송
     const roomState = this.githubGateway.getRoomState(roomId);
     client.emit('github_state', roomState);
-
-    // 새 클라이언트에게 같은 방의 모든 사용자 접속시간 전송
-    const roomPlayers = Array.from(this.players.values()).filter(
-      (p) => p.roomId === roomId,
-    );
-    for (const player of roomPlayers) {
-      const minutes = this.playTimeService.getUserMinutes(player.username);
-      if (minutes > 0) {
-        client.emit('timerUpdated', {
-          userId: player.socketId,
-          minutes,
-        });
-      }
-    }
   }
 
   @SubscribeMessage('moving')
@@ -193,17 +170,5 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       direction: data.direction,
       timestamp: data.timestamp,
     });
-  }
-
-  private createTimerCallback(client: Socket) {
-    return (minutes: number) => {
-      const player = this.players.get(client.id);
-
-      // 같은 방의 모든 유저에게 전송 (자기 자신 포함)
-      this.server.to(player!.roomId).emit('timerUpdated', {
-        userId: client.id,
-        minutes,
-      });
-    };
   }
 }
