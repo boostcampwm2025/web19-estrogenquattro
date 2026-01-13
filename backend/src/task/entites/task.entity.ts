@@ -16,7 +16,7 @@ export class Task {
   durationMinutes: number;
 
   @Column({ type: 'date', name: 'completed_date', nullable: true })
-  completedDate: Date;
+  completedDate: Date | null;
 
   @Column({ type: 'date', name: 'created_date' })
   createdDate: Date;

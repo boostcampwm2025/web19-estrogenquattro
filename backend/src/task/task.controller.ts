@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskReq } from './dto/create-task.req.dto';
@@ -27,5 +28,12 @@ export class TaskController {
     @Query('date') date?: string,
   ): Promise<TaskListRes> {
     return this.taskService.getTasks(playerId, date);
+  }
+
+  @Patch(':taskId')
+  async toggleCompleteTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+  ): Promise<TaskRes> {
+    return this.taskService.toggleCompleteTask(taskId);
   }
 }

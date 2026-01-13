@@ -6,6 +6,7 @@ import { CreateTaskReq } from './dto/create-task.req.dto';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res.dto';
 import { TaskListRes } from './dto/task-list.res.dto';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class TaskService {
@@ -53,5 +54,27 @@ export class TaskService {
     return {
       tasks: tasks.map(TaskRes.of),
     };
+  }
+
+  async findOneById(id: number): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id } });
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+    return task;
+  }
+
+  async toggleCompleteTask(taskId: number): Promise<TaskRes> {
+    const task = await this.findOneById(taskId);
+
+    if (task.completedDate) {
+      task.completedDate = null;
+      task.createdDate = new Date();
+    } else {
+      task.completedDate = new Date();
+    }
+
+    const saved = await this.taskRepository.save(task);
+    return TaskRes.of(saved);
   }
 }
