@@ -59,6 +59,7 @@
   --shadow-retro-xl: var(--retro-shadow-xl);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-pixel);
 }
 
 @media (prefers-color-scheme: dark) {
