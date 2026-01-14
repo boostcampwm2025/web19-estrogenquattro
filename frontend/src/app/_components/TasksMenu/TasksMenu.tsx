@@ -44,7 +44,12 @@ export default function App() {
     [tasks],
   );
 
-  const { focusTime, incrementFocusTime, isFocusTimerRunning, setFocusTimerRunning } = useFocusTimeStore(
+  const {
+    focusTime,
+    incrementFocusTime,
+    isFocusTimerRunning,
+    setFocusTimerRunning,
+  } = useFocusTimeStore(
     useShallow((state) => ({
       focusTime: state.focusTime,
       incrementFocusTime: state.incrementFocusTime,

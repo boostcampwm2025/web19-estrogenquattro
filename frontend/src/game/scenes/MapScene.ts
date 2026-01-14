@@ -654,7 +654,10 @@ export class MapScene extends Phaser.Scene {
   }
 
   // 작업 상태 말풍선 업데이트 (상태 변경 시에만)
-  private lastTaskBubbleState: { isFocusing: boolean; taskName?: string } | null = null;
+  private lastTaskBubbleState: {
+    isFocusing: boolean;
+    taskName?: string;
+  } | null = null;
 
   updateTaskBubble() {
     if (!this.player) return;
