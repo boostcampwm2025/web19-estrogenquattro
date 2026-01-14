@@ -111,6 +111,9 @@ export default class Player extends BasePlayer {
       // 실제 소켓 전송
       emitEvent("moving", payload);
 
+      // 펫 위치 업데이트
+      this.updatePetPosition(currentDirection);
+
       // 상태 업데이트
       this.prevState = {
         isMoving,

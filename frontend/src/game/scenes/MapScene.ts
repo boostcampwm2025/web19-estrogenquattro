@@ -67,6 +67,12 @@ export class MapScene extends Phaser.Scene {
       "face",
       `https://avatars.githubusercontent.com/${username}`,
     );
+
+    // Pet
+    this.load.svg("pet", "/assets/mascot/gopher_stage1.svg", {
+      width: 512,
+      height: 512,
+    });
   }
 
   init() {

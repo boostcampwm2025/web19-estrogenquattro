@@ -70,5 +70,8 @@ export default class RemotePlayer extends BasePlayer {
       // 멈췄을 때는 좌표 강제 동기화 (정확한 위치 안착)
       this.container.setPosition(state.x, state.y);
     }
+
+    // 펫 위치 업데이트
+    this.updatePetPosition(state.direction);
   }
 }

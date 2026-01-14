@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { useUserInfoStore } from "@/stores/userInfoStore";
+import Pet from "./Pet";
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -12,6 +13,9 @@ export default class BasePlayer {
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
   protected bodyGlow: Phaser.FX.Glow | null = null;
+
+  // Pet
+  protected pet: Pet;
 
   public id: string;
   public username: string;
@@ -80,16 +84,24 @@ export default class BasePlayer {
       })
       .setOrigin(0.5);
 
-    // 7. 컨테이너 추가
-    this.container.add([
+    // 7. 펫 생성
+    this.pet = new Pet(scene);
+
+    // 8. 컨테이너 추가
+    const containerChildren: Phaser.GameObjects.GameObject[] = [
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
       nameTag,
       this.focusTimeText,
-    ]);
+    ];
+    const petSprite = this.pet.getSprite();
+    if (petSprite) {
+      containerChildren.unshift(petSprite); // 맨 뒤에 추가
+    }
+    this.container.add(containerChildren);
 
-    // 8. 물리 엔진 설정
+    // 9. 물리 엔진 설정
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
     scene.physics.world.enable(this.container);
     this.body = this.container.body as Phaser.Physics.Arcade.Body;
@@ -97,15 +109,11 @@ export default class BasePlayer {
     this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
     this.body.setOffset(0, 10);
 
-    // 9. 인터랙션 설정 (클릭 시 모달 열기)
-
+    // 10. 인터랙션 설정 (클릭 시 모달 열기)
     this.container.setInteractive(
       new Phaser.Geom.Rectangle(0, 10, FACE_RADIUS * 2, FACE_RADIUS * 3),
       Phaser.Geom.Rectangle.Contains,
     );
-
-    // 인터랙션 영역 시각화 (빨간색 박스)
-    //scene.input.enableDebug(this.container, 0xff0000);
 
     // Body Glow Effect 초기화 (비활성 상태로 시작)
     if (this.bodySprite.preFX) {
@@ -142,6 +150,11 @@ export default class BasePlayer {
     }
   }
 
+  // 방향에 따른 펫 위치 업데이트
+  updatePetPosition(direction: string) {
+    this.pet.updatePosition(direction);
+  }
+
   // 집중 시간 업데이트
   updateFocusTime(seconds: number) {
     if (this.focusTimeText) {
@@ -164,6 +177,7 @@ export default class BasePlayer {
 
   // 자원 해제
   destroy() {
+    this.pet.destroy();
     this.container.destroy();
     this.maskShape.destroy();
   }
