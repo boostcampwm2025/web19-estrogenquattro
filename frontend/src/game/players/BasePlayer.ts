@@ -318,12 +318,12 @@ export default class BasePlayer {
 
     // 작업 태그 위에 채팅 말풍선 배치 (태그 높이 + 여백)
     const taskTagHeight = this.taskBubbleContainer ? 40 : 0;
-    const bubbleY = -40 - taskTagHeight;
+    const bubbleY = -43 - taskTagHeight;
 
     const bubbleContainer = this.scene.add.container(0, bubbleY);
     bubbleContainer.setName("chatBubble");
 
-    // 텍스트 생성
+    // 텍스트 생성pnp
     const chatText = this.scene.add.text(0, 0, text, {
       fontFamily: "NeoDunggeunmo, Arial, sans-serif",
       fontSize: "12px",
@@ -343,16 +343,46 @@ export default class BasePlayer {
     const bubbleGraphics = this.scene.add.graphics();
     // 다중 레이어 그림자 (더 부드럽고 자연스러운 효과)
     bubbleGraphics.fillStyle(0x000000, 0.02);
-    bubbleGraphics.fillRoundedRect(-width / 2 + 5, -height / 2 + 5, width, height, radius);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 5,
+      -height / 2 + 5,
+      width,
+      height,
+      radius,
+    );
     bubbleGraphics.fillStyle(0x000000, 0.04);
-    bubbleGraphics.fillRoundedRect(-width / 2 + 3, -height / 2 + 4, width, height, radius);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 3,
+      -height / 2 + 4,
+      width,
+      height,
+      radius,
+    );
     bubbleGraphics.fillStyle(0x000000, 0.08);
-    bubbleGraphics.fillRoundedRect(-width / 2 + 1, -height / 2 + 2, width, height, radius);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 1,
+      -height / 2 + 2,
+      width,
+      height,
+      radius,
+    );
     // 메인 배경
     bubbleGraphics.fillStyle(0xffffff, 1);
     bubbleGraphics.lineStyle(1, 0xd1d5db, 1);
-    bubbleGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
-    bubbleGraphics.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      radius,
+    );
+    bubbleGraphics.strokeRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      radius,
+    );
     // 말풍선 꼬리 (더 작고 부드럽게)
     bubbleGraphics.fillStyle(0xffffff, 1);
     bubbleGraphics.fillTriangle(
