@@ -31,7 +31,8 @@ export default class CameraController {
     const screenHeight = this.scene.scale.height;
     const zoomX = screenWidth / mapWidth;
     const zoomY = screenHeight / mapHeight;
-    const initialZoom = Math.max(zoomX, zoomY);
+    // 맵 전체가 보이도록 작은 값 사용
+    const initialZoom = Math.min(zoomX, zoomY);
     this.scene.cameras.main.setZoom(initialZoom);
   }
 
