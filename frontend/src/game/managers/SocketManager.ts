@@ -39,22 +39,26 @@ export default class SocketManager {
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
-  private getPlayer: () => {
-    id: string;
-    getContainer: () => Phaser.GameObjects.Container;
-    setRoomId: (roomId: string) => void;
-    showChatBubble: (message: string) => void;
-  } | undefined;
+  private getPlayer: () =>
+    | {
+        id: string;
+        getContainer: () => Phaser.GameObjects.Container;
+        setRoomId: (roomId: string) => void;
+        showChatBubble: (message: string) => void;
+      }
+    | undefined;
 
   constructor(
     scene: Phaser.Scene,
     username: string,
-    getPlayer: () => {
-      id: string;
-      getContainer: () => Phaser.GameObjects.Container;
-      setRoomId: (roomId: string) => void;
-      showChatBubble: (message: string) => void;
-    } | undefined,
+    getPlayer: () =>
+      | {
+          id: string;
+          getContainer: () => Phaser.GameObjects.Container;
+          setRoomId: (roomId: string) => void;
+          showChatBubble: (message: string) => void;
+        }
+      | undefined,
   ) {
     this.scene = scene;
     this.username = username;
