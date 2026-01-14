@@ -47,12 +47,18 @@ export class MapScene extends Phaser.Scene {
     this.load.crossOrigin = "anonymous";
 
     // Map 1
-    this.load.image("tiles1", "/assets/tempMap1.png");
-    this.load.tilemapTiledJSON("tilemap1", "/assets/temp1Tilemap.json");
+    this.load.image("tiles1", "/assets/maps/dessert_stage1.png");
+    this.load.tilemapTiledJSON(
+      "tilemap1",
+      "/assets/tilemaps/dessert_stage1.json",
+    );
 
     // Map 2
-    this.load.image("tiles2", "/assets/tempMap2.png");
-    this.load.tilemapTiledJSON("tilemap2", "/assets/temp2Tilemap.json");
+    this.load.image("tiles2", "/assets/maps/dessert_stage2.png");
+    this.load.tilemapTiledJSON(
+      "tilemap2",
+      "/assets/tilemaps/dessert_stage2.json",
+    );
 
     // Body Sprite Sheet
     this.load.spritesheet("body", "/assets/body.png", {
