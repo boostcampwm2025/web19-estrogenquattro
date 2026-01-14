@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePointStore } from "@/stores/pointStore";
-import PetCard from "./components/petCard";
 import PetGacha from "./components/PetGacha";
+import PetCard from "./components/PetCard";
 
 const PET_EVOLUTION_DATA = [
   {
