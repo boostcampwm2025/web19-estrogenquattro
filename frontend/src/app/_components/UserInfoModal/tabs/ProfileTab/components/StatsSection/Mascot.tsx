@@ -43,7 +43,7 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
         onMouseUp={() => setIsPressed(false)}
         className={`relative size-full cursor-pointer transition-transform select-none ${
           isHovered ? "translate-y-1" : ""
-        } ${isPressed ? "scale-125" : ""} ${shouldBounce ? "animate-bounce-twice" : ""}`}
+        } ${isPressed ? "scale-125" : ""} ${shouldBounce ? "animate-grass-pet-bounce" : ""}`}
       >
         <Image
           src={src}
@@ -58,7 +58,7 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
       <div
         className={`pointer-events-none absolute top-0 left-1/2 transition-opacity duration-500 ${
           isHovered ? "opacity-80" : "opacity-0"
-        } ${hasFloated ? "animate-heart-float" : ""}`}
+        } ${hasFloated ? "animate-grass-heart-float" : ""}`}
       >
         <div
           className={`transition-transform select-none ${isPressed ? "scale-125" : ""}`}
