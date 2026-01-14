@@ -11,10 +11,10 @@ export default function PetGacha() {
   const [resultImage, setResultImage] = useState<string | null>(null);
 
   const points = usePointStore((state) => state.points);
-  const usePoints = usePointStore((state) => state.subtractPoints);
+  const subtractPoints = usePointStore((state) => state.subtractPoints);
 
   const handleSummon = () => {
-    if (!usePoints(100)) return;
+    if (!subtractPoints(100)) return;
 
     setStatus("animating");
 

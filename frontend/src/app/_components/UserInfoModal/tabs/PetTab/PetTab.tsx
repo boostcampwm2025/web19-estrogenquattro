@@ -30,7 +30,7 @@ const PET_EVOLUTION_DATA = [
 export default function PetTab() {
   const [stage, setStage] = useState(1);
   const [exp, setExp] = useState(0);
-  const usePoints = usePointStore((state) => state.subtractPoints);
+  const subtractPoints = usePointStore((state) => state.subtractPoints);
 
   // 현재 단계 데이터 가져오기
   const currentStageData =
@@ -49,13 +49,14 @@ export default function PetTab() {
       // 밥주기 로직 (10 포인트 소모)
       if (isMaxStage) return;
 
-      if (!usePoints(10)) {
+      if (!subtractPoints(10)) {
         alert("포인트가 부족합니다! (필요: 10 P)");
         return;
       }
 
       setExp((prev) => Math.min(prev + 10, maxExp));
     }
+  };
   };
 
   return (
