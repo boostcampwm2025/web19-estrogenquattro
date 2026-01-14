@@ -57,7 +57,6 @@ export default function PetTab() {
       setExp((prev) => Math.min(prev + 10, maxExp));
     }
   };
-  };
 
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
