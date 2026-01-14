@@ -137,3 +137,83 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+
+/* Pet Interaction Animation */
+.flying-heart {
+  @apply pointer-events-none absolute text-4xl text-red-500;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  pointer-events: none;
+  animation: float-up 0.8s ease-out forwards;
+}
+
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translateX(var(--random-x, 0px)) translateY(0) scale(1);
+    z-index: 50;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(var(--random-x, 0px)) translateY(-60px) scale(0.5);
+    z-index: 50;
+  }
+}
+
+/* 갸차 스프라이트 애니메이션 */
+.gacha-egg {
+  width: 105px;
+  height: 100px;
+  background-image: url("/assets/pets/spritePetEgg.png");
+  background-size: 100% 800%; /* 총 8프레임 시트이미지 */
+  background-position: 0 0; /* 첫 프레임 부터 시작 */
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.gacha-egg.animating {
+  animation: egg-hatch 4s steps(7) forwards;
+}
+
+@keyframes egg-hatch {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+/* Retro Scrollbar */
+.retro-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+.retro-scrollbar::-webkit-scrollbar-track {
+  background: #f5deb3; /* --retro-bg-primary */
+}
+.retro-scrollbar::-webkit-scrollbar-thumb {
+  background: #8b6f47; /* --retro-button-bg */
+  border: 2px solid #f5deb3; /* pixel effect inside */
+}
+.retro-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b5335;
+}
+@keyframes pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pop {
+  animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
