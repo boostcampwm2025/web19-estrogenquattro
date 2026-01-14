@@ -20,7 +20,6 @@ export type { ProgressBarController, ContributionController };
 export class MapScene extends Phaser.Scene {
   private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private gridKey?: Phaser.Input.Keyboard.Key;
   private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
 
@@ -116,10 +115,7 @@ export class MapScene extends Phaser.Scene {
     this.socketManager.setContributionController(this.contributionController!);
     this.socketManager.connect(() => this.showSessionEndedOverlay());
 
-    // 9. Grid Setup
-    this.mapManager.drawGrid();
-
-    // 10. Chat Setup
+    // 9. Chat Setup
     this.chatManager = new ChatManager(this, (message) =>
       this.socketManager.sendChat(message),
     );
@@ -191,9 +187,6 @@ export class MapScene extends Phaser.Scene {
   private setupControls() {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.gridKey = this.input.keyboard.addKey(
-        Phaser.Input.Keyboard.KeyCodes.G,
-      );
       this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     }
   }
@@ -268,11 +261,6 @@ export class MapScene extends Phaser.Scene {
 
   update() {
     if (!this.player || !this.cursors) return;
-
-    // Grid Toggle
-    if (this.gridKey && Phaser.Input.Keyboard.JustDown(this.gridKey)) {
-      this.mapManager.toggleGrid();
-    }
 
     // 테스트: X 키로 게이지 100% 채우기
     if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {

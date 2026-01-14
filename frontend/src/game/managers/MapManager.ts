@@ -11,7 +11,6 @@ export default class MapManager {
   private currentMapIndex: number = 0;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private tileSize: number = 32;
-  private gridVisible: boolean = true;
 
   constructor(scene: Phaser.Scene, maps: MapConfig[]) {
     this.scene = scene;
@@ -76,42 +75,6 @@ export default class MapManager {
     return this.tileSize;
   }
 
-  drawGrid(): void {
-    const existingGraphics = this.scene.children.getByName("grid");
-    if (existingGraphics) existingGraphics.destroy();
-
-    const mapImage = this.getMapImage();
-    if (!mapImage) return;
-
-    const width = mapImage.width;
-    const height = mapImage.height;
-    const cols = Math.ceil(width / this.tileSize);
-    const rows = Math.ceil(height / this.tileSize);
-
-    const graphics = this.scene.add.graphics();
-    graphics.setName("grid");
-    graphics.lineStyle(1, 0x00ff00, 0.3);
-
-    for (let x = 0; x <= cols; x++) {
-      graphics.moveTo(x * this.tileSize, 0);
-      graphics.lineTo(x * this.tileSize, height);
-    }
-    for (let y = 0; y <= rows; y++) {
-      graphics.moveTo(0, y * this.tileSize);
-      graphics.lineTo(width, y * this.tileSize);
-    }
-    graphics.strokePath();
-    graphics.setVisible(this.gridVisible);
-  }
-
-  toggleGrid(): void {
-    this.gridVisible = !this.gridVisible;
-    const grid = this.scene.children.getByName(
-      "grid",
-    ) as Phaser.GameObjects.Graphics;
-    if (grid) grid.setVisible(this.gridVisible);
-  }
-
   switchToNextMap(onMapReady: () => void): void {
     this.currentMapIndex = (this.currentMapIndex + 1) % this.maps.length;
 
@@ -125,16 +88,9 @@ export default class MapManager {
 
       this.walls?.clear(true, true);
 
-      const oldGrid = this.scene.children.getByName("grid");
-      if (oldGrid) {
-        oldGrid.destroy();
-      }
-
       this.setup();
 
       onMapReady();
-
-      this.drawGrid();
 
       this.scene.cameras.main.fadeIn(500, 0, 0, 0);
     });
@@ -146,8 +102,6 @@ export default class MapManager {
 
   destroy(): void {
     this.walls?.clear(true, true);
-    const grid = this.scene.children.getByName("grid");
-    if (grid) grid.destroy();
     const mapImage = this.getMapImage();
     if (mapImage) mapImage.destroy();
   }
