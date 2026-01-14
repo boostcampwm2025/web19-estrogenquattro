@@ -3,7 +3,7 @@
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import { usePointStore } from "@/stores/pointStore";
 import { useEffect, useState } from "react";
-import ProfileTab from "./tabs/ProfileTab";
+import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
 
