@@ -24,42 +24,72 @@ export default function PetCodex({
         </span>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-3 gap-3 p-1">
-        {PETS_DATA.map((pet) => {
-          const isCollected = collectedPetIds.includes(pet.id);
+      {/* 진화라인 그룹 리스트 */}
+      <div className="flex h-auto flex-col gap-6 p-2">
+        {Object.entries(
+          PETS_DATA.reduce(
+            (acc, pet) => {
+              if (!acc[pet.species]) {
+                acc[pet.species] = [];
+              }
+              acc[pet.species].push(pet);
+              return acc;
+            },
+            {} as Record<string, typeof PETS_DATA>,
+          ),
+        ).map(([species, pets]) => (
+          <div
+            key={species}
+            className="flex flex-col gap-2 bg-amber-100/50 p-3 shadow-sm"
+          >
+            <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+              {pets.map((pet, index) => {
+                const isCollected = collectedPetIds.includes(pet.id);
+                const isLast = index === pets.length - 1;
 
-          return (
-            <div
-              key={pet.id}
-              onClick={() => isCollected && onPetSelect(pet.id)}
-              className={`${PIXEL_CARD} ${
-                isCollected ? "cursor-pointer" : "bg-gray-200"
-              }`}
-              title={isCollected ? pet.description : "???"}
-            >
-              <div className="relative mb-2 h-16 w-16">
-                <Image
-                  src={pet.image}
-                  alt={pet.name}
-                  fill
-                  className={`object-contain ${
-                    isCollected
-                      ? ""
-                      : "pointer-events-none opacity-40 brightness-0 grayscale"
-                  }`}
-                />
-              </div>
-              <p
-                className={`text-center text-xs font-bold ${
-                  isCollected ? "text-amber-900" : "text-gray-500"
-                }`}
-              >
-                {isCollected ? pet.name : "???"}
-              </p>
+                return (
+                  <div key={pet.id} className="contents">
+                    {/* 펫 카드 */}
+                    <div
+                      onClick={() => isCollected && onPetSelect(pet.id)}
+                      className={`${PIXEL_CARD} w-full ${
+                        isCollected ? "cursor-pointer" : "bg-gray-200"
+                      }`}
+                      title={isCollected ? pet.description : "???"}
+                    >
+                      <div className="relative mb-2 h-14 w-14">
+                        <Image
+                          src={pet.image}
+                          alt={pet.name}
+                          fill
+                          className={`object-contain ${
+                            isCollected
+                              ? ""
+                              : "pointer-events-none opacity-40 brightness-0 grayscale"
+                          }`}
+                        />
+                      </div>
+                      <p
+                        className={`w-full text-center text-xs font-bold ${
+                          isCollected ? "text-amber-900" : "text-gray-500"
+                        }`}
+                      >
+                        {isCollected ? pet.name : "???"}
+                      </p>
+                    </div>
+
+                    {/* 진화 화살표 */}
+                    {!isLast && (
+                      <div className="flex justify-center text-amber-900/40">
+                        ▶
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
