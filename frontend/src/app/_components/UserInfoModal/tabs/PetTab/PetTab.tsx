@@ -33,10 +33,11 @@ export default function PetTab() {
       setStage((prev) => Math.min(prev + 1, currentEvolutionLine.length));
       setExp(0);
 
-      // 진화 시 다음 단계 펫도 수집된 것으로 처리
+      // 진화 시 다음 단계 펫도 수집된 것으로 처리 및 대표 펫으로 설정
       const nextPet = currentEvolutionLine.find((p) => p.stage === nextStage);
       if (nextPet) {
         handlePetCollected(nextPet.id);
+        setActivePetId(nextPet.id);
       }
     } else {
       // 밥주기 로직 (10 포인트 소모)
