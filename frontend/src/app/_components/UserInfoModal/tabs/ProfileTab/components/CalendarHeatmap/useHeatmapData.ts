@@ -1,9 +1,14 @@
 import { useMemo } from "react";
-import { Task } from "@/app/_components/TasksMenu/types";
 
 export interface DayData {
   date: Date;
   value: number;
+}
+
+// DB에서 받아올 날짜별 데이터 타입
+export interface DailyTaskCount {
+  date: string; // "YYYY-MM-DD" 형식
+  taskCount: number;
 }
 
 interface UseHeatmapDataResult {
@@ -11,15 +16,14 @@ interface UseHeatmapDataResult {
   weeks: DayData[][];
 }
 
-export function useHeatmapData(tasks: Task[]): UseHeatmapDataResult {
+export function useHeatmapData(
+  dailyTaskCounts: DailyTaskCount[],
+): UseHeatmapDataResult {
   const yearData = useMemo(() => {
+    // DB에서 받은 데이터를 Map으로 변환 (빠른 조회용)
     const taskCountByDate = new Map<string, number>();
-
-    tasks.forEach((task) => {
-      if (task.date) {
-        const dateKey = task.date.toDateString();
-        taskCountByDate.set(dateKey, (taskCountByDate.get(dateKey) || 0) + 1);
-      }
+    dailyTaskCounts.forEach((item) => {
+      taskCountByDate.set(item.date, item.taskCount);
     });
 
     const days: DayData[] = [];
@@ -28,14 +32,14 @@ export function useHeatmapData(tasks: Task[]): UseHeatmapDataResult {
     oneYearAgo.setFullYear(today.getFullYear() - 1);
 
     for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toDateString();
+      const dateKey = d.toISOString().split("T")[0]; // "YYYY-MM-DD" 형식
       days.push({
         date: new Date(d),
         value: taskCountByDate.get(dateKey) || 0,
       });
     }
     return days;
-  }, [tasks]);
+  }, [dailyTaskCounts]);
 
   const weeks = useMemo(() => {
     const weeksArray: DayData[][] = [];

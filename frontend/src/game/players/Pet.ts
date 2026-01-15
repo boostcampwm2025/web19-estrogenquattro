@@ -6,7 +6,7 @@ export default class Pet {
   private scene: Phaser.Scene;
   private sprite: Phaser.GameObjects.Image | null = null;
   private currentDirection: Direction = DIRECTION.STOP;
-  private offset = { x: 0, y: 55 }; // 기본: 아래쪽 (몸통 중심 y:5 기준)
+  private offset = { x: 35, y: 0 }; // 기본: 오른쪽
 
   // 거리 설정
   private readonly DISTANCE_X = 35; // 좌우 거리

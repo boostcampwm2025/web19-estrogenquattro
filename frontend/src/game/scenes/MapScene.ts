@@ -2,6 +2,17 @@ import * as Phaser from "phaser";
 import Player from "../players/Player";
 import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
+import { useTasksStore } from "@/stores/useTasksStore";
+
+interface PlayerData {
+  userId: string;
+  username?: string;
+  x: number;
+  y: number;
+  isMoving?: boolean;
+  direction?: string;
+  timestamp?: number;
+}
 import {
   createProgressBar,
   ProgressBarController,
@@ -281,10 +292,43 @@ export class MapScene extends Phaser.Scene {
     const focusTime = useFocusTimeStore.getState().focusTime;
     this.player.updateFocusTime(focusTime);
 
+    // 작업 상태 말풍선 업데이트
+    this.updateTaskBubble();
+
     // Player Update
     this.player.update(this.cursors);
 
     // Remote Players Update
     this.socketManager.updateRemotePlayers();
+  }
+
+  // 작업 상태 말풍선 업데이트 (상태 변경 시에만)
+  private lastTaskBubbleState: {
+    isFocusing: boolean;
+    taskName?: string;
+  } | null = null;
+
+  updateTaskBubble() {
+    if (!this.player) return;
+
+    const { isFocusTimerRunning } = useFocusTimeStore.getState();
+    const tasks = useTasksStore.getState().tasks;
+    const runningTask = tasks.find((task) => task.isRunning);
+
+    // 타이머가 돌아가고 있는지 확인 (전체 or 개별)
+    const isFocusing = isFocusTimerRunning || !!runningTask;
+    const taskName = runningTask?.text;
+
+    // 상태가 변경되었을 때만 업데이트
+    const currentState = { isFocusing, taskName };
+    if (
+      this.lastTaskBubbleState?.isFocusing === currentState.isFocusing &&
+      this.lastTaskBubbleState?.taskName === currentState.taskName
+    ) {
+      return;
+    }
+
+    this.lastTaskBubbleState = currentState;
+    this.player.updateTaskBubble({ isFocusing, taskName });
   }
 }
