@@ -7,13 +7,27 @@ const PIXEL_CARD =
 
 interface PetCodexProps {
   collectedPetIds: string[];
+  activePetId: string;
   onPetSelect: (petId: string) => void;
 }
 
 export default function PetCodex({
   collectedPetIds,
+  activePetId,
   onPetSelect,
 }: PetCodexProps) {
+  // 미리 펫들을 종류별로 그룹화
+  const groupedPets = PETS_DATA.reduce(
+    (acc, pet) => {
+      if (!acc[pet.species]) {
+        acc[pet.species] = [];
+      }
+      acc[pet.species].push(pet);
+      return acc;
+    },
+    {} as Record<string, typeof PETS_DATA>,
+  );
+
   return (
     <div className={`flex flex-col gap-4 bg-amber-50 p-6 ${PIXEL_BORDER}`}>
       {/* Header */}
@@ -25,19 +39,8 @@ export default function PetCodex({
       </div>
 
       {/* 진화라인 그룹 리스트 */}
-      <div className="flex h-auto flex-col gap-6 p-2">
-        {Object.entries(
-          PETS_DATA.reduce(
-            (acc, pet) => {
-              if (!acc[pet.species]) {
-                acc[pet.species] = [];
-              }
-              acc[pet.species].push(pet);
-              return acc;
-            },
-            {} as Record<string, typeof PETS_DATA>,
-          ),
-        ).map(([species, pets]) => (
+      <div className="flex h-auto flex-col gap-3">
+        {Object.entries(groupedPets).map(([species, pets]) => (
           <div
             key={species}
             className="flex flex-col gap-2 bg-amber-100/50 p-3 shadow-sm"
@@ -45,6 +48,7 @@ export default function PetCodex({
             <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
               {pets.map((pet, index) => {
                 const isCollected = collectedPetIds.includes(pet.id);
+                const isActive = pet.id === activePetId;
                 const isLast = index === pets.length - 1;
 
                 return (
@@ -57,6 +61,12 @@ export default function PetCodex({
                       }`}
                       title={isCollected ? pet.description : "???"}
                     >
+                      {/* 장착 뱃지 */}
+                      {isActive && (
+                        <div className="absolute -top-2 -right-2 z-10 rotate-12 rounded border border-red-800 bg-red-500 px-1.5 py-0.5 text-[12px] font-bold text-white shadow-sm">
+                          대표펫
+                        </div>
+                      )}
                       <div className="relative mb-2 h-14 w-14">
                         <Image
                           src={pet.image}

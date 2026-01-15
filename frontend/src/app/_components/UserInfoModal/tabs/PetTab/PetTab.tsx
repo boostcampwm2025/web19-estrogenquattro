@@ -78,6 +78,7 @@ export default function PetTab() {
       <PetGacha onPetCollected={handlePetCollected} />
       <PetCodex
         collectedPetIds={collectedPetIds}
+        activePetId={activePetId}
         onPetSelect={handlePetSelect}
       />
     </div>
