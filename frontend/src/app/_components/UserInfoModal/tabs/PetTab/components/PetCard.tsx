@@ -53,19 +53,25 @@ export default function PetCard({
       <div className="flex flex-col items-center justify-center">
         <div className="relative h-32 w-32 drop-shadow-xl">
           {hearts.map((heart) => (
-            <span
+            <div
               key={heart.id}
-              className="flying-heart"
+              className="flying-heart absolute size-10"
               style={
                 {
                   "--random-x": `${heart.x}px`,
-                  left: "50%", // Center origin horizontally
-                  top: "0", // Start from top of container (close to pet head)
+                  left: "50%",
+                  top: "0",
                 } as React.CSSProperties
               }
             >
-              ❤️
-            </span>
+              <Image
+                src="/assets/heart.png"
+                alt="Heart"
+                fill
+                className="object-contain"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
           ))}
           <Image
             src={currentStageData.image}
@@ -119,7 +125,7 @@ export default function PetCard({
             <button
               onClick={handleFeedClick}
               disabled={isMaxStage || (!isReadyToEvolve && points < 10)}
-              className={`flex h-12 w-full flex-col items-center justify-center rounded text-lg leading-tight font-bold transition-all ${
+              className={`flex h-12 w-full flex-col items-center justify-center rounded text-base leading-tight font-bold transition-all ${
                 isMaxStage || (!isReadyToEvolve && points < 10)
                   ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
                   : isReadyToEvolve
