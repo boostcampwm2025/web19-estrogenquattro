@@ -1,4 +1,5 @@
 import { Task } from "@/app/_components/TasksMenu/types";
+import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
 import { getDateRange } from "./dateUtils";
 
 const TASK_NAMES = [
@@ -49,4 +50,22 @@ export function generateMockTasks(daysCount: number = 365): Task[] {
     }
   }
   return tasks;
+}
+
+// 히트맵용 일별 Task 개수 Mock 데이터 생성
+export function generateMockDailyTaskCounts(
+  daysCount: number = 365,
+): DailyTaskCount[] {
+  const dailyCounts: DailyTaskCount[] = [];
+  const { startDate, endDate } = getDateRange(daysCount);
+
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const taskCount = Math.floor(Math.random() * 26); // 0~25개
+    dailyCounts.push({
+      date: d.toISOString().split("T")[0], // "YYYY-MM-DD" 형식
+      taskCount,
+    });
+  }
+
+  return dailyCounts;
 }
