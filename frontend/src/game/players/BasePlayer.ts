@@ -74,6 +74,7 @@ export default class BasePlayer {
     // 5. 닉네임 표시
     const nameTag = scene.add
       .text(0, 50, username, {
+        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
@@ -85,6 +86,7 @@ export default class BasePlayer {
     // 6. 집중 시간 표시 (닉네임 아래)
     this.focusTimeText = scene.add
       .text(0, 66, formatFocusTime(0), {
+        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "10px",
         color: "#ffffff",
         backgroundColor: "#00000088",
@@ -333,7 +335,7 @@ export default class BasePlayer {
 
     // 작업 태그 위에 채팅 말풍선 배치 (태그 높이 + 여백)
     const taskTagHeight = this.taskBubbleContainer ? 40 : 0;
-    const bubbleY = -43 - taskTagHeight;
+    const bubbleY = -40 - taskTagHeight;
 
     const bubbleContainer = this.scene.add.container(0, bubbleY);
     bubbleContainer.setName("chatBubble");
@@ -352,8 +354,8 @@ export default class BasePlayer {
     const bounds = chatText.getBounds();
     const padding = 12;
     const width = bounds.width + padding * 2;
-    const height = bounds.height + padding * 2;
-    const radius = Math.min(height / 2, 16); // 더 둥글게
+    const height = bounds.height + padding;
+    const radius = 10; // 더 둥글게
 
     const bubbleGraphics = this.scene.add.graphics();
     // 다중 레이어 그림자 (더 부드럽고 자연스러운 효과)
