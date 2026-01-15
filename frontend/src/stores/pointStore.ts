@@ -8,7 +8,7 @@ interface PointState {
 }
 
 export const usePointStore = create<PointState>((set, get) => ({
-  points: 3000, // 임시 Mock Points
+  points: 1000, // 임시 Mock Points
 
   addPoints: (amount) => set((state) => ({ points: state.points + amount })),
 
