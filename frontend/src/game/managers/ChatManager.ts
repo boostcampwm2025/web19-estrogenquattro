@@ -20,7 +20,7 @@ export default class ChatManager {
     input.id = "chat-input";
     input.type = "text";
     input.className =
-      "absolute bottom-[100px] left-1/2 -translate-x-1/2 w-[300px] p-[10px] rounded-[20px] border-[2px] border-[#333] bg-white hidden z-[1000] placeholder:text-gray-500 font-sans";
+      "absolute bottom-[100px] left-1/2 -translate-x-1/2 w-[320px] p-3 text-base border-4 border-gray-800 bg-white shadow-[4px_4px_0_0_rgba(0,0,0,0.5)] font-['NeoDunggeunmo',_Arial,_sans-serif] outline-none hidden z-[1000] placeholder:text-gray-400";
     input.placeholder = "메시지를 입력하세요 (Enter로 전송)";
 
     document.body.appendChild(input);
