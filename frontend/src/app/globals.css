@@ -128,16 +128,6 @@ body {
   --animate-grass-pet-bounce: grass-pet-bounce 3s ease-in-out;
 }
 
-/* Hide scrollbar utility */
-.scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
-}
-
 /* Pet Interaction Animation */
 .flying-heart {
   @apply pointer-events-none absolute text-4xl text-red-500;
