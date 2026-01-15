@@ -1,13 +1,15 @@
 import { emitEvent } from "../../lib/socket";
 import BasePlayer from "./BasePlayer";
+import { DIRECTION } from "../constants/direction";
+import type { Direction } from "../types/direction";
 
 export default class Player extends BasePlayer {
   private roomId: string;
 
   // 이전 프레임의 상태 저장용
-  private prevState = {
+  private prevState: { isMoving: boolean; direction: Direction } = {
     isMoving: false,
-    direction: "stop",
+    direction: DIRECTION.STOP,
   };
 
   constructor(
@@ -75,11 +77,11 @@ export default class Player extends BasePlayer {
     }
 
     // 방향 문자열 생성 (예: "left-up", "right", "stop")
-    let currentDirection = "stop";
+    let currentDirection: Direction = DIRECTION.STOP;
     if (isMoving) {
-      if (hDir && vDir) currentDirection = `${hDir}-${vDir}`;
-      else if (hDir) currentDirection = hDir;
-      else if (vDir) currentDirection = vDir;
+      if (hDir && vDir) currentDirection = `${hDir}-${vDir}` as Direction;
+      else if (hDir) currentDirection = hDir as Direction;
+      else if (vDir) currentDirection = vDir as Direction;
     }
 
     // 애니메이션 업데이트

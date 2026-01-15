@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import Pet from "./Pet";
+import type { Direction } from "../types/direction";
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -151,7 +152,7 @@ export default class BasePlayer {
   }
 
   // 방향에 따른 펫 위치 업데이트
-  updatePetPosition(direction: string) {
+  updatePetPosition(direction: Direction) {
     this.pet.updatePosition(direction);
   }
 

@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import BasePlayer from "./BasePlayer";
+import type { Direction } from "../types/direction";
 
 export default class RemotePlayer extends BasePlayer {
   constructor(
@@ -18,7 +19,7 @@ export default class RemotePlayer extends BasePlayer {
     x: number;
     y: number;
     isMoving: boolean;
-    direction: string;
+    direction: Direction;
   }) {
     if (!this.body) {
       console.error("RemotePlayer body not found");

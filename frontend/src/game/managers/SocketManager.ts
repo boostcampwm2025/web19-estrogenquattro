@@ -5,6 +5,7 @@ import type {
   ProgressBarController,
   ContributionController,
 } from "../scenes/MapScene";
+import type { Direction } from "../types/direction";
 
 interface PlayerData {
   userId: string;
@@ -12,7 +13,7 @@ interface PlayerData {
   x: number;
   y: number;
   isMoving?: boolean;
-  direction?: string;
+  direction?: Direction;
   timestamp?: number;
 }
 
