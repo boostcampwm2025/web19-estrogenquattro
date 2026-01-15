@@ -2,7 +2,7 @@
 
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import { usePointStore } from "@/stores/pointStore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -20,10 +20,10 @@ export default function UserInfoModal() {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const points = usePointStore((state) => state.points);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     closeModal();
     setActiveTab("profile");
-  };
+  }, [closeModal]);
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function UserInfoModal() {
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [closeModal]);
+  }, [handleClose]);
 
   if (!isOpen) return null;
 

@@ -17,7 +17,7 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
     const weekday = weekdays[selectedDate.getDay()];
 
     // 일자를 항상 2자리로 표시하여 너비 고정
-    return `${year} ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
+    return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
   };
 
   return (

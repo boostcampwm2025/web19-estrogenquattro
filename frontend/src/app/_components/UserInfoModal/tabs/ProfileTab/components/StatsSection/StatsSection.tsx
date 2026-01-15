@@ -29,7 +29,7 @@ export default function StatsSection({
   );
 
   return (
-    <div className="flex h-40 gap-4">
+    <div className="flex h-60 gap-4">
       <GrassCard />
       <div className="grid h-full flex-1 grid-cols-3 grid-rows-2 gap-2">
         <StatCard title="집중시간" value={stats.focusTime} />

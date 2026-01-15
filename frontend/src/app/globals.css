@@ -87,6 +87,47 @@ body {
   font-family: "NeoDunggeunmo", sans-serif;
 }
 
+/* Profile Grass Pet Animation */
+@keyframes grass-heart-float {
+  0%,
+  100% {
+    transform: translate(-50%, -0.5rem);
+  }
+  50% {
+    transform: translate(-50%, -0.75rem);
+  }
+}
+
+@keyframes grass-pet-bounce {
+  0% {
+    transform: translateY(0);
+  }
+  10% {
+    transform: translateY(-0.5rem);
+  }
+  20% {
+    transform: translateY(0);
+  }
+  30%,
+  40% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@theme {
+  --animate-grass-heart-float: grass-heart-float 3s ease-in-out infinite;
+  --animate-grass-pet-bounce: grass-pet-bounce 3s ease-in-out;
+}
+
 /* Pet Interaction Animation */
 .flying-heart {
   @apply pointer-events-none absolute text-4xl text-red-500;
