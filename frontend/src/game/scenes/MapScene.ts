@@ -4,15 +4,6 @@ import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 
-interface PlayerData {
-  userId: string;
-  username?: string;
-  x: number;
-  y: number;
-  isMoving?: boolean;
-  direction?: string;
-  timestamp?: number;
-}
 import {
   createProgressBar,
   ProgressBarController,
