@@ -5,6 +5,9 @@ const isProd = process.env.NODE_ENV === 'production';
 const nextConfig: NextConfig = {
   output: isProd ? 'export' : undefined,
   distDir: isProd ? '../backend/public' : '.next',
+  images: {
+    unoptimized: isProd,
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
