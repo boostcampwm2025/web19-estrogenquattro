@@ -115,8 +115,8 @@ export default class BasePlayer {
     scene.physics.world.enable(this.container);
     this.body = this.container.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
-    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
-    this.body.setOffset(0, 10);
+    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS / 2);
+    this.body.setOffset(0, 50);
 
     // 10. 인터랙션 설정 (클릭 시 모달 열기)
     this.container.setInteractive(
