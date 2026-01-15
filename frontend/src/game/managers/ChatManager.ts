@@ -58,7 +58,12 @@ export default class ChatManager {
     this.input.value = "";
     this.input.style.display = "none";
     this.input.blur();
-    this.scene.input.keyboard!.enabled = true;
+
+    setTimeout(() => {
+      if (this.scene && this.scene.input && this.scene.input.keyboard) {
+        this.scene.input.keyboard.enabled = true;
+      }
+    }, 100);
   }
 
   destroy(): void {
