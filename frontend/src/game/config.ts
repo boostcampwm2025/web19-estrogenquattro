@@ -12,12 +12,12 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   audio: {
     noAudio: true,
   },
-  backgroundColor: "#000000",
+  backgroundColor: "#303032",
   physics: {
     default: "arcade",
     arcade: {
       gravity: { x: 0, y: 0 },
-      debug: true,
+      debug: false,
     },
   },
   scene: [MapScene],
