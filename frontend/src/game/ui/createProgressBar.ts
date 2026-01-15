@@ -87,15 +87,18 @@ export function createProgressBar(
 
     const padding = config.border + 2;
     const fillWidth = ((config.width - padding * 2) * progress) / 100;
+    const innerRadius = config.radius - padding;
+    // 최소 너비: radius * 2 (둥근 모서리가 깨지지 않도록)
+    const minWidth = innerRadius * 2;
 
     if (fillWidth > 0) {
       progressBar.fillStyle(0x4ade80, 1);
       progressBar.fillRoundedRect(
         config.x + padding,
         config.y + padding,
-        fillWidth,
+        Math.max(fillWidth, minWidth),
         config.height - padding * 2,
-        config.radius - padding,
+        innerRadius,
       );
     }
   };
