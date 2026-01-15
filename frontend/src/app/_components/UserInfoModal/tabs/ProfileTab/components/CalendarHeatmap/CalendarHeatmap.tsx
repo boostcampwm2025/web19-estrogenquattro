@@ -1,20 +1,19 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { Task } from "@/app/_components/TasksMenu/types";
 import { Button } from "@/_components/ui/button";
-import { useHeatmapData, DayData } from "./useHeatmapData";
+import { useHeatmapData, DayData, DailyTaskCount } from "./useHeatmapData";
 import { getHeatmapColorClass } from "../../lib/heatmapColors";
 import { isSameDay } from "../../lib/dateUtils";
 import { HeatmapTooltip } from "./HeatmapTooltip";
 
 interface CalendarHeatmapProps {
-  tasks: Task[];
+  dailyTaskCounts: DailyTaskCount[];
   onSelectDate: (date: Date) => void;
   selectedDate?: Date;
 }
 
 export function CalendarHeatmap({
-  tasks,
+  dailyTaskCounts,
   onSelectDate,
   selectedDate,
 }: CalendarHeatmapProps) {
@@ -23,7 +22,7 @@ export function CalendarHeatmap({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { weeks } = useHeatmapData(tasks);
+  const { weeks } = useHeatmapData(dailyTaskCounts);
 
   const handleScroll = (direction: "left" | "right") => {
     const container = containerRef.current;
@@ -74,24 +73,24 @@ export function CalendarHeatmap({
         <div className="relative flex-1 overflow-hidden">
           <div
             ref={containerRef}
-            className="scrollbar-hide overflow-x-auto"
+            className="scrollbar-hide overflow-x-auto overflow-y-visible"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             <div
-              className="inline-flex gap-1"
+              className="inline-flex gap-1 py-0.5 pr-1"
               style={{ minWidth: "max-content" }}
             >
               {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-1">
+                <div key={weekIndex} className="flex flex-col gap-0.75">
                   {week.map((day, dayIndex) => (
                     <div
                       key={`${weekIndex}-${dayIndex}`}
-                      className={`h-3 w-3 rounded-none border transition-all ${getHeatmapColorClass(day.value)} ${
+                      className={`h-3 w-3 rounded-sm transition-colors ${getHeatmapColorClass(day.value)} ${
                         day.value === -1
-                          ? "cursor-default border-transparent"
+                          ? "cursor-default"
                           : isSameDay(day.date, selectedDate)
-                            ? "scale-110 border-2 border-amber-900"
-                            : "cursor-pointer border border-amber-300 hover:scale-110 hover:border-amber-800"
+                            ? "ring-2 ring-amber-900"
+                            : "cursor-pointer ring-1 ring-amber-300 hover:ring-2 hover:ring-amber-800"
                       }`}
                       onClick={() => day.value !== -1 && onSelectDate(day.date)}
                       onMouseEnter={(e) => handleMouseMove(e, day)}

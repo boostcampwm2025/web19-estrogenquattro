@@ -44,8 +44,19 @@ export default function App() {
     [tasks],
   );
 
-  const { focusTime, incrementFocusTime } = useFocusTimeStore();
-  const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
+  const {
+    focusTime,
+    incrementFocusTime,
+    isFocusTimerRunning,
+    setFocusTimerRunning,
+  } = useFocusTimeStore(
+    useShallow((state) => ({
+      focusTime: state.focusTime,
+      incrementFocusTime: state.incrementFocusTime,
+      isFocusTimerRunning: state.isFocusTimerRunning,
+      setFocusTimerRunning: state.setFocusTimerRunning,
+    })),
+  );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
   // Focus Time 타이머 (Focus Time이나 Task 중 하나라도 실행 중이면 증가)
@@ -79,11 +90,11 @@ export default function App() {
   const handleToggleTimer = () => {
     if (isTimerRunning) {
       // 정지: Focus Timer와 모든 Task 정지
-      setIsFocusTimerRunning(false);
+      setFocusTimerRunning(false);
       stopAllTasks();
     } else {
       // 시작: Focus Timer만 시작
-      setIsFocusTimerRunning(true);
+      setFocusTimerRunning(true);
     }
   };
 
@@ -92,7 +103,7 @@ export default function App() {
 
     // Task 종료시 Focus Timer도 종료
     if (targetTask && targetTask.isRunning) {
-      setIsFocusTimerRunning(false);
+      setFocusTimerRunning(false);
     }
 
     toggleTaskTimer(id);
