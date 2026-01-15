@@ -100,7 +100,11 @@ export default function PetCard({
               <div
                 className={`h-full transition-all duration-300 ease-out ${isReadyToEvolve ? "animate-pulse bg-amber-500" : "bg-green-500"}`}
                 style={{
-                  width: isMaxStage ? "100%" : `${(exp / maxExp) * 100}%`,
+                  width: isMaxStage
+                    ? "100%"
+                    : exp > 0
+                      ? `max(4px, ${(exp / maxExp) * 100}%)`
+                      : "0%",
                 }}
               />
               {/* 눈금 효과 */}
