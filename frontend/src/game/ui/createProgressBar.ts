@@ -88,18 +88,31 @@ export function createProgressBar(
     const padding = config.border + 2;
     const fillWidth = ((config.width - padding * 2) * progress) / 100;
     const innerRadius = config.radius - padding;
-    // 최소 너비: radius * 2 (둥근 모서리가 깨지지 않도록)
-    const minWidth = innerRadius * 2;
+    const innerHeight = config.height - padding * 2;
 
     if (fillWidth > 0) {
       progressBar.fillStyle(0x4ade80, 1);
-      progressBar.fillRoundedRect(
-        config.x + padding,
-        config.y + padding,
-        Math.max(fillWidth, minWidth),
-        config.height - padding * 2,
-        innerRadius,
-      );
+
+      // 너비가 충분하면 양쪽 둥글게, 아니면 왼쪽만 둥글게
+      if (fillWidth >= innerRadius * 2) {
+        progressBar.fillRoundedRect(
+          config.x + padding,
+          config.y + padding,
+          fillWidth,
+          innerHeight,
+          innerRadius,
+        );
+      } else {
+        // 작은 값일 때: 왼쪽만 둥글게 (tl, bl만 radius 적용)
+        const actualWidth = Math.max(fillWidth, innerRadius);
+        progressBar.fillRoundedRect(
+          config.x + padding,
+          config.y + padding,
+          actualWidth,
+          innerHeight,
+          { tl: innerRadius, tr: 0, bl: innerRadius, br: 0 },
+        );
+      }
     }
   };
 
