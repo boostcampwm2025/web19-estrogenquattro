@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { TaskTimer } from "./TaskTimer";
 import { TaskList } from "./TaskList";
-import { Task } from "./types";
-import { useTasks } from "./hooks/useTasks";
 import { formatTime, formatTaskTime } from "./utils/timeFormat";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "1",
-    text: "API 엔드포인트 상성 문서",
-    completed: false,
-    time: 0,
-    isRunning: false,
-  },
-];
+import { useTasksStore } from "@/stores/useTasksStore";
+import { useShallow } from "zustand/react/shallow";
 
 export default function App() {
   const [isExpanded, setIsExpanded] = useState(true);
+
   const {
     tasks,
     addTask,
@@ -30,12 +21,42 @@ export default function App() {
     toggleTaskTimer,
     stopAllTasks,
     incrementTaskTime,
-    completedCount,
-    runningTask,
-  } = useTasks(INITIAL_TASKS);
+  } = useTasksStore(
+    useShallow((state) => ({
+      tasks: state.tasks,
+      addTask: state.addTask,
+      toggleTask: state.toggleTask,
+      deleteTask: state.deleteTask,
+      editTask: state.editTask,
+      toggleTaskTimer: state.toggleTaskTimer,
+      stopAllTasks: state.stopAllTasks,
+      incrementTaskTime: state.incrementTaskTime,
+    })),
+  );
 
-  const { focusTime, incrementFocusTime } = useFocusTimeStore();
-  const [isFocusTimerRunning, setIsFocusTimerRunning] = useState(false);
+  const completedCount = useMemo(
+    () => tasks.filter((task) => task.completed).length,
+    [tasks],
+  );
+
+  const runningTask = useMemo(
+    () => tasks.find((task) => task.isRunning),
+    [tasks],
+  );
+
+  const {
+    focusTime,
+    incrementFocusTime,
+    isFocusTimerRunning,
+    setFocusTimerRunning,
+  } = useFocusTimeStore(
+    useShallow((state) => ({
+      focusTime: state.focusTime,
+      incrementFocusTime: state.incrementFocusTime,
+      isFocusTimerRunning: state.isFocusTimerRunning,
+      setFocusTimerRunning: state.setFocusTimerRunning,
+    })),
+  );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
   // Focus Time 타이머 (Focus Time이나 Task 중 하나라도 실행 중이면 증가)
@@ -69,11 +90,11 @@ export default function App() {
   const handleToggleTimer = () => {
     if (isTimerRunning) {
       // 정지: Focus Timer와 모든 Task 정지
-      setIsFocusTimerRunning(false);
+      setFocusTimerRunning(false);
       stopAllTasks();
     } else {
       // 시작: Focus Timer만 시작
-      setIsFocusTimerRunning(true);
+      setFocusTimerRunning(true);
     }
   };
 
@@ -82,7 +103,7 @@ export default function App() {
 
     // Task 종료시 Focus Timer도 종료
     if (targetTask && targetTask.isRunning) {
-      setIsFocusTimerRunning(false);
+      setFocusTimerRunning(false);
     }
 
     toggleTaskTimer(id);

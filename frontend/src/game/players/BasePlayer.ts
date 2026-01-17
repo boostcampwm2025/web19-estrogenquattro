@@ -1,6 +1,13 @@
 import * as Phaser from "phaser";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { useUserInfoStore } from "@/stores/userInfoStore";
+import Pet from "./Pet";
+import type { Direction } from "../types/direction";
+
+export interface TaskBubbleState {
+  isFocusing: boolean;
+  taskName?: string;
+}
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -12,6 +19,10 @@ export default class BasePlayer {
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
   protected bodyGlow: Phaser.FX.Glow | null = null;
+  protected taskBubbleContainer: Phaser.GameObjects.Container | null = null;
+
+  // Pet
+  protected pet: Pet;
 
   public id: string;
   public username: string;
@@ -63,49 +74,57 @@ export default class BasePlayer {
     // 5. 닉네임 표시
     const nameTag = scene.add
       .text(0, 50, username, {
+        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "12px",
         color: "#ffffff",
         backgroundColor: "#00000088",
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setResolution(2);
 
     // 6. 집중 시간 표시 (닉네임 아래)
     this.focusTimeText = scene.add
       .text(0, 66, formatFocusTime(0), {
+        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "10px",
         color: "#ffffff",
         backgroundColor: "#00000088",
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setResolution(2);
 
-    // 7. 컨테이너 추가
-    this.container.add([
+    // 7. 펫 생성
+    this.pet = new Pet(scene);
+
+    // 8. 컨테이너 추가
+    const containerChildren: Phaser.GameObjects.GameObject[] = [
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
       nameTag,
       this.focusTimeText,
-    ]);
+    ];
+    const petSprite = this.pet.getSprite();
+    if (petSprite) {
+      containerChildren.unshift(petSprite); // 맨 뒤에 추가
+    }
+    this.container.add(containerChildren);
 
-    // 8. 물리 엔진 설정
+    // 9. 물리 엔진 설정
     this.container.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
     scene.physics.world.enable(this.container);
     this.body = this.container.body as Phaser.Physics.Arcade.Body;
     this.body.setCollideWorldBounds(true);
-    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS * 3);
-    this.body.setOffset(0, 10);
+    this.body.setSize(FACE_RADIUS * 2, FACE_RADIUS / 2);
+    this.body.setOffset(0, 50);
 
-    // 9. 인터랙션 설정 (클릭 시 모달 열기)
-
+    // 10. 인터랙션 설정 (클릭 시 모달 열기)
     this.container.setInteractive(
       new Phaser.Geom.Rectangle(0, 10, FACE_RADIUS * 2, FACE_RADIUS * 3),
       Phaser.Geom.Rectangle.Contains,
     );
-
-    // 인터랙션 영역 시각화 (빨간색 박스)
-    //scene.input.enableDebug(this.container, 0xff0000);
 
     // Body Glow Effect 초기화 (비활성 상태로 시작)
     if (this.bodySprite.preFX) {
@@ -142,6 +161,11 @@ export default class BasePlayer {
     }
   }
 
+  // 방향에 따른 펫 위치 업데이트
+  updatePetPosition(direction: Direction) {
+    this.pet.updatePosition(direction);
+  }
+
   // 집중 시간 업데이트
   updateFocusTime(seconds: number) {
     if (this.focusTimeText) {
@@ -164,6 +188,7 @@ export default class BasePlayer {
 
   // 자원 해제
   destroy() {
+    this.pet.destroy();
     this.container.destroy();
     this.maskShape.destroy();
   }
@@ -190,7 +215,117 @@ export default class BasePlayer {
     }
   }
 
-  // 말풍선 표시
+  // 작업 상태 태그 표시 (항상 표시됨, 꼬리 없는 태그 스타일)
+  updateTaskBubble(state: TaskBubbleState) {
+    // 기존 작업 태그 제거
+    if (this.taskBubbleContainer) {
+      this.taskBubbleContainer.destroy();
+      this.taskBubbleContainer = null;
+    }
+
+    const { isFocusing, taskName } = state;
+
+    // 태그 컨테이너 생성 (플레이어 위)
+    this.taskBubbleContainer = this.scene.add.container(0, -40);
+    this.taskBubbleContainer.setName("taskBubble");
+
+    // 상태에 따른 스타일 결정
+    const statusText = isFocusing ? "작업 중" : "휴식 중";
+    // 작업 중: 초록 계열 / 휴식중: 빨강 계열
+    const bgColor = isFocusing ? 0xdcfce7 : 0xfee2e2;
+    const borderColor = isFocusing ? 0x86efac : 0xfca5a5;
+    const dotColor = isFocusing ? 0x22c55e : 0xef4444;
+    const textColor = isFocusing ? "#166534" : "#991b1b";
+
+    const elements: Phaser.GameObjects.GameObject[] = [];
+
+    // 상태 dot
+    const statusDot = this.scene.add.graphics();
+    statusDot.fillStyle(dotColor, 1);
+
+    // 상태 텍스트
+    const statusLabel = this.scene.add.text(0, 0, statusText, {
+      fontFamily: "NeoDunggeunmo, Arial, sans-serif",
+      fontSize: "10px",
+      color: textColor,
+    });
+    statusLabel.setResolution(2);
+    statusLabel.setOrigin(0, 0.5);
+    elements.push(statusDot, statusLabel);
+
+    // 태스크명이 있으면 추가
+    let taskLabel: Phaser.GameObjects.Text | null = null;
+    if (isFocusing && taskName) {
+      const displayTaskName =
+        taskName.length > 30 ? taskName.slice(0, 30) + "..." : taskName;
+      taskLabel = this.scene.add.text(0, 0, displayTaskName, {
+        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
+        fontSize: "9px",
+        color: "#374151",
+      });
+      taskLabel.setResolution(2);
+      taskLabel.setOrigin(0.5, 0.5); // 가운데 정렬
+      elements.push(taskLabel);
+    }
+
+    // 태그 배경 계산
+    const paddingX = 8;
+    const paddingY = 4;
+    const dotSize = 5;
+    const dotGap = 6;
+    const taskPaddingX = 12; // 세부 작업 글씨 좌우 여백
+    const statusWidth = dotSize + dotGap + statusLabel.width;
+    const taskWidth = taskLabel ? taskLabel.width + taskPaddingX * 2 : 0;
+    const width = Math.max(statusWidth, taskWidth) + paddingX * 2;
+    const height = taskLabel ? 32 : 18;
+
+    // 태그 배경 (꼬리 없음, 둥근 사각형)
+    const tagGraphics = this.scene.add.graphics();
+    tagGraphics.fillStyle(bgColor, 1);
+    tagGraphics.lineStyle(1, borderColor, 1);
+    tagGraphics.fillRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      height / 2,
+    );
+    tagGraphics.strokeRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      height / 2,
+    );
+
+    // 요소 위치 조정
+    if (taskLabel) {
+      // 2줄 레이아웃: 상태(위) + 태스크(아래)
+      const statusY = -6;
+      const taskY = 8;
+      // "작업 중" 텍스트의 왼쪽 시작점 (dot 오른쪽)
+      const statusTextLeftX = -width / 2 + paddingX + dotSize + dotGap;
+      statusDot.fillCircle(
+        -width / 2 + paddingX + dotSize / 2,
+        statusY,
+        dotSize / 2,
+      );
+      statusLabel.setPosition(statusTextLeftX, statusY);
+      // task를 "작" 글자 왼쪽에 맞춤 (왼쪽 정렬)
+      taskLabel.setOrigin(0, 0.5);
+      taskLabel.setPosition(statusTextLeftX, taskY);
+    } else {
+      // 1줄 레이아웃: 상태만
+      statusDot.fillCircle(-width / 2 + paddingX + dotSize / 2, 0, dotSize / 2);
+      statusLabel.setPosition(-width / 2 + paddingX + dotSize + dotGap, 0);
+    }
+
+    this.taskBubbleContainer.add([tagGraphics, ...elements]);
+    this.container.add(this.taskBubbleContainer);
+    this.container.bringToTop(this.taskBubbleContainer);
+  }
+
+  // 채팅 말풍선 표시
   showChatBubble(text: string) {
     // 기존 말풍선 제거
     const existingBubble = this.container.getByName("chatBubble");
@@ -198,36 +333,87 @@ export default class BasePlayer {
       existingBubble.destroy();
     }
 
-    const bubbleContainer = this.scene.add.container(0, -70);
+    // 작업 태그 위에 채팅 말풍선 배치 (태그 높이 + 여백)
+    const taskTagHeight = this.taskBubbleContainer ? 40 : 0;
+    const bubbleY = -40 - taskTagHeight;
+
+    const bubbleContainer = this.scene.add.container(0, bubbleY);
     bubbleContainer.setName("chatBubble");
 
-    // 텍스트 생성
+    // 텍스트 생성pnp
     const chatText = this.scene.add.text(0, 0, text, {
-      fontFamily: "Arial, sans-serif",
+      fontFamily: "NeoDunggeunmo, Arial, sans-serif",
       fontSize: "12px",
       color: "#000000",
       wordWrap: { width: 150, useAdvancedWrap: true },
     });
+    chatText.setResolution(2);
     chatText.setOrigin(0.5);
 
     // 말풍선 배경 (둥근 사각형 + 꼬리)
     const bounds = chatText.getBounds();
-    const padding = 10;
+    const padding = 12;
     const width = bounds.width + padding * 2;
-    const height = bounds.height + padding * 2;
+    const height = bounds.height + padding;
+    const radius = 10; // 더 둥글게
 
     const bubbleGraphics = this.scene.add.graphics();
-    bubbleGraphics.fillStyle(0xffffff, 1);
-    bubbleGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
-    // 말풍선 꼬리
-    bubbleGraphics.fillTriangle(
-      -5,
-      height / 2,
-      5,
-      height / 2,
-      0,
-      height / 2 + 8,
+    // 다중 레이어 그림자 (더 부드럽고 자연스러운 효과)
+    bubbleGraphics.fillStyle(0x000000, 0.02);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 5,
+      -height / 2 + 5,
+      width,
+      height,
+      radius,
     );
+    bubbleGraphics.fillStyle(0x000000, 0.04);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 3,
+      -height / 2 + 4,
+      width,
+      height,
+      radius,
+    );
+    bubbleGraphics.fillStyle(0x000000, 0.08);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2 + 1,
+      -height / 2 + 2,
+      width,
+      height,
+      radius,
+    );
+    // 메인 배경
+    bubbleGraphics.fillStyle(0xffffff, 1);
+    bubbleGraphics.lineStyle(1, 0xd1d5db, 1);
+    bubbleGraphics.fillRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      radius,
+    );
+    bubbleGraphics.strokeRoundedRect(
+      -width / 2,
+      -height / 2,
+      width,
+      height,
+      radius,
+    );
+    // 말풍선 꼬리 (더 작고 부드럽게)
+    bubbleGraphics.fillStyle(0xffffff, 1);
+    bubbleGraphics.fillTriangle(
+      -4,
+      height / 2 - 1,
+      4,
+      height / 2 - 1,
+      0,
+      height / 2 + 6,
+    );
+    // 꼬리 테두리
+    bubbleGraphics.lineStyle(1.5, 0xe5e7eb, 1);
+    bubbleGraphics.lineBetween(-4, height / 2, 0, height / 2 + 6);
+    bubbleGraphics.lineBetween(4, height / 2, 0, height / 2 + 6);
 
     bubbleContainer.add([bubbleGraphics, chatText]);
     this.container.add(bubbleContainer);
@@ -239,7 +425,11 @@ export default class BasePlayer {
       }
     });
 
-    // 말풍선이 맨 위에 오도록 설정
+    // 채팅 말풍선이 맨 위에 오도록 설정
     this.container.bringToTop(bubbleContainer);
+    // 작업 태그는 채팅 아래에 위치
+    if (this.taskBubbleContainer) {
+      this.container.bringToTop(this.taskBubbleContainer);
+    }
   }
 }
