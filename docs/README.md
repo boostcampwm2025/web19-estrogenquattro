@@ -32,7 +32,8 @@ REST API 및 WebSocket 이벤트 명세
 |------|------|
 | [DEVELOPMENT.md](./guides/DEVELOPMENT.md) | 개발 환경 설정 |
 | [DEPLOYMENT.md](./guides/DEPLOYMENT.md) | 배포 가이드 |
-| [DATABASE.md](./guides/DATABASE.md) | 데이터베이스 스키마 |
+| [DATABASE.md](./guides/DATABASE.md) | 데이터베이스 가이드 |
+| [ERD.md](./guides/ERD.md) | ERD 및 테이블 상세 |
 
 ### Conventions (컨벤션)
 
