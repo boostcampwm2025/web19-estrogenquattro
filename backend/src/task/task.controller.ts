@@ -24,13 +24,16 @@ export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post()
-  async createTask(@Body() dto: CreateTaskReq): Promise<TaskRes> {
-    return this.taskService.createTask(dto);
+  async createTask(
+    @Body() dto: CreateTaskReq,
+    @PlayerId() playerId: number,
+  ): Promise<TaskRes> {
+    return this.taskService.createTask({ ...dto, playerId });
   }
 
-  @Get(':playerId')
+  @Get()
   async getTasks(
-    @Param('playerId', ParseIntPipe) playerId: number,
+    @PlayerId() playerId: number,
     @Query('date') date?: string,
   ): Promise<TaskListRes> {
     return this.taskService.getTasks(playerId, date);

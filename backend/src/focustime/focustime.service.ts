@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
@@ -11,13 +11,21 @@ export class FocusTimeService {
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
   ) {}
 
+  /**
+   * 오늘 날짜를 YYYY-MM-DD 문자열로 반환
+   * SQLite date 타입과 비교할 때 사용
+   */
+  private getTodayDateString(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
   async findOrCreate(player: Player): Promise<DailyFocusTime> {
-    const now = new Date();
+    const today = this.getTodayDateString();
 
     const existing = await this.focusTimeRepository.findOne({
       where: {
         player: { id: player.id },
-        createdDate: now,
+        createdDate: today as unknown as Date,
       },
     });
 
@@ -29,50 +37,55 @@ export class FocusTimeService {
       player,
       totalFocusMinutes: 0,
       status: FocusStatus.RESTING,
-      createdDate: now,
+      createdDate: today as unknown as Date,
     });
 
     return this.focusTimeRepository.save(newFocusTime);
   }
 
   async startFocusing(playerId: number): Promise<DailyFocusTime> {
-    const now = new Date();
+    const today = this.getTodayDateString();
 
     const focusTime = await this.focusTimeRepository.findOne({
       where: {
         player: { id: playerId },
-        createdDate: now,
+        createdDate: today as unknown as Date,
       },
     });
 
     if (!focusTime) {
-      throw new Error(
+      throw new NotFoundException(
         'FocusTime record not found. Please join the room first.',
       );
     }
 
     focusTime.status = FocusStatus.FOCUSING;
-    focusTime.lastFocusStartTime = now;
+    focusTime.lastFocusStartTime = new Date();
 
     return this.focusTimeRepository.save(focusTime);
   }
 
   async startResting(playerId: number): Promise<DailyFocusTime> {
     const now = new Date();
+    const today = this.getTodayDateString();
+
     const focusTime = await this.focusTimeRepository.findOne({
       where: {
         player: { id: playerId },
-        createdDate: now,
+        createdDate: today as unknown as Date,
       },
     });
 
     if (!focusTime) {
-      throw new Error(
+      throw new NotFoundException(
         'FocusTime record not found. Please join the room first.',
       );
     }
 
-    if (focusTime.status === FocusStatus.FOCUSING) {
+    if (
+      focusTime.status === FocusStatus.FOCUSING &&
+      focusTime.lastFocusStartTime
+    ) {
       const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
       const diffMins = Math.floor(diffMs / 1000 / 60);
       focusTime.totalFocusMinutes += diffMins;
@@ -86,11 +99,11 @@ export class FocusTimeService {
   async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
     if (playerIds.length === 0) return [];
 
-    const now = new Date();
+    const today = this.getTodayDateString();
     return this.focusTimeRepository.find({
       where: {
         player: { id: In(playerIds) },
-        createdDate: now,
+        createdDate: today as unknown as Date,
       },
       relations: ['player'],
     });

@@ -14,7 +14,6 @@ import { FocusTimeModule } from '../focustime/focustime.module';
     TypeOrmModule.forFeature([Player]),
     GithubModule,
     RoomModule,
-    RoomModule,
     forwardRef(() => AuthModule),
     forwardRef(() => FocusTimeModule),
   ],

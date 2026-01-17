@@ -71,7 +71,7 @@ export class TaskService {
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {
-      throw new NotFoundException(`is not player${playerId}'s Task`);
+      throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
     task.completedDate = new Date();
@@ -83,7 +83,7 @@ export class TaskService {
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {
-      throw new NotFoundException(`is not player${playerId}'s Task`);
+      throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
     task.completedDate = null;
@@ -99,7 +99,7 @@ export class TaskService {
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {
-      throw new NotFoundException(`is not player${playerId}'s Task`);
+      throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
     task.description = description;
@@ -111,7 +111,7 @@ export class TaskService {
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {
-      throw new NotFoundException(`is not player${playerId}'s Task`);
+      throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
     await this.taskRepository.remove(task);
