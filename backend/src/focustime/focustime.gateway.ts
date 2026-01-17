@@ -9,6 +9,10 @@ import { Socket } from 'socket.io';
 import { FocusTimeService } from './focustime.service';
 import { User } from '../auth/user.interface';
 
+interface AuthenticatedSocket extends Socket {
+  data: { user: User };
+}
+
 @WebSocketGateway()
 export class FocusTimeGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(FocusTimeGateway.name);
@@ -16,8 +20,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   constructor(private readonly focusTimeService: FocusTimeService) {}
 
   @SubscribeMessage('focusing')
-  async handleFocusing(@ConnectedSocket() client: Socket) {
-    const user = client.data.user as User;
+  async handleFocusing(@ConnectedSocket() client: AuthenticatedSocket) {
+    const user = client.data.user;
     const focusTime = await this.focusTimeService.startFocusing(user.playerId);
 
     const rooms = Array.from(client.rooms);
@@ -43,8 +47,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('resting')
-  async handleResting(@ConnectedSocket() client: Socket) {
-    const user = client.data.user as User;
+  async handleResting(@ConnectedSocket() client: AuthenticatedSocket) {
+    const user = client.data.user;
 
     const focusTime = await this.focusTimeService.startResting(user.playerId);
 
@@ -69,8 +73,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     }
   }
 
-  async handleDisconnect(@ConnectedSocket() client: Socket) {
-    const user = client.data.user as User;
+  async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
+    const user = client.data.user;
 
     if (!user) {
       return;
@@ -82,8 +86,9 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         `User ${user.username} disconnected. Setting status to RESTING.`,
       );
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Error handling disconnect for user ${user.username}: ${error.message}`,
+        `Error handling disconnect for user ${user.username}: ${message}`,
       );
     }
   }

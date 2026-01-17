@@ -25,7 +25,7 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(GithubGuard)
-  async githubCallback(@Req() req: Request, @Res() res: Response) {
+  githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     this.logger.log(`GitHub callback - username: ${user.username}`);
 

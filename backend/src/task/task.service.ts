@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Task } from './entites/task.entity';
 import { CreateTaskReq } from './dto/create-task.req.dto';
 import { PlayerService } from '../player/player.service';
@@ -52,7 +52,7 @@ export class TaskService {
     const tasks = await query.getMany();
 
     return {
-      tasks: tasks.map(TaskRes.of),
+      tasks: tasks.map((task) => TaskRes.of(task)),
     };
   }
 
