@@ -7,10 +7,10 @@ import { useState } from "react";
 
 interface TaskItemProps {
   task: Task;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onToggleTimer: (id: string) => void;
-  onEdit: (id: string, newText: string) => void;
+  onToggle: (id: number) => void;
+  onDelete: (id: number) => void;
+  onToggleTimer: (id: number) => void;
+  onEdit: (id: number, newText: string) => void;
   formatTime: (seconds: number) => string;
 }
 

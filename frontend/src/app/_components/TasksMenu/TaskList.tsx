@@ -10,10 +10,10 @@ interface TaskListProps {
   completedCount: number;
   totalCount: number;
   onAddTask: (text: string) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  onToggleTaskTimer: (id: string) => void;
-  onEditTask: (id: string, newText: string) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
+  onToggleTaskTimer: (id: number) => void;
+  onEditTask: (id: number, newText: string) => void;
   formatTaskTime: (seconds: number) => string;
 }
 
