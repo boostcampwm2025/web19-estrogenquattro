@@ -17,6 +17,7 @@ export default class RemotePlayer extends BasePlayer {
   }
 
   // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)
+  // TODO: focused/rested 이벤트에 taskName이 포함되면 함께 전달
   setFocusState(isFocusing: boolean, taskName?: string) {
     this.isFocusing = isFocusing;
     this.updateTaskBubble({ isFocusing, taskName });
