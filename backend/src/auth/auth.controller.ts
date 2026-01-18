@@ -32,6 +32,7 @@ export class AuthController {
     const token = this.jwtService.sign({
       sub: user.githubId,
       username: user.username,
+      playerId: user.playerId,
     });
     this.logger.log(`JWT token generated for user: ${user.username}`);
 
@@ -57,8 +58,8 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtGuard)
   me(@Req() req: Request) {
-    const { githubId, username, avatarUrl } = req.user as User;
-    const userInfo: UserInfo = { githubId, username, avatarUrl };
+    const { githubId, username, avatarUrl, playerId } = req.user as User;
+    const userInfo: UserInfo = { githubId, username, avatarUrl, playerId };
     this.logger.log(`/me called - username: ${userInfo.username}`);
     return userInfo;
   }
