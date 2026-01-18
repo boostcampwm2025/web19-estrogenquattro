@@ -322,9 +322,9 @@ describe('TaskService', () => {
       const task = await createTestTask(testPlayer, '내 할 일');
 
       // When & Then
-      await expect(
-        service.deleteTask(task.id, otherPlayer.id),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.deleteTask(task.id, otherPlayer.id)).rejects.toThrow(
+        NotFoundException,
+      );
 
       // 삭제되지 않았는지 확인
       const stillExists = await taskRepository.findOne({

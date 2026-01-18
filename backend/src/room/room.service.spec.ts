@@ -78,7 +78,9 @@ describe('RoomService', () => {
 
       // Then
       // 100번 시도 중 초기 방들이 나와야 함
-      expect(roomIds.has('room-1') || roomIds.has('room-2') || roomIds.has('room-3')).toBe(true);
+      expect(
+        roomIds.has('room-1') || roomIds.has('room-2') || roomIds.has('room-3'),
+      ).toBe(true);
     });
   });
 
@@ -169,7 +171,7 @@ describe('RoomService', () => {
       const service = await createFreshService();
 
       // 소켓 입장
-      const roomId = service.randomJoin('socket-1');
+      service.randomJoin('socket-1');
 
       // 나감
       service.exit('socket-1');

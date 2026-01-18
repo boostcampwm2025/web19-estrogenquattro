@@ -116,10 +116,7 @@ describe('PlayerService', () => {
       await playerRepository.save(existingPlayer);
 
       // When
-      const result = await service.findOrCreateBySocialId(
-        11111,
-        'NewNickname',
-      );
+      const result = await service.findOrCreateBySocialId(11111, 'NewNickname');
 
       // Then
       expect(result.id).toBe(existingPlayer.id);
