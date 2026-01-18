@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
@@ -7,6 +7,8 @@ import { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
+  private readonly logger = new Logger(WsJwtGuard.name);
+
   constructor(
     private jwtService: JwtService,
     private userStore: UserStore,
@@ -47,7 +49,9 @@ export class WsJwtGuard implements CanActivate {
       client.data = { user };
 
       return true;
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`verifyClient failed: ${message}`);
       return false;
     }
   }
