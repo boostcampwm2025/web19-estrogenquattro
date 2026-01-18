@@ -14,7 +14,8 @@ export interface DailyStats {
  * 특정 날짜의 Task들을 필터링
  */
 export function getTasksByDate(tasks: Task[], date: Date): Task[] {
-  return tasks.filter((task) => task.date && isSameDay(task.date, date));
+  const dateStr = date.toISOString().split("T")[0];
+  return tasks.filter((task) => task.createdDate === dateStr);
 }
 
 /**

@@ -14,6 +14,10 @@ export default function App() {
 
   const {
     tasks,
+    isLoading,
+    error,
+    pendingTaskIds,
+    fetchTasks,
     addTask,
     toggleTask,
     deleteTask,
@@ -21,9 +25,14 @@ export default function App() {
     toggleTaskTimer,
     stopAllTasks,
     incrementTaskTime,
+    clearTaskError,
   } = useTasksStore(
     useShallow((state) => ({
       tasks: state.tasks,
+      isLoading: state.isLoading,
+      error: state.error,
+      pendingTaskIds: state.pendingTaskIds,
+      fetchTasks: state.fetchTasks,
       addTask: state.addTask,
       toggleTask: state.toggleTask,
       deleteTask: state.deleteTask,
@@ -31,8 +40,24 @@ export default function App() {
       toggleTaskTimer: state.toggleTaskTimer,
       stopAllTasks: state.stopAllTasks,
       incrementTaskTime: state.incrementTaskTime,
+      clearTaskError: state.clearError,
     })),
   );
+
+  // 마운트 시 Task 목록 조회
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(() => {
+      clearTaskError();
+    }, 3000);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [error, clearTaskError]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -48,13 +73,19 @@ export default function App() {
     focusTime,
     incrementFocusTime,
     isFocusTimerRunning,
-    setFocusTimerRunning,
+    startFocusing,
+    stopFocusing,
+    focusError,
+    clearFocusError,
   } = useFocusTimeStore(
     useShallow((state) => ({
       focusTime: state.focusTime,
       incrementFocusTime: state.incrementFocusTime,
       isFocusTimerRunning: state.isFocusTimerRunning,
-      setFocusTimerRunning: state.setFocusTimerRunning,
+      startFocusing: state.startFocusing,
+      stopFocusing: state.stopFocusing,
+      focusError: state.error,
+      clearFocusError: state.clearError,
     })),
   );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
@@ -71,6 +102,16 @@ export default function App() {
       if (interval) clearInterval(interval);
     };
   }, [isTimerRunning, incrementFocusTime]);
+
+  useEffect(() => {
+    if (!focusError) return;
+    const timeout = window.setTimeout(() => {
+      clearFocusError();
+    }, 3000);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [focusError, clearFocusError]);
 
   // 개별 작업 타이머 (실행 중인 Task의 시간만 증가)
   useEffect(() => {
@@ -89,21 +130,24 @@ export default function App() {
 
   const handleToggleTimer = () => {
     if (isTimerRunning) {
-      // 정지: Focus Timer와 모든 Task 정지
-      setFocusTimerRunning(false);
+      // 정지: Focus Timer와 모든 Task 정지 + 서버에 resting 이벤트 전송
+      stopFocusing();
       stopAllTasks();
     } else {
-      // 시작: Focus Timer만 시작
-      setFocusTimerRunning(true);
+      // 시작: Focus Timer 시작 + 서버에 focusing 이벤트 전송
+      startFocusing();
     }
   };
 
-  const handleToggleTaskTimer = (id: string) => {
+  const handleToggleTaskTimer = (id: number) => {
     const targetTask = tasks.find((task) => task.id === id);
 
-    // Task 종료시 Focus Timer도 종료
     if (targetTask && targetTask.isRunning) {
-      setFocusTimerRunning(false);
+      // Task 종료시 Focus Timer도 종료 + 서버에 resting 이벤트 전송
+      stopFocusing();
+    } else if (!isTimerRunning) {
+      // Task 시작 시 Focus Timer도 시작 (아직 실행 중이 아닐 때만)
+      startFocusing();
     }
 
     toggleTaskTimer(id);
@@ -139,6 +183,7 @@ export default function App() {
             time={formatTime(focusTime)}
             isRunning={isTimerRunning}
             onToggle={handleToggleTimer}
+            error={focusError}
           />
 
           <TaskList
@@ -151,6 +196,8 @@ export default function App() {
             onToggleTaskTimer={handleToggleTaskTimer}
             onEditTask={editTask}
             formatTaskTime={formatTaskTime}
+            error={error}
+            pendingTaskIds={pendingTaskIds}
           />
         </div>
       </div>

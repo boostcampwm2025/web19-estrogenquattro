@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entites/task.entity';
@@ -10,6 +10,8 @@ import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class TaskService {
+  private readonly logger = new Logger(TaskService.name);
+
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
@@ -26,6 +28,9 @@ export class TaskService {
     });
 
     const savedTask = await this.taskRepository.save(newTask);
+    this.logger.log(
+      `Task created (taskId: ${savedTask.id}, playerId: ${player.id})`,
+    );
 
     return TaskRes.of(savedTask);
   }
@@ -104,6 +109,7 @@ export class TaskService {
 
     task.description = description;
     const saved = await this.taskRepository.save(task);
+    this.logger.log(`Task updated (taskId: ${taskId}, playerId: ${playerId})`);
     return TaskRes.of(saved);
   }
 
@@ -115,5 +121,6 @@ export class TaskService {
     }
 
     await this.taskRepository.remove(task);
+    this.logger.log(`Task deleted (taskId: ${taskId}, playerId: ${playerId})`);
   }
 }

@@ -1,8 +1,11 @@
 import * as Phaser from "phaser";
 import BasePlayer from "./BasePlayer";
 import type { Direction } from "../types/direction";
+import { devLogger } from "@/lib/devLogger";
 
 export default class RemotePlayer extends BasePlayer {
+  private isFocusing: boolean = false;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -14,6 +17,17 @@ export default class RemotePlayer extends BasePlayer {
     super(scene, x, y, username, id, texture);
   }
 
+  // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)
+  // TODO: focused/rested 이벤트에 taskName이 포함되면 함께 전달
+  setFocusState(isFocusing: boolean, taskName?: string) {
+    this.isFocusing = isFocusing;
+    this.updateTaskBubble({ isFocusing, taskName });
+  }
+
+  getFocusState(): boolean {
+    return this.isFocusing;
+  }
+
   // 서버에서 받은 상태로 업데이트
   updateState(state: {
     x: number;
@@ -22,7 +36,7 @@ export default class RemotePlayer extends BasePlayer {
     direction: Direction;
   }) {
     if (!this.body) {
-      console.error("RemotePlayer body not found");
+      devLogger.error("RemotePlayer body not found");
       return;
     }
 

@@ -51,6 +51,7 @@ export class FocusTimeService {
         player: { id: playerId },
         createdDate: today as unknown as Date,
       },
+      relations: ['player'],
     });
 
     if (!focusTime) {
@@ -74,6 +75,7 @@ export class FocusTimeService {
         player: { id: playerId },
         createdDate: today as unknown as Date,
       },
+      relations: ['player'],
     });
 
     if (!focusTime) {
