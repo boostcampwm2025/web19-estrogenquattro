@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import BasePlayer from "./BasePlayer";
 import type { Direction } from "../types/direction";
+import { devLogger } from "@/lib/devLogger";
 
 export default class RemotePlayer extends BasePlayer {
   private isFocusing: boolean = false;
@@ -35,7 +36,7 @@ export default class RemotePlayer extends BasePlayer {
     direction: Direction;
   }) {
     if (!this.body) {
-      console.error("RemotePlayer body not found");
+      devLogger.error("RemotePlayer body not found");
       return;
     }
 
