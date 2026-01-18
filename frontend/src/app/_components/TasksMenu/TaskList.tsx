@@ -4,16 +4,19 @@ import { Task } from "./types";
 import { TaskItem } from "./TaskItem";
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { InlineAlert } from "@/_components/ui/inline-alert";
 
 interface TaskListProps {
   tasks: Task[];
   completedCount: number;
   totalCount: number;
+  error?: string | null;
+  pendingTaskIds: number[];
   onAddTask: (text: string) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  onToggleTaskTimer: (id: string) => void;
-  onEditTask: (id: string, newText: string) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
+  onToggleTaskTimer: (id: number) => void;
+  onEditTask: (id: number, newText: string) => void;
   formatTaskTime: (seconds: number) => string;
 }
 
@@ -21,6 +24,8 @@ export function TaskList({
   tasks,
   completedCount,
   totalCount,
+  error,
+  pendingTaskIds,
   onAddTask,
   onToggleTask,
   onDeleteTask,
@@ -66,6 +71,8 @@ export function TaskList({
         </div>
       </div>
 
+      <InlineAlert message={error} />
+
       {isAdding && (
         <form onSubmit={handleSubmit} className="mb-3">
           <div className="flex gap-2">
@@ -100,6 +107,7 @@ export function TaskList({
           <TaskItem
             key={task.id}
             task={task}
+            isPending={pendingTaskIds.includes(task.id)}
             onToggle={onToggleTask}
             onDelete={onDeleteTask}
             onToggleTimer={onToggleTaskTimer}

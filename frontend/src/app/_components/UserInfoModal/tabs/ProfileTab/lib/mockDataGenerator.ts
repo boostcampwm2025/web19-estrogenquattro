@@ -29,7 +29,7 @@ export function generateMockTasks(daysCount: number = 365): Task[] {
   const tasks: Task[] = [];
   const { startDate, endDate } = getDateRange(daysCount);
 
-  let taskId = 0;
+  let taskId = 1;
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     // 날짜마다 0~25개의 Task 생성 (GitHub 히트맵 레벨과 매칭)
     const taskCount = Math.floor(Math.random() * 26);
@@ -41,11 +41,11 @@ export function generateMockTasks(daysCount: number = 365): Task[] {
         : Math.floor(Math.random() * 1800); // 0~30분 (미완료는 시간이 적음)
 
       tasks.push({
-        id: `mock-${taskId++}`,
+        id: taskId++,
         text: TASK_NAMES[Math.floor(Math.random() * TASK_NAMES.length)],
         completed: isCompleted,
         time: timeInSeconds,
-        date: new Date(d),
+        createdDate: d.toISOString().split("T")[0], // YYYY-MM-DD 형식
       });
     }
   }
