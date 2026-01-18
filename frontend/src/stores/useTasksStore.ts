@@ -106,7 +106,9 @@ export const useTasksStore = create<TasksStore>((set, get) => ({
 
     // 낙관적 업데이트
     set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? { ...t, text: newText } : t)),
+      tasks: state.tasks.map((t) =>
+        t.id === id ? { ...t, text: newText } : t,
+      ),
     }));
 
     try {
