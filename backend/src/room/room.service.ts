@@ -97,4 +97,31 @@ export class RoomService {
   getRoomIdBySocketId(socketId: string): string | undefined {
     return this.socketToRoom.get(socketId);
   }
+
+  private roomPlayers = new Map<string, Set<number>>();
+
+  addPlayer(roomId: string, playerId: number) {
+    if (!this.roomPlayers.has(roomId)) {
+      this.roomPlayers.set(roomId, new Set());
+    }
+    const players = this.roomPlayers.get(roomId);
+    if (players) {
+      players.add(playerId);
+    }
+  }
+
+  removePlayer(roomId: string, playerId: number) {
+    const players = this.roomPlayers.get(roomId);
+    if (players) {
+      players.delete(playerId);
+      if (players.size === 0) {
+        this.roomPlayers.delete(roomId);
+      }
+    }
+  }
+
+  getPlayerIds(roomId: string): number[] {
+    const players = this.roomPlayers.get(roomId);
+    return players ? Array.from(players) : [];
+  }
 }

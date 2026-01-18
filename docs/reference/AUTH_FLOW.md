@@ -59,6 +59,7 @@ githubCallback(@Req() req: Request, @Res() res: Response) {
   const token = this.jwtService.sign({
     sub: user.githubId,
     username: user.username,
+    playerId: user.playerId,
   });
 
   // httpOnly 쿠키 설정
@@ -84,8 +85,8 @@ githubCallback(@Req() req: Request, @Res() res: Response) {
 @Get('me')
 @UseGuards(JwtGuard)
 me(@Req() req: Request) {
-  const { githubId, username, avatarUrl } = req.user as User;
-  return { githubId, username, avatarUrl };
+  const { githubId, username, avatarUrl, playerId } = req.user as User;
+  return { githubId, username, avatarUrl, playerId };
 }
 ```
 
@@ -94,7 +95,8 @@ me(@Req() req: Request) {
 {
   "githubId": "12345678",
   "username": "octocat",
-  "avatarUrl": "https://avatars.githubusercontent.com/u/12345678"
+  "avatarUrl": "https://avatars.githubusercontent.com/u/12345678",
+  "playerId": 101
 }
 ```
 
@@ -124,6 +126,7 @@ interface User {
   username: string;
   avatarUrl: string;
   accessToken: string;  // GitHub API 호출용
+  playerId: number;
 }
 ```
 
@@ -135,6 +138,7 @@ interface UserInfo {
   username: string;
   avatarUrl: string;
   // accessToken 미포함 (보안)
+  playerId: number;
 }
 ```
 
@@ -144,6 +148,7 @@ interface UserInfo {
 interface JwtPayload {
   sub: string;      // githubId
   username: string;
+  playerId: number;
 }
 ```
 

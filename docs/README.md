@@ -45,6 +45,7 @@ REST API 및 WebSocket 이벤트 명세
 | [COMMIT_CONVENTION.md](./conventions/COMMIT_CONVENTION.md) | 커밋 컨벤션 |
 | [PR_CONVENTION.md](./conventions/PR_CONVENTION.md) | PR 컨벤션 |
 | [LOGGING_CONVENTION.md](./conventions/LOGGING_CONVENTION.md) | 로깅 컨벤션 |
+| [TEST_CONVENTION.md](./conventions/TEST_CONVENTION.md) | 테스트 컨벤션 |
 
 ### Reference (참고 자료)
 
@@ -53,6 +54,7 @@ REST API 및 WebSocket 이벤트 명세
 | 문서 | 설명 |
 |------|------|
 | [AUTH_FLOW.md](./reference/AUTH_FLOW.md) | GitHub OAuth 인증 흐름 |
+| [FOCUS_TIME.md](./reference/FOCUS_TIME.md) | 포커스 타임 개요 |
 | [ENVIRONMENT.md](./reference/ENVIRONMENT.md) | 환경변수 목록 |
 
 ---
