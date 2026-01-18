@@ -37,10 +37,10 @@ socket.emit('joining', {
 **서버 동작:**
 1. 랜덤 방 배정 (`RoomService.randomJoin`)
 2. 중복 접속 시 이전 세션 종료 (`session_replaced`)
-3. 플레이어 정보 저장
-4. 기존 플레이어 목록 전송 (`players_synced`)
+3. 플레이어 정보 저장 및 방 플레이어 등록
+4. 기존 플레이어 목록 전송 (`players_synced`, 포커스 상태 포함)
 5. 다른 플레이어에게 입장 알림 (`player_joined`)
-6. 접속 시간 타이머 시작
+6. 포커스 타임 레코드 생성/조회
 7. GitHub 폴링 시작
 8. 현재 룸 상태 전송 (`github_state`)
 
@@ -81,6 +81,33 @@ socket.emit('chatting', {
 
 ---
 
+### focusing
+
+집중 시작 (방 입장 후 호출)
+
+```typescript
+socket.emit('focusing');
+```
+
+**서버 동작:**
+- 포커스 상태를 `FOCUSING`으로 변경
+- 같은 방에 `focused` 브로드캐스트
+
+---
+
+### resting
+
+휴식 시작 (방 입장 후 호출)
+
+```typescript
+socket.emit('resting');
+```
+
+**서버 동작:**
+- 포커스 상태를 `RESTING`으로 변경, 집중 시간 누적
+- 같은 방에 `rested` 브로드캐스트
+
+---
 ## 서버 → 클라이언트
 
 ### players_synced
@@ -94,7 +121,10 @@ socket.on('players_synced', (players: Array<{
   username: string,
   roomId: string,
   x: number,
-  y: number
+  y: number,
+  playerId: number,
+  status: 'FOCUSING' | 'RESTING',
+  lastFocusStartTime: string | null
 }>) => {
   // RemotePlayer 생성
 });
@@ -167,21 +197,6 @@ socket.on('chatted', (data: {
 
 ---
 
-### timerUpdated
-
-접속 시간 업데이트 (1분마다)
-
-```typescript
-socket.on('timerUpdated', (data: {
-  userId: string,
-  minutes: number
-}) => {
-  // 플레이어 접속 시간 표시 업데이트
-});
-```
-
----
-
 ### github_event
 
 GitHub 활동 감지 알림
@@ -210,6 +225,40 @@ socket.on('github_state', (state: {
 }) => {
   // 프로그레스바 초기값 설정
   // 기여도 목록 초기값 설정
+});
+```
+
+---
+
+### focused
+
+집중 시작 알림
+
+```typescript
+socket.on('focused', (data: {
+  userId: string,
+  username: string,
+  status: 'FOCUSING',
+  lastFocusStartTime: string
+}) => {
+  // 포커스 상태 표시 업데이트
+});
+```
+
+---
+
+### rested
+
+휴식 시작 알림
+
+```typescript
+socket.on('rested', (data: {
+  userId: string,
+  username: string,
+  status: 'RESTING',
+  totalFocusMinutes: number
+}) => {
+  // 포커스 상태 및 누적 시간 표시 업데이트
 });
 ```
 

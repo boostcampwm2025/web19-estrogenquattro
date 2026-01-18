@@ -54,6 +54,7 @@ REST API 및 WebSocket 이벤트 명세
 | 문서 | 설명 |
 |------|------|
 | [AUTH_FLOW.md](./reference/AUTH_FLOW.md) | GitHub OAuth 인증 흐름 |
+| [FOCUS_TIME.md](./reference/FOCUS_TIME.md) | 포커스 타임 개요 |
 | [ENVIRONMENT.md](./reference/ENVIRONMENT.md) | 환경변수 목록 |
 
 ---

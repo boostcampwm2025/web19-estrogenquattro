@@ -29,25 +29,61 @@ const AppDataSource = new DataSource({
 
 ### Task 엔티티
 
-**backend/src/task/task.entity.ts**:
+**backend/src/task/entites/task.entity.ts**:
 
 ```typescript
-@Entity()
+@Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  title: string;
+  @ManyToOne(() => Player)
+  @JoinColumn({ name: 'player_id' })
+  player: Player;
 
-  @Column({ default: false })
-  completed: boolean;
+  @Column({ type: 'varchar', length: 100, nullable: false })
+  description: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ type: 'int', name: 'total_focus_minutes', default: 0 })
+  totalFocusMinutes: number;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'date', name: 'completed_date', nullable: true })
+  completedDate: Date | null;
+
+  @Column({ type: 'date', name: 'created_date' })
+  createdDate: Date;
+}
+```
+
+### DailyFocusTime 엔티티
+
+**backend/src/focustime/entites/daily-focus-time.entity.ts**:
+
+```typescript
+@Entity('daily_focus_time')
+export class DailyFocusTime {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Player)
+  @JoinColumn({ name: 'player_id' })
+  player: Player;
+
+  @Column({ name: 'total_focus_minutes', type: 'int', default: 0 })
+  totalFocusMinutes: number;
+
+  @Column({
+    type: 'simple-enum',
+    enum: FocusStatus,
+    default: FocusStatus.RESTING,
+  })
+  status: FocusStatus;
+
+  @Column({ name: 'created_date', type: 'date', nullable: false })
+  createdDate: Date;
+
+  @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
+  lastFocusStartTime: Date;
 }
 ```
 
