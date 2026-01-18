@@ -11,6 +11,8 @@ type FakeSocket = {
   trigger: (event: string, data?: unknown) => void;
 };
 
+type SocketManagerCtor = typeof import("@/game/managers/SocketManager").default;
+
 const remotePlayerInstances = new Map<
   string,
   {
@@ -63,8 +65,8 @@ const createFakeSocket = (): FakeSocket => {
 };
 
 describe("SocketManager 통합", () => {
-  let SocketManager: any;
-  let socketManager: any;
+  let SocketManager: SocketManagerCtor;
+  let socketManager: InstanceType<SocketManagerCtor>;
 
   const scene = {
     physics: { add: { collider: vi.fn() } },
