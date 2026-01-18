@@ -3,6 +3,8 @@ import BasePlayer from "./BasePlayer";
 import type { Direction } from "../types/direction";
 
 export default class RemotePlayer extends BasePlayer {
+  private isFocusing: boolean = false;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -12,6 +14,16 @@ export default class RemotePlayer extends BasePlayer {
     texture: string, // 유저네임(텍스처 키) 받기
   ) {
     super(scene, x, y, username, id, texture);
+  }
+
+  // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)
+  setFocusState(isFocusing: boolean, taskName?: string) {
+    this.isFocusing = isFocusing;
+    this.updateTaskBubble({ isFocusing, taskName });
+  }
+
+  getFocusState(): boolean {
+    return this.isFocusing;
   }
 
   // 서버에서 받은 상태로 업데이트

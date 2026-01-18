@@ -14,6 +14,9 @@ export default function App() {
 
   const {
     tasks,
+    isLoading,
+    error,
+    fetchTasks,
     addTask,
     toggleTask,
     deleteTask,
@@ -24,6 +27,9 @@ export default function App() {
   } = useTasksStore(
     useShallow((state) => ({
       tasks: state.tasks,
+      isLoading: state.isLoading,
+      error: state.error,
+      fetchTasks: state.fetchTasks,
       addTask: state.addTask,
       toggleTask: state.toggleTask,
       deleteTask: state.deleteTask,
@@ -33,6 +39,11 @@ export default function App() {
       incrementTaskTime: state.incrementTaskTime,
     })),
   );
+
+  // 마운트 시 Task 목록 조회
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -48,13 +59,15 @@ export default function App() {
     focusTime,
     incrementFocusTime,
     isFocusTimerRunning,
-    setFocusTimerRunning,
+    startFocusing,
+    stopFocusing,
   } = useFocusTimeStore(
     useShallow((state) => ({
       focusTime: state.focusTime,
       incrementFocusTime: state.incrementFocusTime,
       isFocusTimerRunning: state.isFocusTimerRunning,
-      setFocusTimerRunning: state.setFocusTimerRunning,
+      startFocusing: state.startFocusing,
+      stopFocusing: state.stopFocusing,
     })),
   );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
@@ -89,21 +102,24 @@ export default function App() {
 
   const handleToggleTimer = () => {
     if (isTimerRunning) {
-      // 정지: Focus Timer와 모든 Task 정지
-      setFocusTimerRunning(false);
+      // 정지: Focus Timer와 모든 Task 정지 + 서버에 resting 이벤트 전송
+      stopFocusing();
       stopAllTasks();
     } else {
-      // 시작: Focus Timer만 시작
-      setFocusTimerRunning(true);
+      // 시작: Focus Timer 시작 + 서버에 focusing 이벤트 전송
+      startFocusing();
     }
   };
 
-  const handleToggleTaskTimer = (id: string) => {
+  const handleToggleTaskTimer = (id: number) => {
     const targetTask = tasks.find((task) => task.id === id);
 
-    // Task 종료시 Focus Timer도 종료
     if (targetTask && targetTask.isRunning) {
-      setFocusTimerRunning(false);
+      // Task 종료시 Focus Timer도 종료 + 서버에 resting 이벤트 전송
+      stopFocusing();
+    } else if (!isTimerRunning) {
+      // Task 시작 시 Focus Timer도 시작 (아직 실행 중이 아닐 때만)
+      startFocusing();
     }
 
     toggleTaskTimer(id);

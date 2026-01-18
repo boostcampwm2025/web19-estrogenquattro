@@ -15,6 +15,9 @@ interface PlayerData {
   isMoving?: boolean;
   direction?: Direction;
   timestamp?: number;
+  // FocusTime 관련 필드 (players_synced에서 수신)
+  status?: "FOCUSING" | "RESTING";
+  lastFocusStartTime?: string | null;
 }
 
 interface GithubEventData {
@@ -170,6 +173,28 @@ export default class SocketManager {
         remotePlayer.showChatBubble(data.message);
       }
     });
+
+    // 다른 플레이어 집중 시작
+    socket.on(
+      "focused",
+      (data: { userId: string; username: string; status: string }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setFocusState(true);
+        }
+      },
+    );
+
+    // 다른 플레이어 휴식 시작
+    socket.on(
+      "rested",
+      (data: { userId: string; username: string; status: string }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setFocusState(false);
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -188,6 +213,11 @@ export default class SocketManager {
       username,
     );
     this.otherPlayers.set(data.userId, remotePlayer);
+
+    // 입장 시 기존 플레이어의 집중 상태 반영
+    if (data.status === "FOCUSING") {
+      remotePlayer.setFocusState(true);
+    }
 
     if (this.walls) {
       this.scene.physics.add.collider(remotePlayer.getContainer(), this.walls);
