@@ -5,7 +5,7 @@ export interface Task {
   id: number;
   text: string;
   completed: boolean;
-  time: number; // 초 단위 (totalFocusMinutes * 60)
+  time: number; // 초 단위로 저장됨
   isRunning?: boolean;
   createdDate: string; // YYYY-MM-DD
 }
@@ -16,7 +16,7 @@ export function mapTaskResToTask(res: TaskRes): Task {
     id: res.id,
     text: res.description,
     completed: res.isCompleted,
-    time: res.totalFocusMinutes * 60,
+    time: res.totalFocusMinutes * 60, // 분 -> 초 변환
     isRunning: false,
     createdDate: res.createdDate,
   };
