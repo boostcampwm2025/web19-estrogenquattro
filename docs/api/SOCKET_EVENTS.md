@@ -20,6 +20,13 @@ const socket = io(SOCKET_URL, {
 
 ---
 
+## 상태
+
+- **Implemented:** 아래 본문에 상세 설명된 이벤트
+- **Planned/Optional:** 현재 없음
+
+---
+
 ## 클라이언트 → 서버
 
 ### joining
