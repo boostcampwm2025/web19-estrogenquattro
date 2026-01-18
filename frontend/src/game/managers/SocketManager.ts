@@ -175,28 +175,22 @@ export default class SocketManager {
     });
 
     // 다른 플레이어 집중 시작
-    socket.on(
-      "focused",
-      (data: { userId: string; status: string }) => {
-        if (data.status !== "FOCUSING") return;
-        const remotePlayer = this.otherPlayers.get(data.userId);
-        if (remotePlayer) {
-          remotePlayer.setFocusState(true);
-        }
-      },
-    );
+    socket.on("focused", (data: { userId: string; status: string }) => {
+      if (data.status !== "FOCUSING") return;
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.setFocusState(true);
+      }
+    });
 
     // 다른 플레이어 휴식 시작
-    socket.on(
-      "rested",
-      (data: { userId: string; status: string }) => {
-        if (data.status !== "RESTING") return;
-        const remotePlayer = this.otherPlayers.get(data.userId);
-        if (remotePlayer) {
-          remotePlayer.setFocusState(false);
-        }
-      },
-    );
+    socket.on("rested", (data: { userId: string; status: string }) => {
+      if (data.status !== "RESTING") return;
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.setFocusState(false);
+      }
+    });
   }
 
   private addRemotePlayer(data: PlayerData): void {

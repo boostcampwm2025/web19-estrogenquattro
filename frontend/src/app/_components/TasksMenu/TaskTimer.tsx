@@ -1,16 +1,24 @@
 import { Play, Pause } from "lucide-react";
 import { Button } from "@/_components/ui/button";
+import { InlineAlert } from "@/_components/ui/inline-alert";
 
 interface TaskTimerProps {
   time: string;
   isRunning: boolean;
   onToggle: () => void;
+  error?: string | null;
 }
 
-export function TaskTimer({ time, isRunning, onToggle }: TaskTimerProps) {
+export function TaskTimer({
+  time,
+  isRunning,
+  onToggle,
+  error,
+}: TaskTimerProps) {
   return (
     <div className="mb-6">
       <div className="text-md text-retro-text-primary mb-3">[ Focus Time ]</div>
+      <InlineAlert message={error} />
       <div className="border-retro-border-dark bg-retro-bg-secondary shadow-retro-md mb-4 rounded-none border-3 p-6">
         <div className="text-retro-text-primary text-center text-3xl">
           {time}
