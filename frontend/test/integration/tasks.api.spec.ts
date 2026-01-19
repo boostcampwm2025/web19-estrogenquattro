@@ -38,7 +38,7 @@ describe("Tasks API 통합", () => {
 
     const state = useTasksStore.getState();
     expect(state.tasks).toHaveLength(1);
-    expect(state.tasks[0].text).toBe("오늘 작업");
+    expect(state.tasks[0].description).toBe("오늘 작업");
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
   });
@@ -57,7 +57,7 @@ describe("Tasks API 통합", () => {
 
     const state = useTasksStore.getState();
     expect(state.tasks).toHaveLength(1);
-    expect(state.tasks[0].text).toBe("어제 작업");
+    expect(state.tasks[0].description).toBe("어제 작업");
   });
 
   it("Task를 추가하면 새 항목이 생성된다", async () => {
@@ -65,7 +65,7 @@ describe("Tasks API 통합", () => {
 
     const state = useTasksStore.getState();
     expect(state.tasks).toHaveLength(1);
-    expect(state.tasks[0].text).toBe("새 작업");
+    expect(state.tasks[0].description).toBe("새 작업");
   });
 
   it("Task 생성에 실패하면 에러 메시지가 설정된다", async () => {
@@ -187,7 +187,7 @@ describe("Tasks API 통합", () => {
     await useTasksStore.getState().editTask(41, "수정 후");
 
     const state = useTasksStore.getState();
-    expect(state.tasks[0].text).toBe("수정 후");
+    expect(state.tasks[0].description).toBe("수정 후");
   });
 
   it("Task 수정에 실패하면 text가 롤백된다", async () => {
@@ -203,7 +203,7 @@ describe("Tasks API 통합", () => {
     await useTasksStore.getState().editTask(51, "롤백 후");
 
     const state = useTasksStore.getState();
-    expect(state.tasks[0].text).toBe("롤백 전");
+    expect(state.tasks[0].description).toBe("롤백 전");
     expect(state.error).toBe("Task 수정에 실패했습니다.");
   });
 

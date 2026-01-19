@@ -143,11 +143,11 @@ export default function App() {
     const targetTask = tasks.find((task) => task.id === id);
 
     if (targetTask && targetTask.isRunning) {
-      // Task 종료시 Focus Timer도 종료 + 서버에 resting 이벤트 전송
+      // 같은 Task를 다시 클릭: 종료 + 서버에 resting 이벤트 전송
       stopFocusing();
-    } else if (!isTimerRunning) {
-      // Task 시작 시 Focus Timer도 시작 (아직 실행 중이 아닐 때만)
-      startFocusing();
+    } else {
+      // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName 포함)
+      startFocusing(targetTask?.description);
     }
 
     toggleTaskTimer(id);

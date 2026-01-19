@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
+  MessageBody,
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
@@ -20,8 +21,14 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   constructor(private readonly focusTimeService: FocusTimeService) {}
 
   @SubscribeMessage('focusing')
-  async handleFocusing(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handleFocusing(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { taskName?: string },
+  ) {
     const user = client.data.user;
+    this.logger.debug(
+      `Received focusing event - data: ${JSON.stringify(data)}`,
+    );
     const focusTime = await this.focusTimeService.startFocusing(user.playerId);
 
     const rooms = Array.from(client.rooms);
@@ -34,10 +41,12 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         username: focusTime.player.nickname,
         status: focusTime.status,
         lastFocusStartTime: focusTime.lastFocusStartTime,
+        totalFocusMinutes: focusTime.totalFocusMinutes,
+        taskName: data?.taskName,
       });
 
       this.logger.log(
-        `User ${user.username} started focusing in room ${roomId}`,
+        `User ${user.username} started focusing in room ${roomId}${data?.taskName ? ` (task: ${data.taskName})` : ''}`,
       );
     } else {
       this.logger.warn(
