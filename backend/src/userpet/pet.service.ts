@@ -65,13 +65,81 @@ export class PetService {
     });
   }
 
-  async feed(userPetId: string) {
-    // TODO: Implement feed logic
-    return 'feed result';
+  async feed(userPetId: number, playerId: number): Promise<UserPet> {
+    const FEED_COST = 10;
+
+    return this.dataSource.transaction(async (manager) => {
+      const userPet = await manager.findOne(UserPet, {
+        where: { id: userPetId },
+        relations: ['pet', 'player'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!userPet) throw new NotFoundException('UserPet not found');
+      if (userPet.playerId !== playerId)
+        throw new BadRequestException('Not your pet');
+
+      const { player, pet } = userPet;
+
+      // 만렙 체크 (evolution_required_exp가 0이면 만렙으로 간주)
+      if (pet.evolutionRequiredExp === 0) {
+        throw new BadRequestException('Pet is already at max level');
+      }
+
+      // 포인트 차감
+      if (player.totalPoint < FEED_COST) {
+        throw new BadRequestException('Not enough points');
+      }
+
+      player.totalPoint -= FEED_COST;
+      await manager.save(player);
+
+      // 경험치 증가
+      userPet.exp = Math.min(userPet.exp + FEED_COST, pet.evolutionRequiredExp);
+      return manager.save(UserPet, userPet);
+    });
   }
 
-  async evolve(userPetId: string) {
-    // TODO: Implement evolve logic
-    return 'evolve result';
+  async evolve(userPetId: number, playerId: number): Promise<UserPet> {
+    return this.dataSource.transaction(async (manager) => {
+      const userPet = await manager.findOne(UserPet, {
+        where: { id: userPetId },
+        relations: ['pet'],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!userPet) throw new NotFoundException('UserPet not found');
+      if (userPet.playerId !== playerId)
+        throw new BadRequestException('Not your pet');
+
+      const currentPet = userPet.pet;
+
+      // 진화 조건 체크
+      if (currentPet.evolutionRequiredExp === 0) {
+        throw new BadRequestException('Already max stage');
+      }
+
+      if (userPet.exp < currentPet.evolutionRequiredExp) {
+        throw new BadRequestException('Not enough experience to evolve');
+      }
+
+      // 다음 단계 펫 찾기 (같은 종족, 다음 스테이지)
+      const nextStagePet = await this.petRepository.findOne({
+        where: {
+          species: currentPet.species,
+          evolutionStage: currentPet.evolutionStage + 1,
+        },
+      });
+
+      if (!nextStagePet) {
+        throw new InternalServerErrorException('Next evolution not found');
+      }
+
+      // 펫 정보 업데이트 (새 펫으로 교체, 경험치 초기화)
+      userPet.pet = nextStagePet;
+      userPet.exp = 0;
+
+      return manager.save(UserPet, userPet);
+    });
   }
 }
