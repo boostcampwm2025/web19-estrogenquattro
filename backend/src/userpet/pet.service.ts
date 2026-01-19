@@ -9,6 +9,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Pet } from './entities/pet.entity';
 import { UserPet } from './entities/user-pet.entity';
 import { Player } from '../player/entites/player.entity';
+import { UserPetCodex } from './entities/user-pet-codex.entity';
 
 @Injectable()
 export class PetService {
@@ -19,6 +20,8 @@ export class PetService {
     private readonly userPetRepository: Repository<UserPet>,
     @InjectRepository(Player)
     private readonly playerRepository: Repository<Player>,
+    @InjectRepository(UserPetCodex)
+    private readonly userPetCodexRepository: Repository<UserPetCodex>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -60,6 +63,19 @@ export class PetService {
         pet: selectedPet,
         exp: 0,
       });
+
+      // 4. 도감(Collection)에 등록 (이미 있으면 무시)
+      const existingCollection = await this.userPetCodexRepository.findOne({
+        where: { playerId: player.id, petId: selectedPet.id },
+      });
+
+      if (!existingCollection) {
+        const collection = this.userPetCodexRepository.create({
+          player,
+          pet: selectedPet,
+        });
+        await manager.save(UserPetCodex, collection);
+      }
 
       return manager.save(UserPet, userPet);
     });
@@ -112,7 +128,7 @@ export class PetService {
       if (userPet.playerId !== playerId)
         throw new BadRequestException('Not your pet');
 
-      const currentPet = userPet.pet;
+      const { pet: currentPet, player } = userPet;
 
       // 진화 조건 체크
       if (currentPet.evolutionRequiredExp === 0) {
@@ -138,6 +154,19 @@ export class PetService {
       // 펫 정보 업데이트 (새 펫으로 교체, 경험치 초기화)
       userPet.pet = nextStagePet;
       userPet.exp = 0;
+
+      // 도감(Collection)에 등록 (이미 있으면 무시)
+      const existingCollection = await this.userPetCodexRepository.findOne({
+        where: { playerId: player.id, petId: nextStagePet.id },
+      });
+
+      if (!existingCollection) {
+        const collection = this.userPetCodexRepository.create({
+          player,
+          pet: nextStagePet,
+        });
+        await manager.save(UserPetCodex, collection);
+      }
 
       return manager.save(UserPet, userPet);
     });
