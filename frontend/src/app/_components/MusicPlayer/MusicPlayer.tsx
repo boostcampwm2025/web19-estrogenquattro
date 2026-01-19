@@ -112,7 +112,6 @@ export default function MusicPlayer() {
               <button
                 onClick={toggleLoopMode}
                 aria-label={`Repeat Mode: ${loopMode}`}
-                title={`Repeat: ${loopMode}`}
                 className={`flex h-8 w-8 cursor-pointer items-center justify-start transition-colors ${
                   loopMode === LOOP_MODES.OFF
                     ? "text-retro-text-tertiary hover:text-retro-text-primary"
