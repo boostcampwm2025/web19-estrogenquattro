@@ -62,10 +62,8 @@ export class RoomService {
     if (this.availableRooms.length === 0) {
       return this.createRoom();
     }
-    // TODO: 테스트용 임시방편 - 항상 첫 번째 방으로 배정
-    // const idx = Math.floor(Math.random() * this.availableRooms.length);
-    // return this.availableRooms[idx];
-    return this.availableRooms[0];
+    const idx = Math.floor(Math.random() * this.availableRooms.length);
+    return this.availableRooms[idx];
   }
 
   randomJoin(socketId: string): string {
