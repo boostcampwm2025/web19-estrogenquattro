@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { devLogger } from "@/lib/devLogger";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -34,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      devLogger.error("Failed to fetch user", { error });
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

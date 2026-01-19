@@ -22,11 +22,7 @@ export default function ProfileTab() {
   // 실제 API 연동 시: selectedDate가 변경될 때 해당 날짜의 Task를 API로 요청
   const getTasksForDate = (date: Date) => {
     const dateStr = date.toISOString().split("T")[0];
-    return mockTasks.filter((task) => {
-      if (!task.date) return false;
-      const taskDate = new Date(task.date);
-      return taskDate.toISOString().split("T")[0] === dateStr;
-    });
+    return mockTasks.filter((task) => task.createdDate === dateStr);
   };
 
   const selectedDateTasks = getTasksForDate(selectedDate);

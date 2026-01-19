@@ -93,12 +93,14 @@ socket.emit('chatting', {
 집중 시작 (방 입장 후 호출)
 
 ```typescript
-socket.emit('focusing');
+socket.emit('focusing', {
+  taskName?: string  // 집중할 태스크 이름 (선택)
+});
 ```
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
-- 같은 방에 `focused` 브로드캐스트
+- 같은 방에 `focused` 브로드캐스트 (taskName 포함)
 
 ---
 
@@ -131,7 +133,8 @@ socket.on('players_synced', (players: Array<{
   y: number,
   playerId: number,
   status: 'FOCUSING' | 'RESTING',
-  lastFocusStartTime: string | null
+  lastFocusStartTime: string | null,
+  totalFocusMinutes: number
 }>) => {
   // RemotePlayer 생성
 });
@@ -246,7 +249,9 @@ socket.on('focused', (data: {
   userId: string,
   username: string,
   status: 'FOCUSING',
-  lastFocusStartTime: string
+  lastFocusStartTime: string,
+  totalFocusMinutes: number,
+  taskName?: string
 }) => {
   // 포커스 상태 표시 업데이트
 });

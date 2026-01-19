@@ -308,7 +308,7 @@ export class MapScene extends Phaser.Scene {
 
     // 타이머가 돌아가고 있는지 확인 (전체 or 개별)
     const isFocusing = isFocusTimerRunning || !!runningTask;
-    const taskName = runningTask?.text;
+    const taskName = runningTask?.description;
 
     // 상태가 변경되었을 때만 업데이트
     const currentState = { isFocusing, taskName };

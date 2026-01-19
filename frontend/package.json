@@ -9,7 +9,8 @@
     "lint": "eslint",
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
-    "test": "echo \"No tests configured yet\" && exit 0"
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
@@ -30,7 +31,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
+    "msw": "^2.6.0",
+    "socket.io": "^4.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.0"
   }
 }
