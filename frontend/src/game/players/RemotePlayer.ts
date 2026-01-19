@@ -42,14 +42,18 @@ export default class RemotePlayer extends BasePlayer {
       this.currentSessionSeconds = options?.currentSessionSeconds ?? 0;
 
       // 초기 표시
-      this.updateFocusTime(this.totalFocusMinutes * 60 + this.currentSessionSeconds);
+      this.updateFocusTime(
+        this.totalFocusMinutes * 60 + this.currentSessionSeconds,
+      );
 
       // 1초마다 +1 증가
       this.focusTimeTimer = this.scene.time.addEvent({
         delay: 1000,
         callback: () => {
           this.currentSessionSeconds++;
-          this.updateFocusTime(this.totalFocusMinutes * 60 + this.currentSessionSeconds);
+          this.updateFocusTime(
+            this.totalFocusMinutes * 60 + this.currentSessionSeconds,
+          );
         },
         loop: true,
       });
