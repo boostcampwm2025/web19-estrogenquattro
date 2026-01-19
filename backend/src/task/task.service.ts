@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entites/task.entity';
-import { CreateTaskReq } from './dto/create-task.req.dto';
+import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
-import { TaskRes } from './dto/task.res.dto';
-import { TaskListRes } from './dto/task-list.res.dto';
+import { TaskRes } from './dto/task.res';
+import { TaskListRes } from './dto/task-list.res';
 import { NotFoundException } from '@nestjs/common';
 
 @Injectable()

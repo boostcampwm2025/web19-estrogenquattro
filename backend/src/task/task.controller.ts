@@ -11,10 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
-import { CreateTaskReq } from './dto/create-task.req.dto';
-import { UpdateTaskReq } from './dto/update-task.req.dto';
-import { TaskListRes } from './dto/task-list.res.dto';
-import { TaskRes } from './dto/task.res.dto';
+import { CreateTaskReq } from './dto/create-task.req';
+import { UpdateTaskReq } from './dto/update-task.req';
+import { TaskListRes } from './dto/task-list.res';
+import { TaskRes } from './dto/task.res';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlayerId } from '../auth/player-id.decorator';
 
