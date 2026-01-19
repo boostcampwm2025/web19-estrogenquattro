@@ -37,15 +37,12 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
 
   startFocusing: (taskName?: string) => {
     const socket = getSocket();
-    console.log("[DEBUG useFocusTimeStore] startFocusing called with:", taskName);
     if (!socket?.connected) {
-      console.log("[DEBUG useFocusTimeStore] socket not connected");
       set({
         error: "서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.",
       });
       return;
     }
-    console.log("[DEBUG useFocusTimeStore] emitting 'focusing' with:", { taskName });
     socket.emit("focusing", { taskName });
     set({
       status: "FOCUSING",

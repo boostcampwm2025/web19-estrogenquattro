@@ -118,7 +118,6 @@ export default class SocketManager {
     });
 
     socket.on("players_synced", (players: PlayerData[]) => {
-      console.log("[DEBUG SocketManager] received 'players_synced':", players);
       players.forEach((data) => {
         this.addRemotePlayer(data);
       });
@@ -186,12 +185,9 @@ export default class SocketManager {
         lastFocusStartTime?: string;
         totalFocusMinutes?: number;
       }) => {
-        console.log("[DEBUG SocketManager] received 'focused' event:", data);
         if (data.status !== "FOCUSING") return;
         const remotePlayer = this.otherPlayers.get(data.userId);
-        console.log("[DEBUG SocketManager] remotePlayer found:", !!remotePlayer);
         if (remotePlayer) {
-          console.log("[DEBUG SocketManager] calling setFocusState with taskName:", data.taskName);
           remotePlayer.setFocusState(true, {
             taskName: data.taskName,
             lastFocusStartTime: data.lastFocusStartTime,
@@ -214,6 +210,7 @@ export default class SocketManager {
         }
       },
     );
+
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -234,11 +231,6 @@ export default class SocketManager {
     this.otherPlayers.set(data.userId, remotePlayer);
 
     // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
-    console.log("[DEBUG SocketManager] addRemotePlayer - setting focus state:", {
-      userId: data.userId,
-      status: data.status,
-      isFocusing: data.status === "FOCUSING",
-    });
     remotePlayer.setFocusState(data.status === "FOCUSING", {
       lastFocusStartTime: data.lastFocusStartTime ?? undefined,
       totalFocusMinutes: data.totalFocusMinutes ?? 0,

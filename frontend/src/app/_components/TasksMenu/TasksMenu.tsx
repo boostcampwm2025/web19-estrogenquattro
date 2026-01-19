@@ -141,18 +141,12 @@ export default function App() {
 
   const handleToggleTaskTimer = (id: number) => {
     const targetTask = tasks.find((task) => task.id === id);
-    console.log("[DEBUG TasksMenu] handleToggleTaskTimer", {
-      id,
-      targetTask,
-      description: targetTask?.description,
-    });
 
     if (targetTask && targetTask.isRunning) {
       // 같은 Task를 다시 클릭: 종료 + 서버에 resting 이벤트 전송
       stopFocusing();
     } else {
       // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName 포함)
-      console.log("[DEBUG TasksMenu] calling startFocusing with:", targetTask?.description);
       startFocusing(targetTask?.description);
     }
 
