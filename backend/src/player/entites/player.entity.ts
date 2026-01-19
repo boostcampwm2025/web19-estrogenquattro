@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { UserPet } from '../../userpet/entities/user-pet.entity';
 
 @Entity('players')
 export class Player {
@@ -16,4 +17,7 @@ export class Player {
 
   @Column({ type: 'int', name: 'total_point', default: 0 })
   totalPoint: number;
+
+  @OneToMany(() => UserPet, (userPet) => userPet.player)
+  userPets: UserPet[];
 }
