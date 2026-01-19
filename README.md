@@ -1,7 +1,6 @@
 # [🌱 온라인 모각코 서비스 - 잔디 심고 갈래?](http://138.2.116.232:8080/)
-<a href="http://138.2.116.232:8080/">
-    <img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/5766c3d9-2f0e-4d60-80d1-91c1f3ebbad6" />
-</a>
+
+<img href="http://138.2.116.232:8080/" width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/5766c3d9-2f0e-4d60-80d1-91c1f3ebbad6" />
 <p align="center"><em>이미지를 클릭하면 서비스로 이동합니다.</em></p>
 
 # 프로젝트 소개
