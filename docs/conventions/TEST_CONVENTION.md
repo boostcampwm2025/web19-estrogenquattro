@@ -170,9 +170,12 @@ beforeEach(async () => {
 
 ```bash
 cd frontend
-pnpm test        # 테스트 실행
-pnpm test:watch  # 감시 모드
+pnpm test --run  # 단일 실행 (CI/CD, 스크립트용)
+pnpm test        # 감시 모드 (기본값, 개발 중 사용)
 ```
+
+> **주의:** `pnpm test`는 기본적으로 watch 모드로 실행됩니다.
+> 한 번만 실행하고 종료하려면 `--run` 옵션을 사용하세요.
 
 ### MSW 핸들러
 

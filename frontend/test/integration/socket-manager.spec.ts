@@ -91,6 +91,9 @@ describe("SocketManager 통합", () => {
   });
 
   it("players_synced로 FOCUSING 상태를 수신하면 해당 플레이어에 집중 상태가 반영된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: players_synced 이벤트로 FOCUSING 상태의 플레이어 수신
     currentSocket.trigger("players_synced", [
       {
         userId: "remote-1",
@@ -103,11 +106,42 @@ describe("SocketManager 통합", () => {
       },
     ]);
 
+    // Then: setFocusState(true)가 옵션 객체와 함께 호출됨
     const remote = remotePlayerInstances.get("remote-1");
-    expect(remote?.setFocusState).toHaveBeenCalledWith(true);
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      lastFocusStartTime: undefined,
+      totalFocusMinutes: 0,
+    });
+  });
+
+  // 버그 1: RESTING 상태도 setFocusState 호출
+  it("players_synced로 RESTING 상태를 수신하면 setFocusState(false)가 호출된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: players_synced 이벤트로 RESTING 상태의 플레이어 수신
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "RESTING",
+        lastFocusStartTime: null,
+        totalFocusMinutes: 30,
+      },
+    ]);
+
+    // Then: setFocusState(false)가 totalFocusMinutes와 함께 호출됨
+    const remote = remotePlayerInstances.get("remote-1");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
+      lastFocusStartTime: undefined,
+      totalFocusMinutes: 30,
+    });
   });
 
   it("focused 이벤트를 수신하면 해당 플레이어가 집중 상태로 변경된다", () => {
+    // Given: RESTING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
       {
         userId: "remote-1",
@@ -119,18 +153,25 @@ describe("SocketManager 통합", () => {
         lastFocusStartTime: null,
       },
     ]);
-
     const remote = remotePlayerInstances.get("remote-1");
+
+    // When: focused 이벤트 수신
     currentSocket.trigger("focused", {
       userId: "remote-1",
       username: "alice",
       status: "FOCUSING",
     });
 
-    expect(remote?.setFocusState).toHaveBeenCalledWith(true);
+    // Then: setFocusState(true)가 호출됨
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      taskName: undefined,
+      lastFocusStartTime: undefined,
+      totalFocusMinutes: 0,
+    });
   });
 
   it("rested 이벤트를 수신하면 해당 플레이어가 휴식 상태로 변경된다", () => {
+    // Given: FOCUSING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
       {
         userId: "remote-1",
@@ -142,14 +183,140 @@ describe("SocketManager 통합", () => {
         lastFocusStartTime: null,
       },
     ]);
-
     const remote = remotePlayerInstances.get("remote-1");
+
+    // When: rested 이벤트 수신
     currentSocket.trigger("rested", {
       userId: "remote-1",
       username: "alice",
       status: "RESTING",
     });
 
-    expect(remote?.setFocusState).toHaveBeenCalledWith(false);
+    // Then: setFocusState(false)가 호출됨
+    expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
+      totalFocusMinutes: 0,
+    });
+  });
+
+  // 버그 2: taskName 브로드캐스트
+  it("focused 이벤트 수신 시 taskName이 setFocusState에 전달된다", () => {
+    // Given: RESTING 상태의 원격 플레이어가 존재
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "RESTING",
+        lastFocusStartTime: null,
+      },
+    ]);
+    const remote = remotePlayerInstances.get("remote-1");
+
+    // When: taskName이 포함된 focused 이벤트 수신
+    currentSocket.trigger("focused", {
+      userId: "remote-1",
+      username: "alice",
+      status: "FOCUSING",
+      taskName: "코딩하기",
+    });
+
+    // Then: setFocusState가 taskName과 함께 호출됨
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      taskName: "코딩하기",
+      lastFocusStartTime: undefined,
+      totalFocusMinutes: 0,
+    });
+  });
+
+  // 버그 3: 집중시간 브로드캐스트
+  it("focused 이벤트 수신 시 totalFocusMinutes와 lastFocusStartTime이 전달된다", () => {
+    // Given: RESTING 상태의 원격 플레이어가 존재
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "RESTING",
+        lastFocusStartTime: null,
+      },
+    ]);
+    const remote = remotePlayerInstances.get("remote-1");
+
+    // When: 집중시간 데이터가 포함된 focused 이벤트 수신
+    const startTime = "2025-01-18T10:30:00.000Z";
+    currentSocket.trigger("focused", {
+      userId: "remote-1",
+      username: "alice",
+      status: "FOCUSING",
+      taskName: "집중 작업",
+      lastFocusStartTime: startTime,
+      totalFocusMinutes: 60,
+    });
+
+    // Then: setFocusState가 집중시간 데이터와 함께 호출됨
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      taskName: "집중 작업",
+      lastFocusStartTime: startTime,
+      totalFocusMinutes: 60,
+    });
+  });
+
+  it("rested 이벤트 수신 시 totalFocusMinutes가 전달된다", () => {
+    // Given: FOCUSING 상태의 원격 플레이어가 존재
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "FOCUSING",
+        lastFocusStartTime: null,
+      },
+    ]);
+    const remote = remotePlayerInstances.get("remote-1");
+
+    // When: totalFocusMinutes가 포함된 rested 이벤트 수신
+    currentSocket.trigger("rested", {
+      userId: "remote-1",
+      username: "alice",
+      status: "RESTING",
+      totalFocusMinutes: 90,
+    });
+
+    // Then: setFocusState가 totalFocusMinutes와 함께 호출됨
+    expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
+      totalFocusMinutes: 90,
+    });
+  });
+
+  it("players_synced에서 totalFocusMinutes와 lastFocusStartTime이 전달된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: 집중시간 데이터가 포함된 players_synced 이벤트 수신
+    const startTime = "2025-01-18T09:00:00.000Z";
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "FOCUSING",
+        lastFocusStartTime: startTime,
+        totalFocusMinutes: 120,
+      },
+    ]);
+
+    // Then: setFocusState가 집중시간 데이터와 함께 호출됨
+    const remote = remotePlayerInstances.get("remote-1");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      lastFocusStartTime: startTime,
+      totalFocusMinutes: 120,
+    });
   });
 });

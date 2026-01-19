@@ -200,7 +200,11 @@ export default class SocketManager {
     // 다른 플레이어 휴식 시작
     socket.on(
       "rested",
-      (data: { userId: string; status: string; totalFocusMinutes?: number }) => {
+      (data: {
+        userId: string;
+        status: string;
+        totalFocusMinutes?: number;
+      }) => {
         if (data.status !== "RESTING") return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
@@ -210,7 +214,6 @@ export default class SocketManager {
         }
       },
     );
-
   }
 
   private addRemotePlayer(data: PlayerData): void {
