@@ -154,11 +154,21 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .filter((p) => p.socketId !== client.id && p.roomId === roomId)
       .map((p) => {
         const status = statusMap.get(p.playerId);
+
+        // 서버에서 현재 세션 경과 시간 계산
+        const currentSessionSeconds =
+          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+            ? Math.floor(
+                (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
+              )
+            : 0;
+
         return {
           ...p,
           status: status?.status ?? 'RESTING',
-          lastFocusStartTime: status?.lastFocusStartTime ?? null,
+          lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
           totalFocusMinutes: status?.totalFocusMinutes ?? 0,
+          currentSessionSeconds,
         };
       });
 
