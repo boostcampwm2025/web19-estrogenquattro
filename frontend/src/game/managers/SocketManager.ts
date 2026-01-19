@@ -17,8 +17,8 @@ interface PlayerData {
   timestamp?: number;
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: "FOCUSING" | "RESTING";
-  lastFocusStartTime?: string | null;
   totalFocusMinutes?: number;
+  currentSessionSeconds?: number;
 }
 
 interface GithubEventData {
@@ -182,16 +182,16 @@ export default class SocketManager {
         userId: string;
         status: string;
         taskName?: string;
-        lastFocusStartTime?: string;
         totalFocusMinutes?: number;
+        currentSessionSeconds?: number;
       }) => {
         if (data.status !== "FOCUSING") return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(true, {
             taskName: data.taskName,
-            lastFocusStartTime: data.lastFocusStartTime,
             totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            currentSessionSeconds: data.currentSessionSeconds ?? 0,
           });
         }
       },
@@ -233,10 +233,10 @@ export default class SocketManager {
     );
     this.otherPlayers.set(data.userId, remotePlayer);
 
-    // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
+    // 입장 시 기존 플레이어의 집중 상태 반영
     remotePlayer.setFocusState(data.status === "FOCUSING", {
-      lastFocusStartTime: data.lastFocusStartTime ?? undefined,
       totalFocusMinutes: data.totalFocusMinutes ?? 0,
+      currentSessionSeconds: data.currentSessionSeconds ?? 0,
     });
 
     if (this.walls) {
