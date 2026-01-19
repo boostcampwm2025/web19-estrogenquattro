@@ -138,7 +138,7 @@ export default function MusicPlayer() {
                 <button
                   onClick={handleTogglePlay}
                   aria-label={isPlaying ? "Pause" : "Play"}
-                  className="border-retro-border-dark bg-retro-button-bg hover:bg-retro-button-hover flex h-8 w-8 cursor-pointer items-center justify-center border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                  className="border-retro-border-dark bg-retro-button-bg hover:bg-retro-button-hover flex h-8 w-8 cursor-pointer items-center justify-center border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-px active:translate-y-px active:shadow-none"
                 >
                   {isPlaying ? (
                     <Pause className="text-retro-button-text h-4 w-4" />
@@ -150,7 +150,7 @@ export default function MusicPlayer() {
                 <button
                   onClick={handleNext}
                   aria-label="Next Track"
-                  className="border-retro-border-dark bg-retro-button-bg hover:bg-retro-button-hover flex h-8 w-8 cursor-pointer items-center justify-center border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                  className="border-retro-border-dark bg-retro-button-bg hover:bg-retro-button-hover flex h-8 w-8 cursor-pointer items-center justify-center border-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] active:translate-x-px active:translate-y-px active:shadow-none"
                 >
                   <SkipForward className="text-retro-button-text h-3 w-3" />
                 </button>
@@ -180,7 +180,10 @@ export default function MusicPlayer() {
                 max="1"
                 step="0.1"
                 value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  setVolume(parseFloat(e.target.value));
+                  if (isMuted) setIsMuted(false);
+                }}
                 aria-label="Volume Control"
                 className="h-2 flex-1 cursor-pointer appearance-none bg-amber-200 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-amber-700"
               />
