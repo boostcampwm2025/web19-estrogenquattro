@@ -6,6 +6,10 @@ import type {
   ContributionController,
 } from "../scenes/MapScene";
 import type { Direction } from "../types/direction";
+import {
+  useFocusTimeStore,
+  type FocusStatus,
+} from "../../stores/useFocusTimeStore";
 
 interface PlayerData {
   userId: string;
@@ -104,13 +108,28 @@ export default class SocketManager {
       });
     });
 
-    socket.on("joined", (data: { roomId: string }) => {
-      this.roomId = data.roomId;
-      const currentPlayer = this.getPlayer();
-      if (currentPlayer) {
-        currentPlayer.setRoomId(data.roomId);
-      }
-    });
+    socket.on(
+      "joined",
+      (data: {
+        roomId: string;
+        focusTime?: {
+          status: FocusStatus;
+          totalFocusMinutes: number;
+          currentSessionSeconds: number;
+        };
+      }) => {
+        this.roomId = data.roomId;
+        const currentPlayer = this.getPlayer();
+        if (currentPlayer) {
+          currentPlayer.setRoomId(data.roomId);
+        }
+
+        // 서버에서 받은 FocusTime 상태로 동기화 (새로고침 시 복원)
+        if (data.focusTime) {
+          useFocusTimeStore.getState().syncFromServer(data.focusTime);
+        }
+      },
+    );
 
     socket.on("session_replaced", () => {
       socket.disconnect();
