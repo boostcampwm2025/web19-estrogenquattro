@@ -25,11 +25,11 @@ export function TaskItem({
   formatTime,
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.text);
+  const [editText, setEditText] = useState(task.description);
 
   const handleEditClick = () => {
     setIsEditing(true);
-    setEditText(task.text);
+    setEditText(task.description);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -42,7 +42,7 @@ export function TaskItem({
   };
 
   const handleEditCancel = () => {
-    setEditText(task.text);
+    setEditText(task.description);
     setIsEditing(false);
   };
 
@@ -88,7 +88,7 @@ export function TaskItem({
             <div
               className={`text-sm ${task.completed ? "text-retro-text-tertiary line-through" : "text-retro-text-primary"}`}
             >
-              {task.text}
+              {task.description}
             </div>
             <div className="text-retro-text-secondary mt-0.5 text-xs">
               {formatTime(task.time)}

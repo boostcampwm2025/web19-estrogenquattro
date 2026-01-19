@@ -167,12 +167,12 @@ export const useTasksStore = create<TasksStore>((set, get) => {
       set({ error: null });
       addPending(id);
 
-      const oldText = task.text;
+      const oldDescription = task.description;
 
       // 낙관적 업데이트
       set((state) => ({
         tasks: state.tasks.map((t) =>
-          t.id === id ? { ...t, text: trimmedText } : t,
+          t.id === id ? { ...t, description: trimmedText } : t,
         ),
       }));
 
@@ -183,7 +183,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         // 롤백
         set((state) => ({
           tasks: state.tasks.map((t) =>
-            t.id === id ? { ...t, text: oldText } : t,
+            t.id === id ? { ...t, description: oldDescription } : t,
           ),
           error: "Task 수정에 실패했습니다.",
         }));
