@@ -219,6 +219,16 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 새 클라이언트에게 현재 룸의 기여 상태 전송
     const roomState = this.githubGateway.getRoomState(roomId);
     client.emit('github_state', roomState);
+
+    // 로컬 플레이어에게 joined 이벤트 전송 (focusTime 정보 포함)
+    client.emit('joined', {
+      roomId,
+      focusTime: {
+        status: myFocusTime.status,
+        totalFocusMinutes: myFocusTime.totalFocusMinutes,
+        currentSessionSeconds: myCurrentSessionSeconds,
+      },
+    });
   }
 
   @SubscribeMessage('moving')
