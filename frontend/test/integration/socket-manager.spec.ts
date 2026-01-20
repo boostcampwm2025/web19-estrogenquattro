@@ -316,4 +316,48 @@ describe("SocketManager 통합", () => {
       totalFocusMinutes: 120,
     });
   });
+
+  it("player_joined로 FOCUSING 상태를 수신하면 해당 플레이어에 집중 상태가 반영된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: player_joined 이벤트로 FOCUSING 상태의 플레이어 수신
+    currentSocket.trigger("player_joined", {
+      userId: "remote-2",
+      username: "bob",
+      x: 100,
+      y: 200,
+      status: "FOCUSING",
+      totalFocusMinutes: 10,
+      currentSessionSeconds: 30,
+    });
+
+    // Then: setFocusState(true)가 옵션 객체와 함께 호출됨
+    const remote = remotePlayerInstances.get("remote-2");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      currentSessionSeconds: 30,
+      totalFocusMinutes: 10,
+    });
+  });
+
+  it("player_joined로 RESTING 상태를 수신하면 setFocusState(false)가 호출된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: player_joined 이벤트로 RESTING 상태의 플레이어 수신
+    currentSocket.trigger("player_joined", {
+      userId: "remote-2",
+      username: "bob",
+      x: 100,
+      y: 200,
+      status: "RESTING",
+      totalFocusMinutes: 15,
+      currentSessionSeconds: 0,
+    });
+
+    // Then: setFocusState(false)가 호출됨
+    const remote = remotePlayerInstances.get("remote-2");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
+      currentSessionSeconds: 0,
+      totalFocusMinutes: 15,
+    });
+  });
 });

@@ -1,6 +1,4 @@
-import { TaskRes } from "@backend/task/dto/task.res.dto";
-
-type TaskEntity = Parameters<typeof TaskRes.of>[0];
+import type { TaskEntity } from "../shared/task";
 
 type TaskOverrides = Partial<TaskEntity>;
 
