@@ -111,19 +111,16 @@ export class FocusTimeService {
     });
   }
 
-  async getFocusTime(playerId: number, date: string): Promise<DailyFocusTime> {
+  async getFocusTime(
+    playerId: number,
+    date: string,
+  ): Promise<DailyFocusTime | null> {
     const focusTime = await this.focusTimeRepository.findOne({
       where: {
         player: { id: playerId },
         createdDate: date as unknown as Date,
       },
     });
-
-    if (!focusTime) {
-      throw new NotFoundException(
-        `FocusTime record not found for player ${playerId} on ${date}`,
-      );
-    }
 
     return focusTime;
   }

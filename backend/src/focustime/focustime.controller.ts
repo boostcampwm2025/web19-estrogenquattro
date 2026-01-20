@@ -2,7 +2,15 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
-import { DailyFocusTime } from './entites/daily-focus-time.entity';
+import { FocusStatus } from './entites/daily-focus-time.entity';
+
+interface FocusTimeResponse {
+  id: number | null;
+  totalFocusMinutes: number;
+  status: FocusStatus;
+  createdDate: string;
+  lastFocusStartTime: string | null;
+}
 
 @UseGuards(JwtGuard)
 @Controller('api/focustime')
@@ -13,7 +21,27 @@ export class FocustimeController {
   async getFocusTime(
     @PlayerId() playerId: number,
     @Query('date') date: string,
-  ): Promise<DailyFocusTime> {
-    return this.focusTimeService.getFocusTime(playerId, date);
+  ): Promise<FocusTimeResponse> {
+    const focusTime = await this.focusTimeService.getFocusTime(playerId, date);
+
+    if (!focusTime) {
+      return {
+        id: null,
+        totalFocusMinutes: 0,
+        status: FocusStatus.RESTING,
+        createdDate: date,
+        lastFocusStartTime: null,
+      };
+    }
+
+    return {
+      id: focusTime.id,
+      totalFocusMinutes: focusTime.totalFocusMinutes,
+      status: focusTime.status,
+      createdDate: String(focusTime.createdDate),
+      lastFocusStartTime: focusTime.lastFocusStartTime
+        ? focusTime.lastFocusStartTime.toISOString()
+        : null,
+    };
   }
 }
