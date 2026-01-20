@@ -1,9 +1,16 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GithubGateway } from './github.gateway';
 import { GithubPollService } from './github.poll-service';
+import { GithubService } from './github.service';
+import { GithubController } from './github.controller';
+import { DailyGithubActivity } from './entities/daily-github-activity.entity';
 
 @Module({
-  providers: [GithubGateway, GithubPollService],
-  exports: [GithubGateway, GithubPollService], // 다른 모듈에서 사용할 수 있도록 export
+  imports: [TypeOrmModule.forFeature([DailyGithubActivity])],
+  controllers: [GithubController],
+  providers: [GithubGateway, GithubPollService, GithubService],
+  exports: [GithubGateway, GithubPollService, GithubService],
 })
 export class GithubModule {}
+
