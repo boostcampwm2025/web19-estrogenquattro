@@ -44,6 +44,17 @@
 
 <!-- UI 변경사항이나 새로운 기능의 동작을 시각적으로 보여주세요. -->
 
+## 🧪 테스트 (옵션)
+
+<!-- 테스트를 추가했다면 아래 형식으로 작성해주세요. -->
+<!-- 예시:
+| 테스트 방식 | 파일 | 테스트 케이스 |
+|------------|------|--------------|
+| FakeSocket | `socket-manager.spec.ts` | focus_task_updated 이벤트 수신 시 updateTaskBubble 호출 |
+| MSW | `tasks.api.spec.ts` | Task 생성 시 스토어에 반영 |
+| E2E Socket | `focustime.e2e-spec.ts` | joined 이벤트에 focusTime 포함 |
+-->
+
 ## 💡 체크리스트
 
 <!-- PR을 제출하기 전에 아래 항목들을 확인해주세요. -->
