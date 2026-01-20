@@ -49,7 +49,7 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
                 <span
                   className={`text-xs ${task.completed ? "text-amber-600 line-through" : "text-amber-900"}`}
                 >
-                  {task.text}
+                  {task.description}
                 </span>
               </div>
               <span className="text-xs text-amber-700">

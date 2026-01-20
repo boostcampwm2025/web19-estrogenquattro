@@ -66,7 +66,8 @@ Player extends BasePlayer
 RemotePlayer extends BasePlayer
 ├── 서버 위치 데이터 수신
 ├── Lerp 기반 부드러운 이동
-└── 애니메이션 동기화
+├── 애니메이션 동기화
+└── 집중 상태/시간 실시간 표시
 ```
 
 ### Player (로컬 플레이어)
@@ -86,8 +87,17 @@ export class Player extends BasePlayer {
 export class RemotePlayer extends BasePlayer {
   // 서버에서 수신한 위치로 Lerp 이동
   // 방향에 따른 애니메이션 재생
+  // 집중 상태 및 시간 표시
 }
 ```
+
+**FocusTime 기능:**
+
+- `setFocusState(isFocusing, options)`: 집중/휴식 상태 설정
+- 집중 중일 때 1초마다 경과 시간 UI 업데이트 (로컬 계산)
+- `options.taskName`: 현재 작업 중인 태스크 이름 (말풍선 표시)
+- `options.lastFocusStartTime`: 집중 시작 시각 (경과 시간 계산용)
+- `options.totalFocusMinutes`: 누적 집중 시간 (분)
 
 ---
 
@@ -179,6 +189,7 @@ export interface ContributionListController {
 ```typescript
 socket.on('players_synced', (players) => {
   // 기존 플레이어들 RemotePlayer로 생성
+  // FocusTime 상태(status, lastFocusStartTime, totalFocusMinutes) 반영
 });
 
 socket.on('player_joined', (data) => {
@@ -191,6 +202,16 @@ socket.on('moved', (data) => {
 
 socket.on('github_event', (data) => {
   // 프로그레스바 업데이트
+});
+
+socket.on('focused', (data) => {
+  // RemotePlayer 집중 상태로 전환
+  // taskName, lastFocusStartTime, totalFocusMinutes 반영
+});
+
+socket.on('rested', (data) => {
+  // RemotePlayer 휴식 상태로 전환
+  // totalFocusMinutes 업데이트
 });
 ```
 

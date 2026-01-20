@@ -1,4 +1,4 @@
-import { Play, Edit2, Trash2, Pause, Check, X } from "lucide-react";
+import { Play, Edit2, Trash2, Pause, Check, X, Loader2 } from "lucide-react";
 import { Task } from "./types";
 import { Checkbox } from "@/_components/ui/checkbox";
 import { Button } from "@/_components/ui/button";
@@ -7,15 +7,17 @@ import { useState } from "react";
 
 interface TaskItemProps {
   task: Task;
-  onToggle: (id: string) => void;
-  onDelete: (id: string) => void;
-  onToggleTimer: (id: string) => void;
-  onEdit: (id: string, newText: string) => void;
+  isPending: boolean;
+  onToggle: (id: number) => void;
+  onDelete: (id: number) => void;
+  onToggleTimer: (id: number) => void;
+  onEdit: (id: number, newText: string) => void;
   formatTime: (seconds: number) => string;
 }
 
 export function TaskItem({
   task,
+  isPending,
   onToggle,
   onDelete,
   onToggleTimer,
@@ -23,15 +25,16 @@ export function TaskItem({
   formatTime,
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.text);
+  const [editText, setEditText] = useState(task.description);
 
   const handleEditClick = () => {
     setIsEditing(true);
-    setEditText(task.text);
+    setEditText(task.description);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPending) return;
     if (editText.trim()) {
       onEdit(task.id, editText.trim());
       setIsEditing(false);
@@ -39,7 +42,7 @@ export function TaskItem({
   };
 
   const handleEditCancel = () => {
-    setEditText(task.text);
+    setEditText(task.description);
     setIsEditing(false);
   };
 
@@ -47,8 +50,9 @@ export function TaskItem({
     <div className="group border-retro-border-dark bg-retro-bg-secondary shadow-retro-sm hover:border-retro-border-darker flex items-center gap-3 rounded-none border-2 px-3 py-3 transition-colors">
       <Checkbox
         checked={task.completed}
+        disabled={isPending}
         onCheckedChange={() => onToggle(task.id)}
-        className="data-[state=checked]:border-retro-border-darker data-[state=checked]:bg-retro-button-bg border-retro-border-dark h-5 w-5 rounded-none border-2"
+        className="data-[state=checked]:border-retro-border-darker data-[state=checked]:bg-retro-button-bg border-retro-border-dark h-5 w-5 rounded-none border-2 disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       <div className="min-w-0 flex-1">
@@ -59,18 +63,21 @@ export function TaskItem({
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              className="border-retro-border-dark text-retro-text-primary h-8 flex-1 rounded-none border-2 bg-white px-2 text-sm"
+              className="border-retro-border-dark text-retro-text-primary h-8 flex-1 rounded-none border-2 bg-white px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               autoFocus
+              disabled={isPending}
             />
             <Button
               type="submit"
-              className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover flex h-8 w-8 items-center justify-center rounded-none border-2"
+              disabled={isPending}
+              className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover flex h-8 w-8 items-center justify-center rounded-none border-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Check className="h-4 w-4" />
             </Button>
             <Button
               type="button"
-              className="border-retro-border-darker bg-retro-border-light text-retro-button-text hover:bg-retro-button-bg flex h-8 w-8 items-center justify-center rounded-none border-2"
+              disabled={isPending}
+              className="border-retro-border-darker bg-retro-border-light text-retro-button-text hover:bg-retro-button-bg flex h-8 w-8 items-center justify-center rounded-none border-2 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleEditCancel}
             >
               <X className="h-4 w-4" />
@@ -81,7 +88,7 @@ export function TaskItem({
             <div
               className={`text-sm ${task.completed ? "text-retro-text-tertiary line-through" : "text-retro-text-primary"}`}
             >
-              {task.text}
+              {task.description}
             </div>
             <div className="text-retro-text-secondary mt-0.5 text-xs">
               {formatTime(task.time)}
@@ -90,14 +97,19 @@ export function TaskItem({
         )}
       </div>
 
+      {isPending && (
+        <Loader2 className="text-retro-text-secondary h-4 w-4 animate-spin" />
+      )}
+
       {!isEditing && (
         <div className="flex items-center gap-1">
           <Button
+            disabled={isPending}
             className={`flex h-8 w-8 items-center justify-center rounded-none border-2 transition-all ${
               task.isRunning
                 ? "border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover"
                 : "border-retro-border-dark text-retro-text-secondary hover:bg-retro-hover-bg hover:text-retro-border-darker bg-transparent"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-50`}
             onClick={() => onToggleTimer(task.id)}
           >
             {task.isRunning ? (
@@ -107,13 +119,15 @@ export function TaskItem({
             )}
           </Button>
           <Button
-            className="border-retro-border-light text-retro-text-secondary hover:bg-retro-hover-bg hover:text-retro-border-darker flex h-8 w-8 items-center justify-center rounded-none border-2 bg-transparent transition-all"
+            disabled={isPending}
+            className="border-retro-border-light text-retro-text-secondary hover:bg-retro-hover-bg hover:text-retro-border-darker flex h-8 w-8 items-center justify-center rounded-none border-2 bg-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
             onClick={handleEditClick}
           >
             <Edit2 className="h-4 w-4" />
           </Button>
           <Button
-            className="border-retro-border-light text-retro-text-secondary hover:bg-retro-hover-darker hover:text-retro-delete-hover flex h-8 w-8 items-center justify-center rounded-none border-2 bg-transparent transition-all"
+            disabled={isPending}
+            className="border-retro-border-light text-retro-text-secondary hover:bg-retro-hover-darker hover:text-retro-delete-hover flex h-8 w-8 items-center justify-center rounded-none border-2 bg-transparent transition-all disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => onDelete(task.id)}
           >
             <Trash2 className="h-4 w-4" />

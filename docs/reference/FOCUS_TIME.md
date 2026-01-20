@@ -33,7 +33,7 @@
 ### 클라이언트 → 서버
 
 ```typescript
-socket.emit('focusing');
+socket.emit('focusing', { taskName?: string });  // taskName은 선택
 socket.emit('resting');
 ```
 
@@ -44,7 +44,9 @@ socket.on('focused', (data: {
   userId: string,
   username: string,
   status: 'FOCUSING',
-  lastFocusStartTime: string
+  lastFocusStartTime: string,
+  totalFocusMinutes: number,
+  taskName?: string
 }) => {});
 
 socket.on('rested', (data: {

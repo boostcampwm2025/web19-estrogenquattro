@@ -15,6 +15,10 @@ interface PlayerData {
   isMoving?: boolean;
   direction?: Direction;
   timestamp?: number;
+  // FocusTime 관련 필드 (players_synced에서 수신)
+  status?: "FOCUSING" | "RESTING";
+  lastFocusStartTime?: string | null;
+  totalFocusMinutes?: number;
 }
 
 interface GithubEventData {
@@ -170,6 +174,46 @@ export default class SocketManager {
         remotePlayer.showChatBubble(data.message);
       }
     });
+
+    // 다른 플레이어 집중 시작
+    socket.on(
+      "focused",
+      (data: {
+        userId: string;
+        status: string;
+        taskName?: string;
+        lastFocusStartTime?: string;
+        totalFocusMinutes?: number;
+      }) => {
+        if (data.status !== "FOCUSING") return;
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setFocusState(true, {
+            taskName: data.taskName,
+            lastFocusStartTime: data.lastFocusStartTime,
+            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+          });
+        }
+      },
+    );
+
+    // 다른 플레이어 휴식 시작
+    socket.on(
+      "rested",
+      (data: {
+        userId: string;
+        status: string;
+        totalFocusMinutes?: number;
+      }) => {
+        if (data.status !== "RESTING") return;
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setFocusState(false, {
+            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+          });
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -188,6 +232,12 @@ export default class SocketManager {
       username,
     );
     this.otherPlayers.set(data.userId, remotePlayer);
+
+    // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
+    remotePlayer.setFocusState(data.status === "FOCUSING", {
+      lastFocusStartTime: data.lastFocusStartTime ?? undefined,
+      totalFocusMinutes: data.totalFocusMinutes ?? 0,
+    });
 
     if (this.walls) {
       this.scene.physics.add.collider(remotePlayer.getContainer(), this.walls);
