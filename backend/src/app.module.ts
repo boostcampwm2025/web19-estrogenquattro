@@ -19,6 +19,7 @@ import AppDataSource from './database/data-source';
 import { TaskModule } from './task/task.module';
 import { FocusTimeModule } from './focustime/focustime.module';
 import { PetModule } from './userpet/pet.module';
+import { PointModule } from './point/point.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { PetModule } from './userpet/pet.module';
     TaskModule,
     FocusTimeModule,
     PetModule,
+    PointModule,
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],

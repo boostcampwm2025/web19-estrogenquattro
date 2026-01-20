@@ -135,12 +135,17 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Map playerId -> status info
     const statusMap = new Map<
       number,
-      { status: string; lastFocusStartTime: Date | null }
+      {
+        status: string;
+        lastFocusStartTime: Date | null;
+        totalFocusMinutes: number;
+      }
     >();
     focusStatuses.forEach((fs) => {
       statusMap.set(fs.player.id, {
         status: fs.status,
         lastFocusStartTime: fs.lastFocusStartTime,
+        totalFocusMinutes: fs.totalFocusMinutes,
       });
     });
 
@@ -153,6 +158,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           ...p,
           status: status?.status ?? 'RESTING',
           lastFocusStartTime: status?.lastFocusStartTime ?? null,
+          totalFocusMinutes: status?.totalFocusMinutes ?? 0,
         };
       });
 

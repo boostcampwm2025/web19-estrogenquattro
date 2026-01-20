@@ -118,6 +118,7 @@ pnpm logs  # 로그 확인
 | `pnpm lint` | ESLint 검사 |
 | `pnpm format` | Prettier 검사 |
 | `pnpm format:fix` | Prettier 자동 수정 |
+| `pnpm test` | Vitest 테스트 |
 
 ---
 

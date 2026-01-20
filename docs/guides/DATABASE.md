@@ -110,7 +110,8 @@ pnpm migration:revert
 
 ```
 backend/src/database/migrations/
-└── 1768270149211-Auto.ts
+├── 1768270149211-Auto.ts
+└── 1768743865938-AddFocusTimeFields.ts
 ```
 
 ### 마이그레이션 예시

@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Plus, Check, X } from "lucide-react";
 import { Task } from "./types";
 import { TaskItem } from "./TaskItem";
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
+import { InlineAlert } from "@/_components/ui/inline-alert";
 
 interface TaskListProps {
   tasks: Task[];
   completedCount: number;
   totalCount: number;
+  error?: string | null;
+  pendingTaskIds: number[];
   onAddTask: (text: string) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
-  onToggleTaskTimer: (id: string) => void;
-  onEditTask: (id: string, newText: string) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
+  onToggleTaskTimer: (id: number) => void;
+  onEditTask: (id: number, newText: string) => void;
   formatTaskTime: (seconds: number) => string;
 }
 
@@ -21,6 +24,8 @@ export function TaskList({
   tasks,
   completedCount,
   totalCount,
+  error,
+  pendingTaskIds,
   onAddTask,
   onToggleTask,
   onDeleteTask,
@@ -30,6 +35,16 @@ export function TaskList({
 }: TaskListProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTo({
+        top: listRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [tasks.length]);
 
   const handleAddClick = () => {
     setIsAdding(true);
@@ -66,9 +81,11 @@ export function TaskList({
         </div>
       </div>
 
+      <InlineAlert message={error} />
+
       {isAdding && (
         <form onSubmit={handleSubmit} className="mb-3">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Input
               type="text"
               value={newTaskText}
@@ -95,11 +112,15 @@ export function TaskList({
         </form>
       )}
 
-      <div className="space-y-2">
+      <div
+        ref={listRef}
+        className="retro-scrollbar max-h-72 space-y-2 overflow-y-auto pr-2"
+      >
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
             task={task}
+            isPending={pendingTaskIds.includes(task.id)}
             onToggle={onToggleTask}
             onDelete={onDeleteTask}
             onToggleTimer={onToggleTaskTimer}
