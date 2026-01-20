@@ -11,7 +11,8 @@ const mockTasks = generateMockTasks(365);
 
 export default function ProfileTab() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, isLoading } = useProfileData();
+  const { dailyTaskCounts, focusTimeData, isLoading } =
+    useProfileData(selectedDate);
 
   // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
   const getTasksForDate = (date: Date) => {
