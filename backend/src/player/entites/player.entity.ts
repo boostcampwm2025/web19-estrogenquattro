@@ -12,8 +12,8 @@ export class Player {
   @Column({ type: 'varchar', length: 20, nullable: false })
   nickname: string;
 
-  @Column({ type: 'bigint', name: 'primary_user_pet_id', nullable: true })
-  primaryUserPetId: number;
+  @Column({ type: 'int', name: 'equipped_pet_id', nullable: true })
+  equippedPetId: number;
 
   @Column({ type: 'int', name: 'total_point', default: 0 })
   totalPoint: number;

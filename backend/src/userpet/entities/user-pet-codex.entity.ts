@@ -9,7 +9,7 @@ import {
 import { Player } from '../../player/entites/player.entity';
 import { Pet } from './pet.entity';
 
-@Entity('user_pet_collections')
+@Entity('user_pet_codex')
 export class UserPetCodex {
   @PrimaryGeneratedColumn()
   id: number;

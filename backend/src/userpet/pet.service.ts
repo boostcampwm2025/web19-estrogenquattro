@@ -171,4 +171,21 @@ export class PetService {
       return manager.save(UserPet, userPet);
     });
   }
+
+  async equipPet(petId: number, playerId: number): Promise<void> {
+    const pet = await this.petRepository.findOne({ where: { id: petId } });
+    if (!pet) throw new NotFoundException('Pet not found');
+
+    // 1. 도감에 있는지 확인 (수집한 적이 있어야 장착 가능)
+    const collection = await this.userPetCodexRepository.findOne({
+      where: { playerId, petId },
+    });
+
+    if (!collection) {
+      throw new BadRequestException('You do not own this pet');
+    }
+
+    // 2. 플레이어 정보 업데이트
+    await this.playerRepository.update(playerId, { equippedPetId: petId });
+  }
 }
