@@ -23,6 +23,9 @@ export class DailyGithubActivity {
   @Column({ type: 'simple-enum', enum: GithubActivityType })
   type: GithubActivityType;
 
+  @Column({ name: 'player_id', type: 'bigint' })
+  playerId: number;
+
   @ManyToOne(() => Player)
   @JoinColumn({ name: 'player_id' })
   player: Player;
