@@ -90,6 +90,33 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('focus_task_updated')
+  handleFocusTaskUpdated(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { taskName: string },
+  ) {
+    const user = client.data.user;
+
+    const rooms = Array.from(client.rooms);
+    const roomId = rooms.find((room) => room !== client.id);
+
+    if (roomId) {
+      client.to(roomId).emit('focus_task_updated', {
+        userId: client.id,
+        username: user.username,
+        taskName: data.taskName,
+      });
+
+      this.logger.log(
+        `User ${user.username} updated focus task to: ${data.taskName}`,
+      );
+    } else {
+      this.logger.warn(
+        `User ${user.username} sent focus_task_updated but is not in any room`,
+      );
+    }
+  }
+
   async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
     const user = client.data.user;
 
