@@ -233,6 +233,20 @@ export default class SocketManager {
         }
       },
     );
+
+    // 다른 플레이어 집중 Task 이름 변경
+    socket.on(
+      "focus_task_updated",
+      (data: { userId: string; username: string; taskName: string }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.updateTaskBubble({
+            isFocusing: true,
+            taskName: data.taskName,
+          });
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {
