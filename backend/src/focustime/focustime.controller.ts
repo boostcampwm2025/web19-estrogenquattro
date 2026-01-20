@@ -20,16 +20,20 @@ export class FocustimeController {
   @Get()
   async getFocusTime(
     @PlayerId() playerId: number,
-    @Query('date') date: string,
+    @Query('date') date?: string,
   ): Promise<FocusTimeResponse> {
-    const focusTime = await this.focusTimeService.getFocusTime(playerId, date);
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const focusTime = await this.focusTimeService.getFocusTime(
+      playerId,
+      targetDate,
+    );
 
     if (!focusTime) {
       return {
         id: null,
         totalFocusMinutes: 0,
         status: FocusStatus.RESTING,
-        createdDate: date,
+        createdDate: targetDate,
         lastFocusStartTime: null,
       };
     }
