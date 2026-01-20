@@ -111,7 +111,10 @@ export class FocusTimeService {
     });
   }
 
-  async getFocusTime(playerId: number, date: string): Promise<DailyFocusTime> {
+  async getFocusTime(
+    playerId: number,
+    date: string,
+  ): Promise<DailyFocusTime | null> {
     const focusTime = await this.focusTimeRepository.findOne({
       where: {
         player: { id: playerId },
