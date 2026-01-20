@@ -18,6 +18,7 @@ import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 
 @WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -154,11 +155,21 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .filter((p) => p.socketId !== client.id && p.roomId === roomId)
       .map((p) => {
         const status = statusMap.get(p.playerId);
+
+        // 서버에서 현재 세션 경과 시간 계산
+        const currentSessionSeconds =
+          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+            ? Math.floor(
+                (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
+              )
+            : 0;
+
         return {
           ...p,
           status: status?.status ?? 'RESTING',
-          lastFocusStartTime: status?.lastFocusStartTime ?? null,
+          lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
           totalFocusMinutes: status?.totalFocusMinutes ?? 0,
+          currentSessionSeconds,
         };
       });
 
@@ -175,7 +186,25 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 4. Update FocusTime
     const player = await this.playerService.findOneById(userData.user.playerId);
-    await this.focusTimeService.findOrCreate(player);
+    const myFocusTime = await this.focusTimeService.findOrCreate(player);
+
+    // 5. 로컬 플레이어에게 방 정보 + 자신의 FocusTime 상태 전송
+    const myCurrentSessionSeconds =
+      myFocusTime.status === FocusStatus.FOCUSING &&
+      myFocusTime.lastFocusStartTime
+        ? Math.floor(
+            (Date.now() - myFocusTime.lastFocusStartTime.getTime()) / 1000,
+          )
+        : 0;
+
+    client.emit('joined', {
+      roomId,
+      focusTime: {
+        status: myFocusTime.status,
+        totalFocusMinutes: myFocusTime.totalFocusMinutes,
+        currentSessionSeconds: myCurrentSessionSeconds,
+      },
+    });
 
     const connectedAt = new Date();
 
