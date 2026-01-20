@@ -18,6 +18,7 @@ import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 
 @WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -175,17 +176,30 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
 
+    // 4. Update FocusTime
+    const player = await this.playerService.findOneById(userData.user.playerId);
+    const myFocusTime = await this.focusTimeService.findOrCreate(player);
+
+    // 서버에서 현재 세션 경과 시간 계산
+    const myCurrentSessionSeconds =
+      myFocusTime.status === FocusStatus.FOCUSING &&
+      myFocusTime.lastFocusStartTime
+        ? Math.floor(
+            (Date.now() - myFocusTime.lastFocusStartTime.getTime()) / 1000,
+          )
+        : 0;
+
     //남들이 볼 내 캐릭터 그리기
     client.to(roomId).emit('player_joined', {
       userId: client.id,
       username: username,
       x: data.x,
       y: data.y,
+      // focusTime 정보 추가
+      status: myFocusTime.status,
+      totalFocusMinutes: myFocusTime.totalFocusMinutes,
+      currentSessionSeconds: myCurrentSessionSeconds,
     });
-
-    // 4. Update FocusTime
-    const player = await this.playerService.findOneById(userData.user.playerId);
-    await this.focusTimeService.findOrCreate(player);
 
     const connectedAt = new Date();
 
