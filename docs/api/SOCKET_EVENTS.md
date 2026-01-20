@@ -118,12 +118,12 @@ socket.emit('resting');
 
 ---
 
-### focus_task_updated
+### focus_task_updating
 
 집중 중인 태스크 이름 변경 (FOCUSING 상태에서만 호출)
 
 ```typescript
-socket.emit('focus_task_updated', {
+socket.emit('focus_task_updating', {
   taskName: string  // 변경된 태스크 이름
 });
 ```

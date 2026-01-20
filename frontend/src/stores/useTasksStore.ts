@@ -187,7 +187,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           if (status === "FOCUSING") {
             const socket = getSocket();
             if (socket?.connected) {
-              socket.emit("focus_task_updated", { taskName: trimmedText });
+              socket.emit("focus_task_updating", { taskName: trimmedText });
             }
           }
         }

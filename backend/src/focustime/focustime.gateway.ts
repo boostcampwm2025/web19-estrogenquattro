@@ -90,8 +90,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('focus_task_updated')
-  handleFocusTaskUpdated(
+  @SubscribeMessage('focus_task_updating')
+  handleFocusTaskUpdating(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { taskName: string },
   ) {
@@ -112,7 +112,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
       );
     } else {
       this.logger.warn(
-        `User ${user.username} sent focus_task_updated but is not in any room`,
+        `User ${user.username} sent focus_task_updating but is not in any room`,
       );
     }
   }

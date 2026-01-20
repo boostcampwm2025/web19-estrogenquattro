@@ -233,7 +233,7 @@ sequenceDiagram
 
     Browser->>Browser: Task 이름 수정 "코딩" → "리뷰"
     Browser->>Server: API: PATCH /api/tasks/:id
-    Browser->>Server: emit('focus_task_updated', { taskName: "리뷰" })
+    Browser->>Server: emit('focus_task_updating', { taskName: "리뷰" })
 
     Server->>Others: emit('focus_task_updated', { userId, taskName })
 
