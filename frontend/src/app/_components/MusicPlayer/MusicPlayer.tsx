@@ -202,7 +202,7 @@ export default function MusicPlayer() {
                   key={track.id}
                   onClick={() => handlePlayTrack(track)}
                   role="button"
-                  className={`cursor-pointer border-b border-amber-200 p-2 last:border-b-0 ${
+                  className={`cursor-pointer p-2 last:border-b-0 ${
                     currentTrack?.id === track.id
                       ? "bg-retro-button-bg/10"
                       : "hover:bg-amber-100"
