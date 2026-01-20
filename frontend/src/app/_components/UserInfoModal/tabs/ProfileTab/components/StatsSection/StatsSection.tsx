@@ -2,31 +2,23 @@ import { Task } from "@/app/_components/TasksMenu/types";
 import GrassCard from "./GrassCard";
 import StatCard from "./StatCard";
 import { calculateDailyStats } from "../../lib/dateStats";
-import { isSameDay } from "../../lib/dateUtils";
-import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 
 interface StatsSectionProps {
   tasks: Task[];
   selectedDate: Date;
+  focusTimeMinutes?: number;
 }
 
 export default function StatsSection({
   tasks,
   selectedDate,
+  focusTimeMinutes,
 }: StatsSectionProps) {
-  const focusTime = useFocusTimeStore((state) => state.focusTime);
+  // API에서 받은 focusTimeMinutes(분)을 초로 변환하여 전달
+  const focusTimeSeconds =
+    focusTimeMinutes !== undefined ? focusTimeMinutes * 60 : undefined;
 
-  // 오늘 날짜인지 확인
-  const isToday = isSameDay(selectedDate, new Date());
-
-  // TODO: [API 연동] 과거 날짜의 focusTime도 서버에서 가져와야 함
-  // 현재: 오늘이면 실제 focusTime, 과거면 undefined (Task 시간 합산)
-  // 변경 후: 모든 날짜의 focusTime을 서버에서 조회
-  const stats = calculateDailyStats(
-    tasks,
-    selectedDate,
-    isToday ? focusTime : undefined,
-  );
+  const stats = calculateDailyStats(tasks, selectedDate, focusTimeSeconds);
 
   return (
     <div className="flex h-60 gap-4">
