@@ -117,6 +117,23 @@ socket.emit('resting');
 - 같은 방에 `rested` 브로드캐스트
 
 ---
+
+### focus_task_updated
+
+집중 중인 태스크 이름 변경 (FOCUSING 상태에서만 호출)
+
+```typescript
+socket.emit('focus_task_updated', {
+  taskName: string  // 변경된 태스크 이름
+});
+```
+
+**서버 동작:**
+- `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
+- 같은 방에 `focus_task_updated` 브로드캐스트
+
+---
+
 ## 서버 → 클라이언트
 
 ### joined
@@ -296,6 +313,22 @@ socket.on('rested', (data: {
   totalFocusMinutes: number
 }) => {
   // 포커스 상태 및 누적 시간 표시 업데이트
+});
+```
+
+---
+
+### focus_task_updated
+
+집중 태스크 이름 변경 알림
+
+```typescript
+socket.on('focus_task_updated', (data: {
+  userId: string,
+  username: string,
+  taskName: string
+}) => {
+  // RemotePlayer의 태스크 말풍선 업데이트
 });
 ```
 
