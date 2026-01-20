@@ -37,8 +37,36 @@ export class MapScene extends Phaser.Scene {
 
   // Map Configuration
   private maps: MapConfig[] = [
-    { image: "tiles1", tilemap: "tilemap1" },
-    { image: "tiles2", tilemap: "tilemap2" },
+    {
+      image: "tiles1",
+      tilemap: "tilemap1",
+      imagePath: "/assets/maps/dessert_stage1.webp",
+      tilemapPath: "/assets/tilemaps/dessert_stage1.json",
+    },
+    {
+      image: "tiles2",
+      tilemap: "tilemap2",
+      imagePath: "/assets/maps/dessert_stage2.webp",
+      tilemapPath: "/assets/tilemaps/dessert_stage2.json",
+    },
+    {
+      image: "tiles3",
+      tilemap: "tilemap3",
+      imagePath: "/assets/maps/dessert_stage3.webp",
+      tilemapPath: "/assets/tilemaps/dessert_stage3.json",
+    },
+    {
+      image: "tiles4",
+      tilemap: "tilemap4",
+      imagePath: "/assets/maps/dessert_stage4.webp",
+      tilemapPath: "/assets/tilemaps/dessert_stage4.json",
+    },
+    {
+      image: "tiles5",
+      tilemap: "tilemap5",
+      imagePath: "/assets/maps/dessert_stage5.webp",
+      tilemapPath: "/assets/tilemaps/dessert_stage5.json",
+    },
   ];
 
   constructor() {
@@ -48,19 +76,13 @@ export class MapScene extends Phaser.Scene {
   preload() {
     this.load.crossOrigin = "anonymous";
 
-    // Map 1
-    this.load.image("tiles1", "/assets/maps/dessert_stage1.png");
-    this.load.tilemapTiledJSON(
-      "tilemap1",
-      "/assets/tilemaps/dessert_stage1.json",
-    );
-
-    // Map 2
-    this.load.image("tiles2", "/assets/maps/dessert_stage2.png");
-    this.load.tilemapTiledJSON(
-      "tilemap2",
-      "/assets/tilemaps/dessert_stage2.json",
-    );
+    // Load all maps dynamically
+    this.maps.forEach((map) => {
+      this.load.image(map.image, map.imagePath);
+      if (map.tilemapPath) {
+        this.load.tilemapTiledJSON(map.tilemap, map.tilemapPath);
+      }
+    });
 
     // Body Sprite Sheet
     this.load.spritesheet("body", "/assets/body.png", {
