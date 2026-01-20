@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { TaskRes } from "@backend/task/dto/task.res.dto";
+import { TaskRes } from "@backend/task/dto/task.res";
 
 type TaskEntity = Parameters<typeof TaskRes.of>[0];
 
