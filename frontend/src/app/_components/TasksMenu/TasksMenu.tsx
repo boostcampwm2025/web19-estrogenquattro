@@ -177,15 +177,15 @@ export default function App() {
 
   return (
     <div className="w-md">
-      <div className="border-retro-border-dark bg-retro-bg-primary shadow-retro-xl rounded-none border-4 p-6">
+      <div className="border-3 border-amber-900 bg-[#ffecb3] p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
         <div
           className={`flex cursor-pointer items-center justify-between transition-all duration-300 select-none ${
             isExpanded ? "mb-6" : "mb-0"
           }`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <h1 className="text-retro-text-primary text-lg">► TASKS</h1>
-          <button className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer transition-colors">
+          <h1 className="text-lg text-amber-900">► TASKS</h1>
+          <button className="cursor-pointer text-amber-900 transition-colors hover:text-amber-700">
             {isExpanded ? (
               <ChevronUp className="h-5 w-5" />
             ) : (
@@ -225,10 +225,10 @@ export default function App() {
 
         {/* 접혔을 때 미니 컨트롤 */}
         {!isExpanded && (
-          <div className="border-retro-border-light mt-4 flex items-center gap-3 border-t pt-4">
+          <div className="mt-4 flex items-center gap-3 border-t border-amber-900/20 pt-4">
             <button
               onClick={handleMiniControlClick}
-              className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+              className="cursor-pointer text-amber-900 hover:text-amber-700"
               aria-label={isTimerRunning ? "정지" : "시작"}
             >
               {isTimerRunning ? (
@@ -239,16 +239,14 @@ export default function App() {
             </button>
             <div className="flex-1 truncate">
               {lastTask ? (
-                <p className="text-retro-text-primary truncate text-sm font-semibold">
+                <p className="truncate text-sm font-semibold text-amber-900">
                   {lastTask.description}
                 </p>
               ) : (
-                <p className="text-retro-text-tertiary text-sm">
-                  Task를 선택해주세요
-                </p>
+                <p className="text-sm text-amber-700">Task를 선택해주세요</p>
               )}
             </div>
-            <span className="text-retro-text-primary font-mono text-sm">
+            <span className="font-mono text-sm text-amber-900">
               {formatTime(focusTime)}
             </span>
           </div>

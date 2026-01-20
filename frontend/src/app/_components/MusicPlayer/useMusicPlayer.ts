@@ -8,7 +8,7 @@ export function useMusicPlayer() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [volume, setVolume] = useState(0.5);
   const [isMuted, setIsMuted] = useState(false);
-  const [loopMode, setLoopMode] = useState<LoopMode>(LOOP_MODES.OFF);
+  const [loopMode, setLoopMode] = useState<LoopMode>(LOOP_MODES.ALL);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
