@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Plus, Check, X } from "lucide-react";
 import { Task } from "./types";
 import { TaskItem } from "./TaskItem";
@@ -35,6 +35,16 @@ export function TaskList({
 }: TaskListProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTo({
+        top: listRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [tasks.length]);
 
   const handleAddClick = () => {
     setIsAdding(true);
@@ -75,7 +85,7 @@ export function TaskList({
 
       {isAdding && (
         <form onSubmit={handleSubmit} className="mb-3">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Input
               type="text"
               value={newTaskText}
@@ -102,7 +112,10 @@ export function TaskList({
         </form>
       )}
 
-      <div className="space-y-2">
+      <div
+        ref={listRef}
+        className="retro-scrollbar max-h-72 space-y-2 overflow-y-auto pr-2"
+      >
         {tasks.map((task) => (
           <TaskItem
             key={task.id}
