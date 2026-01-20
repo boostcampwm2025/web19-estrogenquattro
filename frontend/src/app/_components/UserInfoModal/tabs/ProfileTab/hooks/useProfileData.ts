@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import {
   pointApi,
   focustimeApi,
+  githubApi,
   DailyPointRes,
   DailyFocusTimeRes,
+  GithubEventsRes,
 } from "@/lib/api";
 import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
 import { toDateString } from "@/utils/timeFormat";
@@ -11,8 +13,9 @@ import { toDateString } from "@/utils/timeFormat";
 interface UseProfileDataReturn {
   dailyTaskCounts: DailyTaskCount[];
   focusTimeData: DailyFocusTimeRes | null;
+  githubEvents: GithubEventsRes | null;
   isLoading: boolean;
-  isFocusTimeLoading: boolean;
+  isDateDataLoading: boolean;
 }
 
 export function useProfileData(
@@ -23,8 +26,11 @@ export function useProfileData(
   const [focusTimeData, setFocusTimeData] = useState<DailyFocusTimeRes | null>(
     null,
   );
+  const [githubEvents, setGithubEvents] = useState<GithubEventsRes | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [isFocusTimeLoading, setIsFocusTimeLoading] = useState(false);
+  const [isDateDataLoading, setIsDateDataLoading] = useState(false);
 
   // 초기 로딩: 히트맵 데이터 (1년치 포인트)
   useEffect(() => {
@@ -41,22 +47,27 @@ export function useProfileData(
     fetchHeatmapData();
   }, []);
 
-  // 선택된 날짜가 바뀔 때마다 집중시간 조회
+  // 선택된 날짜가 바뀔 때마다 집중시간 + GitHub 이벤트 조회
   useEffect(() => {
-    const fetchFocusTime = async () => {
+    const fetchDateData = async () => {
       const dateStr = toDateString(selectedDate);
-      setIsFocusTimeLoading(true);
+      setIsDateDataLoading(true);
       try {
-        const focusTime = await focustimeApi.getFocusTime(playerId, dateStr);
+        const [focusTime, events] = await Promise.all([
+          focustimeApi.getFocusTime(playerId, dateStr),
+          githubApi.getEvents(dateStr),
+        ]);
         setFocusTimeData(focusTime);
+        setGithubEvents(events);
       } catch (error) {
-        console.error("Failed to fetch focus time:", error);
+        console.error("Failed to fetch date data:", error);
         setFocusTimeData(null);
+        setGithubEvents(null);
       } finally {
-        setIsFocusTimeLoading(false);
+        setIsDateDataLoading(false);
       }
     };
-    fetchFocusTime();
+    fetchDateData();
   }, [playerId, selectedDate]);
 
   const dailyTaskCounts: DailyTaskCount[] = useMemo(() => {
@@ -66,5 +77,11 @@ export function useProfileData(
     }));
   }, [pointsData]);
 
-  return { dailyTaskCounts, focusTimeData, isLoading, isFocusTimeLoading };
+  return {
+    dailyTaskCounts,
+    focusTimeData,
+    githubEvents,
+    isLoading,
+    isDateDataLoading,
+  };
 }
