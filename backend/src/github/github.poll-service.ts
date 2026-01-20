@@ -341,10 +341,16 @@ export class GithubPollService {
     const newPRCount = Math.max(0, currentPRCount - baseline.lastPRCount);
 
     // 새로운 이슈 수 계산
-    const newIssueCount = Math.max(0, currentIssueCount - baseline.lastIssueCount);
+    const newIssueCount = Math.max(
+      0,
+      currentIssueCount - baseline.lastIssueCount,
+    );
 
     // 새로운 PR 리뷰 수 계산
-    const newPRReviewCount = Math.max(0, currentPRReviewCount - baseline.lastPRReviewCount);
+    const newPRReviewCount = Math.max(
+      0,
+      currentPRReviewCount - baseline.lastPRReviewCount,
+    );
 
     // 기준점 갱신
     baseline.lastCommitCounts = currentCommitCounts;
@@ -352,7 +358,12 @@ export class GithubPollService {
     baseline.lastIssueCount = currentIssueCount;
     baseline.lastPRReviewCount = currentPRReviewCount;
 
-    if (newCommitCount === 0 && newPRCount === 0 && newIssueCount === 0 && newPRReviewCount === 0) {
+    if (
+      newCommitCount === 0 &&
+      newPRCount === 0 &&
+      newIssueCount === 0 &&
+      newPRReviewCount === 0
+    ) {
       this.logger.debug(`[${username}] No new contributions`);
       return { status: 'no_changes' };
     }
@@ -360,16 +371,32 @@ export class GithubPollService {
     // DB에 새 이벤트 누적
     const { playerId } = schedule;
     if (newIssueCount > 0) {
-      await this.githubService.incrementActivity(playerId, GithubActivityType.ISSUE_OPEN, newIssueCount);
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.ISSUE_OPEN,
+        newIssueCount,
+      );
     }
     if (newPRCount > 0) {
-      await this.githubService.incrementActivity(playerId, GithubActivityType.PR_OPEN, newPRCount);
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_OPEN,
+        newPRCount,
+      );
     }
     if (newPRReviewCount > 0) {
-      await this.githubService.incrementActivity(playerId, GithubActivityType.PR_REVIEWED, newPRReviewCount);
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_REVIEWED,
+        newPRReviewCount,
+      );
     }
     if (newCommitCount > 0) {
-      await this.githubService.incrementActivity(playerId, GithubActivityType.COMMITTED, newCommitCount);
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.COMMITTED,
+        newCommitCount,
+      );
     }
 
     this.logger.log(
