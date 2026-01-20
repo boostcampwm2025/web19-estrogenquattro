@@ -3,7 +3,7 @@ import { LOOP_MODES, TRACKS } from "./constants";
 import { LoopMode, Track } from "./types";
 
 export function useMusicPlayer() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [volume, setVolume] = useState(0.5);

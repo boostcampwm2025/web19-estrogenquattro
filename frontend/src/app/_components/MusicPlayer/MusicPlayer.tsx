@@ -88,19 +88,27 @@ export default function MusicPlayer() {
             }`}
           >
             {/* 현재 재생 정보 */}
-            {currentTrack && (
-              <section
-                className="bg-retro-bg-secondary border-retro-border-dark mb-3 border-2 p-2"
-                aria-label="Now Playing"
-              >
-                <p className="text-retro-text-primary truncate text-xs font-bold">
-                  ♪ {currentTrack.title}
-                </p>
-                <p className="text-retro-text-tertiary truncate text-xs">
-                  {currentTrack.artist}
-                </p>
-              </section>
-            )}
+            <section
+              className="bg-retro-bg-secondary border-retro-border-dark mb-3 border-2 p-2"
+              aria-label="Now Playing"
+            >
+              {currentTrack ? (
+                <>
+                  <p className="text-retro-text-primary truncate text-xs font-bold">
+                    ♪ {currentTrack.title}
+                  </p>
+                  <p className="text-retro-text-tertiary truncate text-xs">
+                    {currentTrack.artist}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-retro-text-tertiary truncate text-xs font-bold">
+                    ♪ 재생 중인 곡 없음
+                  </p>
+                </>
+              )}
+            </section>
 
             {/* 재생 컨트롤러 */}
             <div
