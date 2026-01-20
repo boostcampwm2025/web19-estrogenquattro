@@ -1,9 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { TaskRes } from "@backend/task/dto/task.res.dto";
-
-type TaskEntity = Parameters<typeof TaskRes.of>[0];
-
-const toDateString = (value: Date) => value.toISOString().split("T")[0];
+import { TaskEntity, toDateString, toTaskRes } from "../../shared/task";
 
 let taskStore: TaskEntity[] = [];
 let nextId = 1;
@@ -41,7 +37,7 @@ export const taskHandlers = [
     });
 
     return HttpResponse.json({
-      tasks: tasks.map((task) => TaskRes.of(task)),
+      tasks: tasks.map((task) => toTaskRes(task)),
     });
   }),
 
@@ -60,7 +56,7 @@ export const taskHandlers = [
     nextId += 1;
     taskStore.push(newTask);
 
-    return HttpResponse.json(TaskRes.of(newTask));
+    return HttpResponse.json(toTaskRes(newTask));
   }),
 
   http.patch("*/api/tasks/completion/:taskId", ({ params }) => {
@@ -72,7 +68,7 @@ export const taskHandlers = [
     }
 
     task.completedDate = new Date();
-    return HttpResponse.json(TaskRes.of(task));
+    return HttpResponse.json(toTaskRes(task));
   }),
 
   http.patch("*/api/tasks/uncompletion/:taskId", ({ params }) => {
@@ -84,7 +80,7 @@ export const taskHandlers = [
     }
 
     task.completedDate = null;
-    return HttpResponse.json(TaskRes.of(task));
+    return HttpResponse.json(toTaskRes(task));
   }),
 
   http.patch("*/api/tasks/:taskId", async ({ params, request }) => {
@@ -97,7 +93,7 @@ export const taskHandlers = [
 
     const body = (await request.json()) as { description?: string };
     task.description = body.description ?? task.description;
-    return HttpResponse.json(TaskRes.of(task));
+    return HttpResponse.json(toTaskRes(task));
   }),
 
   http.delete("*/api/tasks/:taskId", ({ params }) => {
