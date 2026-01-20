@@ -54,7 +54,7 @@ export class FocustimeController {
       id: focusTime.id,
       totalFocusMinutes: focusTime.totalFocusMinutes,
       status: focusTime.status,
-      createdDate: String(focusTime.createdDate),
+      createdDate: new Date(focusTime.createdDate).toISOString().slice(0, 10),
       lastFocusStartTime: focusTime.lastFocusStartTime
         ? focusTime.lastFocusStartTime.toISOString()
         : null,
