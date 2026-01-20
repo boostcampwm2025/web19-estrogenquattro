@@ -6,6 +6,7 @@ import type {
   ContributionController,
 } from "../scenes/MapScene";
 import type { Direction } from "../types/direction";
+import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 
 interface PlayerData {
   userId: string;
@@ -16,7 +17,7 @@ interface PlayerData {
   direction?: Direction;
   timestamp?: number;
   // FocusTime 관련 필드 (players_synced에서 수신)
-  status?: "FOCUSING" | "RESTING";
+  status?: FocusStatus;
   lastFocusStartTime?: string | null;
   totalFocusMinutes?: number;
 }
@@ -185,7 +186,7 @@ export default class SocketManager {
         lastFocusStartTime?: string;
         totalFocusMinutes?: number;
       }) => {
-        if (data.status !== "FOCUSING") return;
+        if (data.status !== FOCUS_STATUS.FOCUSING) return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(true, {
@@ -205,7 +206,7 @@ export default class SocketManager {
         status: string;
         totalFocusMinutes?: number;
       }) => {
-        if (data.status !== "RESTING") return;
+        if (data.status !== FOCUS_STATUS.RESTING) return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(false, {
@@ -234,7 +235,7 @@ export default class SocketManager {
     this.otherPlayers.set(data.userId, remotePlayer);
 
     // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
-    remotePlayer.setFocusState(data.status === "FOCUSING", {
+    remotePlayer.setFocusState(data.status === FOCUS_STATUS.FOCUSING, {
       lastFocusStartTime: data.lastFocusStartTime ?? undefined,
       totalFocusMinutes: data.totalFocusMinutes ?? 0,
     });
