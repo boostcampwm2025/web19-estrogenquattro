@@ -13,3 +13,4 @@ import { DailyGithubActivity } from './entities/daily-github-activity.entity';
   exports: [GithubGateway, GithubPollService, GithubService],
 })
 export class GithubModule {}
+
