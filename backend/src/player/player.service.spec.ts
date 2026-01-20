@@ -5,6 +5,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { Player } from './entites/player.entity';
+import { UserPet } from '../userpet/entities/user-pet.entity';
+import { Pet } from '../userpet/entities/pet.entity';
 
 describe('PlayerService', () => {
   let service: PlayerService;
@@ -17,7 +19,7 @@ describe('PlayerService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Player],
+          entities: [Player, UserPet, Pet],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Player]),
