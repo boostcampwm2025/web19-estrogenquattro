@@ -1,5 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { pointApi, focustimeApi, DailyPointRes, DailyFocusTimeRes } from "@/lib/api";
+import {
+  pointApi,
+  focustimeApi,
+  DailyPointRes,
+  DailyFocusTimeRes,
+} from "@/lib/api";
 import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
 
 interface UseProfileDataReturn {
@@ -10,7 +15,9 @@ interface UseProfileDataReturn {
 
 export function useProfileData(): UseProfileDataReturn {
   const [pointsData, setPointsData] = useState<DailyPointRes[]>([]);
-  const [focusTimeData, setFocusTimeData] = useState<DailyFocusTimeRes | null>(null);
+  const [focusTimeData, setFocusTimeData] = useState<DailyFocusTimeRes | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

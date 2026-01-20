@@ -12,7 +12,9 @@ const sizeClasses = {
 
 export function Loading({ size = "md", text, className = "" }: LoadingProps) {
   return (
-    <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center gap-3 ${className}`}
+    >
       <div
         className={`animate-spin rounded-full border-amber-300 border-t-amber-700 ${sizeClasses[size]}`}
       />
