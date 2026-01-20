@@ -6,6 +6,7 @@ import {
   DailyFocusTimeRes,
 } from "@/lib/api";
 import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
+import { toDateString } from "@/utils/timeFormat";
 
 interface UseProfileDataReturn {
   dailyTaskCounts: DailyTaskCount[];
@@ -40,7 +41,7 @@ export function useProfileData(selectedDate: Date): UseProfileDataReturn {
   // 선택된 날짜가 바뀔 때마다 집중시간 조회
   useEffect(() => {
     const fetchFocusTime = async () => {
-      const dateStr = selectedDate.toISOString().split("T")[0];
+      const dateStr = toDateString(selectedDate);
       setIsFocusTimeLoading(true);
       try {
         const focusTime = await focustimeApi.getFocusTime(dateStr);

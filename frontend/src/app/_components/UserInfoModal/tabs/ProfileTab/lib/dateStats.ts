@@ -1,5 +1,6 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { isSameDay } from "./dateUtils";
+import { toDateString } from "@/utils/timeFormat";
 
 export interface DailyStats {
   focusTime: string;
@@ -14,7 +15,7 @@ export interface DailyStats {
  * 특정 날짜의 Task들을 필터링
  */
 export function getTasksByDate(tasks: Task[], date: Date): Task[] {
-  const dateStr = date.toISOString().split("T")[0];
+  const dateStr = toDateString(date);
   return tasks.filter((task) => task.createdDate === dateStr);
 }
 

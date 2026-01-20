@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { toDateString } from "@/utils/timeFormat";
 
 export interface DayData {
   date: Date;
@@ -32,7 +33,7 @@ export function useHeatmapData(
     oneYearAgo.setFullYear(today.getFullYear() - 1);
 
     for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toISOString().split("T")[0]; // "YYYY-MM-DD" 형식
+      const dateKey = toDateString(d); // "YYYY-MM-DD" 형식
       days.push({
         date: new Date(d),
         value: taskCountByDate.get(dateKey) || 0,

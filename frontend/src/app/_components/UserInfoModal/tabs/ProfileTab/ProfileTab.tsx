@@ -5,6 +5,7 @@ import TaskSection from "./components/TaskSection/TaskSection";
 import { generateMockTasks } from "./lib/mockDataGenerator";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
+import { toDateString } from "@/utils/timeFormat";
 
 // TODO: [API 연동] 선택한 날짜의 Task 목록 Mock 데이터
 const mockTasks = generateMockTasks(365);
@@ -16,7 +17,7 @@ export default function ProfileTab() {
 
   // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
   const getTasksForDate = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toDateString(date);
     return mockTasks.filter((task) => task.createdDate === dateStr);
   };
 
