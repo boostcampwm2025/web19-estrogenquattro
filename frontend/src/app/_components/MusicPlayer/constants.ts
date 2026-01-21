@@ -86,3 +86,10 @@ export const LOOP_MODES = {
   ALL: "ALL",
   ONE: "ONE",
 } as const;
+
+// localStorage 키 상수
+export const STORAGE_KEYS = {
+  VOLUME: "musicPlayer_volume",
+  LOOP_MODE: "musicPlayer_loopMode",
+  LAST_TRACK_ID: "musicPlayer_lastTrackId",
+} as const;

@@ -1,14 +1,45 @@
 import { useState, useRef, useEffect } from "react";
-import { LOOP_MODES, TRACKS } from "./constants";
+import { LOOP_MODES, STORAGE_KEYS, TRACKS } from "./constants";
 import { LoopMode, Track } from "./types";
+
+function getStoredVolume(): number {
+  if (typeof window === "undefined") return 0.5;
+
+  const stored = localStorage.getItem(STORAGE_KEYS.VOLUME);
+  if (stored === null) return 0.5;
+  const parsed = parseFloat(stored);
+  return Number.isNaN(parsed) ? 0.5 : Math.max(0, Math.min(1, parsed));
+}
+
+function getStoredLoopMode(): LoopMode {
+  if (typeof window === "undefined") return LOOP_MODES.ALL;
+  const stored = localStorage.getItem(STORAGE_KEYS.LOOP_MODE);
+  if (
+    stored === LOOP_MODES.OFF ||
+    stored === LOOP_MODES.ALL ||
+    stored === LOOP_MODES.ONE
+  ) {
+    return stored;
+  }
+  return LOOP_MODES.ALL;
+}
+
+function getStoredTrack(): Track | null {
+  if (typeof window === "undefined") return null;
+  const storedId = localStorage.getItem(STORAGE_KEYS.LAST_TRACK_ID);
+  if (!storedId) return null;
+  return TRACKS.find((t) => t.id === storedId) || null;
+}
 
 export function useMusicPlayer() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [volume, setVolume] = useState(0.5);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(
+    getStoredTrack,
+  );
+  const [volume, setVolume] = useState(getStoredVolume);
   const [isMuted, setIsMuted] = useState(false);
-  const [loopMode, setLoopMode] = useState<LoopMode>(LOOP_MODES.ALL);
+  const [loopMode, setLoopMode] = useState<LoopMode>(getStoredLoopMode);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -18,6 +49,21 @@ export function useMusicPlayer() {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  // localStorage 저장 이펙트
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.VOLUME, String(volume));
+  }, [volume]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.LOOP_MODE, loopMode);
+  }, [loopMode]);
+
+  useEffect(() => {
+    if (currentTrack) {
+      localStorage.setItem(STORAGE_KEYS.LAST_TRACK_ID, currentTrack.id);
+    }
+  }, [currentTrack]);
 
   // 재생 상태 조절 이펙트
   useEffect(() => {
