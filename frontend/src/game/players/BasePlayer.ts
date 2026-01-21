@@ -189,6 +189,15 @@ export default class BasePlayer {
     return this.container;
   }
 
+  // 플레이어 위치 재설정 (리스폰)
+  setPosition(x: number, y: number) {
+    this.container.setPosition(x, y);
+    // 물리 바디도 함께 이동
+    if (this.body) {
+      this.body.reset(x, y);
+    }
+  }
+
   // 자원 해제
   destroy() {
     this.pet.destroy();

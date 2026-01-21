@@ -7,6 +7,18 @@ export interface MapConfig {
   tilemapPath: string;
 }
 
+interface WallRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface SpawnPosition {
+  x: number;
+  y: number;
+}
+
 export default class MapManager {
   private scene: Phaser.Scene;
   private maps: MapConfig[];
@@ -128,5 +140,87 @@ export default class MapManager {
     this.walls?.clear(true, true);
     const mapImage = this.getMapImage();
     if (mapImage) mapImage.destroy();
+  }
+
+  /**
+   * wall이 아닌 랜덤 스폰 위치 계산 (중앙 부근)
+   */
+  getRandomSpawnPosition(): SpawnPosition {
+    const { width: mapWidth, height: mapHeight } = this.getMapSize();
+    const maxAttempts = 10;
+    const playerSize = 32;
+
+    // 중앙 부근 범위 (맵 중앙 기준 20% 영역)
+    const centerX = mapWidth / 2;
+    const centerY = mapHeight / 2;
+    const rangeX = mapWidth * 0.2;
+    const rangeY = mapHeight * 0.2;
+
+    // 현재 wall 정보를 가져옴
+    const wallRects = this.getWallRects();
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const x = centerX + (Math.random() - 0.5) * rangeX;
+      const y = centerY + (Math.random() - 0.5) * rangeY;
+
+      // wall과 충돌하는지 확인
+      const collides = wallRects.some((wall) =>
+        this.rectIntersects(
+          x - playerSize / 2,
+          y - playerSize / 2,
+          playerSize,
+          playerSize,
+          wall.x,
+          wall.y,
+          wall.width,
+          wall.height,
+        ),
+      );
+
+      if (!collides) {
+        return { x: Math.round(x), y: Math.round(y) };
+      }
+    }
+
+    // 실패 시 기본 위치 반환
+    console.warn("Failed to find valid spawn position, using center");
+    return { x: Math.round(centerX), y: Math.round(centerY) };
+  }
+
+  /**
+   * 현재 맵의 wall 정보를 사각형 배열로 반환
+   */
+  private getWallRects(): WallRect[] {
+    const wallRects: WallRect[] = [];
+
+    if (!this.walls) return wallRects;
+
+    this.walls.getChildren().forEach((child) => {
+      const rect = child as Phaser.GameObjects.Rectangle;
+      wallRects.push({
+        x: rect.x - rect.width / 2,
+        y: rect.y - rect.height / 2,
+        width: rect.width,
+        height: rect.height,
+      });
+    });
+
+    return wallRects;
+  }
+
+  /**
+   * 두 사각형이 겹치는지 확인(AABB)
+   */
+  private rectIntersects(
+    x1: number,
+    y1: number,
+    w1: number,
+    h1: number,
+    x2: number,
+    y2: number,
+    w2: number,
+    h2: number,
+  ): boolean {
+    return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
   }
 }
