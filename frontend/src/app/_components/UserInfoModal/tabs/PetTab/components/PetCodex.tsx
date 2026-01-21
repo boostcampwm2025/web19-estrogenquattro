@@ -1,23 +1,27 @@
 import Image from "next/image";
-import { PETS_DATA } from "../data/pets";
+import { Pet } from "@/lib/api/pet";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_CARD =
   "relative flex flex-col items-center justify-center bg-amber-100 p-2 aspect-auto hover:bg-amber-200 transition-colors border-2 border-amber-900/50";
 
 interface PetCodexProps {
-  collectedPetIds: string[];
-  activePetId: string;
-  onPetSelect: (petId: string) => void;
+  allPets: Pet[];
+  collectedPetIds: number[];
+  activePetId: number;
+  equippedPetId?: number;
+  onPetSelect: (petId: number) => void;
 }
 
 export default function PetCodex({
+  allPets,
   collectedPetIds,
   activePetId,
+  equippedPetId,
   onPetSelect,
 }: PetCodexProps) {
   // 미리 펫들을 종류별로 그룹화
-  const groupedPets = PETS_DATA.reduce(
+  const groupedPets = allPets.reduce(
     (acc, pet) => {
       if (!acc[pet.species]) {
         acc[pet.species] = [];
@@ -25,7 +29,7 @@ export default function PetCodex({
       acc[pet.species].push(pet);
       return acc;
     },
-    {} as Record<string, typeof PETS_DATA>,
+    {} as Record<string, Pet[]>,
   );
 
   return (
@@ -34,7 +38,7 @@ export default function PetCodex({
       <div className="flex items-center justify-between border-b-2 border-amber-900/20 pb-2">
         <h3 className="text-xl font-bold text-amber-900">펫 도감</h3>
         <span className="text-xs font-bold text-amber-700">
-          {collectedPetIds.length} / {PETS_DATA.length} 수집
+          {collectedPetIds.length} / {allPets.length} 수집
         </span>
       </div>
 
@@ -48,7 +52,9 @@ export default function PetCodex({
             <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
               {pets.map((pet, index) => {
                 const isCollected = collectedPetIds.includes(pet.id);
-                const isActive = pet.id === activePetId;
+                // 선택된 펫은 UI상 강조 (border 등) - 여기선 PIXEL_CARD가 이미 스타일을 가짐
+                // 장착된 펫은 뱃지로 표시
+                const isEquipped = pet.id === equippedPetId;
                 const isLast = index === pets.length - 1;
 
                 return (
@@ -62,14 +68,14 @@ export default function PetCodex({
                       title={isCollected ? pet.description : "???"}
                     >
                       {/* 장착 뱃지 */}
-                      {isActive && (
+                      {isEquipped && (
                         <div className="absolute -top-2 -right-2 z-10 rotate-12 rounded border border-red-800 bg-red-500 px-1.5 py-0.5 text-[12px] font-bold text-white shadow-sm">
                           대표펫
                         </div>
                       )}
                       <div className="relative mb-2 h-14 w-14">
                         <Image
-                          src={pet.image}
+                          src={pet.actualImgUrl}
                           alt={pet.name}
                           fill
                           className={`object-contain ${
