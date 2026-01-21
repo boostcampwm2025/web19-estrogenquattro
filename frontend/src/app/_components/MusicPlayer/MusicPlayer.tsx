@@ -170,10 +170,10 @@ export default function MusicPlayer() {
             <div className="mb-3 flex items-center gap-2">
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                aria-label={isMuted ? "Unmute" : "Mute"}
+                aria-label={isMuted || volume === 0 ? "Unmute" : "Mute"}
                 className="cursor-pointer text-amber-900 hover:text-amber-700"
               >
-                {isMuted ? (
+                {isMuted || volume === 0 ? (
                   <VolumeX className="h-4 w-4" />
                 ) : (
                   <Volume2 className="h-4 w-4" />
