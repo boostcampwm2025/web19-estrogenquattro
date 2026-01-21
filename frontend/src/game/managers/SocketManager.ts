@@ -7,6 +7,10 @@ import type {
 } from "../scenes/MapScene";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
+import {
+  useFocusTimeStore,
+  type FocusTimeData,
+} from "../../stores/useFocusTimeStore";
 
 interface PlayerData {
   userId: string;
@@ -21,6 +25,7 @@ interface PlayerData {
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
   totalFocusMinutes?: number;
+  currentSessionSeconds?: number;
 }
 
 interface GithubEventData {
@@ -106,13 +111,20 @@ export default class SocketManager {
       });
     });
 
-    socket.on("joined", (data: { roomId: string }) => {
-      this.roomId = data.roomId;
-      const currentPlayer = this.getPlayer();
-      if (currentPlayer) {
-        currentPlayer.setRoomId(data.roomId);
-      }
-    });
+    socket.on(
+      "joined",
+      (data: { roomId: string; focusTime?: FocusTimeData }) => {
+        this.roomId = data.roomId;
+        const currentPlayer = this.getPlayer();
+        if (currentPlayer) {
+          currentPlayer.setRoomId(data.roomId);
+        }
+        // 서버에서 받은 focusTime 정보로 로컬 상태 복원
+        if (data.focusTime) {
+          useFocusTimeStore.getState().syncFromServer(data.focusTime);
+        }
+      },
+    );
 
     socket.on("session_replaced", () => {
       socket.disconnect();
@@ -184,16 +196,16 @@ export default class SocketManager {
         userId: string;
         status: string;
         taskName?: string;
-        lastFocusStartTime?: string;
         totalFocusMinutes?: number;
+        currentSessionSeconds?: number;
       }) => {
         if (data.status !== FOCUS_STATUS.FOCUSING) return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(true, {
             taskName: data.taskName,
-            lastFocusStartTime: data.lastFocusStartTime,
             totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            currentSessionSeconds: data.currentSessionSeconds ?? 0,
           });
         }
       },
@@ -212,6 +224,20 @@ export default class SocketManager {
         if (remotePlayer) {
           remotePlayer.setFocusState(false, {
             totalFocusMinutes: data.totalFocusMinutes ?? 0,
+          });
+        }
+      },
+    );
+
+    // 다른 플레이어 집중 Task 이름 변경
+    socket.on(
+      "focus_task_updated",
+      (data: { userId: string; username: string; taskName: string }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.updateTaskBubble({
+            isFocusing: true,
+            taskName: data.taskName,
           });
         }
       },
@@ -238,8 +264,8 @@ export default class SocketManager {
 
     // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
     remotePlayer.setFocusState(data.status === FOCUS_STATUS.FOCUSING, {
-      lastFocusStartTime: data.lastFocusStartTime ?? undefined,
       totalFocusMinutes: data.totalFocusMinutes ?? 0,
+      currentSessionSeconds: data.currentSessionSeconds ?? 0,
     });
 
     if (this.walls) {

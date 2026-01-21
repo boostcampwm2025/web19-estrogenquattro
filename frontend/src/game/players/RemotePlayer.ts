@@ -5,15 +5,15 @@ import { devLogger } from "@/lib/devLogger";
 
 interface FocusTimeOptions {
   taskName?: string;
-  lastFocusStartTime?: string | null;
   totalFocusMinutes?: number;
+  currentSessionSeconds?: number;
 }
 
 export default class RemotePlayer extends BasePlayer {
   private isFocusing: boolean = false;
   private focusTimeTimer: Phaser.Time.TimerEvent | null = null;
   private totalFocusMinutes: number = 0;
-  private lastFocusStartTime: Date | null = null;
+  private focusStartTimestamp: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -39,42 +39,31 @@ export default class RemotePlayer extends BasePlayer {
     }
 
     if (isFocusing) {
-      // 집중 시작: lastFocusStartTime 저장 및 타이머 시작
-      this.lastFocusStartTime = options?.lastFocusStartTime
-        ? new Date(options.lastFocusStartTime)
-        : new Date();
+      // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
+      const currentSessionSeconds = options?.currentSessionSeconds ?? 0;
+      this.focusStartTimestamp = Date.now() - currentSessionSeconds * 1000;
 
-      // 현재 집중 시간 표시
-      this.updateFocusTimeDisplay();
+      // 초기 표시
+      this.updateFocusTime(this.totalFocusMinutes * 60 + currentSessionSeconds);
 
-      // 1초마다 집중 시간 UI 업데이트 (로컬 계산)
+      // 1초마다 경과 시간 기반으로 계산 (프레임 드랍/탭 비활성화에도 정확)
       this.focusTimeTimer = this.scene.time.addEvent({
         delay: 1000,
-        callback: () => this.updateFocusTimeDisplay(),
+        callback: () => {
+          const elapsed = Math.floor(
+            (Date.now() - this.focusStartTimestamp) / 1000,
+          );
+          this.updateFocusTime(this.totalFocusMinutes * 60 + elapsed);
+        },
         loop: true,
       });
     } else {
-      // 휴식 시작: 누적 시간만 표시
-      this.lastFocusStartTime = null;
+      // 휴식 상태: 누적 시간만 표시
+      this.focusStartTimestamp = 0;
       this.updateFocusTime(this.totalFocusMinutes * 60);
     }
 
     this.updateTaskBubble({ isFocusing, taskName: options?.taskName });
-  }
-
-  private updateFocusTimeDisplay() {
-    if (!this.isFocusing || !this.lastFocusStartTime) {
-      this.updateFocusTime(this.totalFocusMinutes * 60);
-      return;
-    }
-
-    // 현재 세션 집중 시간(초) = (현재 시간 - 시작 시간) / 1000
-    const currentSessionSeconds = Math.floor(
-      (Date.now() - this.lastFocusStartTime.getTime()) / 1000,
-    );
-    // 총 집중 시간(초) = 누적(분) * 60 + 현재 세션(초)
-    const totalSeconds = this.totalFocusMinutes * 60 + currentSessionSeconds;
-    this.updateFocusTime(totalSeconds);
   }
 
   getFocusState(): boolean {
