@@ -16,6 +16,7 @@ interface PlayerData {
   isMoving?: boolean;
   direction?: Direction;
   timestamp?: number;
+  playerId?: number;
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -231,6 +232,7 @@ export default class SocketManager {
       username,
       data.userId,
       username,
+      data.playerId ?? 0,
     );
     this.otherPlayers.set(data.userId, remotePlayer);
 

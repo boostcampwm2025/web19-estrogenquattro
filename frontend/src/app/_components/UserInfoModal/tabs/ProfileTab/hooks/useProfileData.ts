@@ -15,7 +15,10 @@ interface UseProfileDataReturn {
   isFocusTimeLoading: boolean;
 }
 
-export function useProfileData(selectedDate: Date): UseProfileDataReturn {
+export function useProfileData(
+  playerId: number,
+  selectedDate: Date,
+): UseProfileDataReturn {
   const [pointsData, setPointsData] = useState<DailyPointRes[]>([]);
   const [focusTimeData, setFocusTimeData] = useState<DailyFocusTimeRes | null>(
     null,
@@ -44,7 +47,7 @@ export function useProfileData(selectedDate: Date): UseProfileDataReturn {
       const dateStr = toDateString(selectedDate);
       setIsFocusTimeLoading(true);
       try {
-        const focusTime = await focustimeApi.getFocusTime(dateStr);
+        const focusTime = await focustimeApi.getFocusTime(playerId, dateStr);
         setFocusTimeData(focusTime);
       } catch (error) {
         console.error("Failed to fetch focus time:", error);
@@ -54,7 +57,7 @@ export function useProfileData(selectedDate: Date): UseProfileDataReturn {
       }
     };
     fetchFocusTime();
-  }, [selectedDate]);
+  }, [playerId, selectedDate]);
 
   const dailyTaskCounts: DailyTaskCount[] = useMemo(() => {
     return pointsData.map((point) => ({

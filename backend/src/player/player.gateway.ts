@@ -171,6 +171,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       username: username,
       x: data.x,
       y: data.y,
+      playerId: playerId,
     });
 
     // 4. Update FocusTime

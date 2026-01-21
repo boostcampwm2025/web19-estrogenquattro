@@ -24,6 +24,7 @@ export class MapScene extends Phaser.Scene {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
+  private playerId: number = 0;
 
   // Managers & Controllers
   private mapManager!: MapManager;
@@ -107,6 +108,7 @@ export class MapScene extends Phaser.Scene {
   init() {
     const user = this.registry.get("user");
     this.username = user?.username;
+    this.playerId = user?.playerId ?? 0;
   }
 
   create() {
@@ -211,6 +213,7 @@ export class MapScene extends Phaser.Scene {
       this.username,
       myId,
       "pending",
+      this.playerId,
     );
   }
 

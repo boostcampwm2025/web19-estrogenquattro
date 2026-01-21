@@ -6,14 +6,18 @@ import { generateMockTasks } from "./lib/mockDataGenerator";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
 import { toDateString } from "@/utils/timeFormat";
+import { useUserInfoStore } from "@/stores/userInfoStore";
 
 // TODO: [API 연동] 선택한 날짜의 Task 목록 Mock 데이터
 const mockTasks = generateMockTasks(365);
 
 export default function ProfileTab() {
+  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, isLoading } =
-    useProfileData(selectedDate);
+  const { dailyTaskCounts, focusTimeData, isLoading } = useProfileData(
+    targetPlayerId ?? 0,
+    selectedDate,
+  );
 
   // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
   const getTasksForDate = (date: Date) => {
