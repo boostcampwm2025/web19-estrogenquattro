@@ -27,7 +27,7 @@
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ✅ 해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
-| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ❌ 미해결 |
+| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ✅ 해결 |
 
 ---
 
@@ -600,7 +600,7 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 
 ---
 
-## #159: 서버 접속 끊김 감지를 위한 하트비트 구현
+## #159: 서버 접속 끊김 감지를 위한 하트비트 구현 ✅
 
 ### 현상
 
@@ -716,12 +716,31 @@ connect(callbacks: {
 
 ### 체크리스트
 
-- [ ] `SocketManager.ts`에 `isSessionReplaced` 플래그 추가
-- [ ] `connect` 메서드 콜백 시그니처 확장
-- [ ] `disconnect` 이벤트 핸들러 추가
-- [ ] `connect` 이벤트에서 오버레이 숨김 처리
-- [ ] `MapScene.ts`에 연결 끊김 오버레이 메서드 추가
-- [ ] 테스트
+- [x] `SocketManager.ts`에 `isSessionReplaced` 플래그 추가
+- [x] `connect` 메서드 콜백 시그니처 확장
+- [x] `disconnect` 이벤트 핸들러 추가
+- [x] `connect` 이벤트에서 오버레이 숨김 처리
+- [x] `MapScene.ts`에 연결 끊김 오버레이 메서드 추가
+- [x] 테스트
+
+### 해결
+
+- **PR**: (생성 예정)
+- **브랜치**: `feat/#159-heartbeat`
+- **커밋**:
+  - `fb5166a` docs: #159 연결 끊김 감지 구현 계획 문서 추가
+  - `a521ce0` feat: 소켓 연결 끊김 감지 및 재연결 UI 피드백 추가
+  - `5c1a1e6` test: 소켓 연결 끊김/재연결 이벤트 테스트 추가
+
+### 테스트 케이스
+
+| 테스트 방식 | 파일 | 테스트 케이스 |
+|------------|------|--------------|
+| FakeSocket | `socket-manager.spec.ts` | disconnect 이벤트 발생 시 showConnectionLostOverlay 호출 |
+| FakeSocket | `socket-manager.spec.ts` | io client disconnect 시 오버레이 미표시 |
+| FakeSocket | `socket-manager.spec.ts` | session_replaced 후 disconnect 시 오버레이 미표시 |
+| FakeSocket | `socket-manager.spec.ts` | connect 이벤트 발생 시 hideConnectionLostOverlay 호출 |
+| FakeSocket | `socket-manager.spec.ts` | session_replaced 시 showSessionEndedOverlay 호출 |
 
 ---
 
@@ -745,10 +764,11 @@ connect(callbacks: {
 - **#166 완료**: PR #176 (브랜치: `fix/#166-socket-response`, Stacked PR)
 - **#167 스킵**: 에러 타입 구분의 실질적 가치 없음 (이슈 닫힘)
 
-### 4. #159 (별도 진행)
+### 4. #159 ✅ (완료)
 - **브랜치**: `feat/#159-heartbeat`
+- **PR**: (생성 예정)
 - **연관성**: 연결 상태 감지 (FocusTime과 독립)
-- **선행 조건**: 없음
+- **선행 조건**: 없음 (main에서 분기)
 
 ### 5. #162 (별도 진행)
 - **브랜치**: `feat/#162-daily-reset`
