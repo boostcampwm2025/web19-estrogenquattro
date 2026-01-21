@@ -7,11 +7,13 @@ import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
+import { Task } from '../task/entites/task.entity';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
   let focusTimeRepository: Repository<DailyFocusTime>;
   let playerRepository: Repository<Player>;
+  let taskRepository: Repository<Task>;
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -20,10 +22,10 @@ describe('FocusTimeService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [DailyFocusTime, Player, UserPet, Pet],
+          entities: [DailyFocusTime, Player, UserPet, Pet, Task],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([DailyFocusTime, Player]),
+        TypeOrmModule.forFeature([DailyFocusTime, Player, Task]),
       ],
       providers: [FocusTimeService],
     }).compile();
@@ -35,6 +37,7 @@ describe('FocusTimeService', () => {
     playerRepository = module.get<Repository<Player>>(
       getRepositoryToken(Player),
     );
+    taskRepository = module.get<Repository<Task>>(getRepositoryToken(Task));
   });
 
   afterAll(async () => {
@@ -54,6 +57,7 @@ describe('FocusTimeService', () => {
   beforeEach(async () => {
     // 각 테스트 전 데이터 초기화
     await focusTimeRepository.clear();
+    await taskRepository.clear();
     await playerRepository.clear();
   });
 

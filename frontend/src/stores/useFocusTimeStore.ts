@@ -31,7 +31,7 @@ interface FocusTimeStore {
   clearError: () => void;
 
   // 소켓 연동 액션
-  startFocusing: (taskName?: string) => void;
+  startFocusing: (taskName?: string, taskId?: number) => void;
   stopFocusing: () => void;
 
   // 서버 동기화 액션
@@ -53,7 +53,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   setFocusTimerRunning: (isRunning) => set({ isFocusTimerRunning: isRunning }),
   clearError: () => set({ error: null }),
 
-  startFocusing: (taskName?: string) => {
+  startFocusing: (taskName?: string, taskId?: number) => {
     const socket = getSocket();
     if (!socket?.connected) {
       set({
@@ -61,7 +61,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       });
       return;
     }
-    socket.emit("focusing", { taskName });
+    socket.emit("focusing", { taskName, taskId });
     set((state) => ({
       status: FOCUS_STATUS.FOCUSING,
       isFocusTimerRunning: true,

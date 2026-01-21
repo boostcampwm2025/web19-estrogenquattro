@@ -18,14 +18,15 @@
 | `status` | enum | `FOCUSING` \| `RESTING` |
 | `created_date` | date | `YYYY-MM-DD` |
 | `last_focus_start_time` | datetime | 마지막 집중 시작 시각 (nullable) |
+| `current_task_id` | int | 현재 집중 중인 Task ID (nullable) |
 
 ---
 
 ## 상태 전이
 
 1. **방 입장**: `findOrCreate`로 당일 레코드 생성/조회
-2. **focusing**: 상태를 `FOCUSING`으로 변경하고 `last_focus_start_time` 기록
-3. **resting**: 집중 시간 누적 후 상태를 `RESTING`으로 변경 (`last_focus_start_time`은 유지)
+2. **focusing**: 상태를 `FOCUSING`으로 변경하고 `last_focus_start_time` 기록, `current_task_id` 저장 (선택)
+3. **resting**: 집중 시간 누적 후 상태를 `RESTING`으로 변경, `current_task_id`가 있으면 해당 Task에도 집중 시간 누적
 4. **disconnect**: `RESTING` 처리 시도 (예외는 로깅)
 
 ```mermaid
@@ -43,7 +44,7 @@ stateDiagram-v2
 ### 클라이언트 → 서버
 
 ```typescript
-socket.emit('focusing', { taskName?: string });  // taskName은 선택
+socket.emit('focusing', { taskName?: string, taskId?: number });  // taskName, taskId는 선택
 socket.emit('resting');
 ```
 

@@ -156,8 +156,8 @@ export default function App() {
       // 같은 Task를 다시 클릭: 종료 + 서버에 resting 이벤트 전송
       stopFocusing();
     } else {
-      // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName 포함)
-      startFocusing(targetTask?.description);
+      // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName, taskId 포함)
+      startFocusing(targetTask?.description, targetTask?.id);
       // 마지막으로 실행한 Task ID 저장
       setLastRunTaskId(id);
       // 완료된 Task 타이머 시작 시 체크 해제

@@ -36,4 +36,7 @@ export class DailyFocusTime {
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;
+
+  @Column({ name: 'current_task_id', type: 'int', nullable: true })
+  currentTaskId: number | null;
 }
