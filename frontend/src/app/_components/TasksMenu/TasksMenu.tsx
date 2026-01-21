@@ -165,6 +165,10 @@ export default function App() {
       startFocusing(targetTask?.description);
       // 마지막으로 실행한 Task ID 저장
       setLastRunTaskId(id);
+      // 완료된 Task 타이머 시작 시 체크 해제
+      if (targetTask?.completed) {
+        toggleTask(id);
+      }
     }
 
     toggleTaskTimer(id);
@@ -177,6 +181,18 @@ export default function App() {
     } else {
       handleToggleTimer();
     }
+  };
+
+  const handleToggleTask = (id: number) => {
+    const targetTask = tasks.find((task) => task.id === id);
+
+    // 실행 중인 Task를 체크하면 타이머 정지
+    if (targetTask?.isRunning) {
+      stopFocusing();
+      toggleTaskTimer(id);
+    }
+
+    toggleTask(id);
   };
 
   return (
@@ -217,7 +233,7 @@ export default function App() {
             completedCount={completedCount}
             totalCount={tasks.length}
             onAddTask={addTask}
-            onToggleTask={toggleTask}
+            onToggleTask={handleToggleTask}
             onDeleteTask={deleteTask}
             onToggleTaskTimer={handleToggleTaskTimer}
             onEditTask={editTask}
