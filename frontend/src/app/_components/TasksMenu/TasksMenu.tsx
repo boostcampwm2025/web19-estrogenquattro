@@ -147,6 +147,10 @@ export default function App() {
     } else {
       // 시작: Focus Timer 시작 + 서버에 focusing 이벤트 전송
       startFocusing();
+      // 펼친 상태에서 전체 타이머 시작 시 마지막 Task 정보 초기화
+      if (isExpanded) {
+        setLastRunTaskId(null);
+      }
     }
   };
 
