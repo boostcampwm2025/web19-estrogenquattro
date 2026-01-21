@@ -17,6 +17,7 @@ const remotePlayerInstances = new Map<
   string,
   {
     setFocusState: ReturnType<typeof vi.fn>;
+    updateTaskBubble: ReturnType<typeof vi.fn>;
     destroy: ReturnType<typeof vi.fn>;
   }
 >();
@@ -27,6 +28,7 @@ vi.mock("@/game/players/RemotePlayer", () => ({
   default: vi.fn().mockImplementation((_scene, _x, _y, _username, id) => {
     const instance = {
       setFocusState: vi.fn(),
+      updateTaskBubble: vi.fn(),
       destroy: vi.fn(),
       updateState: vi.fn(),
       showChatBubble: vi.fn(),
@@ -358,6 +360,35 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
       currentSessionSeconds: 0,
       totalFocusMinutes: 15,
+    });
+  });
+
+  it("focus_task_updated 이벤트 수신 시 updateTaskBubble이 호출된다", () => {
+    // Given: FOCUSING 상태의 원격 플레이어가 존재
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "FOCUSING",
+        currentSessionSeconds: 0,
+      },
+    ]);
+    const remote = remotePlayerInstances.get("remote-1");
+
+    // When: focus_task_updated 이벤트 수신
+    currentSocket.trigger("focus_task_updated", {
+      userId: "remote-1",
+      username: "alice",
+      taskName: "리뷰하기",
+    });
+
+    // Then: updateTaskBubble이 올바른 인자로 호출됨
+    expect(remote?.updateTaskBubble).toHaveBeenCalledWith({
+      isFocusing: true,
+      taskName: "리뷰하기",
     });
   });
 });

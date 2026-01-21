@@ -158,7 +158,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         // 서버에서 현재 세션 경과 시간 계산
         const currentSessionSeconds =
-          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+          status?.status === FocusStatus.FOCUSING && status?.lastFocusStartTime
             ? Math.floor(
                 (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
               )
@@ -189,7 +189,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           )
         : 0;
 
-    //남들이 볼 내 캐릭터 그리기
+    // 5. 남들이 볼 내 캐릭터 그리기 (focusTime 정보 포함)
     client.to(roomId).emit('player_joined', {
       userId: client.id,
       username: username,
