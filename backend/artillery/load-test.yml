@@ -1,0 +1,112 @@
+config:
+  # 배포 서버 URL로 변경 필요
+  target: "http://localhost:8080"
+  phases:
+    - duration: 300 # 5분
+      arrivalRate: 10 # 초당 10명 도착
+      maxVusers: 50 # 최대 50명
+  engines:
+    socketio-v3:
+      transports: ["websocket"]
+  processor: "./processor.js"
+  payload:
+    - path: "./users.csv"
+
+      fields:
+        - "jwt"
+      order: "sequence" # 각 vuser가 순차적으로 다른 JWT 사용
+
+scenarios:
+  - name: "Socket.IO Load Test - Full Scenario"
+    engine: socketio-v3
+    flow:
+      # 쿠키로 JWT 설정
+      - function: "setJwtCookie"
+
+      # 1. joining 이벤트
+      - emit:
+          channel: "joining"
+          data:
+            x: "{{ $randomNumber(100, 800) }}"
+            y: "{{ $randomNumber(100, 600) }}"
+            username: "loadtest_user_{{ $loopCount }}"
+      - think: 1
+
+      # 2. moving 이벤트 15회 (1초 간격)
+      - loop:
+          - emit:
+              channel: "moving"
+              data:
+                x: "{{ $randomNumber(100, 800) }}"
+                y: "{{ $randomNumber(100, 600) }}"
+                isMoving: true
+                direction: "right"
+                timestamp: "{{ $timestamp }}"
+          - think: 1
+        count: 15
+
+      # 3. chatting 이벤트 5회 (1초 간격)
+      - loop:
+          - emit:
+              channel: "chatting"
+              data:
+                message: "Load test message {{ $randomNumber(1, 1000) }}"
+          - think: 1
+        count: 5
+
+      # 4. focusing 이벤트
+      - emit:
+          channel: "focusing"
+          data:
+            taskName: "Load Test Task"
+      - think: 5
+
+      # 5. moving while focusing (10회)
+      - loop:
+          - emit:
+              channel: "moving"
+              data:
+                x: "{{ $randomNumber(100, 800) }}"
+                y: "{{ $randomNumber(100, 600) }}"
+                isMoving: true
+                direction: "left"
+                timestamp: "{{ $timestamp }}"
+          - think: 1
+        count: 10
+
+      # 6. resting 이벤트
+      - emit:
+          channel: "resting"
+          data: {}
+      - think: 3
+
+      # 7. 다시 focusing
+      - emit:
+          channel: "focusing"
+          data:
+            taskName: "Second Task"
+      - think: 3
+
+      # 8. 혼합 이벤트 (moving + chatting)
+      - loop:
+          - emit:
+              channel: "moving"
+              data:
+                x: "{{ $randomNumber(100, 800) }}"
+                y: "{{ $randomNumber(100, 600) }}"
+                isMoving: false
+                direction: "down"
+                timestamp: "{{ $timestamp }}"
+          - think: 1
+          - emit:
+              channel: "chatting"
+              data:
+                message: "Still here {{ $randomNumber(1, 100) }}"
+          - think: 1
+        count: 10
+
+      # 9. 마지막 resting
+      - emit:
+          channel: "resting"
+          data: {}
+      - think: 2

@@ -24,7 +24,9 @@
     "typeorm": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "migration:generate": "node --require ts-node/register --require tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations/Auto -d src/database/data-source.ts",
     "migration:run": "pnpm run typeorm migration:run -d src/database/data-source.ts",
-    "migration:revert": "pnpm run typeorm migration:revert -d src/database/data-source.ts"
+    "migration:revert": "pnpm run typeorm migration:revert -d src/database/data-source.ts",
+    "loadtest:generate-tokens": "npx ts-node artillery/generate-tokens.ts",
+    "loadtest:run": "artillery run artillery/load-test.yml"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.2",

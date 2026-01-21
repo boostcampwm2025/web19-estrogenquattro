@@ -10,6 +10,8 @@
     "build:all": "pnpm build:backend && pnpm build:frontend",
     "deploy": "pnpm install:backend && pnpm build:backend && pm2 start ecosystem.config.js --only backend",
     "deploy:reload": "git pull && pnpm install:backend && pnpm build:backend && pm2 delete all && pm2 start ecosystem.config.js --only backend",
+    "deploy:loadtest": "pnpm install:backend && pnpm build:backend && cd backend && pnpm loadtest:generate-tokens && cd .. && pm2 delete all && pm2 start ecosystem.loadtest.config.js",
+    "loadtest:run": "cd backend && pnpm loadtest:run",
     "start": "pm2 start ecosystem.config.js",
     "stop": "pm2 stop ecosystem.config.js",
     "restart": "pm2 reload ecosystem.config.js",

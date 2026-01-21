@@ -19,6 +19,7 @@ import AppDataSource from './database/data-source';
 import { TaskModule } from './task/task.module';
 import { FocusTimeModule } from './focustime/focustime.module';
 import { PointModule } from './point/point.module';
+import { LoadTestModule } from './loadtest/loadtest.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { PointModule } from './point/point.module';
     TaskModule,
     FocusTimeModule,
     PointModule,
+    LoadTestModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService, ChatGateway],
