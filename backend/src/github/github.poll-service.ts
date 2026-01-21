@@ -252,7 +252,7 @@ export class GithubPollService {
     const currentCommitCount =
       contributionsCollection.totalCommitContributions ?? 0;
 
-    // PR 기여 파싱 - 총 개수
+    // PR 기여 파싱 - 총 개수 (total 필드 사용)
     const currentPRCount =
       contributionsCollection.totalPullRequestContributions ?? 0;
 

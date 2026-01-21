@@ -2,18 +2,18 @@ import { create } from "zustand";
 
 interface UserInfoState {
   isOpen: boolean;
-  targetUserId: string | null;
+  targetPlayerId: number | null;
   targetUsername: string | null;
-  openModal: (userId: string, username: string) => void;
+  openModal: (playerId: number, username: string) => void;
   closeModal: () => void;
 }
 
 export const useUserInfoStore = create<UserInfoState>((set) => ({
   isOpen: false,
-  targetUserId: null,
+  targetPlayerId: null,
   targetUsername: null,
-  openModal: (userId, username) =>
-    set({ isOpen: true, targetUserId: userId, targetUsername: username }),
+  openModal: (playerId, username) =>
+    set({ isOpen: true, targetPlayerId: playerId, targetUsername: username }),
   closeModal: () =>
-    set({ isOpen: false, targetUserId: null, targetUsername: null }),
+    set({ isOpen: false, targetPlayerId: null, targetUsername: null }),
 }));

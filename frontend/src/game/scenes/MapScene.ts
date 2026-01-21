@@ -24,6 +24,7 @@ export class MapScene extends Phaser.Scene {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
+  private playerId: number = 0;
 
   // Managers & Controllers
   private mapManager!: MapManager;
@@ -107,6 +108,7 @@ export class MapScene extends Phaser.Scene {
   init() {
     const user = this.registry.get("user");
     this.username = user?.username;
+    this.playerId = user?.playerId ?? 0;
   }
 
   create() {
@@ -193,24 +195,20 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupPlayer() {
-    const { width: mapWidth, height: mapHeight } = this.mapManager.getMapSize();
-    const tileSize = this.mapManager.getTileSize();
-
-    const startX =
-      Math.floor(mapWidth / 2 / tileSize) * tileSize + tileSize / 2;
-    const startY =
-      Math.floor(mapHeight / 2 / tileSize) * tileSize + tileSize / 2;
+    // wall 피해 랜덤 스폰 위치
+    const spawnPos = this.mapManager.getRandomSpawnPosition();
 
     const socket = getSocket();
     const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
 
     this.player = new Player(
       this,
-      startX,
-      startY,
+      spawnPos.x,
+      spawnPos.y,
       this.username,
       myId,
       "pending",
+      this.playerId,
     );
   }
 
@@ -247,6 +245,12 @@ export class MapScene extends Phaser.Scene {
         this.socketManager.setContributionController(
           this.contributionController!,
         );
+
+        // 플레이어 리스폰 (wall 피해 랜덤 위치)
+        if (this.player) {
+          const spawnPos = this.mapManager.getRandomSpawnPosition();
+          this.player.setPosition(spawnPos.x, spawnPos.y);
+        }
       });
     };
 

@@ -52,7 +52,7 @@ export default function MusicPlayer() {
       {/* 전체 위젯을 감싸는 독립적인 구획 */}
       <section className="w-64" aria-label="Music Player Widget">
         {/* 플레이어 카드 본문 */}
-        <article className="border-retro-border-dark bg-retro-bg-primary shadow-retro-xl border-4 p-4">
+        <article className="border-3 border-amber-900 bg-[#ffecb3] p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
           {/* 상단 헤더 영역 */}
           <header
             className={`flex cursor-pointer items-center justify-between select-none ${
@@ -61,14 +61,12 @@ export default function MusicPlayer() {
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <div className="flex items-center gap-2">
-              <Music className="text-retro-text-primary h-4 w-4" />
-              <h2 className="text-retro-text-primary text-sm font-bold">
-                MUSIC
-              </h2>
+              <Music className="h-4 w-4 text-amber-900" />
+              <h2 className="text-sm font-bold text-amber-900">MUSIC</h2>
             </div>
             <button
               type="button"
-              className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+              className="cursor-pointer text-amber-900 hover:text-amber-700"
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {isExpanded ? (
@@ -88,19 +86,27 @@ export default function MusicPlayer() {
             }`}
           >
             {/* 현재 재생 정보 */}
-            {currentTrack && (
-              <section
-                className="bg-retro-bg-secondary border-retro-border-dark mb-3 border-2 p-2"
-                aria-label="Now Playing"
-              >
-                <p className="text-retro-text-primary truncate text-xs font-bold">
-                  ♪ {currentTrack.title}
-                </p>
-                <p className="text-retro-text-tertiary truncate text-xs">
-                  {currentTrack.artist}
-                </p>
-              </section>
-            )}
+            <section
+              className="mb-3 border-2 border-amber-900 bg-white/50 p-2"
+              aria-label="Now Playing"
+            >
+              {currentTrack ? (
+                <>
+                  <p className="truncate text-xs font-bold text-amber-900">
+                    ♪ {currentTrack.title}
+                  </p>
+                  <p className="truncate text-xs text-amber-700">
+                    {currentTrack.artist}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="truncate text-xs font-bold text-amber-700">
+                    ♪ 재생 중인 곡 없음
+                  </p>
+                </>
+              )}
+            </section>
 
             {/* 재생 컨트롤러 */}
             <div
@@ -114,8 +120,8 @@ export default function MusicPlayer() {
                 aria-label={`Repeat Mode: ${loopMode}`}
                 className={`flex h-8 w-8 cursor-pointer items-center justify-start transition-colors ${
                   loopMode === LOOP_MODES.OFF
-                    ? "text-retro-text-tertiary hover:text-retro-text-primary"
-                    : "text-retro-text-primary"
+                    ? "text-amber-500 hover:text-amber-900"
+                    : "text-amber-900"
                 }`}
               >
                 {loopMode === LOOP_MODES.ONE ? (
@@ -165,7 +171,7 @@ export default function MusicPlayer() {
               <button
                 onClick={() => setIsMuted(!isMuted)}
                 aria-label={isMuted ? "Unmute" : "Mute"}
-                className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+                className="cursor-pointer text-amber-900 hover:text-amber-700"
               >
                 {isMuted ? (
                   <VolumeX className="h-4 w-4" />
@@ -185,26 +191,29 @@ export default function MusicPlayer() {
                   if (isMuted) setIsMuted(false);
                 }}
                 aria-label="Volume Control"
-                className="h-2 flex-1 cursor-pointer appearance-none bg-amber-200 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-amber-700"
+                className="h-2 flex-1 cursor-pointer appearance-none bg-amber-300/60 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-amber-700"
               />
             </div>
 
             {/* 트랙 리스트 */}
-            <ul className="border-retro-border-dark retro-scrollbar max-h-32 overflow-y-auto border-2 bg-white/50">
+            <ul className="retro-scrollbar max-h-32 overflow-y-auto border-2 border-amber-900 bg-white/50">
               {TRACKS.map((track) => (
                 <li
                   key={track.id}
                   onClick={() => handlePlayTrack(track)}
                   role="button"
-                  className={`cursor-pointer border-b border-amber-200 p-2 last:border-b-0 ${
+                  className={`cursor-pointer p-2 last:border-b-0 ${
                     currentTrack?.id === track.id
-                      ? "bg-amber-200"
+                      ? "bg-retro-button-bg/10"
                       : "hover:bg-amber-100"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     {currentTrack?.id === track.id && isPlaying ? (
-                      <span className="text-xs" aria-hidden="true">
+                      <span
+                        className="text-xs text-amber-900"
+                        aria-hidden="true"
+                      >
                         ▶
                       </span>
                     ) : (
@@ -213,10 +222,10 @@ export default function MusicPlayer() {
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-retro-text-primary truncate text-xs font-bold">
+                      <p className="truncate text-xs font-bold text-amber-900">
                         {track.title}
                       </p>
-                      <p className="text-retro-text-tertiary truncate text-xs">
+                      <p className="truncate text-xs text-amber-700">
                         {track.artist}
                       </p>
                     </div>
@@ -228,13 +237,13 @@ export default function MusicPlayer() {
 
           {/* 접혔을 때 미니 플레이어 */}
           {!isExpanded && currentTrack && (
-            <footer className="border-retro-border-light mt-3 flex items-center gap-2 border-t pt-3">
+            <footer className="mt-3 flex items-center gap-2 border-t border-amber-900/20 pt-3">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleTogglePlay();
                 }}
-                className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+                className="cursor-pointer text-amber-900 hover:text-amber-700"
               >
                 {isPlaying ? (
                   <Pause className="h-4 w-4" />
@@ -242,7 +251,7 @@ export default function MusicPlayer() {
                   <Play className="h-4 w-4" />
                 )}
               </button>
-              <p className="text-retro-text-primary flex-1 truncate text-sm font-semibold">
+              <p className="flex-1 truncate text-sm font-semibold text-amber-900">
                 ♪ {currentTrack.title}
               </p>
             </footer>

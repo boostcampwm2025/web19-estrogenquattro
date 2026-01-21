@@ -17,6 +17,7 @@ const remotePlayerInstances = new Map<
   string,
   {
     setFocusState: ReturnType<typeof vi.fn>;
+    updateTaskBubble: ReturnType<typeof vi.fn>;
     destroy: ReturnType<typeof vi.fn>;
   }
 >();
@@ -27,6 +28,7 @@ vi.mock("@/game/players/RemotePlayer", () => ({
   default: vi.fn().mockImplementation((_scene, _x, _y, _username, id) => {
     const instance = {
       setFocusState: vi.fn(),
+      updateTaskBubble: vi.fn(),
       destroy: vi.fn(),
       updateState: vi.fn(),
       showChatBubble: vi.fn(),
@@ -102,19 +104,18 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "FOCUSING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
 
     // Then: setFocusState(true)가 옵션 객체와 함께 호출됨
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
-      lastFocusStartTime: undefined,
+      currentSessionSeconds: 0,
       totalFocusMinutes: 0,
     });
   });
 
-  // 버그 1: RESTING 상태도 setFocusState 호출
   it("players_synced로 RESTING 상태를 수신하면 setFocusState(false)가 호출된다", () => {
     // Given: 없음 (초기 상태)
 
@@ -127,7 +128,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "RESTING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
         totalFocusMinutes: 30,
       },
     ]);
@@ -135,7 +136,7 @@ describe("SocketManager 통합", () => {
     // Then: setFocusState(false)가 totalFocusMinutes와 함께 호출됨
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
-      lastFocusStartTime: undefined,
+      currentSessionSeconds: 0,
       totalFocusMinutes: 30,
     });
   });
@@ -150,7 +151,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "RESTING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
     const remote = remotePlayerInstances.get("remote-1");
@@ -160,12 +161,13 @@ describe("SocketManager 통합", () => {
       userId: "remote-1",
       username: "alice",
       status: "FOCUSING",
+      currentSessionSeconds: 0,
     });
 
     // Then: setFocusState(true)가 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: undefined,
-      lastFocusStartTime: undefined,
+      currentSessionSeconds: 0,
       totalFocusMinutes: 0,
     });
   });
@@ -180,7 +182,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "FOCUSING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
     const remote = remotePlayerInstances.get("remote-1");
@@ -198,7 +200,6 @@ describe("SocketManager 통합", () => {
     });
   });
 
-  // 버그 2: taskName 브로드캐스트
   it("focused 이벤트 수신 시 taskName이 setFocusState에 전달된다", () => {
     // Given: RESTING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
@@ -209,7 +210,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "RESTING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
     const remote = remotePlayerInstances.get("remote-1");
@@ -220,18 +221,18 @@ describe("SocketManager 통합", () => {
       username: "alice",
       status: "FOCUSING",
       taskName: "코딩하기",
+      currentSessionSeconds: 0,
     });
 
     // Then: setFocusState가 taskName과 함께 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: "코딩하기",
-      lastFocusStartTime: undefined,
+      currentSessionSeconds: 0,
       totalFocusMinutes: 0,
     });
   });
 
-  // 버그 3: 집중시간 브로드캐스트
-  it("focused 이벤트 수신 시 totalFocusMinutes와 lastFocusStartTime이 전달된다", () => {
+  it("focused 이벤트 수신 시 totalFocusMinutes와 currentSessionSeconds가 전달된다", () => {
     // Given: RESTING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
       {
@@ -241,26 +242,25 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "RESTING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
     const remote = remotePlayerInstances.get("remote-1");
 
     // When: 집중시간 데이터가 포함된 focused 이벤트 수신
-    const startTime = "2025-01-18T10:30:00.000Z";
     currentSocket.trigger("focused", {
       userId: "remote-1",
       username: "alice",
       status: "FOCUSING",
       taskName: "집중 작업",
-      lastFocusStartTime: startTime,
+      currentSessionSeconds: 120,
       totalFocusMinutes: 60,
     });
 
     // Then: setFocusState가 집중시간 데이터와 함께 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: "집중 작업",
-      lastFocusStartTime: startTime,
+      currentSessionSeconds: 120,
       totalFocusMinutes: 60,
     });
   });
@@ -275,7 +275,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "FOCUSING",
-        lastFocusStartTime: null,
+        currentSessionSeconds: 0,
       },
     ]);
     const remote = remotePlayerInstances.get("remote-1");
@@ -294,11 +294,10 @@ describe("SocketManager 통합", () => {
     });
   });
 
-  it("players_synced에서 totalFocusMinutes와 lastFocusStartTime이 전달된다", () => {
+  it("players_synced에서 totalFocusMinutes와 currentSessionSeconds가 전달된다", () => {
     // Given: 없음 (초기 상태)
 
     // When: 집중시간 데이터가 포함된 players_synced 이벤트 수신
-    const startTime = "2025-01-18T09:00:00.000Z";
     currentSocket.trigger("players_synced", [
       {
         userId: "remote-1",
@@ -307,7 +306,7 @@ describe("SocketManager 통합", () => {
         y: 0,
         playerId: 1,
         status: "FOCUSING",
-        lastFocusStartTime: startTime,
+        currentSessionSeconds: 300,
         totalFocusMinutes: 120,
       },
     ]);
@@ -315,8 +314,81 @@ describe("SocketManager 통합", () => {
     // Then: setFocusState가 집중시간 데이터와 함께 호출됨
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
-      lastFocusStartTime: startTime,
+      currentSessionSeconds: 300,
       totalFocusMinutes: 120,
+    });
+  });
+
+  it("player_joined로 FOCUSING 상태를 수신하면 해당 플레이어에 집중 상태가 반영된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: player_joined 이벤트로 FOCUSING 상태의 플레이어 수신
+    currentSocket.trigger("player_joined", {
+      userId: "remote-2",
+      username: "bob",
+      x: 100,
+      y: 200,
+      status: "FOCUSING",
+      totalFocusMinutes: 10,
+      currentSessionSeconds: 30,
+    });
+
+    // Then: setFocusState(true)가 옵션 객체와 함께 호출됨
+    const remote = remotePlayerInstances.get("remote-2");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
+      currentSessionSeconds: 30,
+      totalFocusMinutes: 10,
+    });
+  });
+
+  it("player_joined로 RESTING 상태를 수신하면 setFocusState(false)가 호출된다", () => {
+    // Given: 없음 (초기 상태)
+
+    // When: player_joined 이벤트로 RESTING 상태의 플레이어 수신
+    currentSocket.trigger("player_joined", {
+      userId: "remote-2",
+      username: "bob",
+      x: 100,
+      y: 200,
+      status: "RESTING",
+      totalFocusMinutes: 15,
+      currentSessionSeconds: 0,
+    });
+
+    // Then: setFocusState(false)가 호출됨
+    const remote = remotePlayerInstances.get("remote-2");
+    expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
+      currentSessionSeconds: 0,
+      totalFocusMinutes: 15,
+    });
+  });
+
+  it("focus_task_updated 이벤트 수신 시 updateTaskBubble이 호출된다", () => {
+    // Given: FOCUSING 상태의 원격 플레이어가 존재
+    currentSocket.trigger("players_synced", [
+      {
+        userId: "remote-1",
+        username: "alice",
+        x: 0,
+        y: 0,
+        playerId: 1,
+        status: "FOCUSING",
+        currentSessionSeconds: 0,
+      },
+    ]);
+    const remote = remotePlayerInstances.get("remote-1");
+
+    // When: focus_task_updated 이벤트 수신
+    currentSocket.trigger("focus_task_updated", {
+      userId: "remote-1",
+      username: "alice",
+      taskName: "리뷰하기",
+    });
+
+    // Then: updateTaskBubble이 올바른 인자로 호출됨
+    expect(remote?.updateTaskBubble).toHaveBeenCalledWith({
+      isFocusing: true,
+      taskName: "리뷰하기",
     });
   });
 });

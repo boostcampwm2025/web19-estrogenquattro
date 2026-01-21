@@ -117,7 +117,44 @@ socket.emit('resting');
 - 같은 방에 `rested` 브로드캐스트
 
 ---
+
+### focus_task_updating
+
+집중 중인 태스크 이름 변경 (FOCUSING 상태에서만 호출)
+
+```typescript
+socket.emit('focus_task_updating', {
+  taskName: string  // 변경된 태스크 이름
+});
+```
+
+**서버 동작:**
+- `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
+- 같은 방에 `focus_task_updated` 브로드캐스트
+
+---
+
 ## 서버 → 클라이언트
+
+### joined
+
+방 입장 완료 알림 (로컬 플레이어에게 전송)
+
+```typescript
+socket.on('joined', (data: {
+  roomId: string,
+  focusTime: {
+    status: 'FOCUSING' | 'RESTING',
+    totalFocusMinutes: number,
+    currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
+  }
+}) => {
+  // roomId 저장
+  // focusTime으로 로컬 상태 복원 (새로고침 대응)
+});
+```
+
+---
 
 ### players_synced
 
@@ -134,7 +171,8 @@ socket.on('players_synced', (players: Array<{
   playerId: number,
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
-  totalFocusMinutes: number
+  totalFocusMinutes: number,
+  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }>) => {
   // RemotePlayer 생성
 });
@@ -151,7 +189,10 @@ socket.on('player_joined', (data: {
   userId: string,
   username: string,
   x: number,
-  y: number
+  y: number,
+  status: 'FOCUSING' | 'RESTING',
+  totalFocusMinutes: number,
+  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }) => {
   // RemotePlayer 생성
 });
@@ -251,6 +292,7 @@ socket.on('focused', (data: {
   status: 'FOCUSING',
   lastFocusStartTime: string,
   totalFocusMinutes: number,
+  currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
   taskName?: string
 }) => {
   // 포커스 상태 표시 업데이트
@@ -271,6 +313,22 @@ socket.on('rested', (data: {
   totalFocusMinutes: number
 }) => {
   // 포커스 상태 및 누적 시간 표시 업데이트
+});
+```
+
+---
+
+### focus_task_updated
+
+집중 태스크 이름 변경 알림
+
+```typescript
+socket.on('focus_task_updated', (data: {
+  userId: string,
+  username: string,
+  taskName: string
+}) => {
+  // RemotePlayer의 태스크 말풍선 업데이트
 });
 ```
 
