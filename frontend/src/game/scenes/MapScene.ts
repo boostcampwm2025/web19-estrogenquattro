@@ -36,6 +36,10 @@ export class MapScene extends Phaser.Scene {
   private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
 
+  // Connection Lost Overlay
+  private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
+  private connectionLostText?: Phaser.GameObjects.Text;
+
   // Map Configuration
   private maps: MapConfig[] = [
     {
@@ -145,7 +149,11 @@ export class MapScene extends Phaser.Scene {
     this.socketManager.setWalls(this.mapManager.getWalls()!);
     this.socketManager.setProgressBarController(this.progressBarController!);
     this.socketManager.setContributionController(this.contributionController!);
-    this.socketManager.connect(() => this.showSessionEndedOverlay());
+    this.socketManager.connect({
+      showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
+      showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
+      hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
+    });
 
     // 9. Chat Setup
     this.chatManager = new ChatManager(this, (message) =>
@@ -290,6 +298,47 @@ export class MapScene extends Phaser.Scene {
     text.setOrigin(0.5);
     text.setScrollFactor(0);
     text.setDepth(1001);
+  }
+
+  private showConnectionLostOverlay() {
+    // 이미 표시 중이면 무시
+    if (this.connectionLostOverlay) return;
+
+    this.connectionLostOverlay = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0x000000,
+      0.7,
+    );
+    this.connectionLostOverlay.setScrollFactor(0);
+    this.connectionLostOverlay.setDepth(1000);
+
+    this.connectionLostText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      "서버와의 연결이 끊어졌습니다.\n재연결 시도 중...",
+      {
+        fontSize: "24px",
+        color: "#ffffff",
+        align: "center",
+      },
+    );
+    this.connectionLostText.setOrigin(0.5);
+    this.connectionLostText.setScrollFactor(0);
+    this.connectionLostText.setDepth(1001);
+  }
+
+  private hideConnectionLostOverlay() {
+    if (this.connectionLostOverlay) {
+      this.connectionLostOverlay.destroy();
+      this.connectionLostOverlay = undefined;
+    }
+    if (this.connectionLostText) {
+      this.connectionLostText.destroy();
+      this.connectionLostText = undefined;
+    }
   }
 
   update() {
