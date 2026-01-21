@@ -158,7 +158,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         // 서버에서 현재 세션 경과 시간 계산
         const currentSessionSeconds =
-          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+          status?.status === FocusStatus.FOCUSING && status?.lastFocusStartTime
             ? Math.floor(
                 (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
               )
