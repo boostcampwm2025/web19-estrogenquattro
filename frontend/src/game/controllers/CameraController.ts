@@ -35,6 +35,21 @@ export default class CameraController {
     const initialZoom = Math.min(zoomX, zoomY);
     this.minZoom = initialZoom;
     this.scene.cameras.main.setZoom(initialZoom);
+
+    // 맵을 화면 가운데에 배치하기 위한 오프셋 계산
+    const scaledMapWidth = mapWidth * initialZoom;
+    const scaledMapHeight = mapHeight * initialZoom;
+    const offsetX = (screenWidth - scaledMapWidth) / 2 / initialZoom;
+    const offsetY = (screenHeight - scaledMapHeight) / 2 / initialZoom;
+
+    // 카메라 bounds를 조정하여 상하좌우 여백이 동일하게
+    this.scene.cameras.main.setBounds(
+      -offsetX,
+      -offsetY,
+      mapWidth + offsetX * 2,
+      mapHeight + offsetY * 2,
+    );
+    this.scene.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
   }
 
   private handleZoom(
