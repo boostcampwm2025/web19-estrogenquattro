@@ -353,7 +353,7 @@ export class DailyResetService {
 
 ## #165: FocusTime Race Condition - 트랜잭션 미사용 ⏭️
 
-> **스킵 사유**: 현재 아키텍처에서 발생 불가능한 이론적 버그
+> **스킵 사유**: 현재 아키텍처에서 발생 확률이 매우 낮고, 기존 방지 메커니즘으로 충분히 완화됨
 
 ### 현상
 
@@ -458,7 +458,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 - `await` 순차 처리: 대부분 순서대로 실행
 - SQLite 쓰기 직렬화: 동시 쓰기 자동 차단
 
-**결론:** 현재 아키텍처에서 Race Condition이 발생할 수 있는 시나리오가 없음. 추후 다중 서버 환경이나 DB 변경 시 재검토 필요.
+**결론:** 현재 아키텍처에서 Race Condition 발생 확률이 매우 낮음. 다만 비동기 소켓 핸들러 특성상 이론적으로 SELECT→UPDATE 인터리브 가능성이 완전히 0은 아님. 추후 다중 서버 환경이나 DB 변경 시 재검토 필요.
 
 - **GitHub 이슈**: #165 (closed, not planned)
 

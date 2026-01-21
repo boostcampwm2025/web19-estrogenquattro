@@ -38,7 +38,7 @@ interface FocusTimeStore {
   syncFromServer: (data: FocusTimeData) => void;
 }
 
-export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
+export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
   focusTime: 0,
   baseFocusSeconds: 0,
   isFocusTimerRunning: false,
@@ -98,6 +98,10 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       return;
     }
 
+    // 롤백을 위해 현재 상태 저장
+    const { focusStartTimestamp: prevTimestamp, baseFocusSeconds: prevBase } =
+      get();
+
     // 낙관적 업데이트
     set({
       status: FOCUS_STATUS.RESTING,
@@ -112,14 +116,14 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       {},
       (response: { success: boolean; error?: string }) => {
         if (!response?.success) {
-          // 에러 시 롤백
-          set((state) => ({
+          // 에러 시 롤백 - 원래 값으로 복원
+          set({
             status: "FOCUSING",
             isFocusTimerRunning: true,
-            focusStartTimestamp: Date.now(),
-            baseFocusSeconds: state.focusTime,
+            focusStartTimestamp: prevTimestamp,
+            baseFocusSeconds: prevBase,
             error: response?.error || "휴식 전환에 실패했습니다.",
-          }));
+          });
         }
       },
     );
