@@ -12,6 +12,7 @@ export interface FocusTimeData {
 interface FocusTimeStore {
   // 내 상태
   focusTime: number;
+  baseFocusSeconds: number; // 집중 시작 시점의 누적 시간 (경과 시간 계산용)
   isFocusTimerRunning: boolean;
   status: FocusStatus;
   error: string | null;
@@ -34,6 +35,7 @@ interface FocusTimeStore {
 
 export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   focusTime: 0,
+  baseFocusSeconds: 0,
   isFocusTimerRunning: false,
   status: "RESTING",
   error: null,
@@ -55,12 +57,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       return;
     }
     socket.emit("focusing", { taskName });
-    set({
+    set((state) => ({
       status: "FOCUSING",
       isFocusTimerRunning: true,
       focusStartTimestamp: Date.now(),
+      baseFocusSeconds: state.focusTime, // 집중 시작 시점의 누적 시간 저장
       error: null,
-    });
+    }));
   },
 
   stopFocusing: () => {
@@ -82,9 +85,9 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
 
   syncFromServer: (data: FocusTimeData) => {
     const isFocusing = data.status === "FOCUSING";
+    const baseSeconds = data.totalFocusMinutes * 60;
     const totalSeconds =
-      data.totalFocusMinutes * 60 +
-      (isFocusing ? data.currentSessionSeconds : 0);
+      baseSeconds + (isFocusing ? data.currentSessionSeconds : 0);
 
     // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
     const focusStartTimestamp = isFocusing
@@ -95,6 +98,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       status: data.status,
       isFocusTimerRunning: isFocusing,
       focusTime: totalSeconds,
+      baseFocusSeconds: baseSeconds, // 경과 시간 계산용 기준값
       focusStartTimestamp,
       error: null,
     });
