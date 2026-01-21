@@ -7,7 +7,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
-import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FocusStatus } from './entites/daily-focus-time.entity';
 
@@ -18,15 +17,6 @@ interface FocusTimeResponse {
   createdDate: string;
   lastFocusStartTime: string | null;
 }
-
-interface FocusTimeResponse {
-  id: number | null;
-  totalFocusMinutes: number;
-  status: FocusStatus;
-  createdDate: string;
-  lastFocusStartTime: string | null;
-}
->>>>>>> 6708b70 (fix: 기록이 없는 날짜를 조회하면 0을 반환하도록 수정)
 
 @Controller('api/focustime')
 @UseGuards(JwtGuard)

@@ -77,7 +77,7 @@ export default function App() {
 
   const {
     focusTime,
-    setFocusTime,
+    incrementFocusTime,
     isFocusTimerRunning,
     startFocusing,
     stopFocusing,
@@ -86,7 +86,7 @@ export default function App() {
   } = useFocusTimeStore(
     useShallow((state) => ({
       focusTime: state.focusTime,
-      setFocusTime: state.setFocusTime,
+      incrementFocusTime: state.incrementFocusTime,
       isFocusTimerRunning: state.isFocusTimerRunning,
       startFocusing: state.startFocusing,
       stopFocusing: state.stopFocusing,
@@ -96,23 +96,18 @@ export default function App() {
   );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
-  // Focus Time 타이머 (경과 시간 기반 계산 - 탭 비활성화 시에도 정확)
+  // Focus Time 타이머 (Focus Time이나 Task 중 하나라도 실행 중이면 증가)
   useEffect(() => {
     let interval: number | undefined;
     if (isTimerRunning) {
       interval = window.setInterval(() => {
-        const { focusStartTimestamp, baseFocusSeconds } =
-          useFocusTimeStore.getState();
-        if (focusStartTimestamp) {
-          const elapsed = Math.floor((Date.now() - focusStartTimestamp) / 1000);
-          setFocusTime(baseFocusSeconds + elapsed);
-        }
+        incrementFocusTime();
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, setFocusTime]);
+  }, [isTimerRunning, incrementFocusTime]);
 
   useEffect(() => {
     if (!focusError) return;
