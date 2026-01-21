@@ -25,7 +25,7 @@
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
-| #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ❌ 미해결 |
+| #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ✅ 해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
 | #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ❌ 미해결 |
 | #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
@@ -464,7 +464,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 
 ---
 
-## #166: FocusTime 소켓 이벤트 클라이언트 응답 누락
+## #166: FocusTime 소켓 이벤트 클라이언트 응답 누락 ✅
 
 ### 현상
 
@@ -532,15 +532,17 @@ socket.emit('focusing', { taskName }, (response) => {
 
 ### 체크리스트
 
-- [ ] `handleFocusing`에 try-catch + return 응답 추가
-- [ ] `handleResting`에 try-catch + return 응답 추가
-- [ ] `handleFocusTaskUpdating`에 try-catch + return 응답 추가
-- [ ] 프론트엔드 응답 처리 (선택)
+- [x] `handleFocusing`에 try-catch + return 응답 추가
+- [x] `handleResting`에 try-catch + return 응답 추가
+- [x] `handleFocusTaskUpdating`에 try-catch + return 응답 추가
+- [x] 프론트엔드 응답 처리 (에러 시 롤백)
 - [ ] 테스트 추가
 
-### 참고
+### 해결
 
-현재는 클라이언트가 **낙관적 업데이트(optimistic update)**를 하고 있어서 대부분 동작하지만, 에러 발생 시 **상태 불일치**가 생길 수 있음
+- **PR**: #176
+- **커밋**: `d475dcf`
+- **브랜치**: `fix/#166-socket-response` (Stacked PR on `fix/#164-task-focustime`)
 
 ---
 
@@ -758,8 +760,8 @@ return {
   2. **#164**: Task 집중 시간 서버 저장 (#126 스키마 활용) ✅
   3. **#165**: 트랜잭션/Lock 추가 ⏭️ 스킵 (발생 불가)
 
-### 3. #166 ❌ → #167 ⏭️
-- **#166**: 소켓 이벤트 클라이언트 응답 추가 (미해결)
+### 3. #166 ✅ → #167 ⏭️
+- **#166 완료**: PR #176 (브랜치: `fix/#166-socket-response`, Stacked PR)
 - **#167 스킵**: 에러 타입 구분의 실질적 가치 없음 (이슈 닫힘)
 
 ### 4. #159 (별도 진행)
@@ -780,8 +782,10 @@ return {
 main ← PR #125, #134, #136 머지 완료 ✅
   └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
         └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
+              └── PR #176 (fix/#166-socket-response) - 리뷰 대기 중 (Stacked PR)
 ```
 
 - #168: DB 집중 시간 초 단위 변경 (#126)
 - #170: 개별 태스크 집중 시간 서버 저장 (#164) - #168 위에 Stacked PR
-- 이후 작업은 #168 → #170 순서로 머지 후 진행
+- #176: 소켓 이벤트 클라이언트 응답 추가 (#166) - #170 위에 Stacked PR
+- 이후 작업은 #168 → #170 → #176 순서로 머지 후 진행
