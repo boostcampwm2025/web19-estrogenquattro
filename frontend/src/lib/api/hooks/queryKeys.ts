@@ -10,6 +10,7 @@ export const queryKeys = {
   },
   github: {
     all: ["github"] as const,
-    events: (date: string) => [...queryKeys.github.all, "events", date] as const,
+    events: (date: string) =>
+      [...queryKeys.github.all, "events", date] as const,
   },
 };
