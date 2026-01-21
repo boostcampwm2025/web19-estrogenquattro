@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, DataSource, EntityManager } from 'typeorm';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
@@ -14,6 +14,7 @@ export class FocusTimeService {
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -55,108 +56,122 @@ export class FocusTimeService {
     const now = new Date();
     const today = this.getTodayDateString();
 
-    const focusTime = await this.focusTimeRepository.findOne({
-      where: {
-        player: { id: playerId },
-        createdDate: today as unknown as Date,
-      },
-      relations: ['player'],
-    });
+    return this.dataSource.transaction(async (manager) => {
+      const focusTimeRepo = manager.getRepository(DailyFocusTime);
 
-    if (!focusTime) {
-      throw new NotFoundException(
-        'FocusTime record not found. Please join the room first.',
-      );
-    }
+      const focusTime = await focusTimeRepo.findOne({
+        where: {
+          player: { id: playerId },
+          createdDate: today as unknown as Date,
+        },
+        relations: ['player'],
+      });
 
-    // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
-    if (
-      focusTime.status === FocusStatus.FOCUSING &&
-      focusTime.lastFocusStartTime
-    ) {
-      const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
-      const diffSeconds = Math.floor(diffMs / 1000);
-      focusTime.totalFocusSeconds += diffSeconds;
-
-      // 이전 Task의 집중 시간 업데이트
-      if (focusTime.currentTaskId && diffSeconds > 0) {
-        await this.addFocusTimeToTask(
-          playerId,
-          focusTime.currentTaskId,
-          diffSeconds,
-        );
-        this.logger.log(
-          `Task switch: saved ${diffSeconds}s for previous task ${focusTime.currentTaskId}`,
+      if (!focusTime) {
+        throw new NotFoundException(
+          'FocusTime record not found. Please join the room first.',
         );
       }
-    }
 
-    focusTime.status = FocusStatus.FOCUSING;
-    focusTime.lastFocusStartTime = now;
-    focusTime.currentTaskId = taskId ?? null;
+      // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
+      if (
+        focusTime.status === FocusStatus.FOCUSING &&
+        focusTime.lastFocusStartTime
+      ) {
+        const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
+        const diffSeconds = Math.floor(diffMs / 1000);
+        focusTime.totalFocusSeconds += diffSeconds;
 
-    if (taskId) {
-      this.logger.log(`Player ${playerId} started focusing on task ${taskId}`);
-    }
+        // 이전 Task의 집중 시간 업데이트
+        if (focusTime.currentTaskId && diffSeconds > 0) {
+          await this.addFocusTimeToTask(
+            manager,
+            playerId,
+            focusTime.currentTaskId,
+            diffSeconds,
+          );
+          this.logger.log(
+            `Task switch: saved ${diffSeconds}s for previous task ${focusTime.currentTaskId}`,
+          );
+        }
+      }
 
-    return this.focusTimeRepository.save(focusTime);
+      focusTime.status = FocusStatus.FOCUSING;
+      focusTime.lastFocusStartTime = now;
+      focusTime.currentTaskId = taskId ?? null;
+
+      if (taskId) {
+        this.logger.log(
+          `Player ${playerId} started focusing on task ${taskId}`,
+        );
+      }
+
+      return focusTimeRepo.save(focusTime);
+    });
   }
 
   async startResting(playerId: number): Promise<DailyFocusTime> {
     const now = new Date();
     const today = this.getTodayDateString();
 
-    const focusTime = await this.focusTimeRepository.findOne({
-      where: {
-        player: { id: playerId },
-        createdDate: today as unknown as Date,
-      },
-      relations: ['player'],
-    });
+    return this.dataSource.transaction(async (manager) => {
+      const focusTimeRepo = manager.getRepository(DailyFocusTime);
 
-    if (!focusTime) {
-      throw new NotFoundException(
-        'FocusTime record not found. Please join the room first.',
-      );
-    }
+      const focusTime = await focusTimeRepo.findOne({
+        where: {
+          player: { id: playerId },
+          createdDate: today as unknown as Date,
+        },
+        relations: ['player'],
+      });
 
-    let diffSeconds = 0;
-
-    if (
-      focusTime.status === FocusStatus.FOCUSING &&
-      focusTime.lastFocusStartTime
-    ) {
-      const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
-      diffSeconds = Math.floor(diffMs / 1000);
-      focusTime.totalFocusSeconds += diffSeconds;
-
-      // 집중 중이던 Task가 있으면 해당 Task의 집중 시간도 업데이트
-      if (focusTime.currentTaskId && diffSeconds > 0) {
-        await this.addFocusTimeToTask(
-          playerId,
-          focusTime.currentTaskId,
-          diffSeconds,
+      if (!focusTime) {
+        throw new NotFoundException(
+          'FocusTime record not found. Please join the room first.',
         );
       }
-    }
 
-    focusTime.status = FocusStatus.RESTING;
-    // currentTaskId는 유지 (다음 집중 시작 시 덮어쓰여짐)
+      let diffSeconds = 0;
 
-    return this.focusTimeRepository.save(focusTime);
+      if (
+        focusTime.status === FocusStatus.FOCUSING &&
+        focusTime.lastFocusStartTime
+      ) {
+        const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
+        diffSeconds = Math.floor(diffMs / 1000);
+        focusTime.totalFocusSeconds += diffSeconds;
+
+        // 집중 중이던 Task가 있으면 해당 Task의 집중 시간도 업데이트
+        if (focusTime.currentTaskId && diffSeconds > 0) {
+          await this.addFocusTimeToTask(
+            manager,
+            playerId,
+            focusTime.currentTaskId,
+            diffSeconds,
+          );
+        }
+      }
+
+      focusTime.status = FocusStatus.RESTING;
+      // currentTaskId는 유지 (다음 집중 시작 시 덮어쓰여짐)
+
+      return focusTimeRepo.save(focusTime);
+    });
   }
 
   /**
    * Task의 집중 시간을 추가 (소유권 검증 + 원자적 업데이트)
+   * 트랜잭션 내에서 실행되어야 함
    */
   private async addFocusTimeToTask(
+    manager: EntityManager,
     playerId: number,
     taskId: number,
     seconds: number,
   ): Promise<void> {
-    const result = await this.taskRepository
+    const result = await manager
       .createQueryBuilder()
-      .update()
+      .update(Task)
       .set({ totalFocusSeconds: () => `total_focus_seconds + ${seconds}` })
       .where('id = :taskId', { taskId })
       .andWhere('player_id = :playerId', { playerId })
