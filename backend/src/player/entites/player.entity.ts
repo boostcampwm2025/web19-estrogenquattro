@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { UserPet } from '../../userpet/entities/user-pet.entity';
 
 @Entity('players')
 export class Player {
@@ -11,9 +12,12 @@ export class Player {
   @Column({ type: 'varchar', length: 20, nullable: false })
   nickname: string;
 
-  @Column({ type: 'bigint', name: 'primary_user_pet_id', nullable: true })
-  primaryUserPetId: number;
+  @Column({ type: 'int', name: 'equipped_pet_id', nullable: true })
+  equippedPetId: number;
 
   @Column({ type: 'int', name: 'total_point', default: 0 })
   totalPoint: number;
+
+  @OneToMany(() => UserPet, (userPet) => userPet.player)
+  userPets: UserPet[];
 }

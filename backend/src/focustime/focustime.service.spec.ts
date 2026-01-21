@@ -5,6 +5,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { FocusTimeService } from './focustime.service';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
+import { UserPet } from '../userpet/entities/user-pet.entity';
+import { Pet } from '../userpet/entities/pet.entity';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
@@ -18,7 +20,7 @@ describe('FocusTimeService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [DailyFocusTime, Player],
+          entities: [DailyFocusTime, Player, UserPet, Pet],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([DailyFocusTime, Player]),
@@ -80,7 +82,7 @@ describe('FocusTimeService', () => {
 
       // Then: 레코드를 찾을 수 있어야 함
       expect(found).toBeDefined();
-      expect(found.id).toBe(focusTime.id);
+      expect(found?.id).toBe(focusTime.id);
     });
 
     it('SQLite에 저장된 date 컬럼의 실제 값을 확인한다', async () => {

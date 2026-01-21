@@ -7,6 +7,8 @@ import { TaskService } from './task.service';
 import { Task } from './entites/task.entity';
 import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
+import { UserPet } from '../userpet/entities/user-pet.entity';
+import { Pet } from '../userpet/entities/pet.entity';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -23,7 +25,7 @@ describe('TaskService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Task, Player],
+          entities: [Task, Player, UserPet, Pet],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Task, Player]),
