@@ -26,7 +26,8 @@
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ❌ 미해결 |
-| #167 | FocusTime Disconnect 시 에러 처리 미흡 | ❌ 미해결 |
+| #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
+| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ❌ 미해결 |
 | #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
 
 ---
@@ -543,80 +544,149 @@ socket.emit('focusing', { taskName }, (response) => {
 
 ---
 
-## #167: FocusTime Disconnect 시 에러 처리 미흡
+## #167: FocusTime Disconnect 시 에러 처리 미흡 ⏭️
 
-### 현상
+> **스킵 사유**: 에러 타입 구분의 실질적 가치 없음
+
+### 현상 (원래 이슈)
 
 Disconnect 시 `startResting()` 호출이 실패해도 로깅만 하고 무시 → 집중 시간 손실 가능
 
-### 시나리오
+### 분석 결과
 
-```
-1. 사용자가 집중 중 (FOCUSING, 10분 경과)
-2. 브라우저 강제 종료 (disconnect)
-3. 서버: startResting() 호출 → DB 에러 발생
-4. 서버: 에러 로깅만 하고 종료
-5. DB에 10분이 누적되지 않음 ❌
-```
-
-### 현재 코드
+`startResting` 실제 동작을 분석한 결과:
 
 ```typescript
-// focustime.gateway.ts
-async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
-  try {
-    await this.focusTimeService.startResting(user.playerId);
-  } catch (error) {
-    this.logger.error(`Failed to set RESTING on disconnect: ${error.message}`);
-    // 에러 로깅만 하고 끝 ← 문제점
+async startResting(playerId: number): Promise<DailyFocusTime> {
+  const focusTime = await this.focusTimeRepository.findOne({...});
+
+  // 레코드가 없을 때만 NotFoundException
+  if (!focusTime) {
+    throw new NotFoundException(...);
   }
+
+  // 이미 RESTING이면 시간 계산 없이 그냥 넘어감 (예외 X)
+  if (focusTime.status === FocusStatus.FOCUSING && focusTime.lastFocusStartTime) {
+    // 집중 시간 계산...
+  }
+
+  focusTime.status = FocusStatus.RESTING;
+  return this.focusTimeRepository.save(focusTime);
 }
 ```
+
+### 실제 동작
+
+| 상황 | 동작 |
+|------|------|
+| 집중 중 (FOCUSING) → Disconnect | 시간 계산 후 RESTING으로 변경 ✓ |
+| 이미 RESTING → Disconnect | **예외 없이** RESTING 유지 ✓ |
+| 레코드 없음 → Disconnect | `NotFoundException` 발생 |
+
+### NotFoundException 발생 케이스
+
+1. **서버 재시작**: 클라이언트 재연결 시 disconnect 발생하지만 새 서버에는 `findOrCreate` 미호출
+2. **자정 경과**: 23:59 접속 → 00:01 disconnect → 날짜 변경으로 레코드 없음
+3. **비정상 연결**: join 없이 disconnect만 발생하는 엣지 케이스
+
+### 스킵 결정
+
+- "이미 RESTING"인 경우 예외가 발생하지 않음 → 에러 타입 구분 불필요
+- `NotFoundException`은 엣지 케이스에서만 발생하며, 현재 warn 레벨 로깅으로 충분
+- 에러 타입에 따른 처리 분기의 실질적 가치 없음
+
+**GitHub 이슈**: #167 (closed, not planned)
+
+---
+
+## #159: 서버 접속 끊김 감지를 위한 하트비트 구현
+
+### 현상
+
+- 서버 연결이 끊겨도 클라이언트에서 감지 못함
+- 다른 플레이어가 나간 것도 즉시 반영되지 않을 수 있음
+- Socket.io 기본 ping/pong과 별개로 애플리케이션 레벨 하트비트 필요
+
+### 영향
+
+| 상황 | 현재 동작 | 사용자 경험 |
+|------|----------|------------|
+| 서버 다운 | 클라이언트 무반응 | 집중 버튼 클릭해도 반응 없음, 원인 모름 |
+| 네트워크 끊김 | 감지 안 됨 | 시간이 계속 흐르지만 서버에 저장 안 됨 |
+| 다른 플레이어 끊김 | 즉시 반영 안 될 수 있음 | 나간 플레이어가 계속 보임 |
 
 ### 해결 방안
 
+**Socket.io 기본 옵션 활용:**
+
 ```typescript
-async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
-  const user = client.data.user;
-  if (!user) return;
+// 서버
+const io = new Server(server, {
+  pingInterval: 10000,  // 10초마다 ping
+  pingTimeout: 5000,    // 5초 내 응답 없으면 disconnect
+});
 
-  try {
-    await this.focusTimeService.startResting(user.playerId);
-    this.logger.log(`Player ${user.playerId} disconnected, set to RESTING`);
-  } catch (error) {
-    // 이미 RESTING이면 정상 케이스로 처리
-    if (error instanceof NotFoundException) {
-      this.logger.warn(`Player ${user.playerId} already RESTING or not found`);
-      return;
-    }
+// 클라이언트
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+});
 
-    // 그 외 에러는 심각한 문제
-    this.logger.error(`Critical: Failed to save focus time on disconnect`, error);
-    // TODO: 재시도 로직 또는 알림
-  }
-}
+socket.on('disconnect', (reason) => {
+  // UI에 연결 끊김 표시
+});
+
+socket.on('reconnect', () => {
+  // 상태 재동기화
+});
 ```
 
-### 주의: Disconnect vs Resting
+**애플리케이션 레벨 하트비트 (선택):**
 
-| 상황 | 이벤트 | 사용자 상태 |
-|------|--------|------------|
-| 집중 → 휴식 전환 | `rested` 브로드캐스트 | 방에 **남아있음** |
-| 브라우저 종료 | `player_left` 브로드캐스트 | 방에서 **나감** |
+```typescript
+// 서버
+setInterval(() => {
+  io.emit('heartbeat', { timestamp: Date.now() });
+}, 10000);
 
-Disconnect 시에는 `rested`가 아니라 `player_left` 이벤트가 PlayerGateway에서 처리됨
+// 클라이언트
+let lastHeartbeat = Date.now();
+socket.on('heartbeat', () => {
+  lastHeartbeat = Date.now();
+});
+
+setInterval(() => {
+  if (Date.now() - lastHeartbeat > 30000) {
+    // 30초간 하트비트 없으면 연결 끊김으로 간주
+    showDisconnectedOverlay();
+  }
+}, 5000);
+```
 
 ### 수정 파일
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `backend/src/focustime/focustime.gateway.ts` | 에러 타입별 처리 |
+| 영역 | 파일 | 변경 내용 |
+|------|------|----------|
+| Backend | `main.ts` 또는 Gateway | Socket.io 옵션 설정 |
+| Frontend | `lib/socket.ts` | reconnection 옵션, disconnect/reconnect 핸들러 |
+| Frontend | UI 컴포넌트 | 연결 끊김 오버레이, 재연결 버튼 |
 
 ### 체크리스트
 
-- [ ] 에러 타입별 처리 (NotFoundException은 무시)
-- [ ] 심각한 에러는 별도 로깅/알림
-- [ ] 테스트 추가
+- [ ] 하트비트 주기 결정 (예: 10초, 30초)
+- [ ] 서버: Socket.io pingInterval, pingTimeout 설정
+- [ ] 클라이언트: reconnection 옵션 설정
+- [ ] 클라이언트: disconnect/reconnect 이벤트 핸들링
+- [ ] UI: 연결 끊김 상태 표시 (오버레이)
+- [ ] UI: 재연결 버튼 또는 자동 재연결 표시
+- [ ] 재연결 시 상태 동기화 (FocusTime, 플레이어 위치 등)
+
+### 참고
+
+- Socket.io 기본 heartbeat: `pingInterval`, `pingTimeout` 옵션
+- FocusTime 동기화는 경과 시간 기반 방식 사용 (하트비트 X)
+- 이 이슈는 FocusTime 동기화가 아닌 **연결 상태 감지** 목적
 
 ---
 
@@ -688,14 +758,16 @@ return {
   2. **#164**: Task 집중 시간 서버 저장 (#126 스키마 활용) ✅
   3. **#165**: 트랜잭션/Lock 추가 ⏭️ 스킵 (발생 불가)
 
-### 3. #166 → #167 (순차 진행)
-- **브랜치**: `fix/#166-socket-response` (base: 2단계 PR)
-- **연관성**: 모두 `focustime.gateway.ts` 수정
-- **순서**:
-  1. **#166**: 소켓 이벤트 클라이언트 응답 추가
-  2. **#167**: Disconnect 에러 처리 개선
+### 3. #166 ❌ → #167 ⏭️
+- **#166**: 소켓 이벤트 클라이언트 응답 추가 (미해결)
+- **#167 스킵**: 에러 타입 구분의 실질적 가치 없음 (이슈 닫힘)
 
-### 4. #162 (별도 진행)
+### 4. #159 (별도 진행)
+- **브랜치**: `feat/#159-heartbeat`
+- **연관성**: 연결 상태 감지 (FocusTime과 독립)
+- **선행 조건**: 없음
+
+### 5. #162 (별도 진행)
 - **브랜치**: `feat/#162-daily-reset`
 - **연관성**: 독립적인 신규 기능
 - **선행 조건**: 포인트 시스템 완성 후 진행
