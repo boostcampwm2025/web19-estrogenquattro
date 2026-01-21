@@ -150,7 +150,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
     });
 
-    // 2. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
+    // 3. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
     const existingPlayers = Array.from(this.players.values())
       .filter((p) => p.socketId !== client.id && p.roomId === roomId)
       .map((p) => {
@@ -173,22 +173,14 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
         };
       });
 
-    //내가 볼 기존 사람들 그리기
+    // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
-
-    //남들이 볼 내 캐릭터 그리기
-    client.to(roomId).emit('player_joined', {
-      userId: client.id,
-      username: username,
-      x: data.x,
-      y: data.y,
-    });
 
     // 4. Update FocusTime
     const player = await this.playerService.findOneById(userData.user.playerId);
     const myFocusTime = await this.focusTimeService.findOrCreate(player);
 
-    // 5. 로컬 플레이어에게 방 정보 + 자신의 FocusTime 상태 전송
+    // 서버에서 현재 세션 경과 시간 계산
     const myCurrentSessionSeconds =
       myFocusTime.status === FocusStatus.FOCUSING &&
       myFocusTime.lastFocusStartTime
@@ -197,13 +189,15 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           )
         : 0;
 
-    client.emit('joined', {
-      roomId,
-      focusTime: {
-        status: myFocusTime.status,
-        totalFocusMinutes: myFocusTime.totalFocusMinutes,
-        currentSessionSeconds: myCurrentSessionSeconds,
-      },
+    // 5. 남들이 볼 내 캐릭터 그리기 (focusTime 정보 포함)
+    client.to(roomId).emit('player_joined', {
+      userId: client.id,
+      username: username,
+      x: data.x,
+      y: data.y,
+      status: myFocusTime.status,
+      totalFocusMinutes: myFocusTime.totalFocusMinutes,
+      currentSessionSeconds: myCurrentSessionSeconds,
     });
 
     const connectedAt = new Date();
@@ -219,6 +213,16 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 새 클라이언트에게 현재 룸의 기여 상태 전송
     const roomState = this.githubGateway.getRoomState(roomId);
     client.emit('github_state', roomState);
+
+    // 6. 로컬 플레이어에게 joined 이벤트 전송 (focusTime 정보 포함)
+    client.emit('joined', {
+      roomId,
+      focusTime: {
+        status: myFocusTime.status,
+        totalFocusMinutes: myFocusTime.totalFocusMinutes,
+        currentSessionSeconds: myCurrentSessionSeconds,
+      },
+    });
   }
 
   @SubscribeMessage('moving')

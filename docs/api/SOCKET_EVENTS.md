@@ -136,6 +136,26 @@ socket.emit('focus_task_updating', {
 
 ## 서버 → 클라이언트
 
+### joined
+
+방 입장 완료 알림 (로컬 플레이어에게 전송)
+
+```typescript
+socket.on('joined', (data: {
+  roomId: string,
+  focusTime: {
+    status: 'FOCUSING' | 'RESTING',
+    totalFocusMinutes: number,
+    currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
+  }
+}) => {
+  // roomId 저장
+  // focusTime으로 로컬 상태 복원 (새로고침 대응)
+});
+```
+
+---
+
 ### players_synced
 
 기존 플레이어 목록 (입장 시 수신)
@@ -151,7 +171,8 @@ socket.on('players_synced', (players: Array<{
   playerId: number,
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
-  totalFocusMinutes: number
+  totalFocusMinutes: number,
+  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }>) => {
   // RemotePlayer 생성
 });
@@ -168,7 +189,10 @@ socket.on('player_joined', (data: {
   userId: string,
   username: string,
   x: number,
-  y: number
+  y: number,
+  status: 'FOCUSING' | 'RESTING',
+  totalFocusMinutes: number,
+  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }) => {
   // RemotePlayer 생성
 });
@@ -268,6 +292,7 @@ socket.on('focused', (data: {
   status: 'FOCUSING',
   lastFocusStartTime: string,
   totalFocusMinutes: number,
+  currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
   taskName?: string
 }) => {
   // 포커스 상태 표시 업데이트

@@ -3,12 +3,19 @@ import { getSocket } from "@/lib/socket";
 
 export type FocusStatus = "FOCUSING" | "RESTING";
 
+export interface FocusTimeData {
+  status: FocusStatus;
+  totalFocusMinutes: number;
+  currentSessionSeconds: number;
+}
+
 interface FocusTimeStore {
   // 내 상태
   focusTime: number;
   isFocusTimerRunning: boolean;
   status: FocusStatus;
   error: string | null;
+  focusStartTimestamp: number | null;
 
   // 기존 액션
   setFocusTime: (time: number) => void;
@@ -21,12 +28,8 @@ interface FocusTimeStore {
   startFocusing: (taskName?: string) => void;
   stopFocusing: () => void;
 
-  // 서버 동기화 액션 (새로고침 시 복원용)
-  syncFromServer: (data: {
-    status: FocusStatus;
-    totalFocusMinutes: number;
-    currentSessionSeconds: number;
-  }) => void;
+  // 서버 동기화 액션
+  syncFromServer: (data: FocusTimeData) => void;
 }
 
 export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
@@ -34,6 +37,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   isFocusTimerRunning: false,
   status: "RESTING",
   error: null,
+  focusStartTimestamp: null,
 
   setFocusTime: (time) => set({ focusTime: time }),
   incrementFocusTime: () =>
@@ -54,6 +58,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
     set({
       status: "FOCUSING",
       isFocusTimerRunning: true,
+      focusStartTimestamp: Date.now(),
       error: null,
     });
   },
@@ -70,21 +75,27 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
     set({
       status: "RESTING",
       isFocusTimerRunning: false,
+      focusStartTimestamp: null,
       error: null,
     });
   },
 
-  syncFromServer: (data) => {
+  syncFromServer: (data: FocusTimeData) => {
     const isFocusing = data.status === "FOCUSING";
-    // 총 집중 시간 = 누적 분 * 60 + 현재 세션 초
     const totalSeconds =
       data.totalFocusMinutes * 60 +
       (isFocusing ? data.currentSessionSeconds : 0);
+
+    // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
+    const focusStartTimestamp = isFocusing
+      ? Date.now() - data.currentSessionSeconds * 1000
+      : null;
 
     set({
       status: data.status,
       isFocusTimerRunning: isFocusing,
       focusTime: totalSeconds,
+      focusStartTimestamp,
       error: null,
     });
   },
