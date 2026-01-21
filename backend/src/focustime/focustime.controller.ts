@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
 import { DailyFocusTime } from './entites/daily-focus-time.entity';
 
@@ -8,7 +8,7 @@ export class FocustimeController {
 
   @Get(':playerId')
   async getFocusTime(
-    @Param('playerId') playerId: number,
+    @Param('playerId', ParseIntPipe) playerId: number,
     @Query('date') date: string,
   ): Promise<DailyFocusTime> {
     return this.focusTimeService.getFocusTime(playerId, date);
