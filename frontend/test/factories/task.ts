@@ -6,7 +6,7 @@ export const buildTaskEntity = (overrides: TaskOverrides = {}): TaskEntity => {
   const base = {
     id: 1,
     description: "기본 작업",
-    totalFocusMinutes: 0,
+    totalFocusSeconds: 0,
     completedDate: null,
     createdDate: new Date("2025-01-18T00:00:00.000Z"),
   };

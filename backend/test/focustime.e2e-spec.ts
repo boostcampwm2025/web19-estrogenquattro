@@ -179,7 +179,7 @@ describe('FocusTime E2E (Socket)', () => {
         roomId: string;
         focusTime: {
           status: string;
-          totalFocusMinutes: number;
+          totalFocusSeconds: number;
           currentSessionSeconds: number;
         };
       }>((resolve, reject) => {
@@ -192,12 +192,12 @@ describe('FocusTime E2E (Socket)', () => {
       expect(joinedResponse).toHaveProperty('roomId');
       expect(joinedResponse).toHaveProperty('focusTime');
       expect(joinedResponse.focusTime).toHaveProperty('status');
-      expect(joinedResponse.focusTime).toHaveProperty('totalFocusMinutes');
+      expect(joinedResponse.focusTime).toHaveProperty('totalFocusSeconds');
       expect(joinedResponse.focusTime).toHaveProperty('currentSessionSeconds');
 
       // 초기 상태 확인
       expect(joinedResponse.focusTime.status).toBe(FocusStatus.RESTING);
-      expect(joinedResponse.focusTime.totalFocusMinutes).toBe(0);
+      expect(joinedResponse.focusTime.totalFocusSeconds).toBe(0);
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
     });
 
@@ -208,7 +208,7 @@ describe('FocusTime E2E (Socket)', () => {
 
       await focusTimeRepository.save({
         player: testPlayer,
-        totalFocusMinutes: 10,
+        totalFocusSeconds: 10,
         status: FocusStatus.FOCUSING,
         createdDate: today as unknown as Date,
         lastFocusStartTime: fiveMinutesAgo,
@@ -222,7 +222,7 @@ describe('FocusTime E2E (Socket)', () => {
         roomId: string;
         focusTime: {
           status: string;
-          totalFocusMinutes: number;
+          totalFocusSeconds: number;
           currentSessionSeconds: number;
         };
       }>((resolve, reject) => {
@@ -233,7 +233,7 @@ describe('FocusTime E2E (Socket)', () => {
 
       // Then: 기존 상태가 복원되어야 함
       expect(joinedResponse.focusTime.status).toBe(FocusStatus.FOCUSING);
-      expect(joinedResponse.focusTime.totalFocusMinutes).toBe(10);
+      expect(joinedResponse.focusTime.totalFocusSeconds).toBe(10);
 
       // currentSessionSeconds는 5분(300초) 정도 (오차 허용)
       expect(
@@ -251,7 +251,7 @@ describe('FocusTime E2E (Socket)', () => {
 
       await focusTimeRepository.save({
         player: testPlayer,
-        totalFocusMinutes: 25,
+        totalFocusSeconds: 25,
         status: FocusStatus.RESTING,
         createdDate: today as unknown as Date,
         lastFocusStartTime: tenMinutesAgo, // 이전 집중 시작 시간 (참고용)
@@ -265,7 +265,7 @@ describe('FocusTime E2E (Socket)', () => {
         roomId: string;
         focusTime: {
           status: string;
-          totalFocusMinutes: number;
+          totalFocusSeconds: number;
           currentSessionSeconds: number;
         };
       }>((resolve, reject) => {
@@ -276,7 +276,7 @@ describe('FocusTime E2E (Socket)', () => {
 
       // Then: 휴식 상태에서는 currentSessionSeconds가 0
       expect(joinedResponse.focusTime.status).toBe(FocusStatus.RESTING);
-      expect(joinedResponse.focusTime.totalFocusMinutes).toBe(25);
+      expect(joinedResponse.focusTime.totalFocusSeconds).toBe(25);
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
     });
   });

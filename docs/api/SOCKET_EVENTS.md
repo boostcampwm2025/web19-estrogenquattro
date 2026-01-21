@@ -145,7 +145,7 @@ socket.on('joined', (data: {
   roomId: string,
   focusTime: {
     status: 'FOCUSING' | 'RESTING',
-    totalFocusMinutes: number,
+    totalFocusSeconds: number,
     currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
   }
 }) => {
@@ -171,7 +171,7 @@ socket.on('players_synced', (players: Array<{
   playerId: number,
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }>) => {
   // RemotePlayer 생성
@@ -191,7 +191,7 @@ socket.on('player_joined', (data: {
   x: number,
   y: number,
   status: 'FOCUSING' | 'RESTING',
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }) => {
   // RemotePlayer 생성
@@ -291,7 +291,7 @@ socket.on('focused', (data: {
   username: string,
   status: 'FOCUSING',
   lastFocusStartTime: string,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
   taskName?: string
 }) => {
@@ -310,7 +310,7 @@ socket.on('rested', (data: {
   userId: string,
   username: string,
   status: 'RESTING',
-  totalFocusMinutes: number
+  totalFocusSeconds: number
 }) => {
   // 포커스 상태 및 누적 시간 표시 업데이트
 });

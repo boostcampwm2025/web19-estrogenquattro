@@ -14,7 +14,7 @@
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `player_id` | bigint | 플레이어 ID |
-| `total_focus_minutes` | int | 누적 집중 시간(분) |
+| `total_focus_seconds` | int | 누적 집중 시간(초) |
 | `status` | enum | `FOCUSING` \| `RESTING` |
 | `created_date` | date | `YYYY-MM-DD` |
 | `last_focus_start_time` | datetime | 마지막 집중 시작 시각 (nullable) |
@@ -55,7 +55,7 @@ socket.on('focused', (data: {
   username: string,
   status: 'FOCUSING',
   lastFocusStartTime: string,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 경과 시간
   taskName?: string
 }) => {});
@@ -64,7 +64,7 @@ socket.on('rested', (data: {
   userId: string,
   username: string,
   status: 'RESTING',
-  totalFocusMinutes: number
+  totalFocusSeconds: number
 }) => {});
 ```
 
@@ -90,7 +90,7 @@ sequenceDiagram
     Note over DB: status = FOCUSING<br/>lastFocusStartTime = now()
     DB-->>Server: focusTime
 
-    Server->>Others: emit('focused', { userId, status,<br/>lastFocusStartTime, totalFocusMinutes,<br/>currentSessionSeconds, taskName })
+    Server->>Others: emit('focused', { userId, status,<br/>lastFocusStartTime, totalFocusSeconds,<br/>currentSessionSeconds, taskName })
 ```
 
 ### 2. 로컬 플레이어 휴식 시작
@@ -108,10 +108,10 @@ sequenceDiagram
     Store->>Store: status = RESTING<br/>isFocusTimerRunning = false
 
     Server->>DB: startResting(playerId)
-    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusMinutes += elapsed<br/>status = RESTING<br/>(lastFocusStartTime 유지)
+    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusSeconds += elapsed<br/>status = RESTING<br/>(lastFocusStartTime 유지)
     DB-->>Server: focusTime
 
-    Server->>Others: emit('rested', { userId, status,<br/>totalFocusMinutes })
+    Server->>Others: emit('rested', { userId, status,<br/>totalFocusSeconds })
 ```
 
 ### 3. 다른 플레이어 집중 시작 (focused 이벤트 수신)
@@ -127,7 +127,7 @@ sequenceDiagram
     Server->>Browser: emit('focused', { userId: honki,<br/>currentSessionSeconds: 0, ... })
 
     Browser->>RP: setFocusState(true, options)
-    Note over RP: currentSeconds = 0 (서버값)<br/>1초마다 +1 증가<br/>표시: totalMinutes + currentSeconds
+    Note over RP: currentSeconds = 0 (서버값)<br/>1초마다 +1 증가<br/>표시: totalSeconds + currentSeconds
 ```
 
 ### 4. 다른 플레이어 휴식 시작 (rested 이벤트 수신)
@@ -140,10 +140,10 @@ sequenceDiagram
     participant RP as RemotePlayer
 
     Remote->>Server: emit('resting')
-    Server->>Browser: emit('rested', { userId: honki,<br/>totalFocusMinutes: 15 })
+    Server->>Browser: emit('rested', { userId: honki,<br/>totalFocusSeconds: 900 })
 
     Browser->>RP: setFocusState(false, options)
-    Note over RP: 타이머 정지<br/>표시: 15분 (고정)
+    Note over RP: 타이머 정지<br/>표시: 15초 (고정)
 ```
 
 ### 5. 새 플레이어 입장 (players_synced)
@@ -157,11 +157,11 @@ sequenceDiagram
     New->>Server: emit('joining', { x, y, username })
 
     Server->>DB: findAllStatuses(roomPlayerIds)
-    DB-->>Server: [{ fpg: FOCUSING, 10min }, { honki: RESTING, 5min }]
+    DB-->>Server: [{ fpg: FOCUSING, 600s }, { honki: RESTING, 300s }]
 
-    Server->>New: emit('players_synced', [<br/>  { id: fpg, status: FOCUSING,<br/>    totalFocusMinutes: 10,<br/>    currentSessionSeconds: 120 },<br/>  { id: honki, status: RESTING,<br/>    totalFocusMinutes: 5 }<br/>])
+    Server->>New: emit('players_synced', [<br/>  { id: fpg, status: FOCUSING,<br/>    totalFocusSeconds: 600,<br/>    currentSessionSeconds: 120 },<br/>  { id: honki, status: RESTING,<br/>    totalFocusSeconds: 300 }<br/>])
 
-    Note over New: 각 RemotePlayer 생성<br/>fpg: 10분 + 120초 = 12분, 1초씩 증가<br/>honki: 5분 (고정)
+    Note over New: 각 RemotePlayer 생성<br/>fpg: 600초 + 120초 = 720초, 1초씩 증가<br/>honki: 300초 (고정)
 ```
 
 ### 6. 새로고침 (joined 이벤트)
@@ -178,7 +178,7 @@ sequenceDiagram
     Browser->>Server: emit('joining', { x, y, username })
 
     Server->>DB: findOrCreate(player)
-    DB-->>Server: focusTime { status: FOCUSING, totalFocusMinutes: 10 }
+    DB-->>Server: focusTime { status: FOCUSING, totalFocusSeconds: 600 }
 
     Server->>Browser: emit('joined', { roomId })
     Note over Server: ❌ focusTime 정보 누락!
@@ -198,9 +198,9 @@ sequenceDiagram
     Browser->>Server: emit('joining', { x, y, username })
 
     Server->>DB: findOrCreate(player)
-    DB-->>Server: focusTime { status: FOCUSING, totalFocusMinutes: 10 }
+    DB-->>Server: focusTime { status: FOCUSING, totalFocusSeconds: 600 }
 
-    Server->>Browser: emit('joined', {<br/>  roomId,<br/>  focusTime: { status, totalFocusMinutes,<br/>    currentSessionSeconds }<br/>})
+    Server->>Browser: emit('joined', {<br/>  roomId,<br/>  focusTime: { status, totalFocusSeconds,<br/>    currentSessionSeconds }<br/>})
 
     Browser->>Browser: syncFromServer(focusTime)
     Note over Browser: 서버 값으로 복원 ✓

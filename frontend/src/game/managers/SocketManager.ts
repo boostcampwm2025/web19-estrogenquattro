@@ -24,7 +24,7 @@ interface PlayerData {
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
-  totalFocusMinutes?: number;
+  totalFocusSeconds?: number;
   currentSessionSeconds?: number;
 }
 
@@ -196,7 +196,7 @@ export default class SocketManager {
         userId: string;
         status: string;
         taskName?: string;
-        totalFocusMinutes?: number;
+        totalFocusSeconds?: number;
         currentSessionSeconds?: number;
       }) => {
         if (data.status !== FOCUS_STATUS.FOCUSING) return;
@@ -204,7 +204,7 @@ export default class SocketManager {
         if (remotePlayer) {
           remotePlayer.setFocusState(true, {
             taskName: data.taskName,
-            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            totalFocusSeconds: data.totalFocusSeconds ?? 0,
             currentSessionSeconds: data.currentSessionSeconds ?? 0,
           });
         }
@@ -217,13 +217,13 @@ export default class SocketManager {
       (data: {
         userId: string;
         status: string;
-        totalFocusMinutes?: number;
+        totalFocusSeconds?: number;
       }) => {
         if (data.status !== FOCUS_STATUS.RESTING) return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(false, {
-            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            totalFocusSeconds: data.totalFocusSeconds ?? 0,
           });
         }
       },
@@ -264,7 +264,7 @@ export default class SocketManager {
 
     // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
     remotePlayer.setFocusState(data.status === FOCUS_STATUS.FOCUSING, {
-      totalFocusMinutes: data.totalFocusMinutes ?? 0,
+      totalFocusSeconds: data.totalFocusSeconds ?? 0,
       currentSessionSeconds: data.currentSessionSeconds ?? 0,
     });
 

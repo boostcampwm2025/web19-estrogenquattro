@@ -48,7 +48,7 @@ export const taskHandlers = [
     const newTask: TaskEntity = {
       id: nextId,
       description,
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
       completedDate: null,
       createdDate: new Date(),
     } as TaskEntity;

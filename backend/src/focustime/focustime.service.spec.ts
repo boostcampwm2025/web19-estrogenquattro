@@ -65,7 +65,7 @@ describe('FocusTimeService', () => {
       const today = new Date().toISOString().slice(0, 10);
       const focusTime = focusTimeRepository.create({
         player,
-        totalFocusMinutes: 0,
+        totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
         createdDate: today as unknown as Date,
       });
@@ -92,7 +92,7 @@ describe('FocusTimeService', () => {
       const today = new Date().toISOString().slice(0, 10);
       const focusTime = focusTimeRepository.create({
         player,
-        totalFocusMinutes: 0,
+        totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
         createdDate: today as unknown as Date,
       });
@@ -118,7 +118,7 @@ describe('FocusTimeService', () => {
       const today = new Date().toISOString().slice(0, 10);
       const focusTime = focusTimeRepository.create({
         player,
-        totalFocusMinutes: 0,
+        totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
         createdDate: today as unknown as Date,
       });
@@ -145,7 +145,7 @@ describe('FocusTimeService', () => {
       const today = new Date().toISOString().slice(0, 10);
       const existing = focusTimeRepository.create({
         player,
-        totalFocusMinutes: 30,
+        totalFocusSeconds: 30,
         status: FocusStatus.FOCUSING,
         createdDate: today as unknown as Date,
       });
@@ -156,7 +156,7 @@ describe('FocusTimeService', () => {
 
       // Then: 기존 레코드 반환
       expect(result.id).toBe(existing.id);
-      expect(result.totalFocusMinutes).toBe(30);
+      expect(result.totalFocusSeconds).toBe(30);
     });
 
     it('기존 레코드가 없으면 새 레코드를 생성한다', async () => {
@@ -168,7 +168,7 @@ describe('FocusTimeService', () => {
 
       // Then: 새 레코드 생성됨
       expect(result).toBeDefined();
-      expect(result.totalFocusMinutes).toBe(0);
+      expect(result.totalFocusSeconds).toBe(0);
       expect(result.status).toBe(FocusStatus.RESTING);
     });
   });
