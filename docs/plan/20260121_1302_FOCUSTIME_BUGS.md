@@ -23,7 +23,7 @@
 | #124 | 로컬 플레이어 탭 비활성화 시 타이머 부정확 | ✅ 해결 |
 | #126 | DB 누적 집중 시간 초 단위로 변경 | ✅ 해결 |
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
-| #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | 🔄 진행 중 |
+| #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ❌ 미해결 |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ❌ 미해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ❌ 미해결 |
@@ -207,7 +207,7 @@ ALTER TABLE daily_focus_time_new RENAME TO daily_focus_time;
 
 ---
 
-## #164: 개별 태스크 집중 시간이 서버에 저장되지 않음
+## #164: 개별 태스크 집중 시간이 서버에 저장되지 않음 ✅
 
 ### 현상
 
@@ -249,17 +249,32 @@ ALTER TABLE daily_focus_time_new RENAME TO daily_focus_time;
 
 ### 체크리스트
 
-- [ ] `focusing` 이벤트에 `taskId` 추가
-- [ ] `DailyFocusTime` 엔티티에 `currentTaskId` 필드 추가
-- [ ] `startFocusing`에서 `currentTaskId` 저장
-- [ ] `startResting`에서 해당 Task의 집중 시간 업데이트
-- [ ] 프론트엔드에서 `focusing` 이벤트 전송 시 `taskId` 포함
-- [ ] 새로고침 시 Task 시간 서버에서 복원 확인
-- [ ] 테스트 추가
+- [x] `focusing` 이벤트에 `taskId` 추가
+- [x] `DailyFocusTime` 엔티티에 `currentTaskId` 필드 추가
+- [x] `startFocusing`에서 `currentTaskId` 저장
+- [x] `startResting`에서 해당 Task의 집중 시간 업데이트
+- [x] 프론트엔드에서 `focusing` 이벤트 전송 시 `taskId` 포함
+- [x] 새로고침 시 Task 시간 서버에서 복원 확인
+- [x] 테스트 추가
+
+### 테스트
+
+| 파일 | 테스트 케이스 |
+|------|--------------|
+| `focustime.service.spec.ts` | taskId를 전달하면 currentTaskId가 저장된다 |
+| `focustime.service.spec.ts` | taskId 없이 호출하면 currentTaskId가 null이다 |
+| `focustime.service.spec.ts` | currentTaskId가 있고 집중 시간이 있으면 Task의 totalFocusSeconds가 업데이트된다 |
+| `focustime.service.spec.ts` | currentTaskId가 없으면 Task 업데이트가 발생하지 않는다 |
 
 ### 관련 이슈
 
 - #126: Task 테이블도 `totalFocusMinutes` → `totalFocusSeconds` 변경 필요
+
+### 해결
+
+- **PR**: #170
+- **커밋**: `e2ace45`, `a6a71ac`
+- **브랜치**: `fix/#164-task-focustime` (Stacked PR on `fix/#126-focustime-seconds`)
 
 ---
 
@@ -589,12 +604,13 @@ Disconnect 시에는 `rested`가 아니라 `player_left` 이벤트가 PlayerGate
 - PR #134에 커밋 추가
 - 프론트엔드만 수정
 
-### 2. #126 ✅ → #164 → #165 (순차 진행)
+### 2. #126 ✅ → #164 ✅ → #165 (순차 진행)
 - **#126 완료**: PR #168 (브랜치: `fix/#126-focustime-seconds`)
+- **#164 완료**: PR #170 (브랜치: `fix/#164-task-focustime`, Stacked PR)
 - **연관성**: 모두 `focustime.service.ts` 수정, DB 스키마 변경 포함
 - **순서**:
   1. **#126**: `totalFocusMinutes` → `totalFocusSeconds` 변경 ✅
-  2. **#164**: Task 집중 시간 서버 저장 (#126 스키마 활용)
+  2. **#164**: Task 집중 시간 서버 저장 (#126 스키마 활용) ✅
   3. **#165**: 트랜잭션/Lock 추가 (서비스 로직 안정화)
 
 ### 3. #166 → #167 (순차 진행)
@@ -616,7 +632,9 @@ Disconnect 시에는 `rested`가 아니라 `player_left` 이벤트가 PlayerGate
 ```
 main ← PR #125, #134, #136 머지 완료 ✅
   └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
+        └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
 ```
 
 - #168: DB 집중 시간 초 단위 변경 (#126)
-- 이후 작업은 #168 머지 후 main에서 브랜치 생성
+- #170: 개별 태스크 집중 시간 서버 저장 (#164) - #168 위에 Stacked PR
+- 이후 작업은 #168 → #170 순서로 머지 후 진행
