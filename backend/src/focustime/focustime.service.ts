@@ -52,6 +52,7 @@ export class FocusTimeService {
     playerId: number,
     taskId?: number,
   ): Promise<DailyFocusTime> {
+    const now = new Date();
     const today = this.getTodayDateString();
 
     const focusTime = await this.focusTimeRepository.findOne({
@@ -68,8 +69,30 @@ export class FocusTimeService {
       );
     }
 
+    // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
+    if (
+      focusTime.status === FocusStatus.FOCUSING &&
+      focusTime.lastFocusStartTime
+    ) {
+      const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
+      const diffSeconds = Math.floor(diffMs / 1000);
+      focusTime.totalFocusSeconds += diffSeconds;
+
+      // 이전 Task의 집중 시간 업데이트
+      if (focusTime.currentTaskId && diffSeconds > 0) {
+        await this.addFocusTimeToTask(
+          playerId,
+          focusTime.currentTaskId,
+          diffSeconds,
+        );
+        this.logger.log(
+          `Task switch: saved ${diffSeconds}s for previous task ${focusTime.currentTaskId}`,
+        );
+      }
+    }
+
     focusTime.status = FocusStatus.FOCUSING;
-    focusTime.lastFocusStartTime = new Date();
+    focusTime.lastFocusStartTime = now;
     focusTime.currentTaskId = taskId ?? null;
 
     if (taskId) {
@@ -109,7 +132,11 @@ export class FocusTimeService {
 
       // 집중 중이던 Task가 있으면 해당 Task의 집중 시간도 업데이트
       if (focusTime.currentTaskId && diffSeconds > 0) {
-        await this.addFocusTimeToTask(focusTime.currentTaskId, diffSeconds);
+        await this.addFocusTimeToTask(
+          playerId,
+          focusTime.currentTaskId,
+          diffSeconds,
+        );
       }
     }
 
@@ -120,27 +147,29 @@ export class FocusTimeService {
   }
 
   /**
-   * Task의 집중 시간을 추가
+   * Task의 집중 시간을 추가 (소유권 검증 + 원자적 업데이트)
    */
   private async addFocusTimeToTask(
+    playerId: number,
     taskId: number,
     seconds: number,
   ): Promise<void> {
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-    });
+    const result = await this.taskRepository
+      .createQueryBuilder()
+      .update()
+      .set({ totalFocusSeconds: () => `total_focus_seconds + ${seconds}` })
+      .where('id = :taskId', { taskId })
+      .andWhere('player_id = :playerId', { playerId })
+      .execute();
 
-    if (!task) {
-      this.logger.warn(`Task ${taskId} not found, skipping focus time update`);
+    if (!result.affected) {
+      this.logger.warn(
+        `Task ${taskId} not found or not owned by player ${playerId}, skipping focus time update`,
+      );
       return;
     }
 
-    task.totalFocusSeconds += seconds;
-    await this.taskRepository.save(task);
-
-    this.logger.log(
-      `Added ${seconds}s to task ${taskId} (total: ${task.totalFocusSeconds}s)`,
-    );
+    this.logger.log(`Added ${seconds}s to task ${taskId}`);
   }
 
   async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
