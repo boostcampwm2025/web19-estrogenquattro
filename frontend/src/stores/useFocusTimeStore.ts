@@ -3,12 +3,20 @@ import { getSocket } from "@/lib/socket";
 
 export type FocusStatus = "FOCUSING" | "RESTING";
 
+export interface FocusTimeData {
+  status: FocusStatus;
+  totalFocusMinutes: number;
+  currentSessionSeconds: number;
+}
+
 interface FocusTimeStore {
   // 내 상태
   focusTime: number;
+  baseFocusSeconds: number; // 집중 시작 시점의 누적 시간 (경과 시간 계산용)
   isFocusTimerRunning: boolean;
   status: FocusStatus;
   error: string | null;
+  focusStartTimestamp: number | null;
 
   // 기존 액션
   setFocusTime: (time: number) => void;
@@ -20,13 +28,18 @@ interface FocusTimeStore {
   // 소켓 연동 액션
   startFocusing: (taskName?: string) => void;
   stopFocusing: () => void;
+
+  // 서버 동기화 액션
+  syncFromServer: (data: FocusTimeData) => void;
 }
 
 export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   focusTime: 0,
+  baseFocusSeconds: 0,
   isFocusTimerRunning: false,
   status: "RESTING",
   error: null,
+  focusStartTimestamp: null,
 
   setFocusTime: (time) => set({ focusTime: time }),
   incrementFocusTime: () =>
@@ -44,11 +57,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       return;
     }
     socket.emit("focusing", { taskName });
-    set({
+    set((state) => ({
       status: "FOCUSING",
       isFocusTimerRunning: true,
+      focusStartTimestamp: Date.now(),
+      baseFocusSeconds: state.focusTime, // 집중 시작 시점의 누적 시간 저장
       error: null,
-    });
+    }));
   },
 
   stopFocusing: () => {
@@ -63,6 +78,28 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
     set({
       status: "RESTING",
       isFocusTimerRunning: false,
+      focusStartTimestamp: null,
+      error: null,
+    });
+  },
+
+  syncFromServer: (data: FocusTimeData) => {
+    const isFocusing = data.status === "FOCUSING";
+    const baseSeconds = data.totalFocusMinutes * 60;
+    const totalSeconds =
+      baseSeconds + (isFocusing ? data.currentSessionSeconds : 0);
+
+    // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
+    const focusStartTimestamp = isFocusing
+      ? Date.now() - data.currentSessionSeconds * 1000
+      : null;
+
+    set({
+      status: data.status,
+      isFocusTimerRunning: isFocusing,
+      focusTime: totalSeconds,
+      baseFocusSeconds: baseSeconds, // 경과 시간 계산용 기준값
+      focusStartTimestamp,
       error: null,
     });
   },

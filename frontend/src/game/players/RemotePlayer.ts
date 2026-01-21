@@ -13,7 +13,7 @@ export default class RemotePlayer extends BasePlayer {
   private isFocusing: boolean = false;
   private focusTimeTimer: Phaser.Time.TimerEvent | null = null;
   private totalFocusMinutes: number = 0;
-  private currentSessionSeconds: number = 0;
+  private focusStartTimestamp: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -38,28 +38,27 @@ export default class RemotePlayer extends BasePlayer {
     }
 
     if (isFocusing) {
-      // 서버에서 받은 경과 시간으로 시작 (클라이언트 시계 사용 안 함)
-      this.currentSessionSeconds = options?.currentSessionSeconds ?? 0;
+      // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
+      const currentSessionSeconds = options?.currentSessionSeconds ?? 0;
+      this.focusStartTimestamp = Date.now() - currentSessionSeconds * 1000;
 
       // 초기 표시
-      this.updateFocusTime(
-        this.totalFocusMinutes * 60 + this.currentSessionSeconds,
-      );
+      this.updateFocusTime(this.totalFocusMinutes * 60 + currentSessionSeconds);
 
-      // 1초마다 +1 증가
+      // 1초마다 경과 시간 기반으로 계산 (프레임 드랍/탭 비활성화에도 정확)
       this.focusTimeTimer = this.scene.time.addEvent({
         delay: 1000,
         callback: () => {
-          this.currentSessionSeconds++;
-          this.updateFocusTime(
-            this.totalFocusMinutes * 60 + this.currentSessionSeconds,
+          const elapsed = Math.floor(
+            (Date.now() - this.focusStartTimestamp) / 1000,
           );
+          this.updateFocusTime(this.totalFocusMinutes * 60 + elapsed);
         },
         loop: true,
       });
     } else {
       // 휴식 상태: 누적 시간만 표시
-      this.currentSessionSeconds = 0;
+      this.focusStartTimestamp = 0;
       this.updateFocusTime(this.totalFocusMinutes * 60);
     }
 
