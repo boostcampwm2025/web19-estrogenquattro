@@ -8,7 +8,6 @@ const PIXEL_CARD =
 interface PetCodexProps {
   allPets: Pet[];
   collectedPetIds: number[];
-  activePetId: number;
   equippedPetId?: number;
   onPetSelect: (petId: number) => void;
 }
@@ -16,7 +15,6 @@ interface PetCodexProps {
 export default function PetCodex({
   allPets,
   collectedPetIds,
-  activePetId,
   equippedPetId,
   onPetSelect,
 }: PetCodexProps) {
@@ -52,8 +50,7 @@ export default function PetCodex({
             <div className="grid w-full grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
               {pets.map((pet, index) => {
                 const isCollected = collectedPetIds.includes(pet.id);
-                // 선택된 펫은 UI상 강조 (border 등) - 여기선 PIXEL_CARD가 이미 스타일을 가짐
-                // 장착된 펫은 뱃지로 표시
+                // 선택된 펫은 곧 장착된 펫이므로 강조 표시 및 뱃지 부착
                 const isEquipped = pet.id === equippedPetId;
                 const isLast = index === pets.length - 1;
 
@@ -64,10 +61,10 @@ export default function PetCodex({
                       onClick={() => isCollected && onPetSelect(pet.id)}
                       className={`${PIXEL_CARD} w-full ${
                         isCollected ? "cursor-pointer" : "bg-gray-200"
-                      }`}
+                      } ${isEquipped ? "border-amber-600 bg-amber-200" : ""}`}
                       title={isCollected ? pet.description : "???"}
                     >
-                      {/* 장착 뱃지 */}
+                      {/* 장착 뱃지 (선택된 펫 = 장착된 펫) */}
                       {isEquipped && (
                         <div className="absolute -top-2 -right-2 z-10 rotate-12 rounded border border-red-800 bg-red-500 px-1.5 py-0.5 text-[12px] font-bold text-white shadow-sm">
                           대표펫
