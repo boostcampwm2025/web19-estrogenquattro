@@ -56,25 +56,34 @@ export class PetService {
       const randomIndex = Math.floor(Math.random() * stage1Pets.length);
       const selectedPet = stage1Pets[randomIndex];
 
-      // 3. UserPet 생성
+      // 3. 도감(Codex)에서 확인 (이미 수집한 이력이 있는지)
+      const existingCodex = await this.userPetCodexRepository.findOne({
+        where: { playerId: player.id, petId: selectedPet.id },
+      });
+
+      if (existingCodex) {
+        const dummyUserPet = new UserPet();
+        dummyUserPet.id = -1; // 저장되지 않음을 의미
+        dummyUserPet.pet = selectedPet;
+        dummyUserPet.player = player;
+        dummyUserPet.exp = 0;
+        return dummyUserPet;
+      }
+
+      // 4. UserPet 생성 (미보유 시)
       const userPet = this.userPetRepository.create({
         player,
         pet: selectedPet,
         exp: 0,
       });
 
-      // 4. 도감(Codex)에 등록 (이미 있으면 무시)
-      const existingCodex = await this.userPetCodexRepository.findOne({
-        where: { playerId: player.id, petId: selectedPet.id },
+      // 5. 도감(Codex)에 등록
+      // 위에서 이미 검사했으므로 여기서는 무조건 없음 -> 생성
+      const codex = this.userPetCodexRepository.create({
+        player,
+        pet: selectedPet,
       });
-
-      if (!existingCodex) {
-        const codex = this.userPetCodexRepository.create({
-          player,
-          pet: selectedPet,
-        });
-        await manager.save(UserPetCodex, codex);
-      }
+      await manager.save(UserPetCodex, codex);
 
       return manager.save(UserPet, userPet);
     });
