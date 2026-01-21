@@ -98,9 +98,7 @@ export default function App() {
         const { focusStartTimestamp, baseFocusSeconds } =
           useFocusTimeStore.getState();
         if (focusStartTimestamp) {
-          const elapsed = Math.floor(
-            (Date.now() - focusStartTimestamp) / 1000,
-          );
+          const elapsed = Math.floor((Date.now() - focusStartTimestamp) / 1000);
           setFocusTime(baseFocusSeconds + elapsed);
         }
       }, 1000);
