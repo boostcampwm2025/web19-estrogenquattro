@@ -24,7 +24,7 @@
 | #126 | DB 누적 집중 시간 초 단위로 변경 | ✅ 해결 |
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
-| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ❌ 미해결 |
+| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ❌ 미해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ❌ 미해결 |
 
@@ -349,7 +349,9 @@ export class DailyResetService {
 
 ---
 
-## #165: FocusTime Race Condition - 트랜잭션 미사용
+## #165: FocusTime Race Condition - 트랜잭션 미사용 ⏭️
+
+> **스킵 사유**: 현재 아키텍처에서 발생 불가능한 이론적 버그
 
 ### 현상
 
@@ -434,10 +436,29 @@ if (focusTime.status === FocusStatus.RESTING) {
 
 ### 체크리스트
 
-- [ ] `startFocusing`에 트랜잭션 또는 Lock 추가
-- [ ] `startResting`에 트랜잭션 또는 Lock 추가
-- [ ] 이미 같은 상태면 무시하는 로직 추가
-- [ ] 테스트 추가
+- [ ] ~~`startFocusing`에 트랜잭션 또는 Lock 추가~~
+- [ ] ~~`startResting`에 트랜잭션 또는 Lock 추가~~
+- [ ] ~~이미 같은 상태면 무시하는 로직 추가~~
+- [ ] ~~테스트 추가~~
+
+### 스킵 결정
+
+**이론적 발생 조건과 현재 방지 메커니즘:**
+
+| 조건 | 방지 메커니즘 |
+|------|--------------|
+| 여러 탭 동시 조작 | `session_replaced` 이벤트로 이전 세션 자동 종료 |
+| 더블 클릭 | 프론트엔드 UI 버튼 상태 관리 |
+| 네트워크 재시도 | Socket.io 자체 관리 |
+
+**추가 안전 요소:**
+- Node.js 단일 스레드: 진정한 병렬 실행 없음
+- `await` 순차 처리: 대부분 순서대로 실행
+- SQLite 쓰기 직렬화: 동시 쓰기 자동 차단
+
+**결론:** 현재 아키텍처에서 Race Condition이 발생할 수 있는 시나리오가 없음. 추후 다중 서버 환경이나 DB 변경 시 재검토 필요.
+
+- **GitHub 이슈**: #165 (closed, not planned)
 
 ---
 
@@ -604,14 +625,15 @@ Disconnect 시에는 `rested`가 아니라 `player_left` 이벤트가 PlayerGate
 - PR #134에 커밋 추가
 - 프론트엔드만 수정
 
-### 2. #126 ✅ → #164 ✅ → #165 (순차 진행)
+### 2. #126 ✅ → #164 ✅ → #165 ⏭️ (완료)
 - **#126 완료**: PR #168 (브랜치: `fix/#126-focustime-seconds`)
 - **#164 완료**: PR #170 (브랜치: `fix/#164-task-focustime`, Stacked PR)
+- **#165 스킵**: 현재 아키텍처에서 발생 불가능 (이슈 닫힘)
 - **연관성**: 모두 `focustime.service.ts` 수정, DB 스키마 변경 포함
 - **순서**:
   1. **#126**: `totalFocusMinutes` → `totalFocusSeconds` 변경 ✅
   2. **#164**: Task 집중 시간 서버 저장 (#126 스키마 활용) ✅
-  3. **#165**: 트랜잭션/Lock 추가 (서비스 로직 안정화)
+  3. **#165**: 트랜잭션/Lock 추가 ⏭️ 스킵 (발생 불가)
 
 ### 3. #166 → #167 (순차 진행)
 - **브랜치**: `fix/#166-socket-response` (base: 2단계 PR)
