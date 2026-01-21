@@ -18,6 +18,7 @@ import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 
 @WebSocketGateway()
 export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -154,16 +155,39 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .filter((p) => p.socketId !== client.id && p.roomId === roomId)
       .map((p) => {
         const status = statusMap.get(p.playerId);
+
+        // 서버에서 현재 세션 경과 시간 계산
+        const currentSessionSeconds =
+          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+            ? Math.floor(
+                (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
+              )
+            : 0;
+
         return {
           ...p,
           status: status?.status ?? 'RESTING',
-          lastFocusStartTime: status?.lastFocusStartTime ?? null,
+          lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
           totalFocusMinutes: status?.totalFocusMinutes ?? 0,
+          currentSessionSeconds,
         };
       });
 
     //내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
+
+    // 4. Update FocusTime
+    const player = await this.playerService.findOneById(userData.user.playerId);
+    const myFocusTime = await this.focusTimeService.findOrCreate(player);
+
+    // 서버에서 현재 세션 경과 시간 계산
+    const myCurrentSessionSeconds =
+      myFocusTime.status === FocusStatus.FOCUSING &&
+      myFocusTime.lastFocusStartTime
+        ? Math.floor(
+            (Date.now() - myFocusTime.lastFocusStartTime.getTime()) / 1000,
+          )
+        : 0;
 
     //남들이 볼 내 캐릭터 그리기
     client.to(roomId).emit('player_joined', {
@@ -171,11 +195,11 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       username: username,
       x: data.x,
       y: data.y,
+      // focusTime 정보 추가
+      status: myFocusTime.status,
+      totalFocusMinutes: myFocusTime.totalFocusMinutes,
+      currentSessionSeconds: myCurrentSessionSeconds,
     });
-
-    // 4. Update FocusTime
-    const player = await this.playerService.findOneById(userData.user.playerId);
-    await this.focusTimeService.findOrCreate(player);
 
     const connectedAt = new Date();
 
