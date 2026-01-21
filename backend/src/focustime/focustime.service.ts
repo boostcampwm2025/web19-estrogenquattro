@@ -120,9 +120,12 @@ export class FocusTimeService {
     });
 
     if (!focusTime) {
-      throw new NotFoundException(
-        `FocusTime record not found for player ${playerId} on ${date}`,
-      );
+      const emptyRecord = new DailyFocusTime();
+      emptyRecord.totalFocusMinutes = 0;
+      emptyRecord.status = FocusStatus.RESTING;
+      emptyRecord.createdDate = date as unknown as Date;
+      emptyRecord.lastFocusStartTime = null as unknown as Date;
+      return emptyRecord;
     }
 
     return focusTime;

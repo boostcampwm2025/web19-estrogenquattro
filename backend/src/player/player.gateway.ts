@@ -198,6 +198,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       status: myFocusTime.status,
       totalFocusMinutes: myFocusTime.totalFocusMinutes,
       currentSessionSeconds: myCurrentSessionSeconds,
+      playerId: playerId,
     });
 
     const connectedAt = new Date();
@@ -208,6 +209,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       username,
       accessToken,
+      playerId,
     );
 
     // 새 클라이언트에게 현재 룸의 기여 상태 전송

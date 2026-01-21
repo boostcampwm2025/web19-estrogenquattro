@@ -21,9 +21,10 @@ export default class RemotePlayer extends BasePlayer {
     y: number,
     username: string,
     id: string,
-    texture: string,
+    texture: string, // 유저네임(텍스처 키) 받기
+    playerId: number = 0,
   ) {
-    super(scene, x, y, username, id, texture);
+    super(scene, x, y, username, id, texture, playerId);
   }
 
   // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)

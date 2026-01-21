@@ -26,6 +26,7 @@ export default class BasePlayer {
 
   public id: string;
   public username: string;
+  public playerId: number = 0;
 
   protected speed: number = 300;
 
@@ -36,10 +37,12 @@ export default class BasePlayer {
     username: string,
     id: string,
     texture: string = "face",
+    playerId: number = 0,
   ) {
     this.scene = scene;
     this.id = id;
     this.username = username;
+    this.playerId = playerId;
 
     // 1. 컨테이너 생성
     this.container = scene.add.container(x, y);
@@ -133,7 +136,7 @@ export default class BasePlayer {
     }
 
     this.container.on("pointerdown", () => {
-      useUserInfoStore.getState().openModal(this.id, this.username);
+      useUserInfoStore.getState().openModal(this.playerId, this.username);
     });
 
     this.container.on("pointerover", () => {

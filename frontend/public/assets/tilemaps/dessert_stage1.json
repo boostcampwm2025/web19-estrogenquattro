@@ -63,7 +63,7 @@
         }, 
         {
          "id":2,
-         "image":"dessert_stage1.png",
+         "image":"dessert_stage1.webp",
          "imageheight":1536,
          "imagewidth":2752,
          "name":"Image Layer 1",
@@ -552,26 +552,26 @@
                  "y":159.5
                 }, 
                 {
-                 "height":74,
+                 "height":73.3333333333333,
                  "id":94,
                  "name":"",
                  "rotation":0,
                  "type":"wall",
                  "visible":true,
-                 "width":71,
-                 "x":1968,
+                 "width":64.3333333333335,
+                 "x":1968.66666666667,
                  "y":1023
                 }, 
                 {
-                 "height":186,
+                 "height":184,
                  "id":95,
                  "name":"",
                  "rotation":0,
                  "type":"wall",
                  "visible":true,
-                 "width":69,
-                 "x":1830,
-                 "y":909
+                 "width":61,
+                 "x":1836.66666666667,
+                 "y":909.666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",

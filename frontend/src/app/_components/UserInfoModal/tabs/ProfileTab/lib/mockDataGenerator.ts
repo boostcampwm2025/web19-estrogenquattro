@@ -1,6 +1,7 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
 import { getDateRange } from "./dateUtils";
+import { toDateString } from "@/utils/timeFormat";
 
 const TASK_NAMES = [
   "API 엔드포인트 작성",
@@ -45,7 +46,7 @@ export function generateMockTasks(daysCount: number = 365): Task[] {
         description: TASK_NAMES[Math.floor(Math.random() * TASK_NAMES.length)],
         completed: isCompleted,
         time: timeInSeconds,
-        createdDate: d.toISOString().split("T")[0], // YYYY-MM-DD 형식
+        createdDate: toDateString(d), // YYYY-MM-DD 형식
       });
     }
   }
@@ -62,7 +63,7 @@ export function generateMockDailyTaskCounts(
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     const taskCount = Math.floor(Math.random() * 26); // 0~25개
     dailyCounts.push({
-      date: d.toISOString().split("T")[0], // "YYYY-MM-DD" 형식
+      date: toDateString(d), // "YYYY-MM-DD" 형식
       taskCount,
     });
   }

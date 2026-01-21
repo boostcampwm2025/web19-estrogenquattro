@@ -1,17 +1,23 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
-import { PlayerId } from '../auth/player-id.decorator';
-import { JwtGuard } from '../auth/jwt.guard';
 import { DailyFocusTime } from './entites/daily-focus-time.entity';
+import { JwtGuard } from '../auth/jwt.guard';
 
-@UseGuards(JwtGuard)
 @Controller('api/focustime')
+@UseGuards(JwtGuard)
 export class FocustimeController {
   constructor(private readonly focusTimeService: FocusTimeService) {}
 
-  @Get()
+  @Get(':playerId')
   async getFocusTime(
-    @PlayerId() playerId: number,
+    @Param('playerId', ParseIntPipe) playerId: number,
     @Query('date') date: string,
   ): Promise<DailyFocusTime> {
     return this.focusTimeService.getFocusTime(playerId, date);

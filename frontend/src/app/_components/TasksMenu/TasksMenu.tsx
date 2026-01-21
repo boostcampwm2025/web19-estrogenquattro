@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause } from "lucide-react";
 import { TaskTimer } from "./TaskTimer";
 import { TaskList } from "./TaskList";
 import { formatTime, formatTaskTime } from "./utils/timeFormat";
@@ -11,6 +11,7 @@ import { useShallow } from "zustand/react/shallow";
 
 export default function App() {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [lastRunTaskId, setLastRunTaskId] = useState<number | null>(null);
 
   const {
     tasks,
@@ -68,6 +69,11 @@ export default function App() {
     () => tasks.find((task) => task.isRunning),
     [tasks],
   );
+
+  // 마지막 Task 추적용
+  const lastTask = useMemo(() => {
+    return runningTask || tasks.find((task) => task.id === lastRunTaskId);
+  }, [runningTask, tasks, lastRunTaskId]);
 
   const {
     focusTime,
@@ -153,9 +159,20 @@ export default function App() {
     } else {
       // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName 포함)
       startFocusing(targetTask?.description);
+      // 마지막으로 실행한 Task ID 저장
+      setLastRunTaskId(id);
     }
 
     toggleTaskTimer(id);
+  };
+
+  const handleMiniControlClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (lastTask) {
+      handleToggleTaskTimer(lastTask.id);
+    } else {
+      handleToggleTimer();
+    }
   };
 
   return (
@@ -205,6 +222,37 @@ export default function App() {
             pendingTaskIds={pendingTaskIds}
           />
         </div>
+
+        {/* 접혔을 때 미니 컨트롤 */}
+        {!isExpanded && (
+          <div className="border-retro-border-light mt-4 flex items-center gap-3 border-t pt-4">
+            <button
+              onClick={handleMiniControlClick}
+              className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+              aria-label={isTimerRunning ? "정지" : "시작"}
+            >
+              {isTimerRunning ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </button>
+            <div className="flex-1 truncate">
+              {lastTask ? (
+                <p className="text-retro-text-primary truncate text-sm font-semibold">
+                  {lastTask.description}
+                </p>
+              ) : (
+                <p className="text-retro-text-tertiary text-sm">
+                  Task를 선택해주세요
+                </p>
+              )}
+            </div>
+            <span className="text-retro-text-primary font-mono text-sm">
+              {formatTime(focusTime)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

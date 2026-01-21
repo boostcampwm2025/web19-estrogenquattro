@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { getSocket } from "@/lib/socket";
 
-export type FocusStatus = "FOCUSING" | "RESTING";
+export const FOCUS_STATUS = {
+  FOCUSING: "FOCUSING",
+  RESTING: "RESTING",
+} as const;
+
+export type FocusStatus = (typeof FOCUS_STATUS)[keyof typeof FOCUS_STATUS];
 
 export interface FocusTimeData {
   status: FocusStatus;
@@ -37,7 +42,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   focusTime: 0,
   baseFocusSeconds: 0,
   isFocusTimerRunning: false,
-  status: "RESTING",
+  status: FOCUS_STATUS.RESTING,
   error: null,
   focusStartTimestamp: null,
 
@@ -58,7 +63,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
     }
     socket.emit("focusing", { taskName });
     set((state) => ({
-      status: "FOCUSING",
+      status: FOCUS_STATUS.FOCUSING,
       isFocusTimerRunning: true,
       focusStartTimestamp: Date.now(),
       baseFocusSeconds: state.focusTime, // 집중 시작 시점의 누적 시간 저장
@@ -76,7 +81,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
     }
     socket.emit("resting");
     set({
-      status: "RESTING",
+      status: FOCUS_STATUS.RESTING,
       isFocusTimerRunning: false,
       focusStartTimestamp: null,
       error: null,

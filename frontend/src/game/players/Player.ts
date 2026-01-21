@@ -19,11 +19,12 @@ export default class Player extends BasePlayer {
     username: string,
     id: string,
     roomId: string,
+    playerId: number = 0,
   ) {
     // 부모 생성자 호출 (공통 렌더링 & 물리 설정 처리)
     // Local player는 자신의 GitHub ID를 texture key로 사용
     const texture = username;
-    super(scene, x, y, username, id, texture);
+    super(scene, x, y, username, id, texture, playerId);
     this.roomId = roomId;
   }
 
