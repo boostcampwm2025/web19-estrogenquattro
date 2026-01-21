@@ -58,6 +58,7 @@ export class FocusTimeService {
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
+      const taskRepo = manager.getRepository(Task);
 
       const focusTime = await focusTimeRepo.findOne({
         where: {
@@ -71,6 +72,21 @@ export class FocusTimeService {
         throw new NotFoundException(
           'FocusTime record not found. Please join the room first.',
         );
+      }
+
+      // taskId 소유권 검증
+      let verifiedTaskId: number | null = null;
+      if (taskId) {
+        const task = await taskRepo.findOne({
+          where: { id: taskId, player: { id: playerId } },
+        });
+        if (task) {
+          verifiedTaskId = taskId;
+        } else {
+          this.logger.warn(
+            `Task ${taskId} not found or not owned by player ${playerId}, ignoring taskId`,
+          );
+        }
       }
 
       // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
@@ -98,11 +114,11 @@ export class FocusTimeService {
 
       focusTime.status = FocusStatus.FOCUSING;
       focusTime.lastFocusStartTime = now;
-      focusTime.currentTaskId = taskId ?? null;
+      focusTime.currentTaskId = verifiedTaskId;
 
-      if (taskId) {
+      if (verifiedTaskId) {
         this.logger.log(
-          `Player ${playerId} started focusing on task ${taskId}`,
+          `Player ${playerId} started focusing on task ${verifiedTaskId}`,
         );
       }
 
