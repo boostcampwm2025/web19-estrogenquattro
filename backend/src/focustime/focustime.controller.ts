@@ -1,8 +1,17 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
 import { DailyFocusTime } from './entites/daily-focus-time.entity';
+import { JwtGuard } from '../auth/jwt.guard';
 
 @Controller('api/focustime')
+@UseGuards(JwtGuard)
 export class FocustimeController {
   constructor(private readonly focusTimeService: FocusTimeService) {}
 
