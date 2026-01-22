@@ -131,9 +131,19 @@ export default class BasePlayer {
       this.bodyGlow.active = false;
     }
 
-    this.container.on("pointerdown", () => {
-      useUserInfoStore.getState().openModal(this.playerId, this.username);
-    });
+    this.container.on(
+      "pointerdown",
+      (pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+        // DOM 요소 위에서 클릭된 경우 무시
+        const element = document.elementFromPoint(pointer.x, pointer.y);
+        const canvas = this.scene.game.canvas;
+        if (element !== canvas) {
+          event.stopPropagation();
+          return;
+        }
+        useUserInfoStore.getState().openModal(this.playerId, this.username);
+      },
+    );
 
     this.container.on("pointerover", () => {
       this.scene.game.canvas.style.cursor = "pointer";
