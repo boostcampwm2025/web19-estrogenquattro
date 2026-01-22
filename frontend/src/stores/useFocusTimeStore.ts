@@ -16,16 +16,20 @@ export interface FocusTimeData {
 
 interface FocusTimeStore {
   // 내 상태
-  focusTime: number;
-  baseFocusSeconds: number; // 집중 시작 시점의 누적 시간 (경과 시간 계산용)
-  isFocusTimerRunning: boolean;
   status: FocusStatus;
+  isFocusTimerRunning: boolean;
   error: string | null;
-  focusStartTimestamp: number | null;
 
-  // 기존 액션
+  // 서버 기준 타임스탬프 (브라우저 쓰로틀링 무관 시간 계산용)
+  baseFocusSeconds: number; // 이전 세션까지의 누적 시간
+  serverCurrentSessionSeconds: number; // 서버가 계산한 현재 세션 경과 시간
+  serverReceivedAt: number; // 서버 응답 수신 시점 (클라이언트 시간)
+
+  // 계산된 표시값 getter (타임스탬프 기반 계산)
+  getFocusTime: () => number;
+
+  // 기존 액션 (하위 호환성)
   setFocusTime: (time: number) => void;
-  incrementFocusTime: () => void;
   resetFocusTime: () => void;
   setFocusTimerRunning: (isRunning: boolean) => void;
   clearError: () => void;
@@ -39,17 +43,40 @@ interface FocusTimeStore {
 }
 
 export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
-  focusTime: 0,
-  baseFocusSeconds: 0,
-  isFocusTimerRunning: false,
   status: FOCUS_STATUS.RESTING,
+  isFocusTimerRunning: false,
   error: null,
-  focusStartTimestamp: null,
 
-  setFocusTime: (time) => set({ focusTime: time }),
-  incrementFocusTime: () =>
-    set((state) => ({ focusTime: state.focusTime + 1 })),
-  resetFocusTime: () => set({ focusTime: 0 }),
+  // 서버 기준 타임스탬프
+  baseFocusSeconds: 0,
+  serverCurrentSessionSeconds: 0,
+  serverReceivedAt: 0,
+
+  // 타임스탬프 기반 시간 계산 (쓰로틀링 무관)
+  getFocusTime: () => {
+    const {
+      status,
+      baseFocusSeconds,
+      serverCurrentSessionSeconds,
+      serverReceivedAt,
+    } = get();
+
+    if (status === FOCUS_STATUS.FOCUSING && serverReceivedAt > 0) {
+      const clientElapsed = Math.floor((Date.now() - serverReceivedAt) / 1000);
+      return baseFocusSeconds + serverCurrentSessionSeconds + clientElapsed;
+    }
+
+    return baseFocusSeconds;
+  },
+
+  // 하위 호환성 (baseFocusSeconds 직접 설정)
+  setFocusTime: (time) => set({ baseFocusSeconds: time }),
+  resetFocusTime: () =>
+    set({
+      baseFocusSeconds: 0,
+      serverCurrentSessionSeconds: 0,
+      serverReceivedAt: 0,
+    }),
   setFocusTimerRunning: (isRunning) => set({ isFocusTimerRunning: isRunning }),
   clearError: () => set({ error: null }),
 
@@ -57,7 +84,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const prev = get();
 
     // 이미 FOCUSING이면 무시
-    if (prev.status === "FOCUSING") return;
+    if (prev.status === FOCUS_STATUS.FOCUSING) return;
 
     const socket = getSocket();
     if (!socket?.connected) {
@@ -67,12 +94,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
       return;
     }
 
-    // 낙관적 업데이트
+    // 낙관적 업데이트 (타임스탬프 기반)
     set({
       status: FOCUS_STATUS.FOCUSING,
       isFocusTimerRunning: true,
-      focusStartTimestamp: Date.now(),
-      baseFocusSeconds: prev.focusTime,
+      baseFocusSeconds: prev.baseFocusSeconds,
+      serverCurrentSessionSeconds: 0,
+      serverReceivedAt: Date.now(),
       error: null,
     });
 
@@ -84,9 +112,10 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
         if (!response?.success) {
           // 에러 시 롤백
           set({
-            status: "RESTING",
+            status: FOCUS_STATUS.RESTING,
             isFocusTimerRunning: false,
-            focusStartTimestamp: null,
+            serverCurrentSessionSeconds: 0,
+            serverReceivedAt: 0,
             error: response?.error || "집중 시작에 실패했습니다.",
           });
         }
@@ -98,7 +127,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const prev = get();
 
     // 이미 RESTING이면 무시
-    if (prev.status === "RESTING") return;
+    if (prev.status === FOCUS_STATUS.RESTING) return;
 
     const socket = getSocket();
     if (!socket?.connected) {
@@ -108,11 +137,14 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
       return;
     }
 
-    // 낙관적 업데이트
+    // 낙관적 업데이트 (현재 시간을 baseFocusSeconds에 반영)
+    const currentFocusTime = prev.getFocusTime();
     set({
       status: FOCUS_STATUS.RESTING,
       isFocusTimerRunning: false,
-      focusStartTimestamp: null,
+      baseFocusSeconds: currentFocusTime,
+      serverCurrentSessionSeconds: 0,
+      serverReceivedAt: 0,
       error: null,
     });
 
@@ -126,8 +158,9 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
           set({
             status: prev.status,
             isFocusTimerRunning: prev.isFocusTimerRunning,
-            focusStartTimestamp: prev.focusStartTimestamp,
             baseFocusSeconds: prev.baseFocusSeconds,
+            serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
+            serverReceivedAt: prev.serverReceivedAt,
             error: response?.error || "휴식 전환에 실패했습니다.",
           });
         }
@@ -136,22 +169,14 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
   },
 
   syncFromServer: (data: FocusTimeData) => {
-    const isFocusing = data.status === "FOCUSING";
-    const baseSeconds = data.totalFocusSeconds;
-    const totalSeconds =
-      baseSeconds + (isFocusing ? data.currentSessionSeconds : 0);
-
-    // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
-    const focusStartTimestamp = isFocusing
-      ? Date.now() - data.currentSessionSeconds * 1000
-      : null;
+    const isFocusing = data.status === FOCUS_STATUS.FOCUSING;
 
     set({
       status: data.status,
       isFocusTimerRunning: isFocusing,
-      focusTime: totalSeconds,
-      baseFocusSeconds: baseSeconds, // 경과 시간 계산용 기준값
-      focusStartTimestamp,
+      baseFocusSeconds: data.totalFocusSeconds,
+      serverCurrentSessionSeconds: isFocusing ? data.currentSessionSeconds : 0,
+      serverReceivedAt: isFocusing ? Date.now() : 0,
       error: null,
     });
   },
