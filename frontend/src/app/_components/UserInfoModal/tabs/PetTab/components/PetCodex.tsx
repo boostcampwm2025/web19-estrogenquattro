@@ -60,9 +60,15 @@ export default function PetCodex({
                   <div key={pet.id} className="contents">
                     {/* 펫 카드 */}
                     <div
-                      onClick={() => isCollected && onPetSelect(pet.id)}
+                      onClick={() =>
+                        isCollected && isOwner && onPetSelect(pet.id)
+                      }
                       className={`${PIXEL_CARD} w-full ${
-                        isCollected && isOwner ? "cursor-pointer" : isCollected ? "cursor-default" : "bg-gray-200"
+                        isCollected && isOwner
+                          ? "cursor-pointer"
+                          : isCollected
+                            ? "cursor-default"
+                            : "bg-gray-200"
                       } ${isEquipped ? "border-amber-600 bg-amber-200" : ""}`}
                       title={isCollected ? pet.description : "???"}
                     >
