@@ -1,45 +1,50 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { usePointStore } from "@/stores/pointStore";
-import { PETS_DATA, PetDef } from "../data/pets";
+import { Pet } from "@/lib/api/pet";
+import { usePetSystem } from "../hooks/usePetSystem"; // Or pass via props
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
   "bg-amber-600 px-4 py-2 hover:bg-amber-500 text-white border-b-4 border-r-4 border-amber-800 active:border-b-0 active:border-r-0 active:translate-y-1 active:translate-x-1 disabled:opacity-50 disabled:cursor-not-allowed";
 
 interface PetGachaProps {
-  onPetCollected: (petId: string) => void;
+  onPetCollected: (petId: number) => void;
 }
 
 export default function PetGacha({ onPetCollected }: PetGachaProps) {
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
-  const [resultPet, setResultPet] = useState<PetDef | null>(null);
+  const [resultPet, setResultPet] = useState<Pet | null>(null);
+
+  const { gacha } = usePetSystem();
 
   const points = usePointStore((state) => state.points);
-  const subtractPoints = usePointStore((state) => state.subtractPoints);
 
-  // Stage 1인 펫들만 필터링 (뽑기 대상)
-  const availablePets = useMemo(() => {
-    return PETS_DATA.filter((pet) => pet.stage === 1);
-  }, []);
-
-  const handleSummon = () => {
-    if (!subtractPoints(100)) return;
+  const handleSummon = async () => {
+    if (points < 100) {
+      alert("포인트가 부족합니다!");
+      return;
+    }
 
     setStatus("animating");
 
-    // 5초 후 결과 표시
-    setTimeout(() => {
-      // 랜덤 펫 선택
-      const randomIndex = Math.floor(Math.random() * availablePets.length);
-      const summonedPet = availablePets[randomIndex];
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      setResultPet(summonedPet);
-      setStatus("result");
+      const userPet = await gacha();
+      const pet = userPet.pet;
 
-      // 도감에 추가
-      onPetCollected(summonedPet.id);
-    }, 5000);
+      if (pet) {
+        setResultPet(pet);
+        setStatus("result");
+        onPetCollected(pet.id);
+      } else {
+        throw new Error("Unknown pet received");
+      }
+    } catch (e) {
+      alert("뽑기 실패: " + e);
+      setStatus("idle");
+    }
   };
 
   const resetGacha = () => {
@@ -87,7 +92,7 @@ export default function PetGacha({ onPetCollected }: PetGachaProps) {
           <div className="animate-pop flex flex-col items-center gap-4">
             <div className="relative h-24 w-24">
               <Image
-                src={resultPet.image}
+                src={resultPet.actualImgUrl}
                 alt={resultPet.name}
                 fill
                 className="object-contain"

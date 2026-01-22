@@ -3,7 +3,7 @@ import { Task } from '../entites/task.entity';
 export class TaskRes {
   id: number;
   description: string;
-  totalFocusMinutes: number;
+  totalFocusSeconds: number;
   isCompleted: boolean;
   createdDate: string;
 
@@ -11,7 +11,7 @@ export class TaskRes {
     const res = new TaskRes();
     res.id = task.id;
     res.description = task.description;
-    res.totalFocusMinutes = task.totalFocusMinutes;
+    res.totalFocusSeconds = task.totalFocusSeconds;
     res.isCompleted = task.completedDate !== null;
     res.createdDate = new Date(task.createdDate).toISOString().split('T')[0];
     return res;

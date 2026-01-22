@@ -14,10 +14,8 @@ const mockTasks = generateMockTasks(365);
 export default function ProfileTab() {
   const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, isLoading } = useProfileData(
-    targetPlayerId ?? 0,
-    selectedDate,
-  );
+  const { dailyTaskCounts, focusTimeData, githubEvents, isLoading } =
+    useProfileData(targetPlayerId ?? 0, selectedDate);
 
   // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
   const getTasksForDate = (date: Date) => {
@@ -48,6 +46,7 @@ export default function ProfileTab() {
           tasks={selectedDateTasks}
           selectedDate={selectedDate}
           focusTimeMinutes={focusTimeData?.totalFocusMinutes}
+          githubEvents={githubEvents ?? null}
         />
         <TaskSection tasks={selectedDateTasks} selectedDate={selectedDate} />
       </div>

@@ -1,70 +1,48 @@
-import { useState, useEffect, useMemo } from "react";
-import {
-  pointApi,
-  focustimeApi,
-  DailyPointRes,
-  DailyFocusTimeRes,
-} from "@/lib/api";
+import { useMemo } from "react";
+import { usePoint, useFocustime, useGithubEvents } from "@/lib/api/hooks";
+import { DailyFocusTimeRes, GithubEventsRes } from "@/lib/api";
 import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
 import { toDateString } from "@/utils/timeFormat";
 
 interface UseProfileDataReturn {
   dailyTaskCounts: DailyTaskCount[];
-  focusTimeData: DailyFocusTimeRes | null;
+  focusTimeData: DailyFocusTimeRes | undefined;
+  githubEvents: GithubEventsRes | undefined;
   isLoading: boolean;
-  isFocusTimeLoading: boolean;
+  isDateDataLoading: boolean;
 }
 
 export function useProfileData(
   playerId: number,
   selectedDate: Date,
 ): UseProfileDataReturn {
-  const [pointsData, setPointsData] = useState<DailyPointRes[]>([]);
-  const [focusTimeData, setFocusTimeData] = useState<DailyFocusTimeRes | null>(
-    null,
+  const dateStr = toDateString(selectedDate);
+
+  // 히트맵 데이터 (1년치 포인트)
+  const { points, isLoading: isPointsLoading } = usePoint();
+
+  // 선택된 날짜의 집중시간
+  const { focustime: focusTimeData, isLoading: isFocusLoading } = useFocustime(
+    playerId,
+    dateStr,
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFocusTimeLoading, setIsFocusTimeLoading] = useState(false);
 
-  // 초기 로딩: 히트맵 데이터 (1년치 포인트)
-  useEffect(() => {
-    const fetchHeatmapData = async () => {
-      try {
-        const points = await pointApi.getPoints();
-        setPointsData(points);
-      } catch (error) {
-        console.error("Failed to fetch heatmap data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchHeatmapData();
-  }, []);
-
-  // 선택된 날짜가 바뀔 때마다 집중시간 조회
-  useEffect(() => {
-    const fetchFocusTime = async () => {
-      const dateStr = toDateString(selectedDate);
-      setIsFocusTimeLoading(true);
-      try {
-        const focusTime = await focustimeApi.getFocusTime(playerId, dateStr);
-        setFocusTimeData(focusTime);
-      } catch (error) {
-        console.error("Failed to fetch focus time:", error);
-        setFocusTimeData(null);
-      } finally {
-        setIsFocusTimeLoading(false);
-      }
-    };
-    fetchFocusTime();
-  }, [playerId, selectedDate]);
+  // 선택된 날짜의 GitHub 이벤트
+  const { events: githubEvents, isLoading: isGithubLoading } =
+    useGithubEvents(dateStr);
 
   const dailyTaskCounts: DailyTaskCount[] = useMemo(() => {
-    return pointsData.map((point) => ({
+    return points.map((point) => ({
       date: point.createdDate,
       taskCount: point.amount,
     }));
-  }, [pointsData]);
+  }, [points]);
 
-  return { dailyTaskCounts, focusTimeData, isLoading, isFocusTimeLoading };
+  return {
+    dailyTaskCounts,
+    focusTimeData,
+    githubEvents,
+    isLoading: isPointsLoading,
+    isDateDataLoading: isFocusLoading || isGithubLoading,
+  };
 }

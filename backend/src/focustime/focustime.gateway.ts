@@ -23,18 +23,22 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   @SubscribeMessage('focusing')
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { taskName?: string },
+    @MessageBody() data: { taskName?: string; taskId?: number },
   ) {
     const user = client.data.user;
     this.logger.debug(
       `Received focusing event - data: ${JSON.stringify(data)}`,
     );
-    const focusTime = await this.focusTimeService.startFocusing(user.playerId);
 
-    const rooms = Array.from(client.rooms);
-    const roomId = rooms.find((room) => room !== client.id);
+    try {
+      const focusTime = await this.focusTimeService.startFocusing(
+        user.playerId,
+        data?.taskId,
+      );
 
-    if (roomId) {
+      const rooms = Array.from(client.rooms);
+      const roomId = rooms.find((room) => room !== client.id);
+
       // 서버에서 현재 세션 경과 시간 계산
       const currentSessionSeconds = focusTime.lastFocusStartTime
         ? Math.floor(
@@ -42,24 +46,37 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
           )
         : 0;
 
-      // 방에 있는 사람들에게만 집중 중임을 알림
-      client.to(roomId).emit('focused', {
+      const responseData = {
         userId: client.id,
         username: focusTime.player.nickname,
         status: focusTime.status,
         lastFocusStartTime: focusTime.lastFocusStartTime?.toISOString() ?? null,
-        totalFocusMinutes: focusTime.totalFocusMinutes,
+        totalFocusSeconds: focusTime.totalFocusSeconds,
         currentSessionSeconds,
         taskName: data?.taskName,
-      });
+      };
 
-      this.logger.log(
-        `User ${user.username} started focusing in room ${roomId}${data?.taskName ? ` (task: ${data.taskName})` : ''}`,
+      if (roomId) {
+        // 방에 있는 다른 사람들에게 집중 중임을 알림
+        client.to(roomId).emit('focused', responseData);
+
+        this.logger.log(
+          `User ${user.username} started focusing in room ${roomId}${data?.taskName ? ` (task: ${data.taskName})` : ''}`,
+        );
+      } else {
+        this.logger.warn(
+          `User ${user.username} sent focusing but is not in any room`,
+        );
+      }
+
+      // 본인에게 응답
+      return { success: true, data: responseData };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Error in handleFocusing for ${user.username}: ${message}`,
       );
-    } else {
-      this.logger.warn(
-        `User ${user.username} sent focusing but is not in any room`,
-      );
+      return { success: false, error: message };
     }
   }
 
@@ -67,26 +84,40 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   async handleResting(@ConnectedSocket() client: AuthenticatedSocket) {
     const user = client.data.user;
 
-    const focusTime = await this.focusTimeService.startResting(user.playerId);
+    try {
+      const focusTime = await this.focusTimeService.startResting(user.playerId);
 
-    const rooms = Array.from(client.rooms);
-    const roomId = rooms.find((room) => room !== client.id);
+      const rooms = Array.from(client.rooms);
+      const roomId = rooms.find((room) => room !== client.id);
 
-    if (roomId) {
-      client.to(roomId).emit('rested', {
+      const responseData = {
         userId: client.id,
         username: focusTime.player.nickname,
         status: focusTime.status,
-        totalFocusMinutes: focusTime.totalFocusMinutes,
-      });
+        totalFocusSeconds: focusTime.totalFocusSeconds,
+      };
 
-      this.logger.log(
-        `User ${user.username} started resting in room ${roomId}`,
+      if (roomId) {
+        // 방에 있는 다른 사람들에게 휴식 중임을 알림
+        client.to(roomId).emit('rested', responseData);
+
+        this.logger.log(
+          `User ${user.username} started resting in room ${roomId}`,
+        );
+      } else {
+        this.logger.warn(
+          `User ${user.username} sent resting but is not in any room`,
+        );
+      }
+
+      // 본인에게 응답
+      return { success: true, data: responseData };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Error in handleResting for ${user.username}: ${message}`,
       );
-    } else {
-      this.logger.warn(
-        `User ${user.username} sent resting but is not in any room`,
-      );
+      return { success: false, error: message };
     }
   }
 
@@ -100,12 +131,15 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     const rooms = Array.from(client.rooms);
     const roomId = rooms.find((room) => room !== client.id);
 
+    const responseData = {
+      userId: client.id,
+      username: user.username,
+      taskName: data.taskName,
+    };
+
     if (roomId) {
-      client.to(roomId).emit('focus_task_updated', {
-        userId: client.id,
-        username: user.username,
-        taskName: data.taskName,
-      });
+      // 방에 있는 다른 사람들에게 Task 변경 알림
+      client.to(roomId).emit('focus_task_updated', responseData);
 
       this.logger.log(
         `User ${user.username} updated focus task to: ${data.taskName}`,
@@ -115,6 +149,9 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         `User ${user.username} sent focus_task_updating but is not in any room`,
       );
     }
+
+    // 본인에게 응답
+    return { success: true, data: responseData };
   }
 
   async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {

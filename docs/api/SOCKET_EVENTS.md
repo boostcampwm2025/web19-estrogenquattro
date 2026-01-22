@@ -94,13 +94,24 @@ socket.emit('chatting', {
 
 ```typescript
 socket.emit('focusing', {
-  taskName?: string  // 집중할 태스크 이름 (선택)
+  taskName?: string,  // 집중할 태스크 이름 (선택)
+  taskId?: number     // 집중할 태스크 ID (선택, 서버에 집중 시간 누적용)
 });
 ```
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
+- `taskId`가 있으면 존재/소유권 검증 후 `currentTaskId`에 저장 (휴식 시 해당 Task에 집중 시간 누적)
 - 같은 방에 `focused` 브로드캐스트 (taskName 포함)
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds, currentSessionSeconds, taskName? } }
+
+// 실패
+{ success: false, error: string }
+```
 
 ---
 
@@ -114,7 +125,17 @@ socket.emit('resting');
 
 **서버 동작:**
 - 포커스 상태를 `RESTING`으로 변경, 집중 시간 누적
+- `currentTaskId`가 있으면 해당 Task의 `totalFocusSeconds`에도 집중 시간 누적
 - 같은 방에 `rested` 브로드캐스트
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds } }
+
+// 실패
+{ success: false, error: string }
+```
 
 ---
 
@@ -132,6 +153,12 @@ socket.emit('focus_task_updating', {
 - `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
 - 같은 방에 `focus_task_updated` 브로드캐스트
 
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, taskName } }
+```
+
 ---
 
 ## 서버 → 클라이언트
@@ -145,7 +172,7 @@ socket.on('joined', (data: {
   roomId: string,
   focusTime: {
     status: 'FOCUSING' | 'RESTING',
-    totalFocusMinutes: number,
+    totalFocusSeconds: number,
     currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
   }
 }) => {
@@ -171,7 +198,7 @@ socket.on('players_synced', (players: Array<{
   playerId: number,
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }>) => {
   // RemotePlayer 생성
@@ -191,7 +218,7 @@ socket.on('player_joined', (data: {
   x: number,
   y: number,
   status: 'FOCUSING' | 'RESTING',
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }) => {
   // RemotePlayer 생성
@@ -291,7 +318,7 @@ socket.on('focused', (data: {
   username: string,
   status: 'FOCUSING',
   lastFocusStartTime: string,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
   taskName?: string
 }) => {
@@ -310,7 +337,7 @@ socket.on('rested', (data: {
   userId: string,
   username: string,
   status: 'RESTING',
-  totalFocusMinutes: number
+  totalFocusSeconds: number
 }) => {
   // 포커스 상태 및 누적 시간 표시 업데이트
 });

@@ -67,14 +67,14 @@ export function TaskList({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-md text-retro-text-primary">[ Tasks ]</h2>
+        <h2 className="text-md text-amber-900">[ Tasks ]</h2>
         <div className="flex items-center gap-2">
-          <span className="text-retro-text-primary text-sm">
+          <span className="text-sm text-amber-900">
             {completedCount}/{totalCount}
           </span>
           <Button
             onClick={handleAddClick}
-            className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-md hover:bg-retro-button-hover flex h-7 w-7 items-center justify-center rounded-none border-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -92,18 +92,18 @@ export function TaskList({
               onChange={(e) => setNewTaskText(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="새 작업..."
-              className="border-retro-border-dark text-retro-text-primary placeholder:text-retro-text-tertiary flex-1 rounded-none border-2 bg-white px-3 py-2"
+              className="flex-1 rounded-none border-2 border-amber-900 bg-white px-3 py-2 text-amber-900 placeholder:text-amber-500"
               autoFocus
             />
             <Button
               type="submit"
-              className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-md hover:bg-retro-button-hover flex h-8 w-8 items-center justify-center rounded-none border-2 active:shadow-none"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               <Check className="h-4 w-4" />
             </Button>
             <Button
               type="button"
-              className="border-retro-border-darker bg-retro-border-light text-retro-button-text shadow-retro-md hover:bg-retro-button-bg flex h-8 w-8 items-center justify-center rounded-none border-2 active:shadow-none"
+              className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover flex h-7 w-7 items-center justify-center rounded-none border-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleCancel}
             >
               <X className="h-4 w-4" />
@@ -114,7 +114,7 @@ export function TaskList({
 
       <div
         ref={listRef}
-        className="retro-scrollbar max-h-72 space-y-2 overflow-y-auto pr-2"
+        className="retro-scrollbar max-h-72 space-y-2 overflow-y-auto"
       >
         {tasks.map((task) => (
           <TaskItem

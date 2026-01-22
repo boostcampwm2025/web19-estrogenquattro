@@ -160,6 +160,14 @@ export class MapScene extends Phaser.Scene {
       this.socketManager.sendChat(message),
     );
     this.chatManager.setup();
+
+    // 10. Cleanup on scene shutdown
+    this.events.on("shutdown", this.cleanup, this);
+  }
+
+  private cleanup(): void {
+    this.cameraController?.destroy();
+    this.events.off("shutdown", this.cleanup, this);
   }
 
   private createAnimations() {
@@ -203,21 +211,16 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupPlayer() {
-    const { width: mapWidth, height: mapHeight } = this.mapManager.getMapSize();
-    const tileSize = this.mapManager.getTileSize();
-
-    const startX =
-      Math.floor(mapWidth / 2 / tileSize) * tileSize + tileSize / 2;
-    const startY =
-      Math.floor(mapHeight / 2 / tileSize) * tileSize + tileSize / 2;
+    // wall 피해 랜덤 스폰 위치
+    const spawnPos = this.mapManager.getRandomSpawnPosition();
 
     const socket = getSocket();
     const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
 
     this.player = new Player(
       this,
-      startX,
-      startY,
+      spawnPos.x,
+      spawnPos.y,
       this.username,
       myId,
       "pending",
@@ -258,6 +261,12 @@ export class MapScene extends Phaser.Scene {
         this.socketManager.setContributionController(
           this.contributionController!,
         );
+
+        // 플레이어 리스폰 (wall 피해 랜덤 위치)
+        if (this.player) {
+          const spawnPos = this.mapManager.getRandomSpawnPosition();
+          this.player.setPosition(spawnPos.x, spawnPos.y);
+        }
       });
     };
 

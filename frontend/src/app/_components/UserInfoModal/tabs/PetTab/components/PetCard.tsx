@@ -7,7 +7,6 @@ const PIXEL_BTN =
   "bg-green-600 px-2 hover:bg-green-500 text-white border-b-4 border-r-4 border-green-800 active:border-b-0 active:border-r-0 active:translate-y-1 active:translate-x-1";
 
 interface PetCardProps {
-  stage: number;
   exp: number;
   maxExp: number;
   currentStageData: {
@@ -21,7 +20,6 @@ interface PetCardProps {
 }
 
 export default function PetCard({
-  stage,
   exp,
   maxExp,
   currentStageData,

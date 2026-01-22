@@ -30,7 +30,7 @@ erDiagram
         bigint id PK
         bigint player_id FK
         varchar description "작업 설명 (100자)"
-        int total_focus_minutes "누적 집중 시간 (분)"
+        int total_focus_seconds "누적 집중 시간 (초)"
         date completed_date "완료 날짜 (nullable)"
         date created_date "생성 날짜"
     }
@@ -38,10 +38,11 @@ erDiagram
     daily_focus_time {
         bigint id PK
         bigint player_id FK
-        int total_focus_minutes "집중 시간 (분)"
+        int total_focus_seconds "집중 시간 (초)"
         enum status "FOCUSING | RESTING"
         date created_date "집계 날짜"
         datetime last_focus_start_time "마지막 집중 시작 시각"
+        int current_task_id "현재 집중 중인 Task ID (nullable)"
     }
 
     pets {
@@ -112,7 +113,7 @@ erDiagram
 | id | bigint | PK, AUTO_INCREMENT | 고유 ID |
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | description | varchar(100) | | 작업 설명 |
-| total_focus_minutes | int | DEFAULT 0 | 누적 집중 시간 (분) |
+| total_focus_seconds | int | DEFAULT 0 | 누적 집중 시간 (초) |
 | completed_date | date | NULL 허용 | 완료 날짜 |
 | created_date | date | NOT NULL | 생성 날짜 |
 
@@ -126,10 +127,11 @@ erDiagram
 |------|------|----------|------|
 | id | bigint | PK, AUTO_INCREMENT | 고유 ID |
 | player_id | bigint | FK → players.id | 플레이어 ID |
-| total_focus_minutes | int | DEFAULT 0 | 집중 시간 (분) |
+| total_focus_seconds | int | DEFAULT 0 | 집중 시간 (초) |
 | status | enum | NOT NULL | `FOCUSING` 또는 `RESTING` |
 | created_date | date | NOT NULL | 집계 기준 날짜 |
 | last_focus_start_time | datetime | NULL 허용 | 마지막 집중 시작 시각 |
+| current_task_id | int | NULL 허용 | 현재 집중 중인 Task ID |
 
 ---
 

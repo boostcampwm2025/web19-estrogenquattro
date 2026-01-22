@@ -77,7 +77,7 @@ export default function App() {
 
   const {
     focusTime,
-    setFocusTime,
+    incrementFocusTime,
     isFocusTimerRunning,
     startFocusing,
     stopFocusing,
@@ -86,7 +86,7 @@ export default function App() {
   } = useFocusTimeStore(
     useShallow((state) => ({
       focusTime: state.focusTime,
-      setFocusTime: state.setFocusTime,
+      incrementFocusTime: state.incrementFocusTime,
       isFocusTimerRunning: state.isFocusTimerRunning,
       startFocusing: state.startFocusing,
       stopFocusing: state.stopFocusing,
@@ -96,23 +96,18 @@ export default function App() {
   );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
-  // Focus Time 타이머 (경과 시간 기반 계산 - 탭 비활성화 시에도 정확)
+  // Focus Time 타이머 (Focus Time이나 Task 중 하나라도 실행 중이면 증가)
   useEffect(() => {
     let interval: number | undefined;
     if (isTimerRunning) {
       interval = window.setInterval(() => {
-        const { focusStartTimestamp, baseFocusSeconds } =
-          useFocusTimeStore.getState();
-        if (focusStartTimestamp) {
-          const elapsed = Math.floor((Date.now() - focusStartTimestamp) / 1000);
-          setFocusTime(baseFocusSeconds + elapsed);
-        }
+        incrementFocusTime();
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, setFocusTime]);
+  }, [isTimerRunning, incrementFocusTime]);
 
   useEffect(() => {
     if (!focusError) return;
@@ -147,6 +142,10 @@ export default function App() {
     } else {
       // 시작: Focus Timer 시작 + 서버에 focusing 이벤트 전송
       startFocusing();
+      // 펼친 상태에서 전체 타이머 시작 시 마지막 Task 정보 초기화
+      if (isExpanded) {
+        setLastRunTaskId(null);
+      }
     }
   };
 
@@ -157,10 +156,14 @@ export default function App() {
       // 같은 Task를 다시 클릭: 종료 + 서버에 resting 이벤트 전송
       stopFocusing();
     } else {
-      // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName 포함)
-      startFocusing(targetTask?.description);
+      // Task 시작 또는 전환 + 서버에 focusing 이벤트 전송 (taskName, taskId 포함)
+      startFocusing(targetTask?.description, targetTask?.id);
       // 마지막으로 실행한 Task ID 저장
       setLastRunTaskId(id);
+      // 완료된 Task 타이머 시작 시 체크 해제
+      if (targetTask?.completed) {
+        toggleTask(id);
+      }
     }
 
     toggleTaskTimer(id);
@@ -175,17 +178,29 @@ export default function App() {
     }
   };
 
+  const handleToggleTask = (id: number) => {
+    const targetTask = tasks.find((task) => task.id === id);
+
+    // 실행 중인 Task를 체크하면 타이머 정지
+    if (targetTask?.isRunning) {
+      stopFocusing();
+      toggleTaskTimer(id);
+    }
+
+    toggleTask(id);
+  };
+
   return (
     <div className="w-md">
-      <div className="border-retro-border-dark bg-retro-bg-primary shadow-retro-xl rounded-none border-4 p-6">
+      <div className="border-3 border-amber-900 bg-[#ffecb3] p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
         <div
           className={`flex cursor-pointer items-center justify-between transition-all duration-300 select-none ${
             isExpanded ? "mb-6" : "mb-0"
           }`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <h1 className="text-retro-text-primary text-lg">► TASKS</h1>
-          <button className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer transition-colors">
+          <h1 className="text-lg text-amber-900">► TASKS</h1>
+          <button className="cursor-pointer text-amber-900 transition-colors hover:text-amber-700">
             {isExpanded ? (
               <ChevronUp className="h-5 w-5" />
             ) : (
@@ -213,7 +228,7 @@ export default function App() {
             completedCount={completedCount}
             totalCount={tasks.length}
             onAddTask={addTask}
-            onToggleTask={toggleTask}
+            onToggleTask={handleToggleTask}
             onDeleteTask={deleteTask}
             onToggleTaskTimer={handleToggleTaskTimer}
             onEditTask={editTask}
@@ -225,10 +240,10 @@ export default function App() {
 
         {/* 접혔을 때 미니 컨트롤 */}
         {!isExpanded && (
-          <div className="border-retro-border-light mt-4 flex items-center gap-3 border-t pt-4">
+          <div className="mt-4 flex items-center gap-3 border-t border-amber-900/20 pt-4">
             <button
               onClick={handleMiniControlClick}
-              className="text-retro-text-primary hover:text-retro-text-secondary cursor-pointer"
+              className="cursor-pointer text-amber-900 hover:text-amber-700"
               aria-label={isTimerRunning ? "정지" : "시작"}
             >
               {isTimerRunning ? (
@@ -239,16 +254,14 @@ export default function App() {
             </button>
             <div className="flex-1 truncate">
               {lastTask ? (
-                <p className="text-retro-text-primary truncate text-sm font-semibold">
+                <p className="truncate text-sm font-semibold text-amber-900">
                   {lastTask.description}
                 </p>
               ) : (
-                <p className="text-retro-text-tertiary text-sm">
-                  Task를 선택해주세요
-                </p>
+                <p className="text-sm text-amber-700">Task를 선택해주세요</p>
               )}
             </div>
-            <span className="text-retro-text-primary font-mono text-sm">
+            <span className="font-mono text-sm text-amber-900">
               {formatTime(focusTime)}
             </span>
           </div>

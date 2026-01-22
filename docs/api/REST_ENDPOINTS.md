@@ -130,7 +130,7 @@ POST /api/tasks
 {
   "id": 1,
   "description": "오늘 할 일",
-  "totalFocusMinutes": 0,
+  "totalFocusSeconds": 0,
   "isCompleted": false,
   "createdDate": "2025-01-18"
 }
@@ -153,7 +153,7 @@ GET /api/tasks?date=YYYY-MM-DD
     {
       "id": 1,
       "description": "오늘 할 일",
-      "totalFocusMinutes": 0,
+      "totalFocusSeconds": 0,
       "isCompleted": false,
       "createdDate": "2025-01-18"
     }
@@ -198,7 +198,7 @@ PATCH /api/tasks/completion/:taskId
 {
   "id": 1,
   "description": "오늘 할 일",
-  "totalFocusMinutes": 25,
+  "totalFocusSeconds": 25,
   "isCompleted": true,
   "createdDate": "2025-01-18"
 }
@@ -217,7 +217,7 @@ PATCH /api/tasks/uncompletion/:taskId
 {
   "id": 1,
   "description": "오늘 할 일",
-  "totalFocusMinutes": 25,
+  "totalFocusSeconds": 25,
   "isCompleted": false,
   "createdDate": "2025-01-18"
 }
@@ -243,7 +243,7 @@ PATCH /api/tasks/:taskId
 {
   "id": 1,
   "description": "수정된 할 일",
-  "totalFocusMinutes": 25,
+  "totalFocusSeconds": 25,
   "isCompleted": false,
   "createdDate": "2025-01-18"
 }
@@ -468,7 +468,7 @@ GET /api/focus-time?date=YYYY-MM-DD
 {
   "date": "2025-01-18",
   "status": "FOCUSING",
-  "totalFocusMinutes": 120,
+  "totalFocusSeconds": 120,
   "lastFocusStartTime": "2025-01-18T10:30:00.000Z"
 }
 ```
@@ -485,11 +485,11 @@ GET /api/focus-time/summary?range=week
 ```json
 {
   "range": "week",
-  "totalFocusMinutes": 520,
+  "totalFocusSeconds": 520,
   "days": [
     {
       "date": "2025-01-12",
-      "totalFocusMinutes": 60
+      "totalFocusSeconds": 60
     }
   ]
 }
@@ -508,7 +508,7 @@ POST /api/focus-time/sessions
 {
   "sessionId": 10,
   "status": "FOCUSING",
-  "totalFocusMinutes": 120,
+  "totalFocusSeconds": 120,
   "lastFocusStartTime": "2025-01-18T10:30:00.000Z"
 }
 ```
@@ -526,7 +526,7 @@ PATCH /api/focus-time/sessions/:id
 {
   "sessionId": 10,
   "status": "RESTING",
-  "totalFocusMinutes": 130
+  "totalFocusSeconds": 130
 }
 ```
 

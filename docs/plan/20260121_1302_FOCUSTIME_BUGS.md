@@ -22,12 +22,14 @@
 |------|------|------|
 | #124 | 로컬 플레이어 탭 비활성화 시 타이머 부정확 | ✅ 해결 |
 | #126 | DB 누적 집중 시간 초 단위로 변경 | ✅ 해결 |
+| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ✅ 해결 |
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (현재 트래픽에서 발생 가능성 낮음) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ✅ 해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
-| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ✅ 해결 |
+| #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
+| #182 | FocusTime 게이트웨이 에러 핸들링 테스트 추가 | ❌ 미해결 |
 
 ---
 
@@ -536,6 +538,8 @@ socket.emit('focusing', { taskName }, (response) => {
 - [x] `handleFocusTaskUpdating`에 try-catch + return 응답 추가
 - [x] 프론트엔드 응답 처리 (에러 시 롤백)
 - [ ] 테스트 추가
+- [x] 프론트엔드 롤백 테스트 추가 (`focustime-store.spec.ts`)
+- [ ] 백엔드 에러 핸들링 테스트 추가 → #182
 
 ### 해결
 
@@ -747,6 +751,81 @@ connect(callbacks: {
 
 ---
 
+## #181: 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시
+
+### 현상
+
+```
+1. 플레이어 A가 "코딩하기" 태스크로 집중 시작
+2. 플레이어 B가 같은 방에 입장
+3. B의 화면에서 A가 "작업중"으로만 표시됨 ❌ (예상: "코딩하기")
+```
+
+### 원인
+
+`player.gateway.ts`의 `players_synced` 이벤트에서 `taskName`이 누락됨:
+
+```typescript
+// 현재 코드 (156-173줄)
+return {
+  ...p,
+  status: status?.status ?? 'RESTING',
+  lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
+  totalFocusSeconds: status?.totalFocusSeconds ?? 0,
+  currentSessionSeconds,
+  // ❌ taskName 없음!
+};
+```
+
+| 이벤트 | taskName 포함 | 결과 |
+|--------|--------------|------|
+| `focused` (집중 시작) | ✅ | 실시간으로 taskName 표시됨 |
+| `players_synced` (입장 시) | ❌ | "작업중"만 표시 |
+
+### 해결 방안
+
+1. `DailyFocusTime.currentTaskId`를 기반으로 Task의 description 조회
+2. `players_synced` 이벤트에 `taskName` 필드 추가
+
+### 수정 파일
+
+| 영역 | 파일 | 변경 내용 |
+|------|------|----------|
+| Backend | `focustime.service.ts` | `findAllStatuses()`에서 currentTask 관계 로드 |
+| Backend | `player.gateway.ts` | `statusMap`에 taskName 추가, `players_synced`에 포함 |
+
+### 체크리스트
+
+- [ ] `focusTimeService.findAllStatuses()`에서 currentTask 관계 로드
+- [ ] `statusMap`에 taskName 추가
+- [ ] `players_synced` 이벤트 응답에 taskName 포함
+- [ ] 테스트 추가
+
+---
+
+## #182: FocusTime 게이트웨이 에러 핸들링 테스트 추가
+
+### 배경
+
+PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸들러에 try-catch 에러 처리와 명시적 응답 반환이 추가되었습니다. CodeRabbit 리뷰에서 이에 대한 백엔드 테스트 추가를 권장했습니다.
+
+### 체크리스트
+
+- [ ] `handleFocusing` 성공/실패 응답 테스트
+- [ ] `handleResting` 성공/실패 응답 테스트
+- [ ] `handleFocusTaskUpdating` 성공/실패 응답 테스트
+- [ ] 룸 미소속 시 조기 반환 테스트
+- [ ] NotFoundException 등 예외 발생 시 에러 응답 테스트
+
+### 참고
+
+- **관련 PR**: #176
+- **관련 파일**: `backend/src/focustime/focustime.gateway.ts`
+- **CodeRabbit 리뷰**: https://github.com/boostcampwm2025/web19-estrogenquattro/pull/176#discussion_r2712661170
+
+
+---
+
 ## 작업 순서
 
 ### 1. #124 ✅ (완료)
@@ -780,14 +859,13 @@ connect(callbacks: {
 
 ---
 
-## 참고: PR 스택 (2026-01-22 업데이트)
+## 참고: PR 스택 (2026-01-21 업데이트)
 
-```text
+```
 main ← PR #125, #134, #136 머지 완료 ✅
-  ├── PR #177 (feat/#159-heartbeat) - 리뷰 대기 중
-  └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
-        └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
-              └── PR #176 (fix/#166-socket-response) - 리뷰 대기 중 (Stacked PR)
+  └── PR #168 (fix/#126-focustime-seconds) - 머지 완료 ✅
+        └── PR #170 (fix/#164-task-focustime) - 머지 완료 ✅
+              └── PR #176 (fix/#166-socket-response) - 머지 완료 ✅
 ```
 
 - #177: 소켓 연결 끊김 감지 및 재연결 UI (#159) - main에서 분기
