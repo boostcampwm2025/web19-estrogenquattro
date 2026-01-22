@@ -1,6 +1,6 @@
 # FocusTime 미해결 버그
 
-**최종 업데이트:** 2026-01-21
+**최종 업데이트:** 2026-01-22
 
 ---
 
@@ -27,6 +27,7 @@
 | #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ❌ 미해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ❌ 미해결 |
+| #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
 
 ---
 
@@ -615,6 +616,58 @@ Disconnect 시에는 `rested`가 아니라 `player_left` 이벤트가 PlayerGate
 
 - [ ] 에러 타입별 처리 (NotFoundException은 무시)
 - [ ] 심각한 에러는 별도 로깅/알림
+- [ ] 테스트 추가
+
+---
+
+## #181: 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시
+
+### 현상
+
+```
+1. 플레이어 A가 "코딩하기" 태스크로 집중 시작
+2. 플레이어 B가 같은 방에 입장
+3. B의 화면에서 A가 "작업중"으로만 표시됨 ❌ (예상: "코딩하기")
+```
+
+### 원인
+
+`player.gateway.ts`의 `players_synced` 이벤트에서 `taskName`이 누락됨:
+
+```typescript
+// 현재 코드 (156-173줄)
+return {
+  ...p,
+  status: status?.status ?? 'RESTING',
+  lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
+  totalFocusSeconds: status?.totalFocusSeconds ?? 0,
+  currentSessionSeconds,
+  // ❌ taskName 없음!
+};
+```
+
+| 이벤트 | taskName 포함 | 결과 |
+|--------|--------------|------|
+| `focused` (집중 시작) | ✅ | 실시간으로 taskName 표시됨 |
+| `players_synced` (입장 시) | ❌ | "작업중"만 표시 |
+
+### 해결 방안
+
+1. `DailyFocusTime.currentTaskId`를 기반으로 Task의 description 조회
+2. `players_synced` 이벤트에 `taskName` 필드 추가
+
+### 수정 파일
+
+| 영역 | 파일 | 변경 내용 |
+|------|------|----------|
+| Backend | `focustime.service.ts` | `findAllStatuses()`에서 currentTask 관계 로드 |
+| Backend | `player.gateway.ts` | `statusMap`에 taskName 추가, `players_synced`에 포함 |
+
+### 체크리스트
+
+- [ ] `focusTimeService.findAllStatuses()`에서 currentTask 관계 로드
+- [ ] `statusMap`에 taskName 추가
+- [ ] `players_synced` 이벤트 응답에 taskName 포함
 - [ ] 테스트 추가
 
 ---
