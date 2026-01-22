@@ -19,7 +19,7 @@ const findTaskOrNull = (taskId: number) =>
   taskStore.find((task) => task.id === taskId) ?? null;
 
 export const taskHandlers = [
-  http.get("*/api/tasks", ({ request }) => {
+  http.get("*/api/tasks/:playerId", ({ request }) => {
     const url = new URL(request.url);
     const today = toDateString(new Date());
     const targetDate = url.searchParams.get("date") ?? today;
