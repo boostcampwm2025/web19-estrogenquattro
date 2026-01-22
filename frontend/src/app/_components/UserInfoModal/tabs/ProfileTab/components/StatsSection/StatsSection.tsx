@@ -3,7 +3,7 @@ import { GithubEventsRes } from "@/lib/api";
 import GrassCard from "./GrassCard";
 import StatCard from "./StatCard";
 import { formatTimeFromSeconds } from "../../lib/dateStats";
-import { toDateString } from "@/utils/timeFormat";
+import { isSameDay } from "../../lib/dateUtils";
 
 interface StatsSectionProps {
   tasks: Task[];
@@ -19,7 +19,7 @@ export default function StatsSection({
   githubEvents,
 }: StatsSectionProps) {
   const focusTimeStr = formatTimeFromSeconds((focusTimeMinutes ?? 0) * 60);
-  const isToday = toDateString(selectedDate) === toDateString(new Date());
+  const isToday = isSameDay(selectedDate, new Date());
   const taskCount = isToday
     ? tasks.length
     : tasks.filter((t) => t.completed).length;

@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlayerId } from '../auth/player-id.decorator';
@@ -14,7 +22,7 @@ export class PlayerController {
   ) {}
 
   @Get(':playerId/info')
-  async getPlayerInfo(@Param('playerId') playerId: number) {
+  async getPlayerInfo(@Param('playerId', ParseIntPipe) playerId: number) {
     return this.playerService.findOneById(playerId);
   }
 

@@ -29,6 +29,10 @@ export default function PetTab() {
   // 현재 선택된 펫 ID (초기값 null -> 로딩 전에는 렌더링 방지)
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setSelectedPetId(null);
+  }, [playerId]);
+
   // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
   useEffect(() => {
     if (selectedPetId !== null || isLoading) return;

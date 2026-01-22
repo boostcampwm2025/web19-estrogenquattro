@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PetService } from './pet.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FeedPetDto } from './dto/feed-pet.dto';
@@ -11,7 +19,7 @@ export class PetController {
   constructor(private readonly petService: PetService) {}
 
   @Get('inventory/:playerId')
-  async getInventory(@Param('playerId') playerId: number) {
+  async getInventory(@Param('playerId', ParseIntPipe) playerId: number) {
     return this.petService.getInventory(playerId);
   }
 
@@ -31,7 +39,7 @@ export class PetController {
   }
 
   @Get('codex/:playerId')
-  async getCodex(@Param('playerId') playerId: number) {
+  async getCodex(@Param('playerId', ParseIntPipe) playerId: number) {
     return this.petService.getCodex(playerId);
   }
 

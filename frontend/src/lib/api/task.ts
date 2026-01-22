@@ -15,7 +15,7 @@ export interface TaskListRes {
 export const taskApi = {
   getTasks: (playerId: number, date?: string) =>
     fetchApi<TaskListRes>(
-      `/api/tasks/${playerId}${date ? `?date=${date}` : ""}`,
+      `/api/tasks/${playerId}${date ? `?date=${encodeURIComponent(date)}` : ""}`,
     ),
 
   createTask: (description: string) =>

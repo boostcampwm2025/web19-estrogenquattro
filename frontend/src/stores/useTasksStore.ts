@@ -49,9 +49,18 @@ export const useTasksStore = create<TasksStore>((set, get) => {
     clearError: () => set({ error: null }),
 
     fetchTasks: async (date?: string) => {
-      const playerId = useAuthStore.getState().user?.playerId;
+      const { user, isLoading: isAuthLoading } = useAuthStore.getState();
+      if (isAuthLoading) {
+        return;
+      }
+      const playerId = user?.playerId;
       if (!playerId) {
-        set({ error: "로그인이 필요합니다.", isLoading: false });
+        set({
+          tasks: [],
+          pendingTaskIds: [],
+          error: "로그인이 필요합니다.",
+          isLoading: false,
+        });
         return;
       }
       set({ isLoading: true, error: null });
