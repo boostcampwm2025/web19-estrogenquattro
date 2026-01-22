@@ -8,18 +8,21 @@ export const usePetSystem = (playerId: number) => {
   const { data: inventory = [], isLoading: isInventoryLoading } = useQuery({
     queryKey: ["pets", "inventory", playerId],
     queryFn: () => petApi.getInventory(playerId),
+    enabled: !!playerId,
   });
 
   // 도감(Codex) 조회
   const { data: codex = [], isLoading: isCodexLoading } = useQuery({
     queryKey: ["pets", "codex", playerId],
     queryFn: () => petApi.getCodex(playerId),
+    enabled: !!playerId,
   });
 
   // 플레이어 정보 (장착 펫 확인용)
   const { data: player, isLoading: isPlayerLoading } = useQuery({
     queryKey: ["player", "info", playerId],
     queryFn: () => petApi.getPlayer(playerId),
+    enabled: !!playerId,
   });
 
   // 전체 펫 목록 (도감용)

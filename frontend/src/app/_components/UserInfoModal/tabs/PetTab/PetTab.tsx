@@ -7,7 +7,7 @@ import { useUserInfoStore } from "@/stores/userInfoStore";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function PetTab() {
-  const { targetPlayerId } = useUserInfoStore();
+  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
   const { user } = useAuthStore();
 
   const playerId = targetPlayerId!;
@@ -19,7 +19,6 @@ export default function PetTab() {
   // 현재 선택된 펫 ID (초기값 null -> 로딩 전에는 렌더링 방지)
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
 
-  // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
   // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
   useEffect(() => {
     if (selectedPetId !== null || isLoading) return;
@@ -134,7 +133,9 @@ export default function PetTab() {
       ) : (
         <div className="border-4 border-amber-900/20 bg-amber-50 p-8 text-center text-amber-700">
           <p className="text-lg font-bold">보유한 펫이 없습니다</p>
-          {isOwner && <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>}
+          {isOwner && (
+            <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>
+          )}
         </div>
       )}
 
