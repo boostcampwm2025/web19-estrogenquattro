@@ -111,3 +111,31 @@ const greeting = "Hello, World!";
 <!-- 외부 링크 -->
 [GitHub](https://github.com)
 ```
+
+---
+
+## 새 탭 링크 (target="_blank")
+
+`target="_blank"`를 사용할 때는 **반드시** `rel="noopener noreferrer"`를 함께 추가합니다.
+
+### 보안 이슈 (Tabnabbing)
+
+`target="_blank"`만 사용하면 새 탭에서 `window.opener`를 통해 원래 페이지에 접근할 수 있어 보안 취약점이 됩니다.
+
+**좋은 예:**
+
+```html
+<a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+```
+
+**나쁜 예:**
+
+```html
+<!-- 보안 취약점 존재 -->
+<a href="https://github.com" target="_blank">GitHub</a>
+```
+
+| 속성 | 역할 |
+|------|------|
+| `noopener` | 새 탭이 `window.opener`에 접근 불가 |
+| `noreferrer` | referrer 정보 전달 안 함 |

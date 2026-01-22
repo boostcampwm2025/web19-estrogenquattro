@@ -250,16 +250,16 @@ flowchart TB
     <tr>
       <th align="center">이름</th>
       <th align="center">
-        <a href="https://github.com/heisjun" target="_blank">김준혁</a>
+        <a href="https://github.com/heisjun" target="_blank" rel="noopener noreferrer">김준혁</a>
       </th>
       <th align="center">
-        <a href="https://github.com/honki12345" target="_blank">김훈기</a>
+        <a href="https://github.com/honki12345" target="_blank" rel="noopener noreferrer">김훈기</a>
       </th>
       <th align="center">
-        <a href="https://github.com/songhaechan" target="_blank">송해찬</a>
+        <a href="https://github.com/songhaechan" target="_blank" rel="noopener noreferrer">송해찬</a>
       </th>
       <th align="center">
-        <a href="https://github.com/ldh-dodo" target="_blank">이도현</a>
+        <a href="https://github.com/ldh-dodo" target="_blank" rel="noopener noreferrer">이도현</a>
       </th>
     </tr>
   </thead>
