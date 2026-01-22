@@ -99,7 +99,7 @@ export default class BasePlayer {
       .setResolution(2);
 
     // 7. 펫 생성
-    this.pet = new Pet(scene);
+    this.pet = new Pet(scene, this.container);
 
     // 8. 컨테이너 추가
     const containerChildren: Phaser.GameObjects.GameObject[] = [
@@ -109,10 +109,6 @@ export default class BasePlayer {
       nameTag,
       this.focusTimeText,
     ];
-    const petSprite = this.pet.getSprite();
-    if (petSprite) {
-      containerChildren.unshift(petSprite); // 맨 뒤에 추가
-    }
     this.container.add(containerChildren);
 
     // 9. 물리 엔진 설정
@@ -225,6 +221,42 @@ export default class BasePlayer {
     if (this.bodySprite) {
       this.bodySprite.stop();
     }
+  }
+
+  // 펫 이미지 동적 로딩 및 설정
+  setPet(imageUrl: string | null) {
+    if (!imageUrl) {
+      // 이미지가 없으면 펫 제거
+      this.pet.destroy();
+      return;
+    }
+
+    const textureKey = `pet_${imageUrl.split("/").pop()}`;
+
+    // 이미 로드된 텍스처면 바로 적용
+    if (this.scene.textures.exists(textureKey)) {
+      this.pet.setTexture(textureKey);
+      return;
+    }
+
+    // 로드되지 않았다면 동적 로딩
+    this.scene.load.image(textureKey, imageUrl);
+
+    // 로드 에러 처리
+    const errorListener = (file: Phaser.Loader.File) => {
+      if (file.key === textureKey) {
+        console.error(`[BasePlayer] Load error for ${textureKey}:`, file);
+        this.scene.load.off("loaderror", errorListener);
+      }
+    };
+    this.scene.load.on("loaderror", errorListener);
+
+    this.scene.load.once(`filecomplete-image-${textureKey}`, () => {
+      this.pet.setTexture(textureKey);
+      this.scene.load.off("loaderror", errorListener); // 성공 시 에러 리스너 제거
+    });
+
+    this.scene.load.start();
   }
 
   // 작업 상태 태그 표시 (항상 표시됨, 꼬리 없는 태그 스타일)
