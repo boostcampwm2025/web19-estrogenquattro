@@ -133,7 +133,12 @@ export default class BasePlayer {
 
     this.container.on(
       "pointerdown",
-      (pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      (
+        pointer: Phaser.Input.Pointer,
+        _lx: number,
+        _ly: number,
+        event: Phaser.Types.Input.EventData,
+      ) => {
         // DOM 요소 위에서 클릭된 경우 무시
         const element = document.elementFromPoint(pointer.x, pointer.y);
         const canvas = this.scene.game.canvas;
