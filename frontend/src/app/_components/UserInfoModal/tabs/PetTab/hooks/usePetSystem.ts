@@ -1,25 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { petApi } from "@/lib/api/pet";
 
-export const usePetSystem = () => {
+export const usePetSystem = (playerId: number) => {
   const queryClient = useQueryClient();
 
-  // 인벤토리 조회 (내 펫 목록)
+  // 인벤토리 조회 (해당 유저의 펫 목록)
   const { data: inventory = [], isLoading: isInventoryLoading } = useQuery({
-    queryKey: ["pets", "inventory"],
-    queryFn: petApi.getInventory,
+    queryKey: ["pets", "inventory", playerId],
+    queryFn: () => petApi.getInventory(playerId),
+    enabled: !!playerId,
+    staleTime: 0,
   });
 
   // 도감(Codex) 조회
   const { data: codex = [], isLoading: isCodexLoading } = useQuery({
-    queryKey: ["pets", "codex"],
-    queryFn: petApi.getCodex,
+    queryKey: ["pets", "codex", playerId],
+    queryFn: () => petApi.getCodex(playerId),
+    enabled: !!playerId,
+    staleTime: 0,
   });
 
   // 플레이어 정보 (장착 펫 확인용)
   const { data: player, isLoading: isPlayerLoading } = useQuery({
-    queryKey: ["player", "me"],
-    queryFn: petApi.getPlayer,
+    queryKey: ["player", "info", playerId],
+    queryFn: () => petApi.getPlayer(playerId),
+    enabled: !!playerId,
+    staleTime: 0,
   });
 
   // 전체 펫 목록 (도감용)
@@ -36,10 +42,12 @@ export const usePetSystem = () => {
   const gachaMutation = useMutation({
     mutationFn: petApi.gacha,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pets", "inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["pets", "codex"] });
+      queryClient.invalidateQueries({
+        queryKey: ["pets", "inventory", playerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 
@@ -47,9 +55,11 @@ export const usePetSystem = () => {
   const feedMutation = useMutation({
     mutationFn: (userPetId: number) => petApi.feed(userPetId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pets", "inventory"] });
+      queryClient.invalidateQueries({
+        queryKey: ["pets", "inventory", playerId],
+      });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 
@@ -57,8 +67,10 @@ export const usePetSystem = () => {
   const evolveMutation = useMutation({
     mutationFn: (userPetId: number) => petApi.evolve(userPetId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pets", "inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["pets", "codex"] });
+      queryClient.invalidateQueries({
+        queryKey: ["pets", "inventory", playerId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
     },
   });
 
@@ -66,7 +78,7 @@ export const usePetSystem = () => {
   const equipMutation = useMutation({
     mutationFn: (petId: number) => petApi.equipPet(petId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 

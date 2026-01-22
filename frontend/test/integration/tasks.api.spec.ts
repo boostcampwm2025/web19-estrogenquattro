@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTasksStore } from "@/stores/useTasksStore";
+import { useAuthStore } from "@/stores/authStore";
 import { buildTaskEntity } from "../factories/task";
-import {
-  resetTaskStore,
-  seedTaskStore,
-} from "../mocks/handlers/tasks";
+import { resetTaskStore, seedTaskStore } from "../mocks/handlers/tasks";
 import { server } from "../mocks/server";
 import { http, HttpResponse } from "msw";
+
+const TEST_PLAYER_ID = 123;
 
 describe("Tasks API 통합", () => {
   beforeEach(() => {
@@ -17,6 +17,12 @@ describe("Tasks API 통합", () => {
       tasks: [],
       isLoading: false,
       error: null,
+      pendingTaskIds: [],
+    });
+    useAuthStore.setState({
+      user: { sub: "test-sub", username: "testuser", playerId: TEST_PLAYER_ID },
+      isAuthenticated: true,
+      isLoading: false,
     });
   });
 
@@ -209,7 +215,7 @@ describe("Tasks API 통합", () => {
 
   it("Task 목록 조회에 실패하면 에러 상태가 설정된다", async () => {
     server.use(
-      http.get("*/api/tasks", () =>
+      http.get("*/api/tasks/:playerId", () =>
         HttpResponse.json({ message: "error" }, { status: 500 }),
       ),
     );

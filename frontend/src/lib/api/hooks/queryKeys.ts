@@ -13,4 +13,9 @@ export const queryKeys = {
     events: (date: string) =>
       [...queryKeys.github.all, "events", date] as const,
   },
+  tasks: {
+    all: ["tasks"] as const,
+    list: (playerId: number, date?: string) =>
+      [...queryKeys.tasks.all, playerId, date] as const,
+  },
 };

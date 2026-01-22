@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PetService } from './pet.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FeedPetDto } from './dto/feed-pet.dto';
@@ -10,8 +18,8 @@ import { PlayerId } from '../auth/player-id.decorator';
 export class PetController {
   constructor(private readonly petService: PetService) {}
 
-  @Get('inventory')
-  async getInventory(@PlayerId() playerId: number) {
+  @Get('inventory/:playerId')
+  async getInventory(@Param('playerId', ParseIntPipe) playerId: number) {
     return this.petService.getInventory(playerId);
   }
 
@@ -30,8 +38,8 @@ export class PetController {
     return this.petService.evolve(dto.userPetId, playerId);
   }
 
-  @Get('codex')
-  async getCodex(@PlayerId() playerId: number) {
+  @Get('codex/:playerId')
+  async getCodex(@Param('playerId', ParseIntPipe) playerId: number) {
     return this.petService.getCodex(playerId);
   }
 
