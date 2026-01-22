@@ -2,3 +2,9 @@
 # https://docs.coderabbit.ai/guides/configure-coderabbit
 
 language: ko-KR
+
+reviews:
+  auto_review:
+    enabled: true
+    base_branches:
+      - ".*"
