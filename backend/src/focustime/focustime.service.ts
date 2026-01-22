@@ -124,7 +124,7 @@ export class FocusTimeService {
 
     if (!focusTime) {
       const emptyRecord = new DailyFocusTime();
-      emptyRecord.totalFocusMinutes = 0;
+      emptyRecord.totalFocusSeconds = 0;
       emptyRecord.status = FocusStatus.RESTING;
       emptyRecord.createdDate = date as unknown as Date;
       emptyRecord.lastFocusStartTime = null as unknown as Date;
