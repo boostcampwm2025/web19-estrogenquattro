@@ -10,15 +10,21 @@ Phaser 3 Arcade Physics 기반의 2D 멀티플레이어 게임
 // frontend/src/game/config.ts
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
+  parent: "game-container",
   scale: {
     mode: Phaser.Scale.RESIZE,
     width: "100%",
     height: "100%",
   },
+  audio: {
+    noAudio: true,
+  },
+  backgroundColor: "#303032",
   physics: {
     default: "arcade",
     arcade: {
       gravity: { x: 0, y: 0 },
+      debug: false,
     },
   },
   scene: [MapScene],
@@ -46,6 +52,104 @@ MapScene
 - 원격 플레이어 (RemotePlayer) 동기화
 - UI 컴포넌트 (프로그레스바, 기여도 목록) 관리
 - Socket.io 이벤트 처리
+
+### 씬 초기화 흐름 (create)
+
+```mermaid
+sequenceDiagram
+    participant S as MapScene
+    participant MM as MapManager
+    participant P as Player
+    participant SM as SocketManager
+    participant CM as ChatManager
+    participant CC as CameraController
+
+    Note over S: create() 시작
+
+    rect rgb(240, 248, 255)
+        Note over S,MM: 1. Map Setup
+        S->>MM: new MapManager(scene, maps)
+        S->>MM: setup()
+        MM->>MM: 맵 이미지 배치
+        MM->>MM: 충돌 영역 생성
+    end
+
+    rect rgb(255, 248, 240)
+        Note over S: 2. Animations Setup
+        S->>S: createAnimations()
+        Note right of S: walk-down, walk-left,<br/>walk-right, walk-up
+    end
+
+    rect rgb(240, 255, 240)
+        Note over S,P: 3. Player Setup
+        S->>MM: getRandomSpawnPosition()
+        MM-->>S: { x, y }
+        S->>P: new Player(scene, x, y, ...)
+    end
+
+    rect rgb(255, 240, 245)
+        Note over S,MM: 4. Collisions Setup
+        S->>MM: getWalls()
+        S->>S: physics.add.collider(player, walls)
+    end
+
+    rect rgb(248, 248, 255)
+        Note over S: 5. Controls Setup
+        S->>S: createCursorKeys()
+        S->>S: addKey(X)
+    end
+
+    rect rgb(255, 255, 240)
+        Note over S: 6. UI Setup
+        S->>S: createProgressBar()
+        S->>S: createContributionList()
+    end
+
+    rect rgb(240, 255, 255)
+        Note over S,CC: 7. Camera Setup
+        S->>CC: new CameraController(scene)
+        S->>CC: setup(width, height, player)
+    end
+
+    rect rgb(255, 245, 238)
+        Note over S,SM: 8. Socket Setup
+        S->>SM: new SocketManager(scene, username, player)
+        S->>SM: setWalls(), setProgressBarController()
+        S->>SM: connect(overlayCallbacks)
+    end
+
+    rect rgb(245, 255, 250)
+        Note over S,CM: 9. Chat Setup
+        S->>CM: new ChatManager(scene, sendCallback)
+        S->>CM: setup()
+    end
+
+    rect rgb(250, 250, 250)
+        Note over S: 10. Cleanup Registration
+        S->>S: events.on('shutdown', cleanup)
+    end
+```
+
+### 씬 라이프사이클
+
+```mermaid
+stateDiagram-v2
+    [*] --> preload: Phaser 게임 시작
+    preload --> init: 에셋 로드 완료
+    init --> create: 사용자 정보 설정
+    create --> update: 초기화 완료
+
+    state update {
+        [*] --> 입력처리
+        입력처리 --> 플레이어이동
+        플레이어이동 --> 집중시간업데이트
+        집중시간업데이트 --> 원격플레이어업데이트
+        원격플레이어업데이트 --> [*]
+    }
+
+    update --> shutdown: 씬 종료
+    shutdown --> [*]: cleanup()
+```
 
 ---
 
@@ -96,8 +200,8 @@ export class RemotePlayer extends BasePlayer {
 - `setFocusState(isFocusing, options)`: 집중/휴식 상태 설정
 - 집중 중일 때 1초마다 경과 시간 UI 업데이트 (로컬 계산)
 - `options.taskName`: 현재 작업 중인 태스크 이름 (말풍선 표시)
-- `options.lastFocusStartTime`: 집중 시작 시각 (경과 시간 계산용)
 - `options.totalFocusSeconds`: 누적 집중 시간 (초)
+- `options.currentSessionSeconds`: 현재 세션 경과 시간 (서버에서 계산하여 전달)
 
 ---
 
@@ -107,11 +211,19 @@ export class RemotePlayer extends BasePlayer {
 
 ```
 frontend/public/assets/
-├── tempMap1.png          # 맵 이미지 1
-├── tempMap2.png          # 맵 이미지 2
-├── temp1Tilemap.json     # Tiled 충돌 데이터 1
-├── temp2Tilemap.json     # Tiled 충돌 데이터 2
-└── body.png              # 캐릭터 스프라이트 시트
+├── maps/
+│   ├── dessert_stage1.webp   # 맵 이미지 1
+│   ├── dessert_stage2.webp   # 맵 이미지 2
+│   ├── dessert_stage3.webp   # 맵 이미지 3
+│   ├── dessert_stage4.webp   # 맵 이미지 4
+│   └── dessert_stage5.webp   # 맵 이미지 5
+├── tilemaps/
+│   ├── dessert_stage1.json   # Tiled 충돌 데이터 1
+│   ├── dessert_stage2.json   # Tiled 충돌 데이터 2
+│   ├── dessert_stage3.json   # Tiled 충돌 데이터 3
+│   ├── dessert_stage4.json   # Tiled 충돌 데이터 4
+│   └── dessert_stage5.json   # Tiled 충돌 데이터 5
+└── body.png                  # 캐릭터 스프라이트 시트
 ```
 
 ### Tiled JSON 충돌 영역
@@ -141,10 +253,65 @@ Tiled 에디터로 충돌 영역을 정의하고 JSON으로 export
 
 프로그레스바 100% 도달 시 다음 맵으로 전환
 
-```typescript
-// 맵 인덱스 순환
-this.currentMapIndex = (this.currentMapIndex + 1) % this.mapConfigs.length;
-// 새 맵 로드 및 충돌 영역 재설정
+#### 맵 순환 상태
+
+```mermaid
+stateDiagram-v2
+    Stage1: dessert_stage1
+    Stage2: dessert_stage2
+    Stage3: dessert_stage3
+    Stage4: dessert_stage4
+    Stage5: dessert_stage5
+
+    [*] --> Stage1: 게임 시작
+    Stage1 --> Stage2: progress 100%
+    Stage2 --> Stage3: progress 100%
+    Stage3 --> Stage4: progress 100%
+    Stage4 --> Stage5: progress 100%
+    Stage5 --> Stage1: progress 100%
+```
+
+#### 맵 전환 시퀀스
+
+```mermaid
+sequenceDiagram
+    participant PB as ProgressBar
+    participant S as MapScene
+    participant MM as MapManager
+    participant SM as SocketManager
+    participant CC as CameraController
+
+    PB->>PB: progress = 100%
+    PB->>S: onProgressComplete()
+
+    S->>MM: switchToNextMap(callback)
+    MM->>MM: currentMapIndex = (index + 1) % 5
+
+    Note over MM: 1. Fade Out
+    MM->>MM: cameras.main.fadeOut(500ms)
+
+    MM->>MM: 기존 맵 이미지 제거
+    MM->>MM: 충돌 영역 초기화
+
+    Note over MM: 2. 새 맵 로드
+    MM->>MM: setup() - 새 맵 이미지 배치
+    MM->>MM: 새 충돌 영역 생성
+
+    MM->>S: callback()
+
+    Note over S: 3. 재설정
+    S->>S: setupCollisions()
+    S->>S: setupUI() - 프로그레스바 리셋
+    S->>CC: updateBounds(width, height)
+    S->>SM: setWalls(), setupCollisions()
+
+    Note over S: 4. 플레이어 리스폰
+    S->>MM: getRandomSpawnPosition()
+    MM-->>S: { x, y }
+    S->>S: player.setPosition(x, y)
+
+    Note over MM: 5. Fade In
+    MM->>MM: cameras.main.fadeIn(500ms)
 ```
 
 ---
@@ -206,7 +373,7 @@ socket.on('github_event', (data) => {
 
 socket.on('focused', (data) => {
   // RemotePlayer 집중 상태로 전환
-  // taskName, lastFocusStartTime, totalFocusSeconds 반영
+  // taskName, totalFocusSeconds, currentSessionSeconds 반영
 });
 
 socket.on('rested', (data) => {
@@ -246,9 +413,11 @@ body.png (4방향 x 4프레임)
 
 ```typescript
 this.anims.create({
-  key: 'walk_down',
+  key: 'walk-down',
   frames: this.anims.generateFrameNumbers('body', { start: 0, end: 3 }),
-  frameRate: 8,
+  frameRate: 10,
   repeat: -1,
 });
 ```
+
+> **Note:** 애니메이션 키는 kebab-case 사용 (예: `walk-down`, `walk-up`, `walk-left`, `walk-right`)

@@ -55,11 +55,10 @@ GitHub OAuth 콜백 처리
 githubCallback(@Req() req: Request, @Res() res: Response) {
   const user = req.user as User;
 
-  // JWT 토큰 생성
+  // JWT 토큰 생성 (playerId는 UserStore에서 관리)
   const token = this.jwtService.sign({
     sub: user.githubId,
     username: user.username,
-    playerId: user.playerId,
   });
 
   // httpOnly 쿠키 설정
@@ -148,9 +147,10 @@ interface UserInfo {
 interface JwtPayload {
   sub: string;      // githubId
   username: string;
-  playerId: number;
 }
 ```
+
+> **Note:** `playerId`는 JWT에 포함되지 않음. 서버에서 `UserStore`를 통해 조회
 
 ---
 

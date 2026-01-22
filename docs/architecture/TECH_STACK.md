@@ -9,8 +9,9 @@
 | **TypeScript** | 5 | 타입 안전성 |
 | **Phaser** | 3.90 | 2D 게임 엔진 |
 | **Zustand** | 5 | 상태 관리 |
+| **React Query** | 5 | 서버 상태 관리 |
 | **Tailwind CSS** | 4 | 스타일링 |
-| **Socket.io-client** | - | WebSocket 클라이언트 |
+| **Socket.io-client** | 4.8 | WebSocket 클라이언트 |
 
 ### Phaser 3 선택 이유
 

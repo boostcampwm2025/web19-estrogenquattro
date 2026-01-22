@@ -51,23 +51,10 @@ const POLL_INTERVAL_BACKOFF = 120_000; // 120초 (rate limit 시)
 query($username: String!) {
   user(login: $username) {
     contributionsCollection {
-      commitContributionsByRepository(maxRepositories: 10) {
-        repository {
-          name
-          owner { login }
-        }
-        contributions(last: 10) {
-          nodes {
-            occurredAt
-            commitCount
-          }
-        }
-      }
-      pullRequestContributions(last: 10) {
-        nodes {
-          occurredAt
-        }
-      }
+      totalCommitContributions
+      totalIssueContributions
+      totalPullRequestContributions
+      totalPullRequestReviewContributions
     }
   }
 }
@@ -75,8 +62,12 @@ query($username: String!) {
 
 ### 응답 데이터
 
-- `commitContributionsByRepository`: 리포지토리별 커밋 기여 (최대 10개 리포)
-- `pullRequestContributions`: PR 기여 (최근 10개)
+- `totalCommitContributions`: 총 커밋 기여 수
+- `totalIssueContributions`: 총 이슈 기여 수
+- `totalPullRequestContributions`: 총 PR 기여 수
+- `totalPullRequestReviewContributions`: 총 PR 리뷰 기여 수
+
+> **Note:** 총량 기반 조회로 단순화됨. 이슈/PR 리뷰는 DB에만 저장되고, 프로그레스바 업데이트는 커밋/PR만 적용됨.
 
 ---
 
@@ -92,14 +83,19 @@ query($username: String!) {
 
 ```typescript
 interface UserBaseline {
-  lastCommitCounts: Map<string, number>; // repo -> commitCount
+  lastCommitCount: number;
   lastPRCount: number;
+  lastIssueCount: number;
+  lastPRReviewCount: number;
+  isFirstPoll: boolean;
 }
 ```
 
 1. **첫 폴링**: 기준점 설정, 이벤트 전송 없음
 2. **이후 폴링**: `현재값 - 기준점 = 새 기여 수`
 3. **새로고침**: 기존 기준점 유지 (중복 알림 방지)
+
+> **Note:** 이슈/PR 리뷰 기여는 DB에 저장되지만, `github_event`로 브로드캐스트되지 않음
 
 ---
 
