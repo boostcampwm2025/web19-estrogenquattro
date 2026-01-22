@@ -38,7 +38,7 @@ interface FocusTimeStore {
   syncFromServer: (data: FocusTimeData) => void;
 }
 
-export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
+export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
   focusTime: 0,
   baseFocusSeconds: 0,
   isFocusTimerRunning: false,
@@ -54,6 +54,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
   clearError: () => set({ error: null }),
 
   startFocusing: (taskName?: string, taskId?: number) => {
+    const prev = get();
+
+    // 이미 FOCUSING이면 무시
+    if (prev.status === "FOCUSING") return;
+
     const socket = getSocket();
     if (!socket?.connected) {
       set({
@@ -61,17 +66,40 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       });
       return;
     }
-    socket.emit("focusing", { taskName, taskId });
-    set((state) => ({
+
+    // 낙관적 업데이트
+    set({
       status: FOCUS_STATUS.FOCUSING,
       isFocusTimerRunning: true,
       focusStartTimestamp: Date.now(),
-      baseFocusSeconds: state.focusTime, // 집중 시작 시점의 누적 시간 저장
+      baseFocusSeconds: prev.focusTime,
       error: null,
-    }));
+    });
+
+    // 소켓 이벤트 전송 (응답 callback 포함)
+    socket.emit(
+      "focusing",
+      { taskName, taskId },
+      (response: { success: boolean; error?: string }) => {
+        if (!response?.success) {
+          // 에러 시 롤백
+          set({
+            status: "RESTING",
+            isFocusTimerRunning: false,
+            focusStartTimestamp: null,
+            error: response?.error || "집중 시작에 실패했습니다.",
+          });
+        }
+      },
+    );
   },
 
   stopFocusing: () => {
+    const prev = get();
+
+    // 이미 RESTING이면 무시
+    if (prev.status === "RESTING") return;
+
     const socket = getSocket();
     if (!socket?.connected) {
       set({
@@ -79,13 +107,32 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
       });
       return;
     }
-    socket.emit("resting");
+
+    // 낙관적 업데이트
     set({
       status: FOCUS_STATUS.RESTING,
       isFocusTimerRunning: false,
       focusStartTimestamp: null,
       error: null,
     });
+
+    // 소켓 이벤트 전송 (응답 callback 포함)
+    socket.emit(
+      "resting",
+      {},
+      (response: { success: boolean; error?: string }) => {
+        if (!response?.success) {
+          // 에러 시 이전 상태로 롤백 (시간 연속성 유지)
+          set({
+            status: prev.status,
+            isFocusTimerRunning: prev.isFocusTimerRunning,
+            focusStartTimestamp: prev.focusStartTimestamp,
+            baseFocusSeconds: prev.baseFocusSeconds,
+            error: response?.error || "휴식 전환에 실패했습니다.",
+          });
+        }
+      },
+    );
   },
 
   syncFromServer: (data: FocusTimeData) => {

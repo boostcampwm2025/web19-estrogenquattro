@@ -101,8 +101,17 @@ socket.emit('focusing', {
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
-- `taskId`가 있으면 `currentTaskId`에 저장 (휴식 시 해당 Task에 집중 시간 누적)
+- `taskId`가 있으면 존재/소유권 검증 후 `currentTaskId`에 저장 (휴식 시 해당 Task에 집중 시간 누적)
 - 같은 방에 `focused` 브로드캐스트 (taskName 포함)
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds, currentSessionSeconds, taskName? } }
+
+// 실패
+{ success: false, error: string }
+```
 
 ---
 
@@ -119,6 +128,15 @@ socket.emit('resting');
 - `currentTaskId`가 있으면 해당 Task의 `totalFocusSeconds`에도 집중 시간 누적
 - 같은 방에 `rested` 브로드캐스트
 
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds } }
+
+// 실패
+{ success: false, error: string }
+```
+
 ---
 
 ### focus_task_updating
@@ -134,6 +152,12 @@ socket.emit('focus_task_updating', {
 **서버 동작:**
 - `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
 - 같은 방에 `focus_task_updated` 브로드캐스트
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, taskName } }
+```
 
 ---
 
