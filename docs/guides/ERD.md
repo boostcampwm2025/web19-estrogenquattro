@@ -13,16 +13,18 @@ erDiagram
     players ||--o{ tasks : has
     players ||--o{ daily_focus_time : has
     players ||--o{ user_pets : owns
+    players ||--o{ user_pet_codex : owns
     players ||--o{ daily_github_activity : has
     players ||--o{ daily_point : has
-    players ||--o{ point_history : has
     pets ||--o{ user_pets : "is owned as"
+    pets ||--o{ user_pet_codex : "is recorded in"
+    players ||--o| pets : "equips"
 
     players {
-        bigint id PK
+        int id PK
         bigint social_id UK "GitHub 유니크 ID"
         varchar nickname "로그인 시 업데이트"
-        bigint primary_user_pet_id FK "대표 펫 ID"
+        int equipped_pet_id FK "장착된 펫 ID"
         int total_point "총 포인트"
     }
 
@@ -46,13 +48,13 @@ erDiagram
     }
 
     pets {
-        bigint id PK
+        int id PK
         varchar name "펫 이름"
         varchar description "펫 설명"
+        varchar species "펫 종"
         int evolution_stage "진화 단계"
         int evolution_required_exp "진화 필요 경험치"
         varchar actual_img_url "실제 이미지 URL"
-        varchar silhouette_img_url "실루엣 이미지 URL"
     }
 
     user_pets {
@@ -84,6 +86,13 @@ erDiagram
         int amount "포인트 량"
         datetime created_at "생성 시각"
     }
+
+    user_pet_codex {
+        int id PK
+        int player_id FK
+        int pet_id FK
+        datetime acquired_at "획득 시각"
+    }
 ```
 
 ---
@@ -96,10 +105,10 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
-| id | bigint | PK, AUTO_INCREMENT | 고유 ID |
+| id | int | PK, AUTO_INCREMENT | 고유 ID |
 | social_id | bigint | UNIQUE, NOT NULL | GitHub 유니크 ID |
 | nickname | varchar(20) | NOT NULL | 닉네임 (로그인 시 업데이트) |
-| primary_user_pet_id | bigint | FK → user_pets.id | 대표 펫 ID |
+| equipped_pet_id | int | FK → pets.id, NULL 허용 | 장착된 펫 ID |
 | total_point | int | DEFAULT 0 | 총 누적 포인트 |
 
 ---
@@ -141,13 +150,13 @@ erDiagram
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
-| id | bigint | PK, AUTO_INCREMENT | 고유 ID |
-| name | varchar(20) | | 펫 이름 (예: 알콜중독 듀크) |
-| description | varchar(100) | | 펫 설명 |
-| evolution_stage | int | | 진화 단계 (1, 2, 3...) |
-| evolution_required_exp | int | | 다음 진화에 필요한 경험치 |
-| actual_img_url | varchar(100) | | 실제 이미지 경로 |
-| silhouette_img_url | varchar(100) | | 실루엣 이미지 경로 |
+| id | int | PK, AUTO_INCREMENT | 고유 ID |
+| name | varchar(20) | NOT NULL | 펫 이름 |
+| description | varchar(100) | NOT NULL | 펫 설명 |
+| species | varchar(20) | NOT NULL | 펫 종 |
+| evolution_stage | int | NOT NULL | 진화 단계 (1, 2, 3...) |
+| evolution_required_exp | int | NOT NULL | 다음 진화에 필요한 경험치 |
+| actual_img_url | varchar(100) | NOT NULL | 실제 이미지 경로 |
 
 ---
 
@@ -204,7 +213,9 @@ erDiagram
 
 ---
 
-### point_history (포인트 내역)
+### point_history (포인트 내역) - Planned
+
+> **Status:** Planned - 아직 구현되지 않음
 
 포인트 획득/차감 상세 내역
 
@@ -224,6 +235,21 @@ erDiagram
 - `COMMITTED` - 커밋
 - `TASK_COMPLETED` - 작업 완료
 - `FOCUSED` - 집중 시간
+
+---
+
+### user_pet_codex (펫 도감)
+
+플레이어가 획득한 적 있는 펫 도감
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|----------|------|
+| id | int | PK, AUTO_INCREMENT | 고유 ID |
+| player_id | int | FK → players.id | 플레이어 ID |
+| pet_id | int | FK → pets.id | 펫 ID |
+| acquired_at | datetime | NOT NULL | 획득 시각 |
+
+**인덱스:** `UNIQUE(player_id, pet_id)` - 플레이어별 펫 1개 레코드
 
 ---
 

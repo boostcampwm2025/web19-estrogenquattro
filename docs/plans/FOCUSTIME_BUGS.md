@@ -617,4 +617,4 @@ socket.on('focus_task_updated', (data: {
 | `docs/api/SOCKET_EVENTS.md` | `focused` 스키마에 `currentSessionSeconds` 추가 |
 | `docs/api/SOCKET_EVENTS.md` | `joined` 이벤트 추가 (focusTime 포함) |
 | `docs/api/SOCKET_EVENTS.md` | `focus_task_updated` 이벤트 추가 (C→S, S→C) |
-| `docs/reference/FOCUS_TIME.md` | 시퀀스 다이어그램 추가 (완료) |
+| `docs/features/FOCUS_TIME.md` | 시퀀스 다이어그램 추가 (완료) |
