@@ -85,4 +85,9 @@ export default class CameraController {
     this.scene.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
     this.setInitialZoom(mapWidth, mapHeight);
   }
+
+  destroy(): void {
+    this.scene.input.off("wheel", this.handleZoom, this);
+    this.scene.scale.off("resize", this.handleResize, this);
+  }
 }

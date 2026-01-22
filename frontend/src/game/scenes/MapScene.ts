@@ -152,6 +152,14 @@ export class MapScene extends Phaser.Scene {
       this.socketManager.sendChat(message),
     );
     this.chatManager.setup();
+
+    // 10. Cleanup on scene shutdown
+    this.events.on("shutdown", this.cleanup, this);
+  }
+
+  private cleanup(): void {
+    this.cameraController?.destroy();
+    this.events.off("shutdown", this.cleanup, this);
   }
 
   private createAnimations() {
