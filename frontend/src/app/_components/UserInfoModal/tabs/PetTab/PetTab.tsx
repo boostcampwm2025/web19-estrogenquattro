@@ -3,15 +3,36 @@ import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
 import PetCodex from "./components/PetCodex";
+import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useAuthStore } from "@/stores/authStore";
+import { UserPet } from "@/lib/api/pet";
 
 export default function PetTab() {
-  const { inventory, codex, player, feed, evolve, equip, allPets, isLoading } =
-    usePetSystem();
+  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
+  const { user } = useAuthStore();
+
+  const playerId = targetPlayerId!;
+  const isOwner = user?.playerId === playerId;
+
+  const {
+    inventory,
+    codex,
+    player,
+    feed,
+    evolve,
+    equip,
+    gacha,
+    allPets,
+    isLoading,
+  } = usePetSystem(playerId);
 
   // 현재 선택된 펫 ID (초기값 null -> 로딩 전에는 렌더링 방지)
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
 
-  // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
+  useEffect(() => {
+    setSelectedPetId(null);
+  }, [playerId]);
+
   // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
   useEffect(() => {
     if (selectedPetId !== null || isLoading) return;
@@ -97,8 +118,15 @@ export default function PetTab() {
     }
   };
 
+  const handleGachaExecution = async (): Promise<UserPet["pet"]> => {
+    const response = await gacha();
+    return response.pet;
+  };
+
   const handlePetSelect = async (petId: number) => {
     setSelectedPetId(petId);
+
+    if (!isOwner) return;
 
     try {
       await equip(petId);
@@ -119,20 +147,29 @@ export default function PetTab() {
           maxExp={maxExp}
           currentStageData={petCardData}
           onAction={handleAction}
+          isOwner={isOwner}
         />
       ) : (
         <div className="border-4 border-amber-900/20 bg-amber-50 p-8 text-center text-amber-700">
           <p className="text-lg font-bold">보유한 펫이 없습니다</p>
-          <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>
+          {isOwner && (
+            <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>
+          )}
         </div>
       )}
 
-      <PetGacha onPetCollected={handlePetCollected} />
+      {isOwner && (
+        <PetGacha
+          onGacha={handleGachaExecution}
+          onPetCollected={handlePetCollected}
+        />
+      )}
       <PetCodex
         allPets={allPets}
         collectedPetIds={collectedPetIds}
         equippedPetId={selectedPetId || -1}
         onPetSelect={handlePetSelect}
+        isOwner={isOwner}
       />
     </div>
   );

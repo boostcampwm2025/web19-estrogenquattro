@@ -28,7 +28,8 @@ export interface PlayerInfoResponse {
 }
 
 export const petApi = {
-  getInventory: () => fetchApi<UserPet[]>("/api/pets/inventory"),
+  getInventory: (playerId: number) =>
+    fetchApi<UserPet[]>(`/api/pets/inventory/${playerId}`),
 
   gacha: () =>
     fetchApi<UserPet>("/api/pets/gacha", {
@@ -53,10 +54,11 @@ export const petApi = {
       body: JSON.stringify({ petId }),
     }),
 
-  getCodex: () => fetchApi<number[]>("/api/pets/codex"),
+  getCodex: (playerId: number) =>
+    fetchApi<number[]>(`/api/pets/codex/${playerId}`),
 
   getAllPets: () => fetchApi<Pet[]>("/api/pets/all"),
 
-  //임시로 설정해 둠 -> 추후 player api로 변경예정
-  getPlayer: () => fetchApi<PlayerInfoResponse>("/api/players/me/info"),
+  getPlayer: (playerId: number) =>
+    fetchApi<PlayerInfoResponse>(`/api/players/${playerId}/info`),
 };
