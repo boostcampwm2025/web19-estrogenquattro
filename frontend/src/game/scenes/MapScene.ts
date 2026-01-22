@@ -24,6 +24,7 @@ export class MapScene extends Phaser.Scene {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
+  private playerId: number = 0;
 
   // Managers & Controllers
   private mapManager!: MapManager;
@@ -34,6 +35,10 @@ export class MapScene extends Phaser.Scene {
   // UI Controllers
   private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
+
+  // Connection Lost Overlay
+  private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
+  private connectionLostText?: Phaser.GameObjects.Text;
 
   // Map Configuration
   private maps: MapConfig[] = [
@@ -107,12 +112,30 @@ export class MapScene extends Phaser.Scene {
   init() {
     const user = this.registry.get("user");
     this.username = user?.username;
+    this.playerId = user?.playerId ?? 0;
+    this.petImage = user?.petImage;
   }
+
+  private petImage: string | null = null;
 
   create() {
     // 1. Map Setup
     this.mapManager = new MapManager(this, this.maps);
     this.mapManager.setup();
+
+    //React(Hooks)에서 보낸 펫 교체 이벤트 처리
+    const handleLocalPetUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (this.player && customEvent.detail?.petImage) {
+        this.player.setPet(customEvent.detail.petImage);
+      }
+    };
+    window.addEventListener("local_pet_update", handleLocalPetUpdate);
+
+    // 씬 종료 시 이벤트 리스너 제거
+    this.events.once("destroy", () => {
+      window.removeEventListener("local_pet_update", handleLocalPetUpdate);
+    });
 
     // 2. Animations Setup
     this.createAnimations();
@@ -143,13 +166,25 @@ export class MapScene extends Phaser.Scene {
     this.socketManager.setWalls(this.mapManager.getWalls()!);
     this.socketManager.setProgressBarController(this.progressBarController!);
     this.socketManager.setContributionController(this.contributionController!);
-    this.socketManager.connect(() => this.showSessionEndedOverlay());
+    this.socketManager.connect({
+      showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
+      showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
+      hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
+    });
 
     // 9. Chat Setup
     this.chatManager = new ChatManager(this, (message) =>
       this.socketManager.sendChat(message),
     );
     this.chatManager.setup();
+
+    // 10. Cleanup on scene shutdown
+    this.events.on("shutdown", this.cleanup, this);
+  }
+
+  private cleanup(): void {
+    this.cameraController?.destroy();
+    this.events.off("shutdown", this.cleanup, this);
   }
 
   private createAnimations() {
@@ -193,25 +228,27 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupPlayer() {
-    const { width: mapWidth, height: mapHeight } = this.mapManager.getMapSize();
-    const tileSize = this.mapManager.getTileSize();
-
-    const startX =
-      Math.floor(mapWidth / 2 / tileSize) * tileSize + tileSize / 2;
-    const startY =
-      Math.floor(mapHeight / 2 / tileSize) * tileSize + tileSize / 2;
+    // wall 피해 랜덤 스폰 위치
+    const spawnPos = this.mapManager.getRandomSpawnPosition();
 
     const socket = getSocket();
     const myId = socket?.id || `guest-${Math.floor(Math.random() * 1000)}`;
 
     this.player = new Player(
       this,
-      startX,
-      startY,
+      spawnPos.x,
+      spawnPos.y,
       this.username,
       myId,
       "pending",
+      this.playerId,
     );
+
+    // 초기 펫 설정
+    this.player.setRoomId("pending"); // 생성자에서 이미 설정하지만 명시적으로
+    if (this.petImage) {
+      this.player.setPet(this.petImage);
+    }
   }
 
   private setupControls() {
@@ -247,6 +284,12 @@ export class MapScene extends Phaser.Scene {
         this.socketManager.setContributionController(
           this.contributionController!,
         );
+
+        // 플레이어 리스폰 (wall 피해 랜덤 위치)
+        if (this.player) {
+          const spawnPos = this.mapManager.getRandomSpawnPosition();
+          this.player.setPosition(spawnPos.x, spawnPos.y);
+        }
       });
     };
 
@@ -287,6 +330,47 @@ export class MapScene extends Phaser.Scene {
     text.setOrigin(0.5);
     text.setScrollFactor(0);
     text.setDepth(1001);
+  }
+
+  private showConnectionLostOverlay() {
+    // 이미 표시 중이면 무시
+    if (this.connectionLostOverlay) return;
+
+    this.connectionLostOverlay = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0x000000,
+      0.7,
+    );
+    this.connectionLostOverlay.setScrollFactor(0);
+    this.connectionLostOverlay.setDepth(1000);
+
+    this.connectionLostText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      "서버와의 연결이 끊어졌습니다.\n재연결 시도 중...",
+      {
+        fontSize: "24px",
+        color: "#ffffff",
+        align: "center",
+      },
+    );
+    this.connectionLostText.setOrigin(0.5);
+    this.connectionLostText.setScrollFactor(0);
+    this.connectionLostText.setDepth(1001);
+  }
+
+  private hideConnectionLostOverlay() {
+    if (this.connectionLostOverlay) {
+      this.connectionLostOverlay.destroy();
+      this.connectionLostOverlay = undefined;
+    }
+    if (this.connectionLostText) {
+      this.connectionLostText.destroy();
+      this.connectionLostText = undefined;
+    }
   }
 
   update() {

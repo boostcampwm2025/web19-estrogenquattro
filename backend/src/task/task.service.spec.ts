@@ -7,6 +7,8 @@ import { TaskService } from './task.service';
 import { Task } from './entites/task.entity';
 import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
+import { UserPet } from '../userpet/entities/user-pet.entity';
+import { Pet } from '../userpet/entities/pet.entity';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -23,7 +25,7 @@ describe('TaskService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Task, Player],
+          entities: [Task, Player, UserPet, Pet],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Task, Player]),
@@ -91,7 +93,7 @@ describe('TaskService', () => {
       expect(result).toBeDefined();
       expect(result.description).toBe('새로운 할 일');
       expect(result.isCompleted).toBe(false);
-      expect(result.totalFocusMinutes).toBe(0);
+      expect(result.totalFocusSeconds).toBe(0);
     });
 
     it('존재하지 않는 플레이어로 생성 시 NotFoundException을 던진다', async () => {

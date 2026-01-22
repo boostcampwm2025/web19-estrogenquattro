@@ -1,19 +1,57 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
-import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
-import { DailyFocusTime } from './entites/daily-focus-time.entity';
+import { FocusStatus } from './entites/daily-focus-time.entity';
 
-@UseGuards(JwtGuard)
+interface FocusTimeResponse {
+  id: number | null;
+  totalFocusSeconds: number;
+  status: FocusStatus;
+  createdDate: string;
+  lastFocusStartTime: string | null;
+}
+
 @Controller('api/focustime')
+@UseGuards(JwtGuard)
 export class FocustimeController {
   constructor(private readonly focusTimeService: FocusTimeService) {}
 
-  @Get()
+  @Get(':playerId')
   async getFocusTime(
-    @PlayerId() playerId: number,
+    @Param('playerId', ParseIntPipe) playerId: number,
     @Query('date') date: string,
-  ): Promise<DailyFocusTime> {
-    return this.focusTimeService.getFocusTime(playerId, date);
+  ): Promise<FocusTimeResponse> {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const focusTime = await this.focusTimeService.getFocusTime(
+      playerId,
+      targetDate,
+    );
+
+    if (!focusTime) {
+      return {
+        id: null,
+        totalFocusSeconds: 0,
+        status: FocusStatus.RESTING,
+        createdDate: targetDate,
+        lastFocusStartTime: null,
+      };
+    }
+
+    return {
+      id: focusTime.id,
+      totalFocusSeconds: focusTime.totalFocusSeconds,
+      status: focusTime.status,
+      createdDate: new Date(focusTime.createdDate).toISOString().slice(0, 10),
+      lastFocusStartTime: focusTime.lastFocusStartTime
+        ? focusTime.lastFocusStartTime.toISOString()
+        : null,
+    };
   }
 }

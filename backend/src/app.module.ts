@@ -18,6 +18,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import AppDataSource from './database/data-source';
 import { TaskModule } from './task/task.module';
 import { FocusTimeModule } from './focustime/focustime.module';
+import { PetModule } from './userpet/pet.module';
 import { PointModule } from './point/point.module';
 
 @Module({
@@ -57,6 +58,7 @@ import { PointModule } from './point/point.module';
     RoomModule,
     TaskModule,
     FocusTimeModule,
+    PetModule,
     PointModule,
   ],
   controllers: [AppController],

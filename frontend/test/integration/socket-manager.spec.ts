@@ -83,13 +83,22 @@ describe("SocketManager 통합", () => {
     showChatBubble: vi.fn(),
   };
 
+  const callbacks = {
+    showSessionEndedOverlay: vi.fn(),
+    showConnectionLostOverlay: vi.fn(),
+    hideConnectionLostOverlay: vi.fn(),
+  };
+
   beforeEach(async () => {
     remotePlayerInstances.clear();
     currentSocket = createFakeSocket();
     vi.resetModules();
+    callbacks.showSessionEndedOverlay.mockClear();
+    callbacks.showConnectionLostOverlay.mockClear();
+    callbacks.hideConnectionLostOverlay.mockClear();
     SocketManager = (await import("@/game/managers/SocketManager")).default;
     socketManager = new SocketManager(scene as never, "tester", () => player);
-    socketManager.connect(() => {});
+    socketManager.connect(callbacks);
   });
 
   it("players_synced로 FOCUSING 상태를 수신하면 해당 플레이어에 집중 상태가 반영된다", () => {
@@ -112,7 +121,7 @@ describe("SocketManager 통합", () => {
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 0,
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
     });
   });
 
@@ -129,15 +138,15 @@ describe("SocketManager 통합", () => {
         playerId: 1,
         status: "RESTING",
         currentSessionSeconds: 0,
-        totalFocusMinutes: 30,
+        totalFocusSeconds: 30,
       },
     ]);
 
-    // Then: setFocusState(false)가 totalFocusMinutes와 함께 호출됨
+    // Then: setFocusState(false)가 totalFocusSeconds와 함께 호출됨
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
       currentSessionSeconds: 0,
-      totalFocusMinutes: 30,
+      totalFocusSeconds: 30,
     });
   });
 
@@ -168,7 +177,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: undefined,
       currentSessionSeconds: 0,
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
     });
   });
 
@@ -196,7 +205,7 @@ describe("SocketManager 통합", () => {
 
     // Then: setFocusState(false)가 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
     });
   });
 
@@ -228,11 +237,11 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: "코딩하기",
       currentSessionSeconds: 0,
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
     });
   });
 
-  it("focused 이벤트 수신 시 totalFocusMinutes와 currentSessionSeconds가 전달된다", () => {
+  it("focused 이벤트 수신 시 totalFocusSeconds와 currentSessionSeconds가 전달된다", () => {
     // Given: RESTING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
       {
@@ -254,18 +263,18 @@ describe("SocketManager 통합", () => {
       status: "FOCUSING",
       taskName: "집중 작업",
       currentSessionSeconds: 120,
-      totalFocusMinutes: 60,
+      totalFocusSeconds: 60,
     });
 
     // Then: setFocusState가 집중시간 데이터와 함께 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       taskName: "집중 작업",
       currentSessionSeconds: 120,
-      totalFocusMinutes: 60,
+      totalFocusSeconds: 60,
     });
   });
 
-  it("rested 이벤트 수신 시 totalFocusMinutes가 전달된다", () => {
+  it("rested 이벤트 수신 시 totalFocusSeconds가 전달된다", () => {
     // Given: FOCUSING 상태의 원격 플레이어가 존재
     currentSocket.trigger("players_synced", [
       {
@@ -280,21 +289,21 @@ describe("SocketManager 통합", () => {
     ]);
     const remote = remotePlayerInstances.get("remote-1");
 
-    // When: totalFocusMinutes가 포함된 rested 이벤트 수신
+    // When: totalFocusSeconds가 포함된 rested 이벤트 수신
     currentSocket.trigger("rested", {
       userId: "remote-1",
       username: "alice",
       status: "RESTING",
-      totalFocusMinutes: 90,
+      totalFocusSeconds: 90,
     });
 
-    // Then: setFocusState가 totalFocusMinutes와 함께 호출됨
+    // Then: setFocusState가 totalFocusSeconds와 함께 호출됨
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
-      totalFocusMinutes: 90,
+      totalFocusSeconds: 90,
     });
   });
 
-  it("players_synced에서 totalFocusMinutes와 currentSessionSeconds가 전달된다", () => {
+  it("players_synced에서 totalFocusSeconds와 currentSessionSeconds가 전달된다", () => {
     // Given: 없음 (초기 상태)
 
     // When: 집중시간 데이터가 포함된 players_synced 이벤트 수신
@@ -307,7 +316,7 @@ describe("SocketManager 통합", () => {
         playerId: 1,
         status: "FOCUSING",
         currentSessionSeconds: 300,
-        totalFocusMinutes: 120,
+        totalFocusSeconds: 120,
       },
     ]);
 
@@ -315,7 +324,7 @@ describe("SocketManager 통합", () => {
     const remote = remotePlayerInstances.get("remote-1");
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 300,
-      totalFocusMinutes: 120,
+      totalFocusSeconds: 120,
     });
   });
 
@@ -329,7 +338,7 @@ describe("SocketManager 통합", () => {
       x: 100,
       y: 200,
       status: "FOCUSING",
-      totalFocusMinutes: 10,
+      totalFocusSeconds: 10,
       currentSessionSeconds: 30,
     });
 
@@ -337,7 +346,7 @@ describe("SocketManager 통합", () => {
     const remote = remotePlayerInstances.get("remote-2");
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 30,
-      totalFocusMinutes: 10,
+      totalFocusSeconds: 10,
     });
   });
 
@@ -351,7 +360,7 @@ describe("SocketManager 통합", () => {
       x: 100,
       y: 200,
       status: "RESTING",
-      totalFocusMinutes: 15,
+      totalFocusSeconds: 15,
       currentSessionSeconds: 0,
     });
 
@@ -359,7 +368,7 @@ describe("SocketManager 통합", () => {
     const remote = remotePlayerInstances.get("remote-2");
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
       currentSessionSeconds: 0,
-      totalFocusMinutes: 15,
+      totalFocusSeconds: 15,
     });
   });
 
@@ -390,5 +399,60 @@ describe("SocketManager 통합", () => {
       isFocusing: true,
       taskName: "리뷰하기",
     });
+  });
+
+  it("disconnect 이벤트 발생 시 showConnectionLostOverlay 콜백이 호출된다", () => {
+    // Given: 연결된 상태
+
+    // When: 네트워크 오류로 disconnect 이벤트 발생
+    currentSocket.trigger("disconnect", "transport close");
+
+    // Then: showConnectionLostOverlay가 호출됨
+    expect(callbacks.showConnectionLostOverlay).toHaveBeenCalled();
+  });
+
+  it("클라이언트가 의도적으로 연결을 끊으면 showConnectionLostOverlay가 호출되지 않는다", () => {
+    // Given: 연결된 상태
+
+    // When: 클라이언트가 의도적으로 disconnect
+    currentSocket.trigger("disconnect", "io client disconnect");
+
+    // Then: showConnectionLostOverlay가 호출되지 않음
+    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+  });
+
+  it("session_replaced 후 disconnect 시 showConnectionLostOverlay가 호출되지 않는다", () => {
+    // Given: session_replaced 이벤트가 먼저 발생
+    currentSocket.trigger("session_replaced");
+
+    // When: 이후 disconnect 이벤트 발생
+    currentSocket.trigger("disconnect", "transport close");
+
+    // Then: showConnectionLostOverlay가 호출되지 않음 (세션 교체 오버레이만 표시)
+    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+    expect(callbacks.showSessionEndedOverlay).toHaveBeenCalled();
+  });
+
+  it("connect 이벤트 발생 시 hideConnectionLostOverlay 콜백이 호출된다", () => {
+    // Given: 연결이 끊어진 상태 (disconnect 발생)
+    currentSocket.trigger("disconnect", "transport close");
+    callbacks.hideConnectionLostOverlay.mockClear();
+
+    // When: 재연결 (connect 이벤트 발생)
+    currentSocket.trigger("connect");
+
+    // Then: hideConnectionLostOverlay가 호출됨
+    expect(callbacks.hideConnectionLostOverlay).toHaveBeenCalled();
+  });
+
+  it("session_replaced 이벤트 발생 시 showSessionEndedOverlay 콜백이 호출된다", () => {
+    // Given: 연결된 상태
+
+    // When: session_replaced 이벤트 발생
+    currentSocket.trigger("session_replaced");
+
+    // Then: showSessionEndedOverlay가 호출되고 소켓이 disconnect됨
+    expect(callbacks.showSessionEndedOverlay).toHaveBeenCalled();
+    expect(currentSocket.disconnect).toHaveBeenCalled();
   });
 });

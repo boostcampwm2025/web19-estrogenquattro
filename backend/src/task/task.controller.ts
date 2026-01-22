@@ -31,9 +31,9 @@ export class TaskController {
     return this.taskService.createTask({ ...dto, playerId });
   }
 
-  @Get()
+  @Get(':playerId')
   async getTasks(
-    @PlayerId() playerId: number,
+    @Param('playerId', ParseIntPipe) playerId: number,
     @Query('date') date?: string,
   ): Promise<TaskListRes> {
     return this.taskService.getTasks(playerId, date);

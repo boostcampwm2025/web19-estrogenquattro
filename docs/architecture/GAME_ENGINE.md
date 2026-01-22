@@ -97,7 +97,7 @@ export class RemotePlayer extends BasePlayer {
 - 집중 중일 때 1초마다 경과 시간 UI 업데이트 (로컬 계산)
 - `options.taskName`: 현재 작업 중인 태스크 이름 (말풍선 표시)
 - `options.lastFocusStartTime`: 집중 시작 시각 (경과 시간 계산용)
-- `options.totalFocusMinutes`: 누적 집중 시간 (분)
+- `options.totalFocusSeconds`: 누적 집중 시간 (초)
 
 ---
 
@@ -189,7 +189,7 @@ export interface ContributionListController {
 ```typescript
 socket.on('players_synced', (players) => {
   // 기존 플레이어들 RemotePlayer로 생성
-  // FocusTime 상태(status, lastFocusStartTime, totalFocusMinutes) 반영
+  // FocusTime 상태(status, lastFocusStartTime, totalFocusSeconds) 반영
 });
 
 socket.on('player_joined', (data) => {
@@ -206,12 +206,12 @@ socket.on('github_event', (data) => {
 
 socket.on('focused', (data) => {
   // RemotePlayer 집중 상태로 전환
-  // taskName, lastFocusStartTime, totalFocusMinutes 반영
+  // taskName, lastFocusStartTime, totalFocusSeconds 반영
 });
 
 socket.on('rested', (data) => {
   // RemotePlayer 휴식 상태로 전환
-  // totalFocusMinutes 업데이트
+  // totalFocusSeconds 업데이트
 });
 ```
 

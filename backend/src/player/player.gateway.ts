@@ -46,6 +46,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: number;
       y: number;
       playerId: number;
+      petImage: string | null; // 펫 이미지 (nullable)
     }
   > = new Map();
 
@@ -118,6 +119,14 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     void client.join(roomId);
 
+    const player = await this.playerService.findOneById(playerId);
+    if (!player) {
+      this.logger.warn(`Player not found: ${playerId}`);
+      client.disconnect();
+      return;
+    }
+    const petImage = player.equippedPet?.actualImgUrl ?? null;
+
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
@@ -127,6 +136,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: data.x,
       y: data.y,
       playerId: playerId,
+      petImage: petImage,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지
@@ -139,14 +149,14 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       {
         status: string;
         lastFocusStartTime: Date | null;
-        totalFocusMinutes: number;
+        totalFocusSeconds: number;
       }
     >();
     focusStatuses.forEach((fs) => {
       statusMap.set(fs.player.id, {
         status: fs.status,
         lastFocusStartTime: fs.lastFocusStartTime,
-        totalFocusMinutes: fs.totalFocusMinutes,
+        totalFocusSeconds: fs.totalFocusSeconds,
       });
     });
 
@@ -158,7 +168,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         // 서버에서 현재 세션 경과 시간 계산
         const currentSessionSeconds =
-          status?.status === 'FOCUSING' && status?.lastFocusStartTime
+          status?.status === FocusStatus.FOCUSING && status?.lastFocusStartTime
             ? Math.floor(
                 (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
               )
@@ -168,7 +178,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           ...p,
           status: status?.status ?? 'RESTING',
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusMinutes: status?.totalFocusMinutes ?? 0,
+          totalFocusSeconds: status?.totalFocusSeconds ?? 0,
           currentSessionSeconds,
         };
       });
@@ -176,8 +186,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
 
-    // 4. Update FocusTime
-    const player = await this.playerService.findOneById(userData.user.playerId);
+    // 4. Update FocusTime (이미 조회한 player 객체 재사용 가능하지만 findOrCreate 로직 유지)
     const myFocusTime = await this.focusTimeService.findOrCreate(player);
 
     // 서버에서 현재 세션 경과 시간 계산
@@ -196,8 +205,10 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: data.x,
       y: data.y,
       status: myFocusTime.status,
-      totalFocusMinutes: myFocusTime.totalFocusMinutes,
+      totalFocusSeconds: myFocusTime.totalFocusSeconds,
       currentSessionSeconds: myCurrentSessionSeconds,
+      playerId: playerId,
+      petImage: petImage, // DB에서 가져온 펫 정보 전송
     });
 
     const connectedAt = new Date();
@@ -208,6 +219,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       username,
       accessToken,
+      playerId,
     );
 
     // 새 클라이언트에게 현재 룸의 기여 상태 전송
@@ -219,7 +231,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       focusTime: {
         status: myFocusTime.status,
-        totalFocusMinutes: myFocusTime.totalFocusMinutes,
+        totalFocusSeconds: myFocusTime.totalFocusSeconds,
         currentSessionSeconds: myCurrentSessionSeconds,
       },
     });
@@ -247,6 +259,51 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       isMoving: data.isMoving,
       direction: data.direction,
       timestamp: data.timestamp,
+    });
+  }
+
+  @SubscribeMessage('pet_equipping')
+  async handlePetEquip(
+    @MessageBody()
+    data: { petId: number | null },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const playerState = this.players.get(client.id);
+    if (!playerState) return;
+
+    // petId 타입 검사
+    if (data.petId !== null && typeof data.petId !== 'number') {
+      this.logger.warn(`Invalid petId type from ${client.id}`);
+      return;
+    }
+
+    // DB에서 플레이어 정보 조회하여 검증
+    const playerFromDb = await this.playerService.findOneById(
+      playerState.playerId,
+    );
+    if (!playerFromDb) {
+      this.logger.warn(`Player not found in DB: ${playerState.playerId}`);
+      return;
+    }
+
+    // 클라이언트가 보낸 petId와 DB의 equippedPetId가 일치하는지 검증
+    if (playerFromDb.equippedPetId !== data.petId) {
+      this.logger.warn(
+        `Pet mismatch: client sent ${data.petId}, DB has ${playerFromDb.equippedPetId}`,
+      );
+      return;
+    }
+
+    // DB에서 검증된 petImage 사용
+    const petImage = playerFromDb.equippedPet?.actualImgUrl ?? null;
+
+    // 인메모리 상태 업데이트
+    playerState.petImage = petImage;
+
+    // 같은 방 사람들에게 전파 (DB에서 검증된 값 사용)
+    client.to(playerState.roomId).emit('pet_equipped', {
+      userId: client.id,
+      petImage: petImage,
     });
   }
 }

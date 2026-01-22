@@ -19,8 +19,8 @@ export class Task {
   @Column({ type: 'varchar', length: 100, nullable: false })
   description: string;
 
-  @Column({ type: 'int', name: 'total_focus_minutes', default: 0 })
-  totalFocusMinutes: number;
+  @Column({ type: 'int', name: 'total_focus_seconds', default: 0 })
+  totalFocusSeconds: number;
 
   @Column({ type: 'date', name: 'completed_date', nullable: true })
   completedDate: Date | null;

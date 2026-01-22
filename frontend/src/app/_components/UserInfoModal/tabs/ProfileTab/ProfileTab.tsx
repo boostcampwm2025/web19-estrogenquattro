@@ -2,42 +2,40 @@ import { useState } from "react";
 import { CalendarHeatmap } from "./components/CalendarHeatmap/CalendarHeatmap";
 import StatsSection from "./components/StatsSection/StatsSection";
 import TaskSection from "./components/TaskSection/TaskSection";
-import {
-  generateMockTasks,
-  generateMockDailyTaskCounts,
-} from "./lib/mockDataGenerator";
-
-// TODO: [API 연동] 히트맵용 일별 Task 개수 Mock 데이터
-// 실제 API 연동 시: GET /api/tasks/daily-counts?userId={userId} 로 가져옴
-const mockDailyTaskCounts = generateMockDailyTaskCounts(365);
-
-// TODO: [API 연동] 선택한 날짜의 Task 목록 Mock 데이터
-// 실제 API 연동 시: GET /api/tasks?userId={userId}&date={YYYY-MM-DD} 로 가져옴
-const mockTasks = generateMockTasks(365);
+import { Loading } from "@/_components/ui/loading";
+import { useProfileData } from "./hooks/useProfileData";
+import { useUserInfoStore } from "@/stores/userInfoStore";
 
 export default function ProfileTab() {
+  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const { dailyTaskCounts, focusTimeData, githubEvents, tasks, isLoading } =
+    useProfileData(targetPlayerId ?? 0, selectedDate);
 
-  // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
-  // 실제 API 연동 시: selectedDate가 변경될 때 해당 날짜의 Task를 API로 요청
-  const getTasksForDate = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    return mockTasks.filter((task) => task.createdDate === dateStr);
-  };
-
-  const selectedDateTasks = getTasksForDate(selectedDate);
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Loading size="lg" text="프로필 로딩 중..." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <CalendarHeatmap
-        dailyTaskCounts={mockDailyTaskCounts}
+        dailyTaskCounts={dailyTaskCounts}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
 
       <div className="space-y-4 text-amber-900">
-        <StatsSection tasks={selectedDateTasks} selectedDate={selectedDate} />
-        <TaskSection tasks={selectedDateTasks} selectedDate={selectedDate} />
+        <StatsSection
+          tasks={tasks}
+          selectedDate={selectedDate}
+          focusTimeMinutes={focusTimeData?.totalFocusMinutes}
+          githubEvents={githubEvents}
+        />
+        <TaskSection tasks={tasks} selectedDate={selectedDate} />
       </div>
     </div>
   );

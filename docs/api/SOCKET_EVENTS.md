@@ -94,13 +94,24 @@ socket.emit('chatting', {
 
 ```typescript
 socket.emit('focusing', {
-  taskName?: string  // 집중할 태스크 이름 (선택)
+  taskName?: string,  // 집중할 태스크 이름 (선택)
+  taskId?: number     // 집중할 태스크 ID (선택, 서버에 집중 시간 누적용)
 });
 ```
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
+- `taskId`가 있으면 존재/소유권 검증 후 `currentTaskId`에 저장 (휴식 시 해당 Task에 집중 시간 누적)
 - 같은 방에 `focused` 브로드캐스트 (taskName 포함)
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds, currentSessionSeconds, taskName? } }
+
+// 실패
+{ success: false, error: string }
+```
 
 ---
 
@@ -114,7 +125,17 @@ socket.emit('resting');
 
 **서버 동작:**
 - 포커스 상태를 `RESTING`으로 변경, 집중 시간 누적
+- `currentTaskId`가 있으면 해당 Task의 `totalFocusSeconds`에도 집중 시간 누적
 - 같은 방에 `rested` 브로드캐스트
+
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, status, totalFocusSeconds } }
+
+// 실패
+{ success: false, error: string }
+```
 
 ---
 
@@ -132,6 +153,36 @@ socket.emit('focus_task_updating', {
 - `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
 - 같은 방에 `focus_task_updated` 브로드캐스트
 
+**응답 (ack):**
+```typescript
+// 성공
+{ success: true, data: { userId, username, taskName } }
+```
+
+---
+
+### pet_equipping
+
+대표 펫 장착 알림 (방 입장 후 호출)
+
+```typescript
+socket.emit('pet_equipping', {
+  petId: number | null  // 장착한 펫 ID (null이면 해제)
+});
+```
+
+**서버 동작:**
+1. `petId` 타입 검증
+2. DB에서 플레이어 정보 조회
+3. 클라이언트가 보낸 `petId`와 DB의 `equippedPetId` 일치 여부 검증 (스푸핑 방지)
+4. 검증 통과 시 DB에서 `petImage` 조회
+5. 인메모리 상태 업데이트
+6. 같은 방에 `pet_equipped` 브로드캐스트 (검증된 petImage 사용)
+
+**보안:**
+- 클라이언트가 임의의 `petImage`를 보내는 것을 방지
+- 서버에서 DB 기준으로 검증된 값만 브로드캐스트
+
 ---
 
 ## 서버 → 클라이언트
@@ -145,7 +196,7 @@ socket.on('joined', (data: {
   roomId: string,
   focusTime: {
     status: 'FOCUSING' | 'RESTING',
-    totalFocusMinutes: number,
+    totalFocusSeconds: number,
     currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
   }
 }) => {
@@ -169,9 +220,10 @@ socket.on('players_synced', (players: Array<{
   x: number,
   y: number,
   playerId: number,
+  petImage: string | null,  // 장착된 펫 이미지 URL
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }>) => {
   // RemotePlayer 생성
@@ -190,8 +242,10 @@ socket.on('player_joined', (data: {
   username: string,
   x: number,
   y: number,
+  playerId: number,
+  petImage: string | null,  // 장착된 펫 이미지 URL
   status: 'FOCUSING' | 'RESTING',
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
 }) => {
   // RemotePlayer 생성
@@ -291,7 +345,7 @@ socket.on('focused', (data: {
   username: string,
   status: 'FOCUSING',
   lastFocusStartTime: string,
-  totalFocusMinutes: number,
+  totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
   taskName?: string
 }) => {
@@ -310,7 +364,7 @@ socket.on('rested', (data: {
   userId: string,
   username: string,
   status: 'RESTING',
-  totalFocusMinutes: number
+  totalFocusSeconds: number
 }) => {
   // 포커스 상태 및 누적 시간 표시 업데이트
 });
@@ -329,6 +383,21 @@ socket.on('focus_task_updated', (data: {
   taskName: string
 }) => {
   // RemotePlayer의 태스크 말풍선 업데이트
+});
+```
+
+---
+
+### pet_equipped
+
+펫 장착 변경 알림
+
+```typescript
+socket.on('pet_equipped', (data: {
+  userId: string,
+  petImage: string | null  // 펫 이미지 URL (null이면 펫 해제)
+}) => {
+  // RemotePlayer의 펫 이미지 업데이트
 });
 ```
 
@@ -367,5 +436,9 @@ Client A                    Server                    Client B
     |                         |                          |
     |                   [GitHub Poll]                    |
     |<-- github_event --------|-- github_event --------->|
+    |                         |                          |
+    |-- pet_equipping ------->|                          |
+    |                   [DB 검증: petId == equippedPetId]|
+    |                         |-- pet_equipped --------->|
     |                         |                          |
 ```

@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GithubGateway } from './github.gateway';
+import { GithubService } from './github.service';
+import { GithubActivityType } from './entities/daily-github-activity.entity';
 
 // 폴링 간격 설정 (밀리초)
 const POLL_INTERVAL = 30_000; // 30초마다 폴링
@@ -11,12 +13,16 @@ interface PollingSchedule {
   accessToken: string;
   roomId: string;
   clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
+  playerId: number;
 }
 
 // 기준점 저장 (새로고침해도 유지)
 interface UserBaseline {
-  lastCommitCounts: Map<string, number>; // repo -> commitCount
+  lastCommitCount: number;
   lastPRCount: number;
+  lastIssueCount: number;
+  lastPRReviewCount: number;
+  isFirstPoll: boolean;
 }
 
 // GraphQL 응답 타입
@@ -30,25 +36,20 @@ interface GraphQLResponse {
 }
 
 interface ContributionsCollection {
-  commitContributionsByRepository?: Array<{
-    repository: {
-      owner: { login: string };
-      name: string;
-    };
-    contributions: {
-      nodes?: Array<{ commitCount: number }>;
-    };
-  }>;
-  pullRequestContributions?: {
-    nodes?: Array<unknown>;
-  };
+  totalCommitContributions?: number;
+  totalIssueContributions?: number;
+  totalPullRequestContributions?: number;
+  totalPullRequestReviewContributions?: number;
 }
 
 @Injectable()
 export class GithubPollService {
   private readonly logger = new Logger(GithubPollService.name);
 
-  constructor(private readonly githubGateway: GithubGateway) {}
+  constructor(
+    private readonly githubGateway: GithubGateway,
+    private readonly githubService: GithubService,
+  ) {}
 
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
@@ -62,6 +63,7 @@ export class GithubPollService {
     roomId: string,
     username: string,
     accessToken: string,
+    playerId: number,
   ) {
     const existingSchedule = this.pollingSchedules.get(username);
 
@@ -85,14 +87,18 @@ export class GithubPollService {
       accessToken,
       roomId,
       clientIds: new Set([clientId]),
+      playerId,
     });
 
     // 기준점이 없으면 새로 생성 (있으면 유지 - 새로고침 시 복원)
     const hasBaseline = this.userBaselines.has(username);
     if (!hasBaseline) {
       this.userBaselines.set(username, {
-        lastCommitCounts: new Map(),
+        lastCommitCount: 0,
         lastPRCount: 0,
+        lastIssueCount: 0,
+        lastPRReviewCount: 0,
+        isFirstPoll: true,
       });
     }
 
@@ -187,23 +193,10 @@ export class GithubPollService {
       query($username: String!) {
         user(login: $username) {
           contributionsCollection {
-            commitContributionsByRepository(maxRepositories: 10) {
-              repository {
-                name
-                owner { login }
-              }
-              contributions(last: 10) {
-                nodes {
-                  occurredAt
-                  commitCount
-                }
-              }
-            }
-            pullRequestContributions(last: 10) {
-              nodes {
-                occurredAt
-              }
-            }
+            totalCommitContributions
+            totalIssueContributions
+            totalPullRequestContributions
+            totalPullRequestReviewContributions
           }
         }
       }
@@ -255,79 +248,113 @@ export class GithubPollService {
       return { status: 'no_changes' };
     }
 
-    // 커밋 기여 파싱 - 리포지토리별 총 커밋 수 계산
-    const currentCommitCounts = new Map<string, number>();
-    for (const repo of contributionsCollection.commitContributionsByRepository ||
-      []) {
-      const repoName = `${repo.repository.owner.login}/${repo.repository.name}`;
-      let totalCommits = 0;
-      for (const node of repo.contributions.nodes || []) {
-        totalCommits += node.commitCount;
-      }
-      currentCommitCounts.set(repoName, totalCommits);
-    }
+    // 커밋 기여 파싱 - 총 개수
+    const currentCommitCount =
+      contributionsCollection.totalCommitContributions ?? 0;
 
-    // PR 기여 파싱 - 총 개수
+    // PR 기여 파싱 - 총 개수 (total 필드 사용)
     const currentPRCount =
-      contributionsCollection.pullRequestContributions?.nodes?.length || 0;
+      contributionsCollection.totalPullRequestContributions ?? 0;
 
-    // 기준점이 비어있으면 첫 폴링 (새로고침 후에도 기존 기준점이 있으면 false)
-    const isFirstPoll = baseline.lastCommitCounts.size === 0;
+    // 이슈 기여 파싱 - 총 개수
+    const currentIssueCount =
+      contributionsCollection.totalIssueContributions ?? 0;
+
+    // PR 리뷰 기여 파싱 - 총 개수
+    const currentPRReviewCount =
+      contributionsCollection.totalPullRequestReviewContributions ?? 0;
+
+    const { isFirstPoll } = baseline;
 
     this.logger.log(
-      `[${username}] GraphQL Response: ${currentCommitCounts.size} repos, ` +
-        `total commits: ${[...currentCommitCounts.values()].reduce((a, b) => a + b, 0)}, ` +
-        `PRs: ${currentPRCount}, isFirstPoll: ${isFirstPoll}`,
+      `[${username}] GraphQL Response: ` +
+        `Commits: ${currentCommitCount}, PRs: ${currentPRCount}, ` +
+        `Issues: ${currentIssueCount}, Reviews: ${currentPRReviewCount}, isFirstPoll: ${isFirstPoll}`,
     );
-
-    // 상위 3개 리포지토리 로깅
-    const sortedRepos = [...currentCommitCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
-    if (sortedRepos.length > 0) {
-      const top3Log = sortedRepos.map(([repo, count]) => {
-        const prevCount = baseline.lastCommitCounts.get(repo) || 0;
-        const diff = count - prevCount;
-        return `${repo}: ${count} commits (${diff >= 0 ? '+' : ''}${diff})`;
-      });
-      this.logger.log(
-        `[${username}] Top repos:\n  - ${top3Log.join('\n  - ')}`,
-      );
-    }
 
     // 첫 폴링이면 기준점만 설정하고 알림 안 보냄
     if (isFirstPoll) {
-      baseline.lastCommitCounts = currentCommitCounts;
+      baseline.lastCommitCount = currentCommitCount;
       baseline.lastPRCount = currentPRCount;
+      baseline.lastIssueCount = currentIssueCount;
+      baseline.lastPRReviewCount = currentPRReviewCount;
+      baseline.isFirstPoll = false;
       this.logger.log(
         `[${username}] First poll - baseline set, no notification`,
       );
       return { status: 'no_changes' };
     }
 
-    // 새로운 커밋 수 계산 (커밋 수 증가분)
-    let newCommitCount = 0;
-    for (const [repo, count] of currentCommitCounts) {
-      const prevCount = baseline.lastCommitCounts.get(repo) || 0;
-      if (count > prevCount) {
-        newCommitCount += count - prevCount;
-      }
-    }
+    // 새로운 커밋 수 계산
+    const newCommitCount = Math.max(
+      0,
+      currentCommitCount - baseline.lastCommitCount,
+    );
 
     // 새로운 PR 수 계산
     const newPRCount = Math.max(0, currentPRCount - baseline.lastPRCount);
 
-    // 기준점 갱신
-    baseline.lastCommitCounts = currentCommitCounts;
-    baseline.lastPRCount = currentPRCount;
+    // 새로운 이슈 수 계산
+    const newIssueCount = Math.max(
+      0,
+      currentIssueCount - baseline.lastIssueCount,
+    );
 
-    if (newCommitCount === 0 && newPRCount === 0) {
+    // 새로운 PR 리뷰 수 계산
+    const newPRReviewCount = Math.max(
+      0,
+      currentPRReviewCount - baseline.lastPRReviewCount,
+    );
+
+    // 기준점 갱신
+    baseline.lastCommitCount = currentCommitCount;
+    baseline.lastPRCount = currentPRCount;
+    baseline.lastIssueCount = currentIssueCount;
+    baseline.lastPRReviewCount = currentPRReviewCount;
+
+    if (
+      newCommitCount === 0 &&
+      newPRCount === 0 &&
+      newIssueCount === 0 &&
+      newPRReviewCount === 0
+    ) {
       this.logger.debug(`[${username}] No new contributions`);
       return { status: 'no_changes' };
     }
 
+    // DB에 새 이벤트 누적
+    const { playerId } = schedule;
+    if (newIssueCount > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.ISSUE_OPEN,
+        newIssueCount,
+      );
+    }
+    if (newPRCount > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_OPEN,
+        newPRCount,
+      );
+    }
+    if (newPRReviewCount > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_REVIEWED,
+        newPRReviewCount,
+      );
+    }
+    if (newCommitCount > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.COMMITTED,
+        newCommitCount,
+      );
+    }
+
     this.logger.log(
-      `[${username}] New contributions detected! Commits: +${newCommitCount}, PRs: +${newPRCount}`,
+      `[${username}] New contributions detected! Commits: +${newCommitCount}, PRs: +${newPRCount}, Issues: +${newIssueCount}, Reviews: +${newPRReviewCount}`,
     );
 
     return {

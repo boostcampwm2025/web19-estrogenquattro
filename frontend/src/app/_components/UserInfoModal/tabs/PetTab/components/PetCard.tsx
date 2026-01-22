@@ -7,7 +7,6 @@ const PIXEL_BTN =
   "bg-green-600 px-2 hover:bg-green-500 text-white border-b-4 border-r-4 border-green-800 active:border-b-0 active:border-r-0 active:translate-y-1 active:translate-x-1";
 
 interface PetCardProps {
-  stage: number;
   exp: number;
   maxExp: number;
   currentStageData: {
@@ -18,14 +17,15 @@ interface PetCardProps {
     maxExp: number;
   };
   onAction: () => void;
+  isOwner: boolean;
 }
 
 export default function PetCard({
-  stage,
   exp,
   maxExp,
   currentStageData,
   onAction,
+  isOwner,
 }: PetCardProps) {
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
   const points = usePointStore((state) => state.points);
@@ -121,21 +121,23 @@ export default function PetCard({
             </div>
           </div>
 
-          <div className="relative flex w-1/5 justify-center">
-            <button
-              onClick={handleFeedClick}
-              disabled={isMaxStage || (!isReadyToEvolve && points < 10)}
-              className={`flex h-12 w-full flex-col items-center justify-center rounded text-base leading-tight font-bold transition-all ${
-                isMaxStage || (!isReadyToEvolve && points < 10)
-                  ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
-                  : isReadyToEvolve
-                    ? "border-r-4 border-b-4 border-amber-800 bg-amber-600 text-white hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:border-r-0 active:border-b-0"
-                    : PIXEL_BTN
-              }`}
-            >
-              <span>{isReadyToEvolve ? "✨ 진화" : "밥주기 (10 P)"}</span>
-            </button>
-          </div>
+          {isOwner && (
+            <div className="relative flex w-1/5 justify-center">
+              <button
+                onClick={handleFeedClick}
+                disabled={isMaxStage || (!isReadyToEvolve && points < 10)}
+                className={`flex h-12 w-full flex-col items-center justify-center rounded text-base leading-tight font-bold transition-all ${
+                  isMaxStage || (!isReadyToEvolve && points < 10)
+                    ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
+                    : isReadyToEvolve
+                      ? "border-r-4 border-b-4 border-amber-800 bg-amber-600 text-white hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:border-r-0 active:border-b-0"
+                      : PIXEL_BTN
+                }`}
+              >
+                <span>{isReadyToEvolve ? "✨ 진화" : "밥주기 (10 P)"}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

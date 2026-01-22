@@ -72,7 +72,7 @@ export const createTestSocketServer = async (): Promise<TestSocketServer> => {
         userId: socket.id,
         username: player.username,
         status: "RESTING",
-        totalFocusMinutes: 0,
+        totalFocusSeconds: 0,
       });
     });
 

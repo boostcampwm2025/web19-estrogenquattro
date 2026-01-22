@@ -46,6 +46,7 @@ REST API 및 WebSocket 이벤트 명세
 | [PR_CONVENTION.md](./conventions/PR_CONVENTION.md) | PR 컨벤션 |
 | [LOGGING_CONVENTION.md](./conventions/LOGGING_CONVENTION.md) | 로깅 컨벤션 |
 | [TEST_CONVENTION.md](./conventions/TEST_CONVENTION.md) | 테스트 컨벤션 |
+| [MARKDOWN_CONVENTION.md](./conventions/MARKDOWN_CONVENTION.md) | 마크다운 컨벤션 |
 
 ### Reference (참고 자료)
 
