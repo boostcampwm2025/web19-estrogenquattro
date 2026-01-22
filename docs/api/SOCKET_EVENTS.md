@@ -94,12 +94,14 @@ socket.emit('chatting', {
 
 ```typescript
 socket.emit('focusing', {
-  taskName?: string  // 집중할 태스크 이름 (선택)
+  taskName?: string,  // 집중할 태스크 이름 (선택)
+  taskId?: number     // 집중할 태스크 ID (선택, 서버에 집중 시간 누적용)
 });
 ```
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
+- `taskId`가 있으면 `currentTaskId`에 저장 (휴식 시 해당 Task에 집중 시간 누적)
 - 같은 방에 `focused` 브로드캐스트 (taskName 포함)
 
 ---
@@ -114,6 +116,7 @@ socket.emit('resting');
 
 **서버 동작:**
 - 포커스 상태를 `RESTING`으로 변경, 집중 시간 누적
+- `currentTaskId`가 있으면 해당 Task의 `totalFocusSeconds`에도 집중 시간 누적
 - 같은 방에 `rested` 브로드캐스트
 
 ---

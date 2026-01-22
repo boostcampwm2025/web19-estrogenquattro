@@ -42,6 +42,7 @@ erDiagram
         enum status "FOCUSING | RESTING"
         date created_date "집계 날짜"
         datetime last_focus_start_time "마지막 집중 시작 시각"
+        int current_task_id "현재 집중 중인 Task ID (nullable)"
     }
 
     pets {
@@ -130,6 +131,7 @@ erDiagram
 | status | enum | NOT NULL | `FOCUSING` 또는 `RESTING` |
 | created_date | date | NOT NULL | 집계 기준 날짜 |
 | last_focus_start_time | datetime | NULL 허용 | 마지막 집중 시작 시각 |
+| current_task_id | int | NULL 허용 | 현재 집중 중인 Task ID |
 
 ---
 

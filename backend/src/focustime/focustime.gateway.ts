@@ -23,13 +23,16 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   @SubscribeMessage('focusing')
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { taskName?: string },
+    @MessageBody() data: { taskName?: string; taskId?: number },
   ) {
     const user = client.data.user;
     this.logger.debug(
       `Received focusing event - data: ${JSON.stringify(data)}`,
     );
-    const focusTime = await this.focusTimeService.startFocusing(user.playerId);
+    const focusTime = await this.focusTimeService.startFocusing(
+      user.playerId,
+      data?.taskId,
+    );
 
     const rooms = Array.from(client.rooms);
     const roomId = rooms.find((room) => room !== client.id);
