@@ -21,6 +21,7 @@ interface PlayerData {
   direction?: Direction;
   timestamp?: number;
   playerId?: number;
+  petImage?: string | null; // 펫 이미지 URL 추가
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -259,6 +260,14 @@ export default class SocketManager {
         }
       },
     );
+
+    // 다른 플레이어 펫 교체
+    socket.on("pet_equipped", (data: { userId: string; petImage: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.setPet(data.petImage);
+      }
+    });
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -284,6 +293,11 @@ export default class SocketManager {
       totalFocusSeconds: data.totalFocusSeconds ?? 0,
       currentSessionSeconds: data.currentSessionSeconds ?? 0,
     });
+
+    // 펫 정보가 있으면 설정
+    if (data.petImage) {
+      remotePlayer.setPet(data.petImage);
+    }
 
     if (this.walls) {
       this.scene.physics.add.collider(remotePlayer.getContainer(), this.walls);

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { petApi } from "@/lib/api/pet";
+import { getSocket } from "@/lib/socket";
 
 export const usePetSystem = (playerId: number) => {
   const queryClient = useQueryClient();
@@ -77,8 +78,30 @@ export const usePetSystem = (playerId: number) => {
   // 대표 펫 장착
   const equipMutation = useMutation({
     mutationFn: (petId: number) => petApi.equipPet(petId),
-    onSuccess: () => {
+    onSuccess: (_, petId) => {
       queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
+
+      // 1. 소켓으로 petId 전송 (서버가 DB 검증 후 petImage 브로드캐스트)
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("pet_equipping", { petId });
+      }
+
+      // 2. 내 화면의 Phaser 플레이어 즉시 업데이트 (로컬용)
+      // allPets에서 petImage를 찾아서 로컬 게임에 반영
+      if (!allPets || allPets.length === 0) {
+        console.warn("allPets not loaded yet for local update");
+        return;
+      }
+
+      const targetPet = allPets.find((p) => p.id === petId);
+      if (targetPet && typeof window !== "undefined") {
+        const petImage = targetPet.actualImgUrl;
+        // React -> Phaser 직접 통신 (커스텀 이벤트 사용)
+        window.dispatchEvent(
+          new CustomEvent("local_pet_update", { detail: { petImage } }),
+        );
+      }
     },
   });
 
