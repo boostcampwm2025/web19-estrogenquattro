@@ -18,6 +18,14 @@ export interface UserPet {
   // player: Player; // 필요 시 추가
 }
 
+export interface PlayerInfoResponse {
+  id: number;
+  socialId: number;
+  nickname: string;
+  equippedPetId: number | null;
+  totalPoint: number;
+}
+
 export const petApi = {
   getInventory: () => fetchApi<UserPet[]>("/api/pets/inventory"),
 
@@ -48,5 +56,6 @@ export const petApi = {
 
   getAllPets: () => fetchApi<Pet[]>("/api/pets/all"),
 
-  getPlayer: () => fetchApi<any>("/api/players/me/info"),
+  //임시로 설정해 둠 -> 추후 player api로 변경예정
+  getPlayer: () => fetchApi<PlayerInfoResponse>("/api/players/me/info"),
 };

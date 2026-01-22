@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
@@ -12,6 +12,7 @@ export default function PetTab() {
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
 
   // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
+  // isLoading이 완전히 끝난 후(player 정보도 로드된 후)에만 초기값을 설정하도록 변경.
   useEffect(() => {
     if (selectedPetId !== null || isLoading) return;
 
@@ -22,7 +23,8 @@ export default function PetTab() {
       // 장착된 펫이 없으면 인벤토리 첫번째(서비스 처음 사용후 펫 뽑기완료시)
       setSelectedPetId(inventory[0].pet.id);
     }
-  }, [player, inventory, selectedPetId, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player, inventory, isLoading]);
 
   const collectedPetIds = codex;
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { usePointStore } from "@/stores/pointStore";
 import { Pet } from "@/lib/api/pet";
