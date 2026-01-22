@@ -29,6 +29,7 @@
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
 | #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ❌ 미해결 |
 | #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
+| #182 | FocusTime 게이트웨이 에러 핸들링 테스트 추가 | ❌ 미해결 |
 
 ---
 
@@ -536,7 +537,8 @@ socket.emit('focusing', { taskName }, (response) => {
 - [x] `handleResting`에 try-catch + return 응답 추가
 - [x] `handleFocusTaskUpdating`에 try-catch + return 응답 추가
 - [x] 프론트엔드 응답 처리 (에러 시 롤백)
-- [ ] 테스트 추가
+- [x] 프론트엔드 롤백 테스트 추가 (`focustime-store.spec.ts`)
+- [ ] 백엔드 에러 핸들링 테스트 추가 → #182
 
 ### 해결
 
@@ -741,6 +743,28 @@ return {
 - [ ] `statusMap`에 taskName 추가
 - [ ] `players_synced` 이벤트 응답에 taskName 포함
 - [ ] 테스트 추가
+
+---
+
+## #182: FocusTime 게이트웨이 에러 핸들링 테스트 추가
+
+### 배경
+
+PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸들러에 try-catch 에러 처리와 명시적 응답 반환이 추가되었습니다. CodeRabbit 리뷰에서 이에 대한 백엔드 테스트 추가를 권장했습니다.
+
+### 체크리스트
+
+- [ ] `handleFocusing` 성공/실패 응답 테스트
+- [ ] `handleResting` 성공/실패 응답 테스트
+- [ ] `handleFocusTaskUpdating` 성공/실패 응답 테스트
+- [ ] 룸 미소속 시 조기 반환 테스트
+- [ ] NotFoundException 등 예외 발생 시 에러 응답 테스트
+
+### 참고
+
+- **관련 PR**: #176
+- **관련 파일**: `backend/src/focustime/focustime.gateway.ts`
+- **CodeRabbit 리뷰**: https://github.com/boostcampwm2025/web19-estrogenquattro/pull/176#discussion_r2712661170
 
 ---
 
