@@ -81,24 +81,26 @@ export const usePetSystem = (playerId: number) => {
     onSuccess: (_, petId) => {
       queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
 
-      // 1. 장착한 펫의 이미지 URL 찾기
+      // 1. 소켓으로 petId 전송 (서버가 DB 검증 후 petImage 브로드캐스트)
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("pet_equipping", { petId });
+      }
+
+      // 2. 내 화면의 Phaser 플레이어 즉시 업데이트 (로컬용)
+      // allPets에서 petImage를 찾아서 로컬 게임에 반영
+      if (!allPets || allPets.length === 0) {
+        console.warn("allPets not loaded yet for local update");
+        return;
+      }
+
       const targetPet = allPets.find((p) => p.id === petId);
-      if (targetPet) {
+      if (targetPet && typeof window !== "undefined") {
         const petImage = targetPet.actualImgUrl;
-
-        // 2. 소켓으로 전파 (다른 플레이어용)
-        const socket = getSocket();
-        if (socket) {
-          socket.emit("pet_equipping", { petImage });
-        }
-
-        // 3. 내 화면의 Phaser 플레이어 즉시 업데이트 (로컬용)
-        if (typeof window !== "undefined") {
-          // React -> Phaser 직접 통신 (커스텀 이벤트 사용)
-          window.dispatchEvent(
-            new CustomEvent("local_pet_update", { detail: { petImage } }),
-          );
-        }
+        // React -> Phaser 직접 통신 (커스텀 이벤트 사용)
+        window.dispatchEvent(
+          new CustomEvent("local_pet_update", { detail: { petImage } }),
+        );
       }
     },
   });

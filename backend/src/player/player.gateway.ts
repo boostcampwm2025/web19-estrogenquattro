@@ -46,7 +46,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: number;
       y: number;
       playerId: number;
-      petImage?: string; // 펫 이미지 추가
+      petImage: string | null; // 펫 이미지 (nullable)
     }
   > = new Map();
 
@@ -120,7 +120,12 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     void client.join(roomId);
 
     const player = await this.playerService.findOneById(playerId);
-    const petImage = player.equippedPet?.actualImgUrl;
+    if (!player) {
+      this.logger.warn(`Player not found: ${playerId}`);
+      client.disconnect();
+      return;
+    }
+    const petImage = player.equippedPet?.actualImgUrl ?? null;
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
@@ -258,21 +263,47 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('pet_equipping')
-  handlePetEquip(
+  async handlePetEquip(
     @MessageBody()
-    data: { petImage: string },
+    data: { petId: number | null },
     @ConnectedSocket() client: Socket,
   ) {
-    const player = this.players.get(client.id);
-    if (!player) return;
+    const playerState = this.players.get(client.id);
+    if (!playerState) return;
 
-    // 펫 정보 업데이트
-    player.petImage = data.petImage;
+    // petId 타입 검사
+    if (data.petId !== null && typeof data.petId !== 'number') {
+      this.logger.warn(`Invalid petId type from ${client.id}`);
+      return;
+    }
 
-    // 같은 방 사람들에게 전파
-    client.to(player.roomId).emit('pet_equipped', {
+    // DB에서 플레이어 정보 조회하여 검증
+    const playerFromDb = await this.playerService.findOneById(
+      playerState.playerId,
+    );
+    if (!playerFromDb) {
+      this.logger.warn(`Player not found in DB: ${playerState.playerId}`);
+      return;
+    }
+
+    // 클라이언트가 보낸 petId와 DB의 equippedPetId가 일치하는지 검증
+    if (playerFromDb.equippedPetId !== data.petId) {
+      this.logger.warn(
+        `Pet mismatch: client sent ${data.petId}, DB has ${playerFromDb.equippedPetId}`,
+      );
+      return;
+    }
+
+    // DB에서 검증된 petImage 사용
+    const petImage = playerFromDb.equippedPet?.actualImgUrl ?? null;
+
+    // 인메모리 상태 업데이트
+    playerState.petImage = petImage;
+
+    // 같은 방 사람들에게 전파 (DB에서 검증된 값 사용)
+    client.to(playerState.roomId).emit('pet_equipped', {
       userId: client.id,
-      petImage: data.petImage,
+      petImage: petImage,
     });
   }
 }

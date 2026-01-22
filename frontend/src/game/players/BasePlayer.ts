@@ -231,7 +231,12 @@ export default class BasePlayer {
       return;
     }
 
-    const textureKey = `pet_${imageUrl.split("/").pop()}`;
+    const fileName = imageUrl.split("/").pop();
+    if (!fileName) {
+      console.warn("[BasePlayer] Invalid imageUrl format:", imageUrl);
+      return;
+    }
+    const textureKey = `pet_${fileName}`;
 
     // 이미 로드된 텍스처면 바로 적용
     if (this.scene.textures.exists(textureKey)) {

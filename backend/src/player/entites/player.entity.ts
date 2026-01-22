@@ -26,9 +26,9 @@ export class Player {
   @Column({ type: 'int', name: 'total_point', default: 0 })
   totalPoint: number;
 
-  @ManyToOne(() => Pet)
+  @ManyToOne(() => Pet, { nullable: true })
   @JoinColumn({ name: 'equipped_pet_id' })
-  equippedPet: Pet;
+  equippedPet: Pet | null;
 
   @OneToMany(() => UserPet, (userPet) => userPet.player)
   userPets: UserPet[];

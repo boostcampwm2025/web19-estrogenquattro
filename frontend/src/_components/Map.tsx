@@ -13,9 +13,9 @@ export default function Map() {
 
   // 플레이어 정보 (장착 펫 포함) 미리 가져오기
   const { data: player } = useQuery({
-    queryKey: ["player", "me"],
-    queryFn: petApi.getPlayer,
-    enabled: !!user, // 유저 정보가 있을 때만 실행
+    queryKey: ["player", "info", user?.playerId],
+    queryFn: () => petApi.getPlayer(user!.playerId),
+    enabled: !!user?.playerId, // 유저 정보가 있을 때만 실행
   });
 
   useEffect(() => {
