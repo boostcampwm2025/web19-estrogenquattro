@@ -12,7 +12,7 @@ import { FocusStatus } from './entites/daily-focus-time.entity';
 
 interface FocusTimeResponse {
   id: number | null;
-  totalFocusMinutes: number;
+  totalFocusSeconds: number;
   status: FocusStatus;
   createdDate: string;
   lastFocusStartTime: string | null;
@@ -37,7 +37,7 @@ export class FocustimeController {
     if (!focusTime) {
       return {
         id: null,
-        totalFocusMinutes: 0,
+        totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
         createdDate: targetDate,
         lastFocusStartTime: null,
@@ -46,7 +46,7 @@ export class FocustimeController {
 
     return {
       id: focusTime.id,
-      totalFocusMinutes: focusTime.totalFocusMinutes,
+      totalFocusSeconds: focusTime.totalFocusSeconds,
       status: focusTime.status,
       createdDate: new Date(focusTime.createdDate).toISOString().slice(0, 10),
       lastFocusStartTime: focusTime.lastFocusStartTime

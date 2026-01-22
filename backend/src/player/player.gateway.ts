@@ -139,14 +139,14 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       {
         status: string;
         lastFocusStartTime: Date | null;
-        totalFocusMinutes: number;
+        totalFocusSeconds: number;
       }
     >();
     focusStatuses.forEach((fs) => {
       statusMap.set(fs.player.id, {
         status: fs.status,
         lastFocusStartTime: fs.lastFocusStartTime,
-        totalFocusMinutes: fs.totalFocusMinutes,
+        totalFocusSeconds: fs.totalFocusSeconds,
       });
     });
 
@@ -168,7 +168,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           ...p,
           status: status?.status ?? 'RESTING',
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusMinutes: status?.totalFocusMinutes ?? 0,
+          totalFocusSeconds: status?.totalFocusSeconds ?? 0,
           currentSessionSeconds,
         };
       });
@@ -196,7 +196,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: data.x,
       y: data.y,
       status: myFocusTime.status,
-      totalFocusMinutes: myFocusTime.totalFocusMinutes,
+      totalFocusSeconds: myFocusTime.totalFocusSeconds,
       currentSessionSeconds: myCurrentSessionSeconds,
       playerId: playerId,
     });
@@ -221,7 +221,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId,
       focusTime: {
         status: myFocusTime.status,
-        totalFocusMinutes: myFocusTime.totalFocusMinutes,
+        totalFocusSeconds: myFocusTime.totalFocusSeconds,
         currentSessionSeconds: myCurrentSessionSeconds,
       },
     });

@@ -35,7 +35,7 @@ export class FocusTimeService {
 
     const newFocusTime = this.focusTimeRepository.create({
       player,
-      totalFocusMinutes: 0,
+      totalFocusSeconds: 0,
       status: FocusStatus.RESTING,
       createdDate: today as unknown as Date,
     });
@@ -89,8 +89,8 @@ export class FocusTimeService {
       focusTime.lastFocusStartTime
     ) {
       const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
-      const diffMins = Math.floor(diffMs / 1000 / 60);
-      focusTime.totalFocusMinutes += diffMins;
+      const diffSeconds = Math.floor(diffMs / 1000);
+      focusTime.totalFocusSeconds += diffSeconds;
     }
 
     focusTime.status = FocusStatus.RESTING;
@@ -124,7 +124,7 @@ export class FocusTimeService {
 
     if (!focusTime) {
       const emptyRecord = new DailyFocusTime();
-      emptyRecord.totalFocusMinutes = 0;
+      emptyRecord.totalFocusSeconds = 0;
       emptyRecord.status = FocusStatus.RESTING;
       emptyRecord.createdDate = date as unknown as Date;
       emptyRecord.lastFocusStartTime = null as unknown as Date;

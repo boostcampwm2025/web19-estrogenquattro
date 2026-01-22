@@ -10,7 +10,7 @@ export type FocusStatus = (typeof FOCUS_STATUS)[keyof typeof FOCUS_STATUS];
 
 export interface FocusTimeData {
   status: FocusStatus;
-  totalFocusMinutes: number;
+  totalFocusSeconds: number;
   currentSessionSeconds: number;
 }
 
@@ -90,7 +90,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set) => ({
 
   syncFromServer: (data: FocusTimeData) => {
     const isFocusing = data.status === "FOCUSING";
-    const baseSeconds = data.totalFocusMinutes * 60;
+    const baseSeconds = data.totalFocusSeconds;
     const totalSeconds =
       baseSeconds + (isFocusing ? data.currentSessionSeconds : 0);
 

@@ -16,7 +16,7 @@ export function mapTaskResToTask(res: TaskRes): Task {
     id: res.id,
     description: res.description,
     completed: res.isCompleted,
-    time: res.totalFocusMinutes * 60, // 분 -> 초 변환
+    time: res.totalFocusSeconds,
     isRunning: false,
     createdDate: res.createdDate,
   };

@@ -48,7 +48,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         username: focusTime.player.nickname,
         status: focusTime.status,
         lastFocusStartTime: focusTime.lastFocusStartTime?.toISOString() ?? null,
-        totalFocusMinutes: focusTime.totalFocusMinutes,
+        totalFocusSeconds: focusTime.totalFocusSeconds,
         currentSessionSeconds,
         taskName: data?.taskName,
       });
@@ -77,7 +77,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         userId: client.id,
         username: focusTime.player.nickname,
         status: focusTime.status,
-        totalFocusMinutes: focusTime.totalFocusMinutes,
+        totalFocusSeconds: focusTime.totalFocusSeconds,
       });
 
       this.logger.log(
