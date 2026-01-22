@@ -35,7 +35,7 @@
 
 ### 현상
 
-```
+```text
 1. 집중 모드 시작 (0분)
 2. 다른 탭으로 이동 (10분 대기)
 3. 원래 탭으로 복귀
@@ -212,7 +212,7 @@ ALTER TABLE daily_focus_time_new RENAME TO daily_focus_time;
 
 ### 현상
 
-```
+```text
 1. 태스크 생성 후 집중 모드 시작
 2. 해당 태스크로 5분간 집중
 3. 휴식 버튼 클릭
@@ -372,7 +372,7 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 
 ### 시나리오: focusing ↔ resting 교차 시 시간 손실
 
-```
+```text
 초기: totalFocusMinutes=10, status=FOCUSING, lastFocusStartTime=10:00
 
 T1: Request A (resting) - findOne() → { totalFocusMinutes: 10, status: FOCUSING }
@@ -397,7 +397,7 @@ T4: Request B - save() → { totalFocusMinutes: 10, status: FOCUSING }  ← 덮�
 
 ### 해결 방안
 
-**방안 1: Pessimistic Locking**
+#### 방안 1: Pessimistic Locking
 
 ```typescript
 async startResting(playerId: number): Promise<DailyFocusTime> {
@@ -420,7 +420,7 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 }
 ```
 
-**방안 2: 중복 호출 방지**
+#### 방안 2: 중복 호출 방지
 
 ```typescript
 // 이미 같은 상태면 무시
@@ -479,7 +479,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 
 ### 시나리오
 
-```
+```text
 1. 사용자가 "집중" 버튼 클릭
 2. 클라이언트: emit('focusing') 전송
 3. 서버: DB 에러 발생 (예: NotFoundException)
@@ -779,7 +779,7 @@ connect(callbacks: {
 
 ## 참고: PR 스택 (2026-01-21 업데이트)
 
-```
+```text
 main ← PR #125, #134, #136 머지 완료 ✅
   └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
         └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
