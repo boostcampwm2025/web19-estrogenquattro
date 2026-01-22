@@ -1,6 +1,6 @@
 # FocusTime 미해결 버그
 
-**최종 업데이트:** 2026-01-21
+**최종 업데이트:** 2026-01-22
 
 ---
 
@@ -720,6 +720,7 @@ connect(callbacks: {
 - [x] `connect` 메서드 콜백 시그니처 확장
 - [x] `disconnect` 이벤트 핸들러 추가
 - [x] `connect` 이벤트에서 오버레이 숨김 처리
+- [x] `connect` 이벤트에서 `isSessionReplaced` 플래그 리셋 (CodeRabbit 리뷰)
 - [x] `MapScene.ts`에 연결 끊김 오버레이 메서드 추가
 - [x] 테스트
 
@@ -731,6 +732,8 @@ connect(callbacks: {
   - `fb5166a` docs: #159 연결 끊김 감지 구현 계획 문서 추가
   - `a521ce0` feat: 소켓 연결 끊김 감지 및 재연결 UI 피드백 추가
   - `5c1a1e6` test: 소켓 연결 끊김/재연결 이벤트 테스트 추가
+  - `9225d2d` style: 마크다운 린트 경고 수정 (MD040, MD036)
+  - `aa0ab5f` fix: CodeRabbit 리뷰 반영 (isSessionReplaced 리셋, 문서 표현 완화)
 
 ### 테스트 케이스
 
@@ -777,16 +780,17 @@ connect(callbacks: {
 
 ---
 
-## 참고: PR 스택 (2026-01-21 업데이트)
+## 참고: PR 스택 (2026-01-22 업데이트)
 
 ```text
 main ← PR #125, #134, #136 머지 완료 ✅
+  ├── PR #177 (feat/#159-heartbeat) - 리뷰 대기 중
   └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
         └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
               └── PR #176 (fix/#166-socket-response) - 리뷰 대기 중 (Stacked PR)
 ```
 
+- #177: 소켓 연결 끊김 감지 및 재연결 UI (#159) - main에서 분기
 - #168: DB 집중 시간 초 단위 변경 (#126)
 - #170: 개별 태스크 집중 시간 서버 저장 (#164) - #168 위에 Stacked PR
 - #176: 소켓 이벤트 클라이언트 응답 추가 (#166) - #170 위에 Stacked PR
-- 이후 작업은 #168 → #170 → #176 순서로 머지 후 진행
