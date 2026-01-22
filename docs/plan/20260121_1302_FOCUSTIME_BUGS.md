@@ -22,12 +22,12 @@
 |------|------|------|
 | #124 | 로컬 플레이어 탭 비활성화 시 타이머 부정확 | ✅ 해결 |
 | #126 | DB 누적 집중 시간 초 단위로 변경 | ✅ 해결 |
+| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ✅ 해결 |
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
-| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
+| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (현재 트래픽에서 발생 가능성 낮음) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ✅ 해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
-| #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ❌ 미해결 |
 | #181 | 새 플레이어 입장 시 기존 플레이어의 태스크 이름 미표시 | ❌ 미해결 |
 | #182 | FocusTime 게이트웨이 에러 핸들링 테스트 추가 | ❌ 미해결 |
 
@@ -37,7 +37,7 @@
 
 ### 현상
 
-```
+```text
 1. 집중 모드 시작 (0분)
 2. 다른 탭으로 이동 (10분 대기)
 3. 원래 탭으로 복귀
@@ -214,7 +214,7 @@ ALTER TABLE daily_focus_time_new RENAME TO daily_focus_time;
 
 ### 현상
 
-```
+```text
 1. 태스크 생성 후 집중 모드 시작
 2. 해당 태스크로 5분간 집중
 3. 휴식 버튼 클릭
@@ -354,7 +354,7 @@ export class DailyResetService {
 
 ## #165: FocusTime Race Condition - 트랜잭션 미사용 ⏭️
 
-> **스킵 사유**: 현재 아키텍처에서 발생 확률이 매우 낮고, 기존 방지 메커니즘으로 충분히 완화됨
+> **스킵 사유**: 현재 트래픽에서 발생 가능성 낮음 (이론적 버그)
 
 ### 현상
 
@@ -374,7 +374,7 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 
 ### 시나리오: focusing ↔ resting 교차 시 시간 손실
 
-```
+```text
 초기: totalFocusMinutes=10, status=FOCUSING, lastFocusStartTime=10:00
 
 T1: Request A (resting) - findOne() → { totalFocusMinutes: 10, status: FOCUSING }
@@ -399,7 +399,7 @@ T4: Request B - save() → { totalFocusMinutes: 10, status: FOCUSING }  ← 덮�
 
 ### 해결 방안
 
-**방안 1: Pessimistic Locking**
+#### 방안 1: Pessimistic Locking
 
 ```typescript
 async startResting(playerId: number): Promise<DailyFocusTime> {
@@ -422,7 +422,7 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 }
 ```
 
-**방안 2: 중복 호출 방지**
+#### 방안 2: 중복 호출 방지
 
 ```typescript
 // 이미 같은 상태면 무시
@@ -459,7 +459,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 - `await` 순차 처리: 대부분 순서대로 실행
 - SQLite 쓰기 직렬화: 동시 쓰기 자동 차단
 
-**결론:** 현재 아키텍처에서 Race Condition 발생 확률이 매우 낮음. 다만 비동기 소켓 핸들러 특성상 이론적으로 SELECT→UPDATE 인터리브 가능성이 완전히 0은 아님. 추후 다중 서버 환경이나 DB 변경 시 재검토 필요.
+**결론:** 현재 트래픽 수준에서 발생 가능성은 낮지만, Node.js 비동기 인터리빙으로 `findOne()` → `save()` 사이에 이론적 위험은 존재함. 추후 다중 서버 환경, DB 변경, 또는 트래픽 증가 시 `startFocusing`/`startResting`에 상태 체크 가드 또는 트랜잭션 추가를 재검토.
 
 - **GitHub 이슈**: #165 (closed, not planned)
 
@@ -481,7 +481,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 
 ### 시나리오
 
-```
+```text
 1. 사용자가 "집중" 버튼 클릭
 2. 클라이언트: emit('focusing') 전송
 3. 서버: DB 에러 발생 (예: NotFoundException)
@@ -537,6 +537,7 @@ socket.emit('focusing', { taskName }, (response) => {
 - [x] `handleResting`에 try-catch + return 응답 추가
 - [x] `handleFocusTaskUpdating`에 try-catch + return 응답 추가
 - [x] 프론트엔드 응답 처리 (에러 시 롤백)
+- [ ] 테스트 추가
 - [x] 프론트엔드 롤백 테스트 추가 (`focustime-store.spec.ts`)
 - [ ] 백엔드 에러 핸들링 테스트 추가 → #182
 
@@ -603,13 +604,12 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 
 ---
 
-## #159: 서버 접속 끊김 감지를 위한 하트비트 구현
+## #159: 서버 접속 끊김 감지를 위한 하트비트 구현 ✅
 
 ### 현상
 
 - 서버 연결이 끊겨도 클라이언트에서 감지 못함
 - 다른 플레이어가 나간 것도 즉시 반영되지 않을 수 있음
-- Socket.io 기본 ping/pong과 별개로 애플리케이션 레벨 하트비트 필요
 
 ### 영향
 
@@ -619,78 +619,135 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 | 네트워크 끊김 | 감지 안 됨 | 시간이 계속 흐르지만 서버에 저장 안 됨 |
 | 다른 플레이어 끊김 | 즉시 반영 안 될 수 있음 | 나간 플레이어가 계속 보임 |
 
-### 해결 방안
+### 현재 소켓 설정 분석
 
-**Socket.io 기본 옵션 활용:**
+#### Backend (`socket-io.adapter.ts`)
 
 ```typescript
-// 서버
-const io = new Server(server, {
-  pingInterval: 10000,  // 10초마다 ping
-  pingTimeout: 5000,    // 5초 내 응답 없으면 disconnect
-});
-
-// 클라이언트
-const socket = io({
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-});
-
-socket.on('disconnect', (reason) => {
-  // UI에 연결 끊김 표시
-});
-
-socket.on('reconnect', () => {
-  // 상태 재동기화
+// 현재 설정: CORS만 설정됨
+return super.createIOServer(port, {
+  ...options,
+  cors,
+  // pingInterval, pingTimeout 미설정 → Socket.io 기본값 사용
 });
 ```
 
-**애플리케이션 레벨 하트비트 (선택):**
+**Socket.io 서버 기본값:**
+- `pingInterval`: 25000ms (25초마다 ping)
+- `pingTimeout`: 20000ms (20초 내 응답 없으면 disconnect)
+
+#### Frontend (`lib/socket.ts`)
 
 ```typescript
-// 서버
-setInterval(() => {
-  io.emit('heartbeat', { timestamp: Date.now() });
-}, 10000);
-
-// 클라이언트
-let lastHeartbeat = Date.now();
-socket.on('heartbeat', () => {
-  lastHeartbeat = Date.now();
+socket = io(SOCKET_URL, {
+  transports: ["websocket"],
+  withCredentials: true,
+  autoConnect: false,
+  // reconnection 관련 미설정 → 기본값 사용
 });
+```
 
-setInterval(() => {
-  if (Date.now() - lastHeartbeat > 30000) {
-    // 30초간 하트비트 없으면 연결 끊김으로 간주
-    showDisconnectedOverlay();
-  }
-}, 5000);
+**Socket.io 클라이언트 기본값:**
+- `reconnection: true` ← 자동 재연결 이미 활성화!
+- `reconnectionAttempts: Infinity`
+- `reconnectionDelay: 1000ms`
+- `reconnectionDelayMax`: 5000ms
+
+#### SocketManager.ts 이벤트 핸들러 현황
+
+| 이벤트 | 핸들러 | 상태 |
+|--------|--------|------|
+| `connect` | ✅ 있음 | joining 이벤트 전송 |
+| `session_replaced` | ✅ 있음 | 오버레이 표시 |
+| `disconnect` | ❌ 없음 | UI 피드백 없음 |
+| `reconnect` | ❌ 없음 | (connect에서 처리 가능) |
+
+### 분석 결론
+
+**이미 있는 것:**
+- 자동 재연결 (Socket.io 기본값)
+- Ping/Pong (25초 간격, 20초 타임아웃)
+
+**없는 것:**
+- `disconnect` 이벤트 핸들러 → UI 피드백
+- 재연결 시 오버레이 숨김
+
+**결론: 애플리케이션 레벨 하트비트 불필요!**
+
+Socket.io 기본 기능 활용 + 이벤트 핸들러 추가로 해결 가능
+
+### 구현 방식 비교
+
+| 방식 | 장점 | 단점 |
+|------|------|------|
+| **콜백 (선택)** | 구현 간단, 기존 패턴과 일관성 | MapScene에 로직 집중, 재사용 어려움 |
+| 이벤트 에미터 | 느슨한 결합, 여러 곳에서 구독 가능 | 추가 설정 필요, 디버깅 어려움 |
+| Zustand 스토어 | React 컴포넌트에서 쉽게 사용, 상태 중앙화 | Phaser Scene과 React 간 동기화 필요 |
+
+### 해결 방안 (콜백 방식)
+
+```typescript
+// SocketManager.ts
+connect(callbacks: {
+  showSessionEndedOverlay: () => void;
+  showConnectionLostOverlay: () => void;
+  hideConnectionLostOverlay: () => void;
+}): void {
+  socket.on("connect", () => {
+    callbacks.hideConnectionLostOverlay();  // 재연결 시 오버레이 숨김
+    // ... joining 전송
+  });
+
+  socket.on("disconnect", (reason) => {
+    if (!this.isSessionReplaced && reason !== "io client disconnect") {
+      callbacks.showConnectionLostOverlay();
+    }
+  });
+
+  socket.on("session_replaced", () => {
+    this.isSessionReplaced = true;
+    callbacks.showSessionEndedOverlay();
+  });
+}
 ```
 
 ### 수정 파일
 
 | 영역 | 파일 | 변경 내용 |
 |------|------|----------|
-| Backend | `main.ts` 또는 Gateway | Socket.io 옵션 설정 |
-| Frontend | `lib/socket.ts` | reconnection 옵션, disconnect/reconnect 핸들러 |
-| Frontend | UI 컴포넌트 | 연결 끊김 오버레이, 재연결 버튼 |
+| Frontend | `SocketManager.ts` | `disconnect` 핸들러, 콜백 확장 |
+| Frontend | `MapScene.ts` | 연결 끊김 오버레이 메서드 추가 |
 
 ### 체크리스트
 
-- [ ] 하트비트 주기 결정 (예: 10초, 30초)
-- [ ] 서버: Socket.io pingInterval, pingTimeout 설정
-- [ ] 클라이언트: reconnection 옵션 설정
-- [ ] 클라이언트: disconnect/reconnect 이벤트 핸들링
-- [ ] UI: 연결 끊김 상태 표시 (오버레이)
-- [ ] UI: 재연결 버튼 또는 자동 재연결 표시
-- [ ] 재연결 시 상태 동기화 (FocusTime, 플레이어 위치 등)
+- [x] `SocketManager.ts`에 `isSessionReplaced` 플래그 추가
+- [x] `connect` 메서드 콜백 시그니처 확장
+- [x] `disconnect` 이벤트 핸들러 추가
+- [x] `connect` 이벤트에서 오버레이 숨김 처리
+- [x] `connect` 이벤트에서 `isSessionReplaced` 플래그 리셋 (CodeRabbit 리뷰)
+- [x] `MapScene.ts`에 연결 끊김 오버레이 메서드 추가
+- [x] 테스트
 
-### 참고
+### 해결
 
-- Socket.io 기본 heartbeat: `pingInterval`, `pingTimeout` 옵션
-- FocusTime 동기화는 경과 시간 기반 방식 사용 (하트비트 X)
-- 이 이슈는 FocusTime 동기화가 아닌 **연결 상태 감지** 목적
+- **PR**: #177
+- **브랜치**: `feat/#159-heartbeat`
+- **커밋**:
+  - `fb5166a` docs: #159 연결 끊김 감지 구현 계획 문서 추가
+  - `a521ce0` feat: 소켓 연결 끊김 감지 및 재연결 UI 피드백 추가
+  - `5c1a1e6` test: 소켓 연결 끊김/재연결 이벤트 테스트 추가
+  - `9225d2d` style: 마크다운 린트 경고 수정 (MD040, MD036)
+  - `aa0ab5f` fix: CodeRabbit 리뷰 반영 (isSessionReplaced 리셋, 문서 표현 완화)
+
+### 테스트 케이스
+
+| 테스트 방식 | 파일 | 테스트 케이스 |
+|------------|------|--------------|
+| FakeSocket | `socket-manager.spec.ts` | disconnect 이벤트 발생 시 showConnectionLostOverlay 호출 |
+| FakeSocket | `socket-manager.spec.ts` | io client disconnect 시 오버레이 미표시 |
+| FakeSocket | `socket-manager.spec.ts` | session_replaced 후 disconnect 시 오버레이 미표시 |
+| FakeSocket | `socket-manager.spec.ts` | connect 이벤트 발생 시 hideConnectionLostOverlay 호출 |
+| FakeSocket | `socket-manager.spec.ts` | session_replaced 시 showSessionEndedOverlay 호출 |
 
 ---
 
@@ -766,6 +823,7 @@ PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸�
 - **관련 파일**: `backend/src/focustime/focustime.gateway.ts`
 - **CodeRabbit 리뷰**: https://github.com/boostcampwm2025/web19-estrogenquattro/pull/176#discussion_r2712661170
 
+
 ---
 
 ## 작업 순서
@@ -777,7 +835,7 @@ PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸�
 ### 2. #126 ✅ → #164 ✅ → #165 ⏭️ (완료)
 - **#126 완료**: PR #168 (브랜치: `fix/#126-focustime-seconds`)
 - **#164 완료**: PR #170 (브랜치: `fix/#164-task-focustime`, Stacked PR)
-- **#165 스킵**: 현재 아키텍처에서 발생 불가능 (이슈 닫힘)
+- **#165 스킵**: 현재 트래픽에서 발생 가능성 낮음 (이슈 닫힘)
 - **연관성**: 모두 `focustime.service.ts` 수정, DB 스키마 변경 포함
 - **순서**:
   1. **#126**: `totalFocusMinutes` → `totalFocusSeconds` 변경 ✅
@@ -788,10 +846,11 @@ PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸�
 - **#166 완료**: PR #176 (브랜치: `fix/#166-socket-response`, Stacked PR)
 - **#167 스킵**: 에러 타입 구분의 실질적 가치 없음 (이슈 닫힘)
 
-### 4. #159 (별도 진행)
+### 4. #159 ✅ (완료)
 - **브랜치**: `feat/#159-heartbeat`
+- **PR**: #177
 - **연관성**: 연결 상태 감지 (FocusTime과 독립)
-- **선행 조건**: 없음
+- **선행 조건**: 없음 (main에서 분기)
 
 ### 5. #162 (별도 진행)
 - **브랜치**: `feat/#162-daily-reset`
@@ -804,12 +863,12 @@ PR #176에서 `handleFocusing`, `handleResting`, `handleFocusTaskUpdating` 핸�
 
 ```
 main ← PR #125, #134, #136 머지 완료 ✅
-  └── PR #168 (fix/#126-focustime-seconds) - 리뷰 대기 중
-        └── PR #170 (fix/#164-task-focustime) - 리뷰 대기 중 (Stacked PR)
-              └── PR #176 (fix/#166-socket-response) - 리뷰 대기 중 (Stacked PR)
+  └── PR #168 (fix/#126-focustime-seconds) - 머지 완료 ✅
+        └── PR #170 (fix/#164-task-focustime) - 머지 완료 ✅
+              └── PR #176 (fix/#166-socket-response) - 머지 완료 ✅
 ```
 
+- #177: 소켓 연결 끊김 감지 및 재연결 UI (#159) - main에서 분기
 - #168: DB 집중 시간 초 단위 변경 (#126)
 - #170: 개별 태스크 집중 시간 서버 저장 (#164) - #168 위에 Stacked PR
 - #176: 소켓 이벤트 클라이언트 응답 추가 (#166) - #170 위에 Stacked PR
-- 이후 작업은 #168 → #170 → #176 순서로 머지 후 진행

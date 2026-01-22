@@ -83,13 +83,22 @@ describe("SocketManager 통합", () => {
     showChatBubble: vi.fn(),
   };
 
+  const callbacks = {
+    showSessionEndedOverlay: vi.fn(),
+    showConnectionLostOverlay: vi.fn(),
+    hideConnectionLostOverlay: vi.fn(),
+  };
+
   beforeEach(async () => {
     remotePlayerInstances.clear();
     currentSocket = createFakeSocket();
     vi.resetModules();
+    callbacks.showSessionEndedOverlay.mockClear();
+    callbacks.showConnectionLostOverlay.mockClear();
+    callbacks.hideConnectionLostOverlay.mockClear();
     SocketManager = (await import("@/game/managers/SocketManager")).default;
     socketManager = new SocketManager(scene as never, "tester", () => player);
-    socketManager.connect(() => {});
+    socketManager.connect(callbacks);
   });
 
   it("players_synced로 FOCUSING 상태를 수신하면 해당 플레이어에 집중 상태가 반영된다", () => {
@@ -390,5 +399,60 @@ describe("SocketManager 통합", () => {
       isFocusing: true,
       taskName: "리뷰하기",
     });
+  });
+
+  it("disconnect 이벤트 발생 시 showConnectionLostOverlay 콜백이 호출된다", () => {
+    // Given: 연결된 상태
+
+    // When: 네트워크 오류로 disconnect 이벤트 발생
+    currentSocket.trigger("disconnect", "transport close");
+
+    // Then: showConnectionLostOverlay가 호출됨
+    expect(callbacks.showConnectionLostOverlay).toHaveBeenCalled();
+  });
+
+  it("클라이언트가 의도적으로 연결을 끊으면 showConnectionLostOverlay가 호출되지 않는다", () => {
+    // Given: 연결된 상태
+
+    // When: 클라이언트가 의도적으로 disconnect
+    currentSocket.trigger("disconnect", "io client disconnect");
+
+    // Then: showConnectionLostOverlay가 호출되지 않음
+    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+  });
+
+  it("session_replaced 후 disconnect 시 showConnectionLostOverlay가 호출되지 않는다", () => {
+    // Given: session_replaced 이벤트가 먼저 발생
+    currentSocket.trigger("session_replaced");
+
+    // When: 이후 disconnect 이벤트 발생
+    currentSocket.trigger("disconnect", "transport close");
+
+    // Then: showConnectionLostOverlay가 호출되지 않음 (세션 교체 오버레이만 표시)
+    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+    expect(callbacks.showSessionEndedOverlay).toHaveBeenCalled();
+  });
+
+  it("connect 이벤트 발생 시 hideConnectionLostOverlay 콜백이 호출된다", () => {
+    // Given: 연결이 끊어진 상태 (disconnect 발생)
+    currentSocket.trigger("disconnect", "transport close");
+    callbacks.hideConnectionLostOverlay.mockClear();
+
+    // When: 재연결 (connect 이벤트 발생)
+    currentSocket.trigger("connect");
+
+    // Then: hideConnectionLostOverlay가 호출됨
+    expect(callbacks.hideConnectionLostOverlay).toHaveBeenCalled();
+  });
+
+  it("session_replaced 이벤트 발생 시 showSessionEndedOverlay 콜백이 호출된다", () => {
+    // Given: 연결된 상태
+
+    // When: session_replaced 이벤트 발생
+    currentSocket.trigger("session_replaced");
+
+    // Then: showSessionEndedOverlay가 호출되고 소켓이 disconnect됨
+    expect(callbacks.showSessionEndedOverlay).toHaveBeenCalled();
+    expect(currentSocket.disconnect).toHaveBeenCalled();
   });
 });
