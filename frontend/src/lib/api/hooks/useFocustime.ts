@@ -9,6 +9,7 @@ export function useFocustime(playerId: number, date: string) {
     queryKey: queryKeys.focustime.detail(playerId, date),
     queryFn: () => focustimeApi.getFocusTime(playerId, date),
     enabled: !!playerId && !!date,
+    staleTime: 0,
   });
 
   return {

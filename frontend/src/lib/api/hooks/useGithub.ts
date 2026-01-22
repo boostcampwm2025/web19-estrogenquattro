@@ -4,11 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { githubApi } from "../github";
 import { queryKeys } from "./queryKeys";
 
-export function useGithubEvents(date: string) {
+export function useGithubEvents(playerId: number, date: string) {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.github.events(date),
-    queryFn: () => githubApi.getEvents(date),
-    enabled: !!date,
+    queryKey: queryKeys.github.events(playerId, date),
+    queryFn: () => githubApi.getEvents(playerId, date),
+    enabled: !!playerId && !!date,
+    staleTime: 0,
   });
 
   return {

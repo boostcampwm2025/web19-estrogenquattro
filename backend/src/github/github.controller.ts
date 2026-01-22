@@ -11,9 +11,11 @@ export class GithubController {
 
   @Get('events')
   async getEvents(
-    @PlayerId() playerId: number,
+    @PlayerId() currentPlayerId: number,
+    @Query('playerId') playerId: string | undefined,
     @Query('date') date: string,
   ): Promise<GithubEventsResDto> {
-    return this.githubService.getPlayerActivitiesByDate(playerId, date);
+    const targetPlayerId = playerId ? Number(playerId) : currentPlayerId;
+    return this.githubService.getPlayerActivitiesByDate(targetPlayerId, date);
   }
 }

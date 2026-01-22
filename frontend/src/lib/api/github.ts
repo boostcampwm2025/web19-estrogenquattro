@@ -10,6 +10,8 @@ export interface GithubEventsRes {
 
 export const githubApi = {
   /** 일별 GitHub 이벤트 조회 */
-  getEvents: (date: string) =>
-    fetchApi<GithubEventsRes>(`/api/github/events?date=${date}`),
+  getEvents: (playerId: number, date: string) =>
+    fetchApi<GithubEventsRes>(
+      `/api/github/events?playerId=${playerId}&date=${date}`
+    ),
 };

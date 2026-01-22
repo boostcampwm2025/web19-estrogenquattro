@@ -36,7 +36,7 @@ export function useProfileData(
 
   // 선택된 날짜의 GitHub 이벤트
   const { events: githubEvents, isLoading: isGithubLoading } =
-    useGithubEvents(dateStr);
+    useGithubEvents(playerId, dateStr);
 
   // 선택된 날짜의 Task 목록
   const { tasks: tasksData, isLoading: isTasksLoading } = useTasks(
