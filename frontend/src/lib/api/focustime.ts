@@ -2,8 +2,8 @@ import { fetchApi } from "./client";
 import { FocusStatus } from "@/stores/useFocusTimeStore";
 
 export interface DailyFocusTimeRes {
-  id: number;
-  totalFocusMinutes: number;
+  id: number | null;
+  totalFocusSeconds: number;
   status: FocusStatus;
   createdDate: string;
   lastFocusStartTime: string | null;
