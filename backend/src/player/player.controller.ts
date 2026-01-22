@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Param } from '@nestjs/common';
 import { PlayerService } from './player.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlayerId } from '../auth/player-id.decorator';
@@ -13,8 +13,8 @@ export class PlayerController {
     private readonly petService: PetService,
   ) {}
 
-  @Get('me/info')
-  async getPlayerInfo(@PlayerId() playerId: number) {
+  @Get(':playerId/info')
+  async getPlayerInfo(@Param('playerId') playerId: number) {
     return this.playerService.findOneById(playerId);
   }
 

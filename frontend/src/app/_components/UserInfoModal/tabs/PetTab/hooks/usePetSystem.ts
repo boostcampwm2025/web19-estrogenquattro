@@ -18,8 +18,8 @@ export const usePetSystem = (playerId: number) => {
 
   // 플레이어 정보 (장착 펫 확인용)
   const { data: player, isLoading: isPlayerLoading } = useQuery({
-    queryKey: ["player", "me"],
-    queryFn: petApi.getPlayer,
+    queryKey: ["player", "info", playerId],
+    queryFn: () => petApi.getPlayer(playerId),
   });
 
   // 전체 펫 목록 (도감용)
@@ -39,7 +39,7 @@ export const usePetSystem = (playerId: number) => {
       queryClient.invalidateQueries({ queryKey: ["pets", "inventory", playerId] });
       queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 
@@ -49,7 +49,7 @@ export const usePetSystem = (playerId: number) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pets", "inventory", playerId] });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 
@@ -66,7 +66,7 @@ export const usePetSystem = (playerId: number) => {
   const equipMutation = useMutation({
     mutationFn: (petId: number) => petApi.equipPet(petId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
 

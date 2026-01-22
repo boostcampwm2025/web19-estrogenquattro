@@ -58,6 +58,6 @@ export const petApi = {
 
   getAllPets: () => fetchApi<Pet[]>("/api/pets/all"),
 
-  //임시로 설정해 둠 -> 추후 player api로 변경예정
-  getPlayer: () => fetchApi<PlayerInfoResponse>("/api/players/me/info"),
+  getPlayer: (playerId: number) =>
+    fetchApi<PlayerInfoResponse>(`/api/players/${playerId}/info`),
 };
