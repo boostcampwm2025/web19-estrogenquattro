@@ -163,7 +163,7 @@ export class PetService {
       userPet.exp = 0;
 
       // 도감(Codex)에 등록 (이미 있으면 무시)
-      const existingCodex = await this.userPetCodexRepository.findOne({
+      const existingCodex = await manager.findOne(UserPetCodex, {
         where: { playerId: player.id, petId: nextStagePet.id },
       });
 

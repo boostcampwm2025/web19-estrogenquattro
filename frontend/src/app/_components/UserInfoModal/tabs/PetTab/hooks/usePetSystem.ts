@@ -38,6 +38,8 @@ export const usePetSystem = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pets", "inventory"] });
       queryClient.invalidateQueries({ queryKey: ["pets", "codex"] });
+      // 포인트 차감 동기화를 위해 플레이어 정보 갱신
+      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
     },
   });
 
@@ -46,6 +48,8 @@ export const usePetSystem = () => {
     mutationFn: (userPetId: number) => petApi.feed(userPetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pets", "inventory"] });
+      // 포인트 차감 동기화를 위해 플레이어 정보 갱신
+      queryClient.invalidateQueries({ queryKey: ["player", "me"] });
     },
   });
 
