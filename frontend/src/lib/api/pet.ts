@@ -1,4 +1,4 @@
-import { fetchApi } from "../api";
+import { fetchApi } from "./client";
 
 // Pet API Interfaces
 export interface Pet {
