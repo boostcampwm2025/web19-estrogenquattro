@@ -11,9 +11,9 @@ interface FocusTimeOptions {
 
 export default class RemotePlayer extends BasePlayer {
   private isFocusing: boolean = false;
-  private focusTimeTimer: Phaser.Time.TimerEvent | null = null;
-  private totalFocusSeconds: number = 0;
-  private focusStartTimestamp: number = 0;
+  private baseFocusSeconds: number = 0; // 이전 세션까지의 누적 시간
+  private serverCurrentSessionSeconds: number = 0; // 서버가 계산한 현재 세션 경과 시간
+  private serverReceivedAt: number = 0; // 서버 응답 수신 시점
 
   constructor(
     scene: Phaser.Scene,
@@ -30,40 +30,37 @@ export default class RemotePlayer extends BasePlayer {
   // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)
   setFocusState(isFocusing: boolean, options?: FocusTimeOptions) {
     this.isFocusing = isFocusing;
-    this.totalFocusSeconds = options?.totalFocusSeconds ?? 0;
-
-    // 기존 타이머 정리 (상태 변경 시 중복 방지)
-    if (this.focusTimeTimer) {
-      this.focusTimeTimer.destroy();
-      this.focusTimeTimer = null;
-    }
+    this.baseFocusSeconds = options?.totalFocusSeconds ?? 0;
 
     if (isFocusing) {
-      // 시작 타임스탬프 역산 (클라이언트 단일 시계 내에서 계산)
-      const currentSessionSeconds = options?.currentSessionSeconds ?? 0;
-      this.focusStartTimestamp = Date.now() - currentSessionSeconds * 1000;
-
-      // 초기 표시
-      this.updateFocusTime(this.totalFocusSeconds + currentSessionSeconds);
-
-      // 1초마다 경과 시간 기반으로 계산 (프레임 드랍/탭 비활성화에도 정확)
-      this.focusTimeTimer = this.scene.time.addEvent({
-        delay: 1000,
-        callback: () => {
-          const elapsed = Math.floor(
-            (Date.now() - this.focusStartTimestamp) / 1000,
-          );
-          this.updateFocusTime(this.totalFocusSeconds + elapsed);
-        },
-        loop: true,
-      });
+      this.serverCurrentSessionSeconds = options?.currentSessionSeconds ?? 0;
+      this.serverReceivedAt = Date.now();
     } else {
-      // 휴식 상태: 누적 시간만 표시
-      this.focusStartTimestamp = 0;
-      this.updateFocusTime(this.totalFocusSeconds);
+      this.serverCurrentSessionSeconds = 0;
+      this.serverReceivedAt = 0;
     }
 
+    // 초기 표시
+    this.updateFocusDisplay();
     this.updateTaskBubble({ isFocusing, taskName: options?.taskName });
+  }
+
+  // 타임스탬프 기반 표시 시간 계산 (브라우저 쓰로틀링 무관)
+  getDisplayTime(): number {
+    if (this.isFocusing && this.serverReceivedAt > 0) {
+      const clientElapsed = Math.floor(
+        (Date.now() - this.serverReceivedAt) / 1000,
+      );
+      return (
+        this.baseFocusSeconds + this.serverCurrentSessionSeconds + clientElapsed
+      );
+    }
+    return this.baseFocusSeconds;
+  }
+
+  // UI 업데이트 (getDisplayTime 결과를 화면에 반영)
+  updateFocusDisplay() {
+    this.updateFocusTime(this.getDisplayTime());
   }
 
   getFocusState(): boolean {
@@ -72,10 +69,6 @@ export default class RemotePlayer extends BasePlayer {
 
   // 자원 해제 오버라이드
   destroy() {
-    if (this.focusTimeTimer) {
-      this.focusTimeTimer.destroy();
-      this.focusTimeTimer = null;
-    }
     super.destroy();
   }
 

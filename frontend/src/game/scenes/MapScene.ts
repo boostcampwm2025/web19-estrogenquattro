@@ -385,8 +385,8 @@ export class MapScene extends Phaser.Scene {
       }
     }
 
-    // 집중 시간 업데이트
-    const focusTime = useFocusTimeStore.getState().focusTime;
+    // 집중 시간 업데이트 (타임스탬프 기반 계산)
+    const focusTime = useFocusTimeStore.getState().getFocusTime();
     this.player.updateFocusTime(focusTime);
 
     // 작업 상태 말풍선 업데이트
