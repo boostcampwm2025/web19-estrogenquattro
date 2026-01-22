@@ -83,9 +83,6 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
   startFocusing: (taskName?: string, taskId?: number) => {
     const prev = get();
 
-    // 이미 FOCUSING이면 무시
-    if (prev.status === FOCUS_STATUS.FOCUSING) return;
-
     const socket = getSocket();
     if (!socket?.connected) {
       set({
@@ -95,10 +92,12 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     }
 
     // 낙관적 업데이트 (타임스탬프 기반)
+    // 이미 FOCUSING이어도 태스크 전환을 위해 서버에 전송
+    const currentFocusTime = prev.getFocusTime();
     set({
       status: FOCUS_STATUS.FOCUSING,
       isFocusTimerRunning: true,
-      baseFocusSeconds: prev.baseFocusSeconds,
+      baseFocusSeconds: currentFocusTime, // 현재까지 누적된 시간 보존
       serverCurrentSessionSeconds: 0,
       serverReceivedAt: Date.now(),
       error: null,

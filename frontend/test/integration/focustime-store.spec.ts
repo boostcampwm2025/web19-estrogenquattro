@@ -109,24 +109,28 @@ describe("useFocusTimeStore 롤백", () => {
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 
-  it("이미 FOCUSING 상태에서 startFocusing 호출 시 무시된다", async () => {
-    // Given: FOCUSING 상태
+  it("이미 FOCUSING 상태에서 startFocusing 호출 시 태스크 전환을 위해 emit된다", async () => {
+    // Given: FOCUSING 상태 (태스크 전환 시나리오)
     const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
 
     useFocusTimeStore.setState({
       status: "FOCUSING",
       isFocusTimerRunning: true,
-      focusStartTimestamp: Date.now(),
       baseFocusSeconds: 0,
-      focusTime: 60,
+      serverCurrentSessionSeconds: 60,
+      serverReceivedAt: Date.now() - 60000,
       error: null,
     });
 
-    // When: startFocusing 호출
-    useFocusTimeStore.getState().startFocusing();
+    // When: 새 태스크로 startFocusing 호출
+    useFocusTimeStore.getState().startFocusing("새 태스크", 123);
 
-    // Then: emit이 호출되지 않음
-    expect(mockSocket.emit).not.toHaveBeenCalled();
+    // Then: emit이 호출됨 (태스크 전환)
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "focusing",
+      { taskName: "새 태스크", taskId: 123 },
+      expect.any(Function),
+    );
   });
 
   it("startFocusing 실패 시 RESTING으로 롤백된다", async () => {
