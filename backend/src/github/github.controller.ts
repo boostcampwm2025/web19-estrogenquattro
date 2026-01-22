@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { GithubService } from './github.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { GithubEventsResDto } from './dto/get-github-events.res';
@@ -15,7 +21,14 @@ export class GithubController {
     @Query('playerId') playerId: string | undefined,
     @Query('date') date: string,
   ): Promise<GithubEventsResDto> {
-    const targetPlayerId = playerId ? Number(playerId) : currentPlayerId;
+    let targetPlayerId = currentPlayerId;
+    if (playerId) {
+      const parsed = Number(playerId);
+      if (Number.isNaN(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+        throw new BadRequestException('Invalid playerId');
+      }
+      targetPlayerId = parsed;
+    }
     return this.githubService.getPlayerActivitiesByDate(targetPlayerId, date);
   }
 }

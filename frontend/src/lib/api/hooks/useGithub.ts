@@ -8,7 +8,7 @@ export function useGithubEvents(playerId: number, date: string) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.github.events(playerId, date),
     queryFn: () => githubApi.getEvents(playerId, date),
-    enabled: !!playerId && !!date,
+    enabled: playerId > 0 && !!date,
     staleTime: 0,
   });
 

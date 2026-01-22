@@ -8,7 +8,7 @@ export function useTasks(playerId: number, date?: string) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.tasks.list(playerId, date),
     queryFn: () => taskApi.getTasks(playerId, date),
-    enabled: !!playerId,
+    enabled: playerId > 0,
     staleTime: 0,
     refetchOnMount: "always",
   });

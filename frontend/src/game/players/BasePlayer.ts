@@ -140,9 +140,18 @@ export default class BasePlayer {
         event: Phaser.Types.Input.EventData,
       ) => {
         // DOM 요소 위에서 클릭된 경우 무시
-        const element = document.elementFromPoint(pointer.x, pointer.y);
-        const canvas = this.scene.game.canvas;
-        if (element !== canvas) {
+        const nativeEvent = pointer.event;
+        let clientX: number;
+        let clientY: number;
+        if (nativeEvent instanceof TouchEvent) {
+          clientX = nativeEvent.touches[0]?.clientX ?? 0;
+          clientY = nativeEvent.touches[0]?.clientY ?? 0;
+        } else {
+          clientX = nativeEvent.clientX;
+          clientY = nativeEvent.clientY;
+        }
+        const element = document.elementFromPoint(clientX, clientY);
+        if (element !== this.scene.game.canvas) {
           event.stopPropagation();
           return;
         }
