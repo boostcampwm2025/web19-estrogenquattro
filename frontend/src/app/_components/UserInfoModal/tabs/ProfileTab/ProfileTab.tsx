@@ -33,7 +33,7 @@ export default function ProfileTab() {
           tasks={tasks}
           selectedDate={selectedDate}
           focusTimeMinutes={focusTimeData?.totalFocusMinutes}
-          githubEvents={githubEvents}
+          githubEvents={githubEvents ?? null}
         />
         <TaskSection tasks={tasks} selectedDate={selectedDate} />
       </div>

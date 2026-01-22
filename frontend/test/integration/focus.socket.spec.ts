@@ -91,6 +91,14 @@ describe("FocusTime Socket 통합", () => {
     actorSocket.emit("joining", { x: 0, y: 0, username: "actor" });
     await waitForEvent(actorSocket, "joined");
 
+    // 먼저 FOCUSING 상태로 전환 (stopFocusing은 FOCUSING 상태에서만 동작)
+    const focusedPromise = waitForEvent<{ status: string }>(
+      observer,
+      "focused",
+    );
+    useFocusTimeStore.getState().startFocusing();
+    await focusedPromise;
+
     const restedPromise = waitForEvent<{ status: string }>(observer, "rested");
 
     useFocusTimeStore.getState().stopFocusing();

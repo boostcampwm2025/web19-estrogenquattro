@@ -21,8 +21,8 @@ export class DailyFocusTime {
   @JoinColumn({ name: 'player_id' })
   player: Player;
 
-  @Column({ name: 'total_focus_minutes', type: 'int', default: 0 })
-  totalFocusMinutes: number;
+  @Column({ name: 'total_focus_seconds', type: 'int', default: 0 })
+  totalFocusSeconds: number;
 
   @Column({
     type: 'simple-enum',
@@ -36,4 +36,7 @@ export class DailyFocusTime {
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;
+
+  @Column({ name: 'current_task_id', type: 'int', nullable: true })
+  currentTaskId: number | null;
 }

@@ -3,7 +3,7 @@ import type { TaskRes } from "../../src/lib/api";
 export type TaskEntity = {
   id: number;
   description: string;
-  totalFocusMinutes: number;
+  totalFocusSeconds: number;
   completedDate: Date | null;
   createdDate: Date;
 };
@@ -14,7 +14,7 @@ export const toDateString = (value: Date) =>
 export const toTaskRes = (task: TaskEntity): TaskRes => ({
   id: task.id,
   description: task.description,
-  totalFocusMinutes: task.totalFocusMinutes,
+  totalFocusSeconds: task.totalFocusSeconds,
   isCompleted: task.completedDate !== null,
   createdDate: toDateString(new Date(task.createdDate)),
 });

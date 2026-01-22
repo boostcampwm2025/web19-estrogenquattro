@@ -24,7 +24,7 @@ interface PlayerData {
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
-  totalFocusMinutes?: number;
+  totalFocusSeconds?: number;
   currentSessionSeconds?: number;
 }
 
@@ -51,6 +51,7 @@ export default class SocketManager {
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
+  private isSessionReplaced: boolean = false;
   private getPlayer: () =>
     | {
         id: string;
@@ -93,13 +94,21 @@ export default class SocketManager {
     return this.roomId;
   }
 
-  connect(showSessionEndedOverlay: () => void): void {
+  connect(callbacks: {
+    showSessionEndedOverlay: () => void;
+    showConnectionLostOverlay: () => void;
+    hideConnectionLostOverlay: () => void;
+  }): void {
     const socket = connectSocket();
     if (!socket) return;
 
     const player = this.getPlayer();
 
     socket.on("connect", () => {
+      // 재연결 시 오버레이 숨김 및 플래그 리셋
+      callbacks.hideConnectionLostOverlay();
+      this.isSessionReplaced = false;
+
       if (player && socket.id) {
         player.id = socket.id;
       }
@@ -109,6 +118,13 @@ export default class SocketManager {
         y: player?.getContainer().y,
         username: this.username,
       });
+    });
+
+    socket.on("disconnect", (reason) => {
+      // 세션 교체가 아니고, 클라이언트가 의도적으로 끊은 것이 아닌 경우에만 오버레이 표시
+      if (!this.isSessionReplaced && reason !== "io client disconnect") {
+        callbacks.showConnectionLostOverlay();
+      }
     });
 
     socket.on(
@@ -127,8 +143,9 @@ export default class SocketManager {
     );
 
     socket.on("session_replaced", () => {
+      this.isSessionReplaced = true;
       socket.disconnect();
-      showSessionEndedOverlay();
+      callbacks.showSessionEndedOverlay();
     });
 
     socket.on("players_synced", (players: PlayerData[]) => {
@@ -196,7 +213,7 @@ export default class SocketManager {
         userId: string;
         status: string;
         taskName?: string;
-        totalFocusMinutes?: number;
+        totalFocusSeconds?: number;
         currentSessionSeconds?: number;
       }) => {
         if (data.status !== FOCUS_STATUS.FOCUSING) return;
@@ -204,7 +221,7 @@ export default class SocketManager {
         if (remotePlayer) {
           remotePlayer.setFocusState(true, {
             taskName: data.taskName,
-            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            totalFocusSeconds: data.totalFocusSeconds ?? 0,
             currentSessionSeconds: data.currentSessionSeconds ?? 0,
           });
         }
@@ -217,13 +234,13 @@ export default class SocketManager {
       (data: {
         userId: string;
         status: string;
-        totalFocusMinutes?: number;
+        totalFocusSeconds?: number;
       }) => {
         if (data.status !== FOCUS_STATUS.RESTING) return;
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setFocusState(false, {
-            totalFocusMinutes: data.totalFocusMinutes ?? 0,
+            totalFocusSeconds: data.totalFocusSeconds ?? 0,
           });
         }
       },
@@ -264,7 +281,7 @@ export default class SocketManager {
 
     // 입장 시 기존 플레이어의 집중 상태 반영 (FOCUSING/RESTING 모두 태그 표시)
     remotePlayer.setFocusState(data.status === FOCUS_STATUS.FOCUSING, {
-      totalFocusMinutes: data.totalFocusMinutes ?? 0,
+      totalFocusSeconds: data.totalFocusSeconds ?? 0,
       currentSessionSeconds: data.currentSessionSeconds ?? 0,
     });
 

@@ -5,14 +5,14 @@ import { devLogger } from "@/lib/devLogger";
 
 interface FocusTimeOptions {
   taskName?: string;
-  totalFocusMinutes?: number;
+  totalFocusSeconds?: number;
   currentSessionSeconds?: number;
 }
 
 export default class RemotePlayer extends BasePlayer {
   private isFocusing: boolean = false;
   private focusTimeTimer: Phaser.Time.TimerEvent | null = null;
-  private totalFocusMinutes: number = 0;
+  private totalFocusSeconds: number = 0;
   private focusStartTimestamp: number = 0;
 
   constructor(
@@ -30,7 +30,7 @@ export default class RemotePlayer extends BasePlayer {
   // 집중 상태 설정 (SocketManager에서 focused/rested 이벤트 수신 시 호출)
   setFocusState(isFocusing: boolean, options?: FocusTimeOptions) {
     this.isFocusing = isFocusing;
-    this.totalFocusMinutes = options?.totalFocusMinutes ?? 0;
+    this.totalFocusSeconds = options?.totalFocusSeconds ?? 0;
 
     // 기존 타이머 정리 (상태 변경 시 중복 방지)
     if (this.focusTimeTimer) {
@@ -44,7 +44,7 @@ export default class RemotePlayer extends BasePlayer {
       this.focusStartTimestamp = Date.now() - currentSessionSeconds * 1000;
 
       // 초기 표시
-      this.updateFocusTime(this.totalFocusMinutes * 60 + currentSessionSeconds);
+      this.updateFocusTime(this.totalFocusSeconds + currentSessionSeconds);
 
       // 1초마다 경과 시간 기반으로 계산 (프레임 드랍/탭 비활성화에도 정확)
       this.focusTimeTimer = this.scene.time.addEvent({
@@ -53,14 +53,14 @@ export default class RemotePlayer extends BasePlayer {
           const elapsed = Math.floor(
             (Date.now() - this.focusStartTimestamp) / 1000,
           );
-          this.updateFocusTime(this.totalFocusMinutes * 60 + elapsed);
+          this.updateFocusTime(this.totalFocusSeconds + elapsed);
         },
         loop: true,
       });
     } else {
       // 휴식 상태: 누적 시간만 표시
       this.focusStartTimestamp = 0;
-      this.updateFocusTime(this.totalFocusMinutes * 60);
+      this.updateFocusTime(this.totalFocusSeconds);
     }
 
     this.updateTaskBubble({ isFocusing, taskName: options?.taskName });

@@ -3,7 +3,7 @@ import { fetchApi } from "./client";
 export interface TaskRes {
   id: number;
   description: string;
-  totalFocusMinutes: number;
+  totalFocusSeconds: number;
   isCompleted: boolean;
   createdDate: string;
 }
