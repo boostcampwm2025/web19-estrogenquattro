@@ -24,7 +24,7 @@
 | #126 | DB 누적 집중 시간 초 단위로 변경 | ✅ 해결 |
 | #162 | 자정 기준 일일 데이터 초기화 및 정산 | ❌ 미해결 |
 | #164 | 개별 태스크 집중 시간이 서버에 저장되지 않음 | ✅ 해결 |
-| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (발생 불가) |
+| #165 | FocusTime Race Condition - 트랜잭션 미사용 | ⏭️ 스킵 (현재 트래픽에서 발생 가능성 낮음) |
 | #166 | FocusTime 소켓 이벤트 클라이언트 응답 누락 | ✅ 해결 |
 | #167 | FocusTime Disconnect 시 에러 처리 미흡 | ⏭️ 스킵 (구분 불필요) |
 | #159 | 서버 접속 끊김 감지를 위한 하트비트 구현 | ✅ 해결 |
@@ -352,7 +352,7 @@ export class DailyResetService {
 
 ## #165: FocusTime Race Condition - 트랜잭션 미사용 ⏭️
 
-> **스킵 사유**: 현재 아키텍처에서 발생 불가능한 이론적 버그
+> **스킵 사유**: 현재 트래픽에서 발생 가능성 낮음 (이론적 버그)
 
 ### 현상
 
@@ -457,7 +457,7 @@ if (focusTime.status === FocusStatus.RESTING) {
 - `await` 순차 처리: 대부분 순서대로 실행
 - SQLite 쓰기 직렬화: 동시 쓰기 자동 차단
 
-**결론:** 현재 아키텍처에서 Race Condition이 발생할 수 있는 시나리오가 없음. 추후 다중 서버 환경이나 DB 변경 시 재검토 필요.
+**결론:** 현재 트래픽 수준에서 발생 가능성은 낮지만, Node.js 비동기 인터리빙으로 `findOne()` → `save()` 사이에 이론적 위험은 존재함. 추후 다중 서버 환경, DB 변경, 또는 트래픽 증가 시 `startFocusing`/`startResting`에 상태 체크 가드 또는 트랜잭션 추가를 재검토.
 
 - **GitHub 이슈**: #165 (closed, not planned)
 
@@ -753,7 +753,7 @@ connect(callbacks: {
 ### 2. #126 ✅ → #164 ✅ → #165 ⏭️ (완료)
 - **#126 완료**: PR #168 (브랜치: `fix/#126-focustime-seconds`)
 - **#164 완료**: PR #170 (브랜치: `fix/#164-task-focustime`, Stacked PR)
-- **#165 스킵**: 현재 아키텍처에서 발생 불가능 (이슈 닫힘)
+- **#165 스킵**: 현재 트래픽에서 발생 가능성 낮음 (이슈 닫힘)
 - **연관성**: 모두 `focustime.service.ts` 수정, DB 스키마 변경 포함
 - **순서**:
   1. **#126**: `totalFocusMinutes` → `totalFocusSeconds` 변경 ✅

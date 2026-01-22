@@ -105,8 +105,9 @@ export default class SocketManager {
     const player = this.getPlayer();
 
     socket.on("connect", () => {
-      // 재연결 시 오버레이 숨김
+      // 재연결 시 오버레이 숨김 및 플래그 리셋
       callbacks.hideConnectionLostOverlay();
+      this.isSessionReplaced = false;
 
       if (player && socket.id) {
         player.id = socket.id;
