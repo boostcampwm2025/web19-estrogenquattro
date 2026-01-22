@@ -3,10 +3,18 @@ import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
 import PetCodex from "./components/PetCodex";
+import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function PetTab() {
+  const { targetPlayerId } = useUserInfoStore();
+  const { user } = useAuthStore();
+
+  const playerId = targetPlayerId!;
+  const isOwner = user?.playerId === playerId;
+
   const { inventory, codex, player, feed, evolve, equip, allPets, isLoading } =
-    usePetSystem();
+    usePetSystem(playerId);
 
   // 현재 선택된 펫 ID (초기값 null -> 로딩 전에는 렌더링 방지)
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
@@ -100,6 +108,8 @@ export default function PetTab() {
   const handlePetSelect = async (petId: number) => {
     setSelectedPetId(petId);
 
+    if (!isOwner) return;
+
     try {
       await equip(petId);
     } catch (e) {
@@ -119,20 +129,22 @@ export default function PetTab() {
           maxExp={maxExp}
           currentStageData={petCardData}
           onAction={handleAction}
+          isOwner={isOwner}
         />
       ) : (
         <div className="border-4 border-amber-900/20 bg-amber-50 p-8 text-center text-amber-700">
           <p className="text-lg font-bold">보유한 펫이 없습니다</p>
-          <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>
+          {isOwner && <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>}
         </div>
       )}
 
-      <PetGacha onPetCollected={handlePetCollected} />
+      {isOwner && <PetGacha onPetCollected={handlePetCollected} />}
       <PetCodex
         allPets={allPets}
         collectedPetIds={collectedPetIds}
         equippedPetId={selectedPetId || -1}
         onPetSelect={handlePetSelect}
+        isOwner={isOwner}
       />
     </div>
   );
