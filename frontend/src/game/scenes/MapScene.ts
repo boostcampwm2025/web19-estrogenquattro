@@ -113,12 +113,29 @@ export class MapScene extends Phaser.Scene {
     const user = this.registry.get("user");
     this.username = user?.username;
     this.playerId = user?.playerId ?? 0;
+    this.petImage = user?.petImage;
   }
+
+  private petImage: string | null = null;
 
   create() {
     // 1. Map Setup
     this.mapManager = new MapManager(this, this.maps);
     this.mapManager.setup();
+
+    //React(Hooks)에서 보낸 펫 교체 이벤트 처리
+    const handleLocalPetUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (this.player && customEvent.detail?.petImage) {
+        this.player.setPet(customEvent.detail.petImage);
+      }
+    };
+    window.addEventListener("local_pet_update", handleLocalPetUpdate);
+
+    // 씬 종료 시 이벤트 리스너 제거
+    this.events.once("destroy", () => {
+      window.removeEventListener("local_pet_update", handleLocalPetUpdate);
+    });
 
     // 2. Animations Setup
     this.createAnimations();
@@ -226,6 +243,12 @@ export class MapScene extends Phaser.Scene {
       "pending",
       this.playerId,
     );
+
+    // 초기 펫 설정
+    this.player.setRoomId("pending"); // 생성자에서 이미 설정하지만 명시적으로
+    if (this.petImage) {
+      this.player.setPet(this.petImage);
+    }
   }
 
   private setupControls() {
