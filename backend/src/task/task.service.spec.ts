@@ -74,9 +74,7 @@ describe('TaskService', () => {
     const task = taskRepository.create({
       player,
       description,
-      createdDate: createdDate
-        ? (createdDate as unknown as Date)
-        : (new Date().toISOString().slice(0, 10) as unknown as Date),
+      createdDate: createdDate ?? new Date().toISOString().slice(0, 10),
     });
     return taskRepository.save(task);
   };
@@ -125,7 +123,7 @@ describe('TaskService', () => {
       // Given
       const today = new Date().toISOString().slice(0, 10);
       const task = await createTestTask(testPlayer, '오늘 완료 할 일', today);
-      task.completedDate = today as unknown as Date;
+      task.completedDate = today;
       await taskRepository.save(task);
 
       // When

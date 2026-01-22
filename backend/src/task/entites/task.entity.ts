@@ -23,8 +23,8 @@ export class Task {
   totalFocusSeconds: number;
 
   @Column({ type: 'date', name: 'completed_date', nullable: true })
-  completedDate: Date | null;
+  completedDate: string | null;
 
   @Column({ type: 'date', name: 'created_date' })
-  createdDate: Date;
+  createdDate: string;
 }
