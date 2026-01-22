@@ -5,6 +5,7 @@ import PetCard from "./components/PetCard";
 import PetCodex from "./components/PetCodex";
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import { useAuthStore } from "@/stores/authStore";
+import { UserPet } from "@/lib/api/pet";
 
 export default function PetTab() {
   const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
@@ -13,8 +14,17 @@ export default function PetTab() {
   const playerId = targetPlayerId!;
   const isOwner = user?.playerId === playerId;
 
-  const { inventory, codex, player, feed, evolve, equip, allPets, isLoading } =
-    usePetSystem(playerId);
+  const {
+    inventory,
+    codex,
+    player,
+    feed,
+    evolve,
+    equip,
+    gacha,
+    allPets,
+    isLoading,
+  } = usePetSystem(playerId);
 
   // 현재 선택된 펫 ID (초기값 null -> 로딩 전에는 렌더링 방지)
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
@@ -104,6 +114,11 @@ export default function PetTab() {
     }
   };
 
+  const handleGachaExecution = async (): Promise<UserPet["pet"]> => {
+    const response = await gacha();
+    return response.pet;
+  };
+
   const handlePetSelect = async (petId: number) => {
     setSelectedPetId(petId);
 
@@ -139,7 +154,12 @@ export default function PetTab() {
         </div>
       )}
 
-      {isOwner && <PetGacha onPetCollected={handlePetCollected} />}
+      {isOwner && (
+        <PetGacha
+          onGacha={handleGachaExecution}
+          onPetCollected={handlePetCollected}
+        />
+      )}
       <PetCodex
         allPets={allPets}
         collectedPetIds={collectedPetIds}

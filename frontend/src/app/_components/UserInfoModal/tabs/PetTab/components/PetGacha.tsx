@@ -1,8 +1,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { usePointStore } from "@/stores/pointStore";
-import { Pet } from "@/lib/api/pet";
-import { usePetSystem } from "../hooks/usePetSystem"; // Or pass via props
+import { Pet, UserPet } from "@/lib/api/pet";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -10,13 +9,12 @@ const PIXEL_BTN =
 
 interface PetGachaProps {
   onPetCollected: (petId: number) => void;
+  onGacha: () => Promise<UserPet["pet"]>;
 }
 
-export default function PetGacha({ onPetCollected }: PetGachaProps) {
+export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
   const [resultPet, setResultPet] = useState<Pet | null>(null);
-
-  const { gacha } = usePetSystem();
 
   const points = usePointStore((state) => state.points);
 
@@ -31,8 +29,7 @@ export default function PetGacha({ onPetCollected }: PetGachaProps) {
     try {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const userPet = await gacha();
-      const pet = userPet.pet;
+      const pet = await onGacha();
 
       if (pet) {
         setResultPet(pet);
