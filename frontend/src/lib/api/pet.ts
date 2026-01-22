@@ -24,6 +24,7 @@ export interface PlayerInfoResponse {
   nickname: string;
   equippedPetId: number | null;
   totalPoint: number;
+  equippedPet?: Pet;
 }
 
 export const petApi = {

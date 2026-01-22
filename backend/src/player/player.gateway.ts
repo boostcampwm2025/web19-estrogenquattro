@@ -46,6 +46,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: number;
       y: number;
       playerId: number;
+      petImage?: string; // 펫 이미지 추가
     }
   > = new Map();
 
@@ -118,6 +119,9 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     void client.join(roomId);
 
+    const player = await this.playerService.findOneById(playerId);
+    const petImage = player.equippedPet?.actualImgUrl;
+
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
@@ -127,6 +131,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       x: data.x,
       y: data.y,
       playerId: playerId,
+      petImage: petImage,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지
@@ -176,8 +181,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
 
-    // 4. Update FocusTime
-    const player = await this.playerService.findOneById(userData.user.playerId);
+    // 4. Update FocusTime (이미 조회한 player 객체 재사용 가능하지만 findOrCreate 로직 유지)
     const myFocusTime = await this.focusTimeService.findOrCreate(player);
 
     // 서버에서 현재 세션 경과 시간 계산
@@ -199,6 +203,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       totalFocusSeconds: myFocusTime.totalFocusSeconds,
       currentSessionSeconds: myCurrentSessionSeconds,
       playerId: playerId,
+      petImage: petImage, // DB에서 가져온 펫 정보 전송
     });
 
     const connectedAt = new Date();
@@ -249,6 +254,25 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       isMoving: data.isMoving,
       direction: data.direction,
       timestamp: data.timestamp,
+    });
+  }
+
+  @SubscribeMessage('pet_equipping')
+  handlePetEquip(
+    @MessageBody()
+    data: { petImage: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    // 펫 정보 업데이트
+    player.petImage = data.petImage;
+
+    // 같은 방 사람들에게 전파
+    client.to(player.roomId).emit('pet_equipped', {
+      userId: client.id,
+      petImage: data.petImage,
     });
   }
 }

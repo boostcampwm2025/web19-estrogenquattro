@@ -11,7 +11,10 @@ export class PlayerService {
   ) {}
 
   async findOneById(id: number): Promise<Player> {
-    const player = await this.playerRepository.findOne({ where: { id } });
+    const player = await this.playerRepository.findOne({
+      where: { id },
+      relations: ['equippedPet'],
+    });
     if (!player) {
       throw new NotFoundException(`Player with ID ${id} not found`);
     }
