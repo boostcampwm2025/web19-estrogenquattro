@@ -62,7 +62,8 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     } = get();
 
     if (status === FOCUS_STATUS.FOCUSING && serverReceivedAt > 0) {
-      const clientElapsed = Math.floor((Date.now() - serverReceivedAt) / 1000);
+      const rawElapsed = Math.floor((Date.now() - serverReceivedAt) / 1000);
+      const clientElapsed = Math.max(0, rawElapsed);
       return baseFocusSeconds + serverCurrentSessionSeconds + clientElapsed;
     }
 
