@@ -1,5 +1,6 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { getTasksByDate, formatTimeFromSeconds } from "../../lib/dateStats";
+import { toDateString } from "@/utils/timeFormat";
 
 interface TaskSectionProps {
   tasks: Task[];
@@ -7,7 +8,10 @@ interface TaskSectionProps {
 }
 
 export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
-  const dailyTasks = getTasksByDate(tasks, selectedDate);
+  const isToday = toDateString(selectedDate) === toDateString(new Date());
+  const dailyTasks = getTasksByDate(tasks, selectedDate).filter(
+    (task) => isToday || task.completed,
+  );
 
   const formatSelectedDate = () => {
     const year = selectedDate.getFullYear();

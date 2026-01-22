@@ -2,28 +2,15 @@ import { useState } from "react";
 import { CalendarHeatmap } from "./components/CalendarHeatmap/CalendarHeatmap";
 import StatsSection from "./components/StatsSection/StatsSection";
 import TaskSection from "./components/TaskSection/TaskSection";
-import { generateMockTasks } from "./lib/mockDataGenerator";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
-import { toDateString } from "@/utils/timeFormat";
 import { useUserInfoStore } from "@/stores/userInfoStore";
-
-// TODO: [API 연동] 선택한 날짜의 Task 목록 Mock 데이터
-const mockTasks = generateMockTasks(365);
 
 export default function ProfileTab() {
   const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, githubEvents, isLoading } =
+  const { dailyTaskCounts, focusTimeData, githubEvents, tasks, isLoading } =
     useProfileData(targetPlayerId ?? 0, selectedDate);
-
-  // TODO: [API 연동] 선택한 날짜의 Task 목록을 가져오는 함수
-  const getTasksForDate = (date: Date) => {
-    const dateStr = toDateString(date);
-    return mockTasks.filter((task) => task.createdDate === dateStr);
-  };
-
-  const selectedDateTasks = getTasksForDate(selectedDate);
 
   if (isLoading) {
     return (
@@ -43,12 +30,12 @@ export default function ProfileTab() {
 
       <div className="space-y-4 text-amber-900">
         <StatsSection
-          tasks={selectedDateTasks}
+          tasks={tasks}
           selectedDate={selectedDate}
           focusTimeMinutes={focusTimeData?.totalFocusMinutes}
           githubEvents={githubEvents}
         />
-        <TaskSection tasks={selectedDateTasks} selectedDate={selectedDate} />
+        <TaskSection tasks={tasks} selectedDate={selectedDate} />
       </div>
     </div>
   );
