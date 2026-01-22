@@ -33,6 +33,7 @@ export class FocusTimeService {
         player: { id: player.id },
         createdDate: today as unknown as Date,
       },
+      relations: ['player', 'currentTask'],
     });
 
     if (existing) {
@@ -65,7 +66,7 @@ export class FocusTimeService {
           player: { id: playerId },
           createdDate: today as unknown as Date,
         },
-        relations: ['player'],
+        relations: ['player', 'currentTask'],
       });
 
       if (!focusTime) {
@@ -75,13 +76,13 @@ export class FocusTimeService {
       }
 
       // taskId 소유권 검증
-      let verifiedTaskId: number | null = null;
+      let verifiedTask: Task | null = null;
       if (taskId) {
         const task = await taskRepo.findOne({
           where: { id: taskId, player: { id: playerId } },
         });
         if (task) {
-          verifiedTaskId = taskId;
+          verifiedTask = task;
         } else {
           this.logger.warn(
             `Task ${taskId} not found or not owned by player ${playerId}, ignoring taskId`,
@@ -90,6 +91,7 @@ export class FocusTimeService {
       }
 
       // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
+      const previousTaskId = focusTime.currentTask?.id ?? null;
       if (
         focusTime.status === FocusStatus.FOCUSING &&
         focusTime.lastFocusStartTime
@@ -99,26 +101,28 @@ export class FocusTimeService {
         focusTime.totalFocusSeconds += diffSeconds;
 
         // 이전 Task의 집중 시간 업데이트
-        if (focusTime.currentTaskId && diffSeconds > 0) {
+        if (previousTaskId && diffSeconds > 0) {
           await this.addFocusTimeToTask(
             manager,
             playerId,
-            focusTime.currentTaskId,
+            previousTaskId,
             diffSeconds,
           );
           this.logger.log(
-            `Task switch: saved ${diffSeconds}s for previous task ${focusTime.currentTaskId}`,
+            `Task switch: saved ${diffSeconds}s for previous task ${previousTaskId}`,
           );
         }
       }
 
       focusTime.status = FocusStatus.FOCUSING;
       focusTime.lastFocusStartTime = now;
-      focusTime.currentTaskId = verifiedTaskId;
+      // Fallback: @Column과 @ManyToOne 충돌 방지를 위해 둘 다 설정
+      focusTime.currentTaskId = verifiedTask?.id ?? null;
+      focusTime.currentTask = verifiedTask;
 
-      if (verifiedTaskId) {
+      if (verifiedTask) {
         this.logger.log(
-          `Player ${playerId} started focusing on task ${verifiedTaskId}`,
+          `Player ${playerId} started focusing on task ${verifiedTask.id}`,
         );
       }
 
@@ -138,7 +142,7 @@ export class FocusTimeService {
           player: { id: playerId },
           createdDate: today as unknown as Date,
         },
-        relations: ['player'],
+        relations: ['player', 'currentTask'],
       });
 
       if (!focusTime) {
@@ -148,6 +152,7 @@ export class FocusTimeService {
       }
 
       let diffSeconds = 0;
+      const currentTaskId = focusTime.currentTask?.id ?? null;
 
       if (
         focusTime.status === FocusStatus.FOCUSING &&
@@ -158,18 +163,18 @@ export class FocusTimeService {
         focusTime.totalFocusSeconds += diffSeconds;
 
         // 집중 중이던 Task가 있으면 해당 Task의 집중 시간도 업데이트
-        if (focusTime.currentTaskId && diffSeconds > 0) {
+        if (currentTaskId && diffSeconds > 0) {
           await this.addFocusTimeToTask(
             manager,
             playerId,
-            focusTime.currentTaskId,
+            currentTaskId,
             diffSeconds,
           );
         }
       }
 
       focusTime.status = FocusStatus.RESTING;
-      // currentTaskId는 유지 (다음 집중 시작 시 덮어쓰여짐)
+      // currentTask는 유지 (다음 집중 시작 시 덮어쓰여짐)
 
       return focusTimeRepo.save(focusTime);
     });
@@ -212,7 +217,7 @@ export class FocusTimeService {
         player: { id: In(playerIds) },
         createdDate: today as unknown as Date,
       },
-      relations: ['player'],
+      relations: ['player', 'currentTask'],
     });
   }
 

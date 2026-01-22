@@ -193,8 +193,8 @@ describe('FocusTimeService', () => {
       // When: startFocusing에 taskId 전달
       const result = await service.startFocusing(player.id, task.id);
 
-      // Then: currentTaskId가 저장됨
-      expect(result.currentTaskId).toBe(task.id);
+      // Then: currentTask가 저장됨
+      expect(result.currentTask?.id).toBe(task.id);
       expect(result.status).toBe(FocusStatus.FOCUSING);
     });
 
@@ -206,8 +206,8 @@ describe('FocusTimeService', () => {
       // When: startFocusing에 taskId 없이 호출
       const result = await service.startFocusing(player.id);
 
-      // Then: currentTaskId가 null
-      expect(result.currentTaskId).toBeNull();
+      // Then: currentTask가 null
+      expect(result.currentTask).toBeNull();
       expect(result.status).toBe(FocusStatus.FOCUSING);
     });
   });
@@ -258,7 +258,7 @@ describe('FocusTimeService', () => {
 
       // Then: 정상적으로 RESTING 상태가 됨
       expect(result.status).toBe(FocusStatus.RESTING);
-      expect(result.currentTaskId).toBeNull();
+      expect(result.currentTask).toBeNull();
     });
   });
 });
