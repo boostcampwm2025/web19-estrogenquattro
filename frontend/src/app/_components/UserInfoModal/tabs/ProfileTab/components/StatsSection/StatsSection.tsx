@@ -8,7 +8,7 @@ interface StatsSectionProps {
   tasks: Task[];
   selectedDate: Date;
   focusTimeMinutes?: number;
-  githubEvents: GithubEventsRes | null;
+  githubEvents: GithubEventsRes | undefined;
 }
 
 export default function StatsSection({
