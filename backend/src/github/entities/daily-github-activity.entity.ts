@@ -31,5 +31,5 @@ export class DailyGithubActivity {
   count: number;
 
   @Column({ name: 'created_date', type: 'date' })
-  createdDate: Date;
+  createdDate: string;
 }

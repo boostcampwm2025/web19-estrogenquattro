@@ -4,7 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
 } from 'typeorm';
 import { Player } from '../../player/entites/player.entity';
 
@@ -23,6 +22,6 @@ export class DailyPoint {
   @Column({ type: 'int' })
   amount: number;
 
-  @CreateDateColumn({ name: 'created_date', type: 'date' })
-  createdDate: Date;
+  @Column({ name: 'created_date', type: 'date' })
+  createdDate: string;
 }
