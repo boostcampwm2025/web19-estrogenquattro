@@ -245,7 +245,7 @@ describe('TaskService', () => {
     it('완료된 할 일을 미완료로 되돌린다', async () => {
       // Given
       const task = await createTestTask(testPlayer, '완료된 할 일');
-      task.completedDate = new Date();
+      task.completedDate = new Date().toISOString().slice(0, 10);
       await taskRepository.save(task);
 
       // When
