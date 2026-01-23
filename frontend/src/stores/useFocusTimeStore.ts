@@ -56,8 +56,12 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
   startFocusing: (taskName?: string, taskId?: number) => {
     const prev = get();
 
-    // 이미 FOCUSING이면 무시
-    if (prev.status === "FOCUSING") return;
+    // Guard: taskId가 없고 이미 FOCUSING이면 무시 (no-op)
+    // taskId가 있으면 Task 전환이므로 서버에 알려야 함
+    const isTaskSwitch = taskId !== undefined;
+    if (prev.status === "FOCUSING" && !isTaskSwitch) {
+      return;
+    }
 
     const socket = getSocket();
     if (!socket?.connected) {

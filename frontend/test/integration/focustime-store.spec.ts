@@ -109,7 +109,7 @@ describe("useFocusTimeStore 롤백", () => {
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 
-  it("이미 FOCUSING 상태에서 startFocusing 호출 시 무시된다", async () => {
+  it("이미 FOCUSING 상태에서 taskId 없이 startFocusing 호출 시 무시된다", async () => {
     // Given: FOCUSING 상태
     const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
 
@@ -122,11 +122,60 @@ describe("useFocusTimeStore 롤백", () => {
       error: null,
     });
 
-    // When: startFocusing 호출
+    // When: taskId 없이 startFocusing 호출
     useFocusTimeStore.getState().startFocusing();
 
     // Then: emit이 호출되지 않음
     expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it("Task A에서 Task B로 전환 시 focusing 이벤트가 전송된다", async () => {
+    // Given: Task A로 집중 중인 상태
+    const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
+
+    useFocusTimeStore.setState({
+      status: "FOCUSING",
+      isFocusTimerRunning: true,
+      focusStartTimestamp: Date.now() - 300000, // 5분 전
+      baseFocusSeconds: 0,
+      focusTime: 300,
+      error: null,
+    });
+
+    // When: Task B로 전환 (taskId 포함)
+    useFocusTimeStore.getState().startFocusing("Task B", 2);
+
+    // Then: focusing 이벤트가 전송됨
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "focusing",
+      { taskName: "Task B", taskId: 2 },
+      expect.any(Function),
+    );
+  });
+
+  it("Task 전환 시 낙관적 업데이트가 적용된다", async () => {
+    // Given: Task A로 집중 중인 상태
+    const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
+
+    const initialTimestamp = Date.now() - 300000;
+    useFocusTimeStore.setState({
+      status: "FOCUSING",
+      isFocusTimerRunning: true,
+      focusStartTimestamp: initialTimestamp,
+      baseFocusSeconds: 0,
+      focusTime: 300,
+      error: null,
+    });
+
+    // When: Task B로 전환
+    useFocusTimeStore.getState().startFocusing("Task B", 2);
+
+    // Then: 상태가 FOCUSING 유지, focusStartTimestamp 갱신
+    const state = useFocusTimeStore.getState();
+    expect(state.status).toBe("FOCUSING");
+    expect(state.isFocusTimerRunning).toBe(true);
+    expect(state.focusStartTimestamp).not.toBe(initialTimestamp); // 새 타임스탬프
+    expect(state.baseFocusSeconds).toBe(300); // 이전 focusTime이 base로 저장
   });
 
   it("startFocusing 실패 시 RESTING으로 롤백된다", async () => {
