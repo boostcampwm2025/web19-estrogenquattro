@@ -31,7 +31,7 @@ export class FocusTimeService {
     const existing = await this.focusTimeRepository.findOne({
       where: {
         player: { id: player.id },
-        createdDate: today as unknown as Date,
+        createdDate: today,
       },
       relations: ['player', 'currentTask'],
     });
@@ -44,7 +44,7 @@ export class FocusTimeService {
       player,
       totalFocusSeconds: 0,
       status: FocusStatus.RESTING,
-      createdDate: today as unknown as Date,
+      createdDate: today,
     });
 
     return this.focusTimeRepository.save(newFocusTime);
@@ -64,7 +64,7 @@ export class FocusTimeService {
       const focusTime = await focusTimeRepo.findOne({
         where: {
           player: { id: playerId },
-          createdDate: today as unknown as Date,
+          createdDate: today,
         },
         relations: ['player', 'currentTask'],
       });
@@ -140,7 +140,7 @@ export class FocusTimeService {
       const focusTime = await focusTimeRepo.findOne({
         where: {
           player: { id: playerId },
-          createdDate: today as unknown as Date,
+          createdDate: today,
         },
         relations: ['player', 'currentTask'],
       });
@@ -215,7 +215,7 @@ export class FocusTimeService {
     return this.focusTimeRepository.find({
       where: {
         player: { id: In(playerIds) },
-        createdDate: today as unknown as Date,
+        createdDate: today,
       },
       relations: ['player', 'currentTask'],
     });
@@ -228,7 +228,7 @@ export class FocusTimeService {
     const focusTime = await this.focusTimeRepository.findOne({
       where: {
         player: { id: playerId },
-        createdDate: date as unknown as Date,
+        createdDate: date,
       },
     });
 
@@ -236,7 +236,7 @@ export class FocusTimeService {
       const emptyRecord = new DailyFocusTime();
       emptyRecord.totalFocusSeconds = 0;
       emptyRecord.status = FocusStatus.RESTING;
-      emptyRecord.createdDate = date as unknown as Date;
+      emptyRecord.createdDate = date;
       emptyRecord.lastFocusStartTime = null as unknown as Date;
       return emptyRecord;
     }

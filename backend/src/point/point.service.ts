@@ -11,14 +11,15 @@ export class PointService {
   ) {}
 
   async getPoints(playerId: number): Promise<DailyPoint[]> {
-    const today = new Date();
+    const today = new Date().toISOString().slice(0, 10);
     const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(today.getFullYear() - 1);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const oneYearAgoStr = oneYearAgo.toISOString().slice(0, 10);
 
     return this.dailyPointRepository.find({
       where: {
         player: { id: playerId },
-        createdDate: Between(oneYearAgo, today),
+        createdDate: Between(oneYearAgoStr, today),
       },
     });
   }

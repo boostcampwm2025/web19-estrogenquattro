@@ -24,7 +24,7 @@ export class TaskService {
     const newTask = this.taskRepository.create({
       player,
       description: dto.description,
-      createdDate: new Date(),
+      createdDate: new Date().toISOString().slice(0, 10),
     });
 
     const savedTask = await this.taskRepository.save(newTask);
@@ -79,7 +79,7 @@ export class TaskService {
       throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
-    task.completedDate = new Date();
+    task.completedDate = new Date().toISOString().slice(0, 10);
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }

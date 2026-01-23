@@ -48,10 +48,10 @@ export class Task {
   totalFocusSeconds: number;
 
   @Column({ type: 'date', name: 'completed_date', nullable: true })
-  completedDate: Date | null;
+  completedDate: string | null;  // YYYY-MM-DD (UTC)
 
   @Column({ type: 'date', name: 'created_date' })
-  createdDate: Date;
+  createdDate: string;  // YYYY-MM-DD (UTC)
 }
 ```
 
@@ -80,7 +80,7 @@ export class DailyFocusTime {
   status: FocusStatus;
 
   @Column({ name: 'created_date', type: 'date', nullable: false })
-  createdDate: Date;
+  createdDate: string;
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;
@@ -194,6 +194,25 @@ pnpm migration:run       # 실행
 - 동시 쓰기 제한 (단일 writer)
 - 대규모 트래픽에 부적합
 - 스케일아웃 불가
+
+### 날짜 타입 규칙
+
+SQLite는 별도의 `DATE` 타입이 없고 `TEXT`로 저장됩니다.
+
+| 컬럼 타입 | TS 타입 | 형식 | 용도 |
+|----------|---------|------|------|
+| `date` | `string` | `YYYY-MM-DD` (UTC) | 날짜만 필요한 경우 |
+| `datetime` | `Date` | ISO 8601 | 시간 연산이 필요한 경우 |
+
+**예시:**
+
+```typescript
+// date 컬럼 - UTC 문자열로 저장
+createdDate: new Date().toISOString().slice(0, 10)  // "2026-01-22"
+
+// datetime 컬럼 - Date 객체 사용
+lastFocusStartTime: new Date()
+```
 
 ### 데이터 백업
 

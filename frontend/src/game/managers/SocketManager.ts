@@ -332,7 +332,10 @@ export default class SocketManager {
   }
 
   updateRemotePlayers(): void {
-    this.otherPlayers.forEach((p) => p.update());
+    this.otherPlayers.forEach((p) => {
+      p.update();
+      p.updateFocusDisplay(); // 타임스탬프 기반 시간 업데이트
+    });
   }
 
   sendChat(message: string): void {

@@ -7,6 +7,7 @@ import { useState } from "react";
 
 interface TaskItemProps {
   task: Task;
+  displayTime: number;
   isPending: boolean;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
@@ -17,6 +18,7 @@ interface TaskItemProps {
 
 export function TaskItem({
   task,
+  displayTime,
   isPending,
   onToggle,
   onDelete,
@@ -91,7 +93,7 @@ export function TaskItem({
               {task.description}
             </div>
             <div className="mt-0.5 text-xs text-amber-700">
-              {formatTime(task.time)}
+              {formatTime(displayTime)}
             </div>
           </>
         )}

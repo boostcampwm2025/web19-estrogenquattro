@@ -13,7 +13,7 @@ export class TaskRes {
     res.description = task.description;
     res.totalFocusSeconds = task.totalFocusSeconds;
     res.isCompleted = task.completedDate !== null;
-    res.createdDate = new Date(task.createdDate).toISOString().split('T')[0];
+    res.createdDate = task.createdDate;
     return res;
   }
 }
