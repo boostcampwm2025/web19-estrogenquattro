@@ -10,8 +10,8 @@ export const queryKeys = {
   },
   github: {
     all: ["github"] as const,
-    events: (date: string) =>
-      [...queryKeys.github.all, "events", date] as const,
+    events: (playerId: number, date: string) =>
+      [...queryKeys.github.all, "events", playerId, date] as const,
   },
   tasks: {
     all: ["tasks"] as const,
