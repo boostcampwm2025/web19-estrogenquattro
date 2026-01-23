@@ -100,10 +100,36 @@ pnpm build
 
 ---
 
+## 코드-문서 매핑
+
+`/sync-docs` 명령어가 참조하는 매핑 테이블입니다.
+
+| 코드 경로 | 관련 문서 |
+|-----------|----------|
+| `backend/src/auth/` | `docs/features/AUTH_FLOW.md` |
+| `backend/src/focustime/` | `docs/features/FOCUS_TIME.md`, `docs/features/FOCUS_TIME_DETAIL.md` |
+| `backend/src/task/` | `docs/api/REST_ENDPOINTS.md` |
+| `backend/src/github/` | `docs/api/GITHUB_POLLING.md` |
+| `backend/src/player/` | `docs/api/SOCKET_EVENTS.md` |
+| `backend/src/room/` | `docs/features/ROOM_JOIN_FLOW.md` |
+| `backend/src/userpet/` | `docs/features/PET_SYSTEM.md` |
+| `backend/src/point/` | `docs/features/POINT_SYSTEM.md` |
+| `backend/src/database/` | `docs/guides/ERD.md`, `docs/guides/DATABASE.md` |
+| `frontend/src/game/` | `docs/architecture/GAME_ENGINE.md` |
+| `frontend/src/game/managers/` | `docs/architecture/GAME_MANAGERS.md` |
+| `frontend/src/stores/` | `docs/architecture/STATE_MANAGEMENT.md` |
+| `*.entity.ts` | `docs/guides/ERD.md` |
+| `*.gateway.ts` | `docs/api/SOCKET_EVENTS.md` |
+| `*.controller.ts` | `docs/api/REST_ENDPOINTS.md` |
+
+> 새 모듈/기능 추가 시 이 테이블도 함께 업데이트하세요.
+
+---
+
 ## 문서 동기화 현황
 
 | 항목 | 마지막 동기화 | 커밋 |
 |------|-------------|------|
-| 전체 문서 | 2026-01-22 | [`50cc5cd`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/50cc5cd) |
+| 전체 문서 | 2026-01-23 | [`27b140e`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/27b140e) |
 
 > 문서와 코드 불일치 발견 시 이슈로 등록해주세요.

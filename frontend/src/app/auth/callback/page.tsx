@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function AuthCallbackPage() {
-  const router = useRouter();
   const { fetchUser, isAuthenticated, isLoading } = useAuthStore();
 
   useEffect(() => {
@@ -15,12 +13,12 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.replace("/");
+        window.location.replace("/");
       } else {
-        router.replace("/login");
+        window.location.replace("/login");
       }
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-900">
