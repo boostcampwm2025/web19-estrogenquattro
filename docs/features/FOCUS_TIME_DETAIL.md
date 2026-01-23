@@ -50,28 +50,33 @@ sequenceDiagram
 
 ```typescript
 interface FocusTimeState {
-  // 표시용
-  focusTime: number;              // 현재 표시할 누적 초
-  baseFocusSeconds: number;       // 집중 시작 시점의 누적 시간
-
   // 상태
   status: 'FOCUSING' | 'RESTING';
   isFocusTimerRunning: boolean;
+  error: string | null;
 
-  // 타이밍
-  focusStartTimestamp: number | null;  // 클라이언트 시계 (로컬 계산용)
+  // 서버 기준 타임스탬프 (브라우저 쓰로틀링 무관 시간 계산용)
+  baseFocusSeconds: number;           // 이전 세션까지의 누적 시간
+  serverCurrentSessionSeconds: number; // 서버가 계산한 현재 세션 경과 시간
+  serverReceivedAt: number;           // 서버 응답 수신 시점 (클라이언트 시간)
 }
 ```
 
 ### 시간 계산 공식
 
 ```typescript
-// 표시 시간 = 기준 시간 + 경과 시간
-displayTime = baseFocusSeconds + (Date.now() - focusStartTimestamp) / 1000;
-
-// 또는 incrementFocusTime()으로 매초 +1
-displayTime = focusTime;  // 매초 증가되는 값
+// 타임스탬프 기반 시간 계산 (쓰로틀링 무관)
+getFocusTime(): number {
+  if (status === 'FOCUSING' && serverReceivedAt > 0) {
+    const clientElapsed = Math.floor((Date.now() - serverReceivedAt) / 1000);
+    return baseFocusSeconds + serverCurrentSessionSeconds + clientElapsed;
+  }
+  return baseFocusSeconds;
+}
 ```
+
+> **Note:** 기존 `incrementFocusTime()` 방식에서 타임스탬프 기반 `getFocusTime()` 방식으로 변경됨.
+> 브라우저 탭 비활성화 시에도 정확한 시간 계산 가능.
 
 ---
 
@@ -82,35 +87,20 @@ displayTime = focusTime;  // 매초 증가되는 값
 ```typescript
 syncFromServer(data: FocusTimeData) {
   const { status, totalFocusSeconds, currentSessionSeconds } = data;
+  const isFocusing = status === 'FOCUSING';
 
-  if (status === 'FOCUSING') {
-    // 1. 총 시간 = 누적 + 현재 세션
-    const totalTime = totalFocusSeconds + (currentSessionSeconds || 0);
-
-    // 2. focusStartTimestamp 역산
-    //    서버의 경과시간을 클라이언트 시계로 변환
-    const focusStartTimestamp = Date.now() - (currentSessionSeconds || 0) * 1000;
-
-    set({
-      focusTime: totalTime,
-      baseFocusSeconds: totalFocusSeconds,
-      status: 'FOCUSING',
-      isFocusTimerRunning: true,
-      focusStartTimestamp,
-    });
-  } else {
-    set({
-      focusTime: totalFocusSeconds,
-      baseFocusSeconds: totalFocusSeconds,
-      status: 'RESTING',
-      isFocusTimerRunning: false,
-      focusStartTimestamp: null,
-    });
-  }
+  set({
+    status: data.status,
+    isFocusTimerRunning: isFocusing,
+    baseFocusSeconds: totalFocusSeconds,
+    serverCurrentSessionSeconds: isFocusing ? currentSessionSeconds : 0,
+    serverReceivedAt: isFocusing ? Date.now() : 0,
+    error: null,
+  });
 }
 ```
 
-### 역산 로직 설명
+### 타임스탬프 기반 계산 설명
 
 ```
 서버 시간: 10:00:00에 집중 시작
@@ -118,10 +108,17 @@ syncFromServer(data: FocusTimeData) {
 서버가 계산: currentSessionSeconds = 60
 
 클라이언트 수신 시각: 10:01:02 (네트워크 지연 2초)
-클라이언트 계산: focusStartTimestamp = 10:01:02 - 60초 = 10:00:02
+클라이언트 저장:
+  - baseFocusSeconds = totalFocusSeconds (이전 세션 누적)
+  - serverCurrentSessionSeconds = 60
+  - serverReceivedAt = Date.now() (10:01:02)
 
-→ 클라이언트 시계 기준으로 60초 전에 시작한 것처럼 설정
-→ 이후 클라이언트에서 자체 계산해도 서버와 대략 일치
+10:01:05에 getFocusTime() 호출:
+  clientElapsed = (10:01:05 - 10:01:02) / 1000 = 3초
+  displayTime = baseFocusSeconds + 60 + 3 = 이전누적 + 63초
+
+→ 브라우저 탭 비활성화 후 복귀해도 정확한 시간 표시
+→ setInterval 쓰로틀링 영향 없음
 ```
 
 ---
@@ -251,30 +248,22 @@ private async addTimeToTask(
 
 ## 클라이언트 타이머
 
-### 전역 집중 타이머
+### 타임스탬프 기반 시간 표시
+
+기존 `setInterval` + `incrementFocusTime()` 방식 대신 타임스탬프 기반 계산 사용:
 
 ```typescript
-// FocusTimer 컴포넌트 또는 훅
-useEffect(() => {
-  if (!isFocusTimerRunning) return;
+// UI 컴포넌트에서
+const focusTime = useFocusTimeStore((state) => state.getFocusTime());
 
-  const interval = setInterval(() => {
-    useFocusTimeStore.getState().incrementFocusTime();
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, [isFocusTimerRunning]);
+// 또는 렌더링 시점에 직접 호출
+const displayTime = useFocusTimeStore.getState().getFocusTime();
 ```
 
-### incrementFocusTime 구현
-
-```typescript
-incrementFocusTime() {
-  set((state) => ({
-    focusTime: state.focusTime + 1
-  }));
-}
-```
+> **장점:**
+> - 브라우저 탭 비활성화 시에도 정확한 시간
+> - `setInterval` 쓰로틀링 영향 없음
+> - 서버-클라이언트 시간 동기화 개선
 
 ---
 
@@ -294,37 +283,48 @@ socket.on('focused', (data) => {
 });
 ```
 
-### RemotePlayer.setFocusState
+### RemotePlayer.setFocusState (타임스탬프 기반)
 
 ```typescript
+// 상태 변수
+private baseFocusSeconds: number = 0;        // 이전 세션까지의 누적 시간
+private serverCurrentSessionSeconds: number = 0; // 서버가 계산한 현재 세션 경과 시간
+private serverReceivedAt: number = 0;        // 서버 응답 수신 시점
+
 setFocusState(isFocusing: boolean, options?: FocusOptions) {
   this.isFocusing = isFocusing;
+  this.baseFocusSeconds = options?.totalFocusSeconds ?? 0;
 
-  if (isFocusing && options) {
-    // 서버에서 받은 경과 시간으로 시작
-    this.currentSeconds = options.currentSessionSeconds || 0;
-    this.totalSeconds = options.totalFocusSeconds || 0;
-
-    // 1초마다 증가
-    this.focusTimer = setInterval(() => {
-      this.currentSeconds++;
-      this.updateFocusTimeDisplay();
-    }, 1000);
-
-    // Task 이름 표시
-    if (options.taskName) {
-      this.showTaskBubble(options.taskName);
-    }
+  if (isFocusing) {
+    this.serverCurrentSessionSeconds = options?.currentSessionSeconds ?? 0;
+    this.serverReceivedAt = Date.now();
   } else {
-    // 휴식 상태
-    clearInterval(this.focusTimer);
-    this.totalSeconds = options?.totalFocusSeconds || this.totalSeconds;
-    this.hideTaskBubble();
+    this.serverCurrentSessionSeconds = 0;
+    this.serverReceivedAt = 0;
   }
 
-  this.updateFocusTimeDisplay();
+  // 초기 표시
+  this.updateFocusDisplay();
+  this.updateTaskBubble({ isFocusing, taskName: options?.taskName });
+}
+
+// 타임스탬프 기반 표시 시간 계산 (브라우저 쓰로틀링 무관)
+getDisplayTime(): number {
+  if (this.isFocusing && this.serverReceivedAt > 0) {
+    const clientElapsed = Math.floor((Date.now() - this.serverReceivedAt) / 1000);
+    return this.baseFocusSeconds + this.serverCurrentSessionSeconds + clientElapsed;
+  }
+  return this.baseFocusSeconds;
+}
+
+// UI 업데이트 (getDisplayTime 결과를 화면에 반영)
+updateFocusDisplay() {
+  this.updateFocusTime(this.getDisplayTime());
 }
 ```
+
+> **Note:** 기존 `setInterval` 기반에서 타임스탬프 기반으로 변경됨.
+> `SocketManager.updateRemotePlayers()`에서 매 프레임 `updateFocusDisplay()` 호출.
 
 ### 시간 표시 형식
 

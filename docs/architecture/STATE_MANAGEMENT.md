@@ -50,18 +50,23 @@ interface AuthActions {
 
 ```typescript
 interface FocusTimeState {
-  focusTime: number;              // 표시용 누적 초
-  baseFocusSeconds: number;       // 집중 시작 시점의 누적 시간
-  isFocusTimerRunning: boolean;   // 타이머 실행 중?
+  // 상태
   status: 'FOCUSING' | 'RESTING';
-  focusStartTimestamp: number | null;  // 클라이언트 시계
+  isFocusTimerRunning: boolean;
   error: string | null;
+
+  // 서버 기준 타임스탬프 (브라우저 쓰로틀링 무관 시간 계산용)
+  baseFocusSeconds: number;           // 이전 세션까지의 누적 시간
+  serverCurrentSessionSeconds: number; // 서버가 계산한 현재 세션 경과 시간
+  serverReceivedAt: number;           // 서버 응답 수신 시점 (클라이언트 시간)
 }
 
 interface FocusTimeActions {
-  // 로컬 전용
+  // 계산된 표시값 getter (타임스탬프 기반 계산)
+  getFocusTime(): number;
+
+  // 로컬 전용 (하위 호환성)
   setFocusTime(time: number): void;
-  incrementFocusTime(): void;     // 1초 증가
   resetFocusTime(): void;
   setFocusTimerRunning(isRunning: boolean): void;
 
@@ -73,6 +78,8 @@ interface FocusTimeActions {
   syncFromServer(data: FocusTimeData): void;
 }
 ```
+
+> **Note:** 기존 `incrementFocusTime()` 방식에서 `getFocusTime()` 타임스탬프 기반으로 변경됨.
 
 **낙관적 업데이트 흐름:**
 
@@ -115,9 +122,11 @@ interface Task {
   isCompleted: boolean;
   totalFocusSeconds: number;
   createdDate: string;
-  // 로컬 전용
+  // 로컬 전용 (타임스탬프 기반)
   isRunning?: boolean;       // 타이머 실행 중
-  currentSeconds?: number;   // 현재 세션 경과 시간
+  time: number;              // 누적 시간 (초)
+  baseTime: number;          // 시작 시점 기준 시간
+  startTimestamp: number | null;  // 타이머 시작 시점
 }
 
 interface TasksActions {
@@ -128,12 +137,14 @@ interface TasksActions {
   deleteTask(id: number): Promise<void>;
   toggleTask(id: number): Promise<void>;
 
-  // 로컬 타이머
+  // 로컬 타이머 (타임스탬프 기반)
   toggleTaskTimer(id: number): void;
   stopAllTasks(): void;
-  incrementTaskTime(id: number): void;
+  getTaskDisplayTime(task: Task): number;  // 타임스탬프 기반 시간 계산
 }
 ```
+
+> **Note:** 기존 `incrementTaskTime()` 방식에서 `getTaskDisplayTime()` 타임스탬프 기반으로 변경됨.
 
 **낙관적 업데이트 적용:**
 - `toggleTask`: 완료 상태 토글
@@ -251,31 +262,41 @@ useTasksStore.getState().fetchTasks();
 
 ---
 
-## 타이머 구현
+## 타이머 구현 (타임스탬프 기반)
 
 ### 전역 집중 타이머
 
+기존 `setInterval` + `incrementFocusTime()` 방식 대신 타임스탬프 기반 계산:
+
 ```typescript
-// 1초마다 실행
-useEffect(() => {
-  if (!isFocusTimerRunning) return;
+// UI 컴포넌트에서 렌더링 시 직접 계산
+const focusTime = useFocusTimeStore.getState().getFocusTime();
 
-  const interval = setInterval(() => {
-    useFocusTimeStore.getState().incrementFocusTime();
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, [isFocusTimerRunning]);
+// getFocusTime() 구현
+getFocusTime(): number {
+  if (status === 'FOCUSING' && serverReceivedAt > 0) {
+    const clientElapsed = Math.floor((Date.now() - serverReceivedAt) / 1000);
+    return baseFocusSeconds + serverCurrentSessionSeconds + clientElapsed;
+  }
+  return baseFocusSeconds;
+}
 ```
 
 ### Task 개별 타이머
 
 ```typescript
-// MapScene.update()에서 호출
-useTasksStore.getState().tasks
-  .filter(t => t.isRunning)
-  .forEach(t => incrementTaskTime(t.id));
+// 타임스탬프 기반 시간 계산
+getTaskDisplayTime(task: Task): number {
+  if (task.isRunning && task.startTimestamp) {
+    return task.baseTime + Math.floor((Date.now() - task.startTimestamp) / 1000);
+  }
+  return task.time;
+}
 ```
+
+> **장점:**
+> - 브라우저 탭 비활성화 시에도 정확한 시간 표시
+> - `setInterval` 쓰로틀링 영향 없음
 
 ---
 
