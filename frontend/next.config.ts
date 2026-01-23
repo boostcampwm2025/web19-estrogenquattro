@@ -5,6 +5,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const nextConfig: NextConfig = {
   output: isProd ? 'export' : undefined,
   distDir: isProd ? '../backend/public' : '.next',
+  trailingSlash: true,
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
