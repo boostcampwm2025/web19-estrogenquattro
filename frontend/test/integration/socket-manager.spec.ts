@@ -114,6 +114,7 @@ describe("SocketManager 통합", () => {
         playerId: 1,
         status: "FOCUSING",
         currentSessionSeconds: 0,
+        taskName: "코딩하기",
       },
     ]);
 
@@ -122,6 +123,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 0,
       totalFocusSeconds: 0,
+      taskName: "코딩하기",
     });
   });
 
@@ -139,6 +141,7 @@ describe("SocketManager 통합", () => {
         status: "RESTING",
         currentSessionSeconds: 0,
         totalFocusSeconds: 30,
+        taskName: null,
       },
     ]);
 
@@ -147,6 +150,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
       currentSessionSeconds: 0,
       totalFocusSeconds: 30,
+      taskName: undefined,
     });
   });
 
@@ -317,6 +321,7 @@ describe("SocketManager 통합", () => {
         status: "FOCUSING",
         currentSessionSeconds: 300,
         totalFocusSeconds: 120,
+        taskName: "집중 작업",
       },
     ]);
 
@@ -325,6 +330,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 300,
       totalFocusSeconds: 120,
+      taskName: "집중 작업",
     });
   });
 
@@ -340,6 +346,7 @@ describe("SocketManager 통합", () => {
       status: "FOCUSING",
       totalFocusSeconds: 10,
       currentSessionSeconds: 30,
+      taskName: "리뷰하기",
     });
 
     // Then: setFocusState(true)가 옵션 객체와 함께 호출됨
@@ -347,6 +354,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(true, {
       currentSessionSeconds: 30,
       totalFocusSeconds: 10,
+      taskName: "리뷰하기",
     });
   });
 
@@ -362,6 +370,7 @@ describe("SocketManager 통합", () => {
       status: "RESTING",
       totalFocusSeconds: 15,
       currentSessionSeconds: 0,
+      taskName: null,
     });
 
     // Then: setFocusState(false)가 호출됨
@@ -369,6 +378,7 @@ describe("SocketManager 통합", () => {
     expect(remote?.setFocusState).toHaveBeenCalledWith(false, {
       currentSessionSeconds: 0,
       totalFocusSeconds: 15,
+      taskName: undefined,
     });
   });
 

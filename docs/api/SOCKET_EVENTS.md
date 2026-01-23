@@ -224,7 +224,8 @@ socket.on('players_synced', (players: Array<{
   status: 'FOCUSING' | 'RESTING',
   lastFocusStartTime: string | null,
   totalFocusSeconds: number,
-  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
+  currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
+  taskName: string | null  // 현재 집중 중인 태스크 이름 (RESTING 시 null)
 }>) => {
   // RemotePlayer 생성
 });
@@ -246,7 +247,8 @@ socket.on('player_joined', (data: {
   petImage: string | null,  // 장착된 펫 이미지 URL
   status: 'FOCUSING' | 'RESTING',
   totalFocusSeconds: number,
-  currentSessionSeconds: number  // 서버가 계산한 현재 세션 경과 시간 (초)
+  currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
+  taskName: string | null  // 현재 집중 중인 태스크 이름 (RESTING 시 null)
 }) => {
   // RemotePlayer 생성
 });
