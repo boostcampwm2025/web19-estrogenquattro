@@ -19,6 +19,7 @@ erDiagram
     pets ||--o{ user_pets : "is owned as"
     pets ||--o{ user_pet_codex : "is recorded in"
     players ||--o| pets : "equips"
+    daily_focus_time }o--o| tasks : "focuses on"
 
     players {
         int id PK
@@ -33,8 +34,8 @@ erDiagram
         bigint player_id FK
         varchar description "작업 설명 (100자)"
         int total_focus_seconds "누적 집중 시간 (초)"
-        date completed_date "완료 날짜 (nullable)"
-        date created_date "생성 날짜"
+        string completed_date "완료 날짜 (YYYY-MM-DD, nullable)"
+        string created_date "생성 날짜 (YYYY-MM-DD)"
     }
 
     daily_focus_time {
@@ -42,9 +43,9 @@ erDiagram
         bigint player_id FK
         int total_focus_seconds "집중 시간 (초)"
         enum status "FOCUSING | RESTING"
-        date created_date "집계 날짜"
+        string created_date "집계 날짜 (YYYY-MM-DD)"
         datetime last_focus_start_time "마지막 집중 시작 시각"
-        int current_task_id "현재 집중 중인 Task ID (nullable)"
+        int current_task_id FK "현재 집중 중인 Task ID (nullable)"
     }
 
     pets {
@@ -69,14 +70,14 @@ erDiagram
         enum type "활동 타입"
         bigint player_id FK
         int count "활동 횟수"
-        date created_date "집계 날짜"
+        string created_date "집계 날짜 (YYYY-MM-DD)"
     }
 
     daily_point {
         bigint id PK
         bigint player_id FK
         int amount "일별 포인트"
-        date created_date "집계 날짜"
+        string created_date "집계 날짜 (YYYY-MM-DD)"
     }
 
     point_history {
@@ -123,8 +124,10 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | description | varchar(100) | | 작업 설명 |
 | total_focus_seconds | int | DEFAULT 0 | 누적 집중 시간 (초) |
-| completed_date | date | NULL 허용 | 완료 날짜 |
-| created_date | date | NOT NULL | 생성 날짜 |
+| completed_date | string | NULL 허용 | 완료 날짜 (YYYY-MM-DD 형식) |
+| created_date | string | NOT NULL | 생성 날짜 (YYYY-MM-DD 형식) |
+
+> **Note:** `completed_date`, `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
 
 ---
 
@@ -138,9 +141,12 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | total_focus_seconds | int | DEFAULT 0 | 집중 시간 (초) |
 | status | enum | NOT NULL | `FOCUSING` 또는 `RESTING` |
-| created_date | date | NOT NULL | 집계 기준 날짜 |
+| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
 | last_focus_start_time | datetime | NULL 허용 | 마지막 집중 시작 시각 |
-| current_task_id | int | NULL 허용 | 현재 집중 중인 Task ID |
+| current_task_id | int | FK → tasks.id, NULL 허용 | 현재 집중 중인 Task ID |
+
+> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼).
+> `current_task_id`는 Task 테이블과 ManyToOne 관계로 연결됨.
 
 ---
 
@@ -185,7 +191,9 @@ erDiagram
 | type | enum | NOT NULL | 활동 타입 |
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | count | int | DEFAULT 0 | 활동 횟수 |
-| created_date | date | NOT NULL | 집계 기준 날짜 |
+| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
+
+> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
 
 **활동 타입 (type):**
 - `ISSUE_OPEN` - 이슈 생성
@@ -207,9 +215,11 @@ erDiagram
 | id | bigint | PK, AUTO_INCREMENT | 고유 ID |
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | amount | int | DEFAULT 0 | 일별 누적 포인트 |
-| created_date | date | NOT NULL | 집계 기준 날짜 |
+| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
 
 **인덱스:** `UNIQUE(player_id, created_date)` - 플레이어별 일별 1개 레코드
+
+> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
 
 ---
 
