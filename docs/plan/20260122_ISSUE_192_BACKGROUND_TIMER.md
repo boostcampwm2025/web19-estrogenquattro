@@ -894,3 +894,182 @@ beforeEach(() => {
 | `task.res.ts` | 불필요한 Date 변환 제거 |
 | `task.service.spec.ts` | 타입 캐스팅 제거 |
 | `DATABASE.md` | 날짜 타입 규칙 문서화 |
+
+---
+
+## 코드래빗 리뷰 검토 및 추가 수정 (2026-01-23)
+
+PR #205에 대한 코드래빗(CodeRabbit) AI 리뷰를 검토하고 지적된 이슈들을 추가로 수정했습니다.
+
+### 지적된 이슈들
+
+#### 1. Date Type Rule Mismatch (🔴 Major)
+
+**문제:**
+- `DATABASE.md:204` 문서에서는 `type: 'date'` 컬럼에 TS 타입 `string` 사용을 명시
+- 하지만 3개 엔티티가 규칙 위반:
+  - `DailyFocusTime.createdDate`: `Date` 타입 사용
+  - `DailyGithubActivity.createdDate`: `Date` 타입 사용
+  - `DailyPoint.createdDate`: `@CreateDateColumn` + `Date` 타입 사용
+- 서비스 코드에서 `as unknown as Date` unsafe cast 필요
+
+**영향:**
+- 타입 안정성 파괴 (컴파일 타임 에러 검출 불가)
+- 시간대 불일치 위험
+- 코드 불일치 (Task는 `string` 사용, 다른 엔티티는 `Date` 사용)
+
+**수정 내용:**
+
+1. 엔티티 타입 변경 (`Date` → `string`):
+```typescript
+// DailyFocusTime
+@Column({ name: 'created_date', type: 'date', nullable: false })
+createdDate: string;  // Date → string
+
+// DailyGithubActivity
+@Column({ name: 'created_date', type: 'date' })
+createdDate: string;  // Date → string
+
+// DailyPoint (@CreateDateColumn 제거)
+@Column({ name: 'created_date', type: 'date' })
+createdDate: string;  // Date → string
+```
+
+2. Unsafe cast 제거:
+```typescript
+// Before (focustime.service.ts:34)
+createdDate: today as unknown as Date  // ❌
+
+// After
+createdDate: today  // ✅
+```
+
+3. 테스트 업데이트:
+```typescript
+// Before (focustime.service.spec.ts:74)
+createdDate: today as unknown as Date  // ❌
+
+// After
+createdDate: today  // ✅
+
+// Before (task.service.spec.ts:248)
+task.completedDate = new Date();  // ❌
+
+// After
+task.completedDate = new Date().toISOString().slice(0, 10);  // ✅
+```
+
+**변경 파일:**
+| 파일 | 변경 내용 |
+|------|----------|
+| `daily-focus-time.entity.ts` | `createdDate` 타입 `Date` → `string` |
+| `daily-github-activity.entity.ts` | `createdDate` 타입 `Date` → `string` |
+| `daily-point.entity.ts` | `@CreateDateColumn` 제거, 타입 `Date` → `string` |
+| `focustime.service.ts` | unsafe cast 제거 (5곳) |
+| `github.service.ts` | unsafe cast 제거 (2곳) |
+| `focustime.service.spec.ts` | unsafe cast 제거, 테스트 업데이트 |
+| `task.service.spec.ts` | `completedDate` Date 객체 → string으로 수정 |
+| `DATABASE.md` | 예시 코드의 `createdDate` 타입 `Date` → `string` |
+
+#### 2. Failed Task Switch Rollback (🔴 Major)
+
+**문제:**
+- `startFocusing` 에러 시 무조건 `RESTING` 상태로 롤백
+- 이미 FOCUSING 중인 상태에서 다른 태스크로 전환 시도 후 실패하면, 기존 집중 세션이 손실됨
+
+**시나리오:**
+```typescript
+// 1. Task A로 집중 중 (10분 경과)
+status: FOCUSING, baseFocusSeconds: 600, serverReceivedAt: 1234567890
+
+// 2. Task B로 전환 시도 → 서버 에러
+
+// 3. 현재 롤백 (❌)
+status: RESTING, baseFocusSeconds: 600, serverReceivedAt: 0
+// → 집중 세션 손실! 타임스탬프가 0이 되어 시간 계산 불가
+
+// 4. 기대 롤백 (✅)
+status: FOCUSING, baseFocusSeconds: 600, serverReceivedAt: 1234567890
+// → Task A 집중 상태 유지
+```
+
+**수정 내용:**
+
+```typescript
+// Before (useFocusTimeStore.ts:112-120)
+if (!response?.success) {
+  set({
+    status: FOCUS_STATUS.RESTING,        // ❌ 무조건 RESTING
+    isFocusTimerRunning: false,
+    serverCurrentSessionSeconds: 0,
+    serverReceivedAt: 0,                 // ❌ 타임스탬프 소실
+  });
+}
+
+// After
+if (!response?.success) {
+  set({
+    status: prev.status,                 // ✅ 이전 상태 복원
+    isFocusTimerRunning: prev.isFocusTimerRunning,
+    baseFocusSeconds: prev.baseFocusSeconds,
+    serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
+    serverReceivedAt: prev.serverReceivedAt,  // ✅ 타임스탬프 복원
+    error: response?.error || "집중 시작에 실패했습니다.",
+  });
+}
+```
+
+**패턴 통일:**
+- `stopFocusing`의 롤백 로직과 동일한 패턴 적용
+- 에러 발생 시 이전 상태를 완전히 복원하여 시간 연속성 유지
+
+**변경 파일:**
+| 파일 | 변경 내용 |
+|------|----------|
+| `useFocusTimeStore.ts` | `startFocusing` 롤백 로직을 `stopFocusing`과 동일하게 수정 |
+
+### 테스트 결과
+
+모든 Backend 테스트 통과:
+```
+Test Suites: 5 passed, 5 total
+Tests:       57 passed, 57 total
+Snapshots:   0 total
+Time:        2.142 s
+```
+
+주요 테스트:
+- `focustime.service.spec.ts`: Date 타입 변경 후 YYYY-MM-DD 문자열 조회 검증 (9개 테스트)
+- `task.service.spec.ts`: Task 엔티티 date 타입 동작 검증 (21개 테스트)
+
+### 추가 변경 사항
+
+1. **테스트 케이스 업데이트:**
+   - "new Date() 객체로는 조회할 수 없다" 테스트 → "string 타입으로 변경 후 올바른 형식으로 조회 성공"으로 변경
+   - `expect(found).toBeNull()` → `expect(found).toBeDefined()`
+
+2. **Import 정리:**
+   - `daily-point.entity.ts`에서 사용하지 않는 `CreateDateColumn` import 제거
+
+### 영향 범위
+
+| 영역 | 변경 사항 |
+|------|----------|
+| 엔티티 | 3개 엔티티의 `createdDate` 타입 변경 (DailyFocusTime, DailyGithubActivity, DailyPoint) |
+| 서비스 | unsafe cast 제거 (7곳) |
+| 프론트엔드 | 롤백 로직 개선 (1곳) |
+| 테스트 | unsafe cast 제거 및 테스트 케이스 업데이트 (2개 파일) |
+| 문서 | DATABASE.md 예시 코드 수정 |
+
+### 마이그레이션 영향
+
+SQLite는 `type: 'date'`를 `TEXT`로 저장하므로:
+- **데이터 변환 불필요** (이미 "YYYY-MM-DD" 문자열로 저장됨)
+- **스키마 변경만 필요** (TypeORM synchronize로 자동 처리)
+- **기존 데이터 호환성 유지**
+
+### 참고 링크
+
+- CodeRabbit 리뷰: https://github.com/boostcampwm2025/web19-estrogenquattro/pull/205#pullrequestreview-3693102241
+- 관련 이슈: #192
+- 관련 PR: #205
