@@ -22,10 +22,10 @@ interface TasksStore {
   editTask: (id: number, newText: string) => Promise<void>;
   clearError: () => void;
 
-  // 로컬 전용 액션 (타이머)
+  // 로컬 전용 액션 (타이머) - 타임스탬프 기반
   toggleTaskTimer: (id: number) => void;
   stopAllTasks: () => void;
-  incrementTaskTime: (id: number) => void;
+  getTaskDisplayTime: (task: Task) => number;
 }
 
 export const useTasksStore = create<TasksStore>((set, get) => {
@@ -220,25 +220,89 @@ export const useTasksStore = create<TasksStore>((set, get) => {
       }
     },
 
-    toggleTaskTimer: (id: number) =>
-      set((state) => ({
-        tasks: state.tasks.map((task) =>
-          task.id === id
-            ? { ...task, isRunning: !task.isRunning }
-            : { ...task, isRunning: false },
-        ),
-      })),
+    // 타임스탬프 기반 태스크 시간 계산
+    getTaskDisplayTime: (task: Task) => {
+      if (task.isRunning && task.startTimestamp) {
+        return (
+          task.baseTime + Math.floor((Date.now() - task.startTimestamp) / 1000)
+        );
+      }
+      return task.time;
+    },
 
+    // 타임스탬프 기반 타이머 토글
+    toggleTaskTimer: (id: number) => {
+      const { tasks } = get();
+      const targetTask = tasks.find((t) => t.id === id);
+      if (!targetTask) return;
+
+      set((state) => ({
+        tasks: state.tasks.map((task) => {
+          if (task.id === id) {
+            // 대상 태스크 토글
+            if (task.isRunning) {
+              // 정지: 경과 시간을 time에 반영
+              const elapsed = task.startTimestamp
+                ? Math.floor((Date.now() - task.startTimestamp) / 1000)
+                : 0;
+              const newTime = task.baseTime + elapsed;
+              return {
+                ...task,
+                isRunning: false,
+                time: newTime,
+                baseTime: newTime,
+                startTimestamp: null,
+              };
+            } else {
+              // 시작: 타임스탬프 설정
+              return {
+                ...task,
+                isRunning: true,
+                baseTime: task.time,
+                startTimestamp: Date.now(),
+              };
+            }
+          }
+
+          // 다른 실행 중인 태스크는 정지 (경과 시간 누적)
+          if (task.isRunning && task.startTimestamp) {
+            const elapsed = Math.floor(
+              (Date.now() - task.startTimestamp) / 1000,
+            );
+            const newTime = task.baseTime + elapsed;
+            return {
+              ...task,
+              isRunning: false,
+              time: newTime,
+              baseTime: newTime,
+              startTimestamp: null,
+            };
+          }
+
+          return task;
+        }),
+      }));
+    },
+
+    // 모든 태스크 정지 (경과 시간 누적)
     stopAllTasks: () =>
       set((state) => ({
-        tasks: state.tasks.map((task) => ({ ...task, isRunning: false })),
-      })),
-
-    incrementTaskTime: (id: number) =>
-      set((state) => ({
-        tasks: state.tasks.map((task) =>
-          task.id === id ? { ...task, time: task.time + 1 } : task,
-        ),
+        tasks: state.tasks.map((task) => {
+          if (task.isRunning && task.startTimestamp) {
+            const elapsed = Math.floor(
+              (Date.now() - task.startTimestamp) / 1000,
+            );
+            const newTime = task.baseTime + elapsed;
+            return {
+              ...task,
+              isRunning: false,
+              time: newTime,
+              baseTime: newTime,
+              startTimestamp: null,
+            };
+          }
+          return { ...task, isRunning: false };
+        }),
       })),
   };
 });

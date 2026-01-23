@@ -150,6 +150,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
         status: string;
         lastFocusStartTime: Date | null;
         totalFocusSeconds: number;
+        currentTask: { description: string } | null;
       }
     >();
     focusStatuses.forEach((fs) => {
@@ -157,6 +158,7 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
         status: fs.status,
         lastFocusStartTime: fs.lastFocusStartTime,
         totalFocusSeconds: fs.totalFocusSeconds,
+        currentTask: fs.currentTask,
       });
     });
 
@@ -180,6 +182,11 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
           totalFocusSeconds: status?.totalFocusSeconds ?? 0,
           currentSessionSeconds,
+          // FOCUSING 상태일 때만 taskName 반환 (RESTING 시 stale 값 방지)
+          taskName:
+            status?.status === FocusStatus.FOCUSING
+              ? (status?.currentTask?.description ?? null)
+              : null,
         };
       });
 
@@ -209,6 +216,11 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       currentSessionSeconds: myCurrentSessionSeconds,
       playerId: playerId,
       petImage: petImage, // DB에서 가져온 펫 정보 전송
+      // FOCUSING 상태일 때만 taskName 반환 (RESTING 시 stale 값 방지)
+      taskName:
+        myFocusTime.status === FocusStatus.FOCUSING
+          ? (myFocusTime.currentTask?.description ?? null)
+          : null,
     });
 
     const connectedAt = new Date();

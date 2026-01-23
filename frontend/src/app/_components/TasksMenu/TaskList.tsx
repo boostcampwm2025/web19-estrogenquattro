@@ -18,6 +18,7 @@ interface TaskListProps {
   onToggleTaskTimer: (id: number) => void;
   onEditTask: (id: number, newText: string) => void;
   formatTaskTime: (seconds: number) => string;
+  getTaskDisplayTime: (task: Task) => number;
 }
 
 export function TaskList({
@@ -32,6 +33,7 @@ export function TaskList({
   onToggleTaskTimer,
   onEditTask,
   formatTaskTime,
+  getTaskDisplayTime,
 }: TaskListProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
@@ -120,6 +122,7 @@ export function TaskList({
           <TaskItem
             key={task.id}
             task={task}
+            displayTime={getTaskDisplayTime(task)}
             isPending={pendingTaskIds.includes(task.id)}
             onToggle={onToggleTask}
             onDelete={onDeleteTask}

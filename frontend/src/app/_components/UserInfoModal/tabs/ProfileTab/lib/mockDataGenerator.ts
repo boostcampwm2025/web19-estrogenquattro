@@ -46,6 +46,9 @@ export function generateMockTasks(daysCount: number = 365): Task[] {
         description: TASK_NAMES[Math.floor(Math.random() * TASK_NAMES.length)],
         completed: isCompleted,
         time: timeInSeconds,
+        baseTime: timeInSeconds,
+        startTimestamp: null,
+        isRunning: false,
         createdDate: toDateString(d), // YYYY-MM-DD 형식
       });
     }

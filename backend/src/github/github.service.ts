@@ -32,7 +32,7 @@ export class GithubService {
       where: {
         player: { id: playerId },
         type,
-        createdDate: today as unknown as Date,
+        createdDate: today,
       },
     });
 
@@ -74,7 +74,7 @@ export class GithubService {
     const activities = await this.dailyGithubActivityRepository.find({
       where: {
         player: { id: playerId },
-        createdDate: targetDate as unknown as Date,
+        createdDate: targetDate,
       },
     });
 

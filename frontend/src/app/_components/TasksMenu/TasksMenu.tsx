@@ -25,7 +25,7 @@ export default function App() {
     editTask,
     toggleTaskTimer,
     stopAllTasks,
-    incrementTaskTime,
+    getTaskDisplayTime,
     clearTaskError,
   } = useTasksStore(
     useShallow((state) => ({
@@ -40,7 +40,7 @@ export default function App() {
       editTask: state.editTask,
       toggleTaskTimer: state.toggleTaskTimer,
       stopAllTasks: state.stopAllTasks,
-      incrementTaskTime: state.incrementTaskTime,
+      getTaskDisplayTime: state.getTaskDisplayTime,
       clearTaskError: state.clearError,
     })),
   );
@@ -76,8 +76,8 @@ export default function App() {
   }, [runningTask, tasks, lastRunTaskId]);
 
   const {
-    focusTime,
-    incrementFocusTime,
+    getFocusTime,
+    baseFocusSeconds,
     isFocusTimerRunning,
     startFocusing,
     stopFocusing,
@@ -85,8 +85,8 @@ export default function App() {
     clearFocusError,
   } = useFocusTimeStore(
     useShallow((state) => ({
-      focusTime: state.focusTime,
-      incrementFocusTime: state.incrementFocusTime,
+      getFocusTime: state.getFocusTime,
+      baseFocusSeconds: state.baseFocusSeconds,
       isFocusTimerRunning: state.isFocusTimerRunning,
       startFocusing: state.startFocusing,
       stopFocusing: state.stopFocusing,
@@ -96,18 +96,32 @@ export default function App() {
   );
   const isTimerRunning = isFocusTimerRunning || !!runningTask;
 
-  // Focus Time 타이머 (Focus Time이나 Task 중 하나라도 실행 중이면 증가)
+  // UI 갱신용 tick (실제 시간 계산은 타임스탬프 기반)
+  const [tick, setTick] = useState(0);
+
+  // 타이머 실행 중일 때 1초마다 tick 증가 (UI 갱신 트리거)
   useEffect(() => {
-    let interval: number | undefined;
-    if (isTimerRunning) {
-      interval = window.setInterval(() => {
-        incrementFocusTime();
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    if (!isTimerRunning) return;
+    const interval = window.setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
+
+  // 탭 복귀 시 즉시 재계산
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "visible") {
+        setTick((t) => t + 1);
+      }
     };
-  }, [isTimerRunning, incrementFocusTime]);
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, []);
+
+  // 타임스탬프 기반 시간 계산 (tick 변경 시 재계산)
+  const focusTime = useMemo(() => {
+    return getFocusTime();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, isFocusTimerRunning, baseFocusSeconds, getFocusTime]);
 
   useEffect(() => {
     if (!focusError) return;
@@ -118,21 +132,6 @@ export default function App() {
       window.clearTimeout(timeout);
     };
   }, [focusError, clearFocusError]);
-
-  // 개별 작업 타이머 (실행 중인 Task의 시간만 증가)
-  useEffect(() => {
-    let interval: number | undefined;
-
-    if (runningTask) {
-      interval = window.setInterval(() => {
-        incrementTaskTime(runningTask.id);
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [runningTask, incrementTaskTime]);
 
   const handleToggleTimer = () => {
     if (isTimerRunning) {
@@ -233,6 +232,7 @@ export default function App() {
             onToggleTaskTimer={handleToggleTaskTimer}
             onEditTask={editTask}
             formatTaskTime={formatTaskTime}
+            getTaskDisplayTime={getTaskDisplayTime}
             error={error}
             pendingTaskIds={pendingTaskIds}
           />

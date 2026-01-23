@@ -8,6 +8,7 @@ export function usePoint() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.points.list(),
     queryFn: pointApi.getPoints,
+    staleTime: 0,
   });
 
   return {

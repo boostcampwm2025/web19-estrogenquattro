@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Player } from '../../player/entites/player.entity';
+import { Task } from '../../task/entites/task.entity';
 
 export enum FocusStatus {
   FOCUSING = 'FOCUSING',
@@ -32,11 +33,17 @@ export class DailyFocusTime {
   status: FocusStatus;
 
   @Column({ name: 'created_date', type: 'date', nullable: false })
-  createdDate: Date;
+  createdDate: string;
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;
 
+  // currentTaskId 컬럼 (Fallback: @Column과 @ManyToOne 둘 다 설정)
   @Column({ name: 'current_task_id', type: 'int', nullable: true })
   currentTaskId: number | null;
+
+  // currentTask relation
+  @ManyToOne(() => Task, { nullable: true })
+  @JoinColumn({ name: 'current_task_id' })
+  currentTask: Task | null;
 }

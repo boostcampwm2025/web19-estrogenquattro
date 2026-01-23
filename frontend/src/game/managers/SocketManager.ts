@@ -27,6 +27,7 @@ interface PlayerData {
   lastFocusStartTime?: string | null;
   totalFocusSeconds?: number;
   currentSessionSeconds?: number;
+  taskName?: string | null; // 현재 집중 중인 태스크 이름
 }
 
 interface GithubEventData {
@@ -292,6 +293,7 @@ export default class SocketManager {
     remotePlayer.setFocusState(data.status === FOCUS_STATUS.FOCUSING, {
       totalFocusSeconds: data.totalFocusSeconds ?? 0,
       currentSessionSeconds: data.currentSessionSeconds ?? 0,
+      taskName: data.taskName ?? undefined,
     });
 
     // 펫 정보가 있으면 설정
@@ -330,7 +332,10 @@ export default class SocketManager {
   }
 
   updateRemotePlayers(): void {
-    this.otherPlayers.forEach((p) => p.update());
+    this.otherPlayers.forEach((p) => {
+      p.update();
+      p.updateFocusDisplay(); // 타임스탬프 기반 시간 업데이트
+    });
   }
 
   sendChat(message: string): void {

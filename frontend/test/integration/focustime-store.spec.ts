@@ -40,9 +40,9 @@ describe("useFocusTimeStore 롤백", () => {
     useFocusTimeStore.setState({
       status: "FOCUSING",
       isFocusTimerRunning: true,
-      focusStartTimestamp: initialTimestamp,
       baseFocusSeconds: 300, // 5분
-      focusTime: 360, // 6분 (5분 + 1분 경과)
+      serverCurrentSessionSeconds: 60, // 1분 경과
+      serverReceivedAt: initialTimestamp,
       error: null,
     });
 
@@ -60,7 +60,7 @@ describe("useFocusTimeStore 롤백", () => {
     const state = useFocusTimeStore.getState();
     expect(state.status).toBe("FOCUSING");
     expect(state.isFocusTimerRunning).toBe(true);
-    expect(state.focusStartTimestamp).toBe(initialTimestamp);
+    expect(state.serverReceivedAt).toBe(initialTimestamp);
     expect(state.baseFocusSeconds).toBe(300);
     expect(state.error).toBe("서버 오류");
   });
@@ -72,9 +72,9 @@ describe("useFocusTimeStore 롤백", () => {
     useFocusTimeStore.setState({
       status: "FOCUSING",
       isFocusTimerRunning: true,
-      focusStartTimestamp: Date.now() - 60000,
       baseFocusSeconds: 300,
-      focusTime: 360,
+      serverCurrentSessionSeconds: 60,
+      serverReceivedAt: Date.now() - 60000,
       error: null,
     });
 
@@ -96,9 +96,9 @@ describe("useFocusTimeStore 롤백", () => {
     useFocusTimeStore.setState({
       status: "RESTING",
       isFocusTimerRunning: false,
-      focusStartTimestamp: null,
       baseFocusSeconds: 300,
-      focusTime: 300,
+      serverCurrentSessionSeconds: 0,
+      serverReceivedAt: 0,
       error: null,
     });
 
@@ -109,24 +109,73 @@ describe("useFocusTimeStore 롤백", () => {
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 
-  it("이미 FOCUSING 상태에서 startFocusing 호출 시 무시된다", async () => {
+  it("이미 FOCUSING 상태에서 taskId 없이 startFocusing 호출 시 무시된다", async () => {
     // Given: FOCUSING 상태
     const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
 
     useFocusTimeStore.setState({
       status: "FOCUSING",
       isFocusTimerRunning: true,
-      focusStartTimestamp: Date.now(),
       baseFocusSeconds: 0,
-      focusTime: 60,
+      serverCurrentSessionSeconds: 60,
+      serverReceivedAt: Date.now() - 60000,
       error: null,
     });
 
-    // When: startFocusing 호출
+    // When: taskId 없이 startFocusing 호출
     useFocusTimeStore.getState().startFocusing();
 
-    // Then: emit이 호출되지 않음
+    // Then: emit이 호출됨 (무시됨)
     expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it("Task A에서 Task B로 전환 시 focusing 이벤트가 전송된다", async () => {
+    // Given: Task A로 집중 중인 상태
+    const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
+
+    useFocusTimeStore.setState({
+      status: "FOCUSING",
+      isFocusTimerRunning: true,
+      baseFocusSeconds: 0,
+      serverCurrentSessionSeconds: 300, // 5분 경과
+      serverReceivedAt: Date.now() - 300000,
+      error: null,
+    });
+
+    // When: Task B로 전환 (taskId 포함)
+    useFocusTimeStore.getState().startFocusing("Task B", 2);
+
+    // Then: focusing 이벤트가 전송됨
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "focusing",
+      { taskName: "Task B", taskId: 2 },
+      expect.any(Function),
+    );
+  });
+
+  it("Task 전환 시 낙관적 업데이트가 적용된다", async () => {
+    // Given: Task A로 집중 중인 상태
+    const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
+
+    const initialTimestamp = Date.now() - 300000;
+    useFocusTimeStore.setState({
+      status: "FOCUSING",
+      isFocusTimerRunning: true,
+      baseFocusSeconds: 0,
+      serverCurrentSessionSeconds: 300,
+      serverReceivedAt: initialTimestamp,
+      error: null,
+    });
+
+    // When: Task B로 전환
+    useFocusTimeStore.getState().startFocusing("Task B", 2);
+
+    // Then: 상태가 FOCUSING 유지, serverReceivedAt 갱신
+    const state = useFocusTimeStore.getState();
+    expect(state.status).toBe("FOCUSING");
+    expect(state.isFocusTimerRunning).toBe(true);
+    expect(state.serverReceivedAt).not.toBe(initialTimestamp); // 새 타임스탬프
+    expect(state.serverReceivedAt).toBeGreaterThan(initialTimestamp);
   });
 
   it("startFocusing 실패 시 RESTING으로 롤백된다", async () => {
@@ -136,9 +185,9 @@ describe("useFocusTimeStore 롤백", () => {
     useFocusTimeStore.setState({
       status: "RESTING",
       isFocusTimerRunning: false,
-      focusStartTimestamp: null,
-      baseFocusSeconds: 0,
-      focusTime: 300,
+      baseFocusSeconds: 300,
+      serverCurrentSessionSeconds: 0,
+      serverReceivedAt: 0,
       error: null,
     });
 
@@ -155,7 +204,7 @@ describe("useFocusTimeStore 롤백", () => {
     const state = useFocusTimeStore.getState();
     expect(state.status).toBe("RESTING");
     expect(state.isFocusTimerRunning).toBe(false);
-    expect(state.focusStartTimestamp).toBeNull();
+    expect(state.serverReceivedAt).toBe(0);
     expect(state.error).toBe("서버 오류");
   });
 });

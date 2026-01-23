@@ -71,7 +71,7 @@ describe('FocusTimeService', () => {
         player,
         totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
-        createdDate: today as unknown as Date,
+        createdDate: today,
       });
       await focusTimeRepository.save(focusTime);
 
@@ -80,7 +80,7 @@ describe('FocusTimeService', () => {
       const found = await focusTimeRepository.findOne({
         where: {
           player: { id: player.id },
-          createdDate: queryDate as unknown as Date,
+          createdDate: queryDate,
         },
       });
 
@@ -98,7 +98,7 @@ describe('FocusTimeService', () => {
         player,
         totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
-        createdDate: today as unknown as Date,
+        createdDate: today,
       });
       await focusTimeRepository.save(focusTime);
 
@@ -115,7 +115,7 @@ describe('FocusTimeService', () => {
       expect(raw[0].created_date).toBe(today);
     });
 
-    it('new Date() 객체로는 조회할 수 없다 (기존 버그 확인용)', async () => {
+    it('string 타입으로 변경 후 올바른 형식으로 조회 성공', async () => {
       // Given: 플레이어와 FocusTime 레코드 생성 (문자열로 저장)
       const player = await createTestPlayer('TestPlayer3');
 
@@ -124,20 +124,21 @@ describe('FocusTimeService', () => {
         player,
         totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
-        createdDate: today as unknown as Date,
+        createdDate: today,
       });
       await focusTimeRepository.save(focusTime);
 
-      // When: new Date() 객체로 조회 시도
+      // When: 같은 형식의 문자열로 조회 시도
       const found = await focusTimeRepository.findOne({
         where: {
           player: { id: player.id },
-          createdDate: new Date(),
+          createdDate: new Date().toISOString().slice(0, 10),
         },
       });
 
-      // Then: 조회 실패 (이것이 기존 버그였음)
-      expect(found).toBeNull();
+      // Then: string 타입으로 변경 후 조회 성공
+      expect(found).toBeDefined();
+      expect(found?.id).toBe(focusTime.id);
     });
   });
 
@@ -151,7 +152,7 @@ describe('FocusTimeService', () => {
         player,
         totalFocusSeconds: 30,
         status: FocusStatus.FOCUSING,
-        createdDate: today as unknown as Date,
+        createdDate: today,
       });
       await focusTimeRepository.save(existing);
 
@@ -186,15 +187,15 @@ describe('FocusTimeService', () => {
       const task = taskRepository.create({
         player,
         description: '테스트 태스크',
-        createdDate: new Date(),
+        createdDate: new Date().toISOString().slice(0, 10),
       });
       await taskRepository.save(task);
 
       // When: startFocusing에 taskId 전달
       const result = await service.startFocusing(player.id, task.id);
 
-      // Then: currentTaskId가 저장됨
-      expect(result.currentTaskId).toBe(task.id);
+      // Then: currentTask가 저장됨
+      expect(result.currentTask?.id).toBe(task.id);
       expect(result.status).toBe(FocusStatus.FOCUSING);
     });
 
@@ -206,8 +207,8 @@ describe('FocusTimeService', () => {
       // When: startFocusing에 taskId 없이 호출
       const result = await service.startFocusing(player.id);
 
-      // Then: currentTaskId가 null
-      expect(result.currentTaskId).toBeNull();
+      // Then: currentTask가 null
+      expect(result.currentTask).toBeNull();
       expect(result.status).toBe(FocusStatus.FOCUSING);
     });
   });
@@ -222,7 +223,7 @@ describe('FocusTimeService', () => {
         player,
         description: '테스트 태스크',
         totalFocusSeconds: 100,
-        createdDate: new Date(),
+        createdDate: new Date().toISOString().slice(0, 10),
       });
       await taskRepository.save(task);
 
@@ -258,7 +259,7 @@ describe('FocusTimeService', () => {
 
       // Then: 정상적으로 RESTING 상태가 됨
       expect(result.status).toBe(FocusStatus.RESTING);
-      expect(result.currentTaskId).toBeNull();
+      expect(result.currentTask).toBeNull();
     });
   });
 });
