@@ -110,12 +110,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
       { taskName, taskId },
       (response: { success: boolean; error?: string }) => {
         if (!response?.success) {
-          // 에러 시 롤백
+          // 에러 시 이전 상태로 완전 롤백 (집중 세션 유지)
           set({
-            status: FOCUS_STATUS.RESTING,
-            isFocusTimerRunning: false,
-            serverCurrentSessionSeconds: 0,
-            serverReceivedAt: 0,
+            status: prev.status,
+            isFocusTimerRunning: prev.isFocusTimerRunning,
+            baseFocusSeconds: prev.baseFocusSeconds,
+            serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
+            serverReceivedAt: prev.serverReceivedAt,
             error: response?.error || "집중 시작에 실패했습니다.",
           });
         }
