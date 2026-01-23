@@ -50,6 +50,9 @@ import { PointModule } from './point/point.module';
         '/socket.io/*path',
         '/metrics/*path',
       ],
+      serveStaticOptions: {
+        extensions: ['html'],
+      },
     }),
     PlayerModule,
     GithubModule,
