@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: isProd,
   },
+  trailingSlash: true,
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

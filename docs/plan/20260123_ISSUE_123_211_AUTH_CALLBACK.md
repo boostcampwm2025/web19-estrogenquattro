@@ -29,10 +29,16 @@
 3. `/auth/callback` 페이지로 리다이렉트
 4. 메인 페이지(`/`)로 이동하지만 **URL이 `/auth/callback/`으로 남아있음**
 
-**원인:**
+**원인 1 - 개발 환경:**
 - Hydration 타이밍 이슈로 인해 간헐적으로 발생
 - `fetchUser()` API 응답이 빠를 경우, Next.js 라우터 hydration이 완료되기 전에 `router.replace()`가 호출됨
 - 라우터가 준비되지 않은 상태에서 호출되면 URL 업데이트가 실패할 수 있음
+
+**원인 2 - 프로덕션 빌드 환경 (백엔드 정적 파일 서빙):**
+- Next.js 정적 빌드 시 `auth/callback/` 디렉토리가 생성되지만 `index.html`이 없음
+- NestJS ServeStaticModule이 디렉토리 발견 시 `/auth/callback/`로 리다이렉트
+- `auth/callback/index.html`이 없어서 루트 `index.html`(메인 페이지)이 반환됨
+- 결과적으로 메인 페이지가 로드되지만 URL은 `/auth/callback/`으로 유지
 
 **현재 코드:**
 ```typescript
@@ -87,6 +93,34 @@ if (isAuthenticated) {
 **단점:**
 - 전체 페이지 리로드 발생 (클라이언트 상태 초기화)
 - 하지만 auth/callback은 상태가 없는 중간 페이지이므로 문제없음
+
+### #123 추가 해결: 프로덕션 빌드 환경 대응
+
+`window.location.replace()` 수정만으로는 프로덕션 빌드 환경에서 문제가 해결되지 않음.
+
+**추가 수정 1 - Next.js 설정:**
+```typescript
+// frontend/next.config.ts
+const nextConfig: NextConfig = {
+  // ...
+  trailingSlash: true,  // 추가
+};
+```
+- 빌드 시 `auth/callback/index.html` 자동 생성
+- `/auth/callback/` 요청 시 올바른 페이지 반환
+
+**추가 수정 2 - NestJS 설정:**
+```typescript
+// backend/src/app.module.ts
+ServeStaticModule.forRoot({
+  rootPath: join(__dirname, '..', 'public'),
+  // ...
+  serveStaticOptions: {
+    extensions: ['html'],  // 추가
+  },
+}),
+```
+- `/auth/callback` 요청 시 `auth/callback.html` 파일 탐색
 
 ### #211 해결: Won't Fix (무시)
 
@@ -191,6 +225,8 @@ export default function AuthCallbackPage() {
 | 파일 | 변경 내용 | 이슈 |
 |------|----------|------|
 | `frontend/src/app/auth/callback/page.tsx` | router.replace → window.location.replace | #123 |
+| `frontend/next.config.ts` | trailingSlash: true 추가 | #123 |
+| `backend/src/app.module.ts` | serveStaticOptions.extensions: ['html'] 추가 | #123 |
 
 ---
 
