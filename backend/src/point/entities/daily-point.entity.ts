@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { Player } from '../../player/entites/player.entity';
 
@@ -24,4 +25,11 @@ export class DailyPoint {
 
   @Column({ name: 'created_date', type: 'date' })
   createdDate: string;
+
+  @BeforeInsert()
+  setCreatedDate(): void {
+    if (!this.createdDate) {
+      this.createdDate = new Date().toISOString().slice(0, 10);
+    }
+  }
 }
