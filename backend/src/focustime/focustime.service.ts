@@ -43,7 +43,7 @@ export class FocusTimeService {
       player,
       totalFocusSeconds: 0,
       status: FocusStatus.RESTING,
-      createdDate: today as unknown as Date,
+      createdDate: today,
     });
 
     return this.focusTimeRepository.save(newFocusTime);
