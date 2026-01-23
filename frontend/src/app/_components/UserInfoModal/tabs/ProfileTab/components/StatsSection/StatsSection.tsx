@@ -8,17 +8,17 @@ import { isSameDay } from "../../lib/dateUtils";
 interface StatsSectionProps {
   tasks: Task[];
   selectedDate: Date;
-  focusTimeMinutes?: number;
+  focusTimeSeconds?: number;
   githubEvents: GithubEventsRes | undefined;
 }
 
 export default function StatsSection({
   tasks,
   selectedDate,
-  focusTimeMinutes,
+  focusTimeSeconds,
   githubEvents,
 }: StatsSectionProps) {
-  const focusTimeStr = formatTimeFromSeconds((focusTimeMinutes ?? 0) * 60);
+  const focusTimeStr = formatTimeFromSeconds(focusTimeSeconds ?? 0);
   const isToday = isSameDay(selectedDate, new Date());
   const taskCount = isToday
     ? tasks.length
