@@ -115,7 +115,9 @@ pnpm build
 | `backend/src/userpet/` | `docs/features/PET_SYSTEM.md` |
 | `backend/src/point/` | `docs/features/POINT_SYSTEM.md` |
 | `backend/src/database/` | `docs/guides/ERD.md`, `docs/guides/DATABASE.md` |
+| `frontend/src/lib/socket.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `frontend/src/game/` | `docs/architecture/GAME_ENGINE.md` |
+| `frontend/src/game/scenes/` | `docs/architecture/GAME_ENGINE.md` |
 | `frontend/src/game/managers/` | `docs/architecture/GAME_MANAGERS.md` |
 | `frontend/src/stores/` | `docs/architecture/STATE_MANAGEMENT.md` |
 | `*.entity.ts` | `docs/guides/ERD.md` |
@@ -130,6 +132,6 @@ pnpm build
 
 | 항목 | 마지막 동기화 | 커밋 |
 |------|-------------|------|
-| 전체 문서 | 2026-01-23 | [`27b140e`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/27b140e) |
+| 전체 문서 | 2026-01-24 | [`d102c9d`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/d102c9d) |
 
 > 문서와 코드 불일치 발견 시 이슈로 등록해주세요.
