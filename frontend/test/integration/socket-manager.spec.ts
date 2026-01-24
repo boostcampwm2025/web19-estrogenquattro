@@ -96,6 +96,10 @@ describe("SocketManager 통합", () => {
     callbacks.showSessionEndedOverlay.mockClear();
     callbacks.showConnectionLostOverlay.mockClear();
     callbacks.hideConnectionLostOverlay.mockClear();
+
+    // /auth/me fetch 모킹 (기본: 200 응답 - 서버 정상, JWT 유효)
+    global.fetch = vi.fn().mockResolvedValue({ status: 200 });
+
     SocketManager = (await import("@/game/managers/SocketManager")).default;
     socketManager = new SocketManager(scene as never, "tester", () => player);
     socketManager.connect(callbacks);
@@ -411,14 +415,16 @@ describe("SocketManager 통합", () => {
     });
   });
 
-  it("disconnect 이벤트 발생 시 showConnectionLostOverlay 콜백이 호출된다", () => {
-    // Given: 연결된 상태
+  it("disconnect 이벤트 발생 시 showConnectionLostOverlay 콜백이 호출된다", async () => {
+    // Given: 연결된 상태, /auth/me가 200 응답 (JWT 유효, 서버 정상)
 
     // When: 네트워크 오류로 disconnect 이벤트 발생
     currentSocket.trigger("disconnect", "transport close");
 
-    // Then: showConnectionLostOverlay가 호출됨
-    expect(callbacks.showConnectionLostOverlay).toHaveBeenCalled();
+    // Then: async 핸들러 완료 대기 후 showConnectionLostOverlay가 호출됨
+    await vi.waitFor(() => {
+      expect(callbacks.showConnectionLostOverlay).toHaveBeenCalled();
+    });
   });
 
   it("클라이언트가 의도적으로 연결을 끊으면 showConnectionLostOverlay가 호출되지 않는다", () => {

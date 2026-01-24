@@ -27,10 +27,26 @@ const socket = io(SOCKET_URL, {
 
 ```typescript
 // SocketManager.ts
-socket.on('disconnect', (reason) => {
-  if (!this.isSessionReplaced && reason !== 'io client disconnect') {
-    callbacks.showConnectionLostOverlay();
+socket.on('disconnect', async (reason) => {
+  // 세션 교체된 경우 제외
+  if (this.isSessionReplaced) return;
+  // 클라이언트가 의도적으로 끊은 경우 제외
+  if (reason === 'io client disconnect') return;
+
+  // JWT 유효성 확인 (frozen 상태에서 auth_expired 못 받았을 때 백업)
+  try {
+    const res = await fetch('/auth/me', { credentials: 'include' });
+    if (res.status === 401) {
+      // JWT 만료 → 로그인 페이지
+      window.location.href = '/login';
+      return;
+    }
+  } catch {
+    // 네트워크 에러 (서버 다운) - 연결 끊김 UI 표시로 진행
   }
+
+  // 서버 문제 → 연결 끊김 UI
+  callbacks.showConnectionLostOverlay();
 });
 
 socket.on('connect', () => {
@@ -42,13 +58,13 @@ socket.on('connect', () => {
 
 **disconnect reason:**
 
-| reason | 설명 | 재연결 |
-|--------|------|--------|
-| `io server disconnect` | 서버가 연결 종료 | 수동 새로고침 필요 |
-| `io client disconnect` | 클라이언트가 의도적 종료 | X |
-| `ping timeout` | 서버 응답 없음 | 수동 새로고침 필요 |
-| `transport close` | 네트워크 끊김 | 수동 새로고침 필요 |
-| `transport error` | 연결 오류 | 수동 새로고침 필요 |
+| reason | 설명 | 처리 |
+|--------|------|------|
+| `io server disconnect` | 서버가 연결 종료 (JWT 만료 포함) | `/auth/me`로 JWT 확인 후 분기 |
+| `io client disconnect` | 클라이언트가 의도적 종료 | 무시 |
+| `ping timeout` | 서버 응답 없음 | 연결 끊김 UI |
+| `transport close` | 네트워크 끊김 | 연결 끊김 UI |
+| `transport error` | 연결 오류 | 연결 끊김 UI |
 
 **연결 끊김 UI:** `MapScene.showConnectionLostOverlay()`
 
@@ -451,6 +467,31 @@ socket.on('session_replaced', (data: {
   // 오버레이 표시
 });
 ```
+
+---
+
+### auth_expired
+
+JWT 토큰이 만료되어 서버가 연결을 해제할 때 전송
+
+```typescript
+socket.on('auth_expired', () => {
+  window.location.href = '/login';
+});
+```
+
+**Payload:** 없음
+
+**Ack:** 없음
+
+**클라이언트 처리:**
+- 이벤트 수신 시 즉시 `/login` 페이지로 이동
+- 클라이언트가 frozen 상태로 이벤트를 수신하지 못해도, `disconnect` 이벤트 핸들러에서 `/auth/me` 호출로 JWT 만료를 감지함
+
+**서버 동작:**
+- 1분마다 모든 연결된 소켓의 JWT 만료 검증
+- `auth_expired` emit 후 즉시 `socket.disconnect()` 호출
+- 클라이언트 응답(ack)을 기다리지 않음
 
 ---
 

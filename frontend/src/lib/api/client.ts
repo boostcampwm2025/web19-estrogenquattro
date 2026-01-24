@@ -24,6 +24,14 @@ export async function fetchApi<T>(
     const text = await response.text();
 
     if (!response.ok) {
+      // 401 Unauthorized - 토큰 만료 → 로그인 페이지로 이동
+      if (response.status === 401) {
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw new Error("Unauthorized");
+      }
+
       let errorMessage = `API Error: ${response.status}`;
       if (text) {
         try {

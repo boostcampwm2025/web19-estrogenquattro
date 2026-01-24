@@ -152,6 +152,22 @@ interface JwtPayload {
 
 > **Note:** `playerId`는 JWT에 포함되지 않음. 서버에서 `UserStore`를 통해 조회
 
+### JWT 설정
+
+```typescript
+// auth.module.ts
+JwtModule.registerAsync({
+  signOptions: { expiresIn: '1d' },  // JWT 만료: 1일
+});
+```
+
+| 항목 | 값 | 설명 |
+|------|-----|------|
+| JWT expiresIn | 1일 | 토큰 자체의 만료 시간 |
+| Cookie maxAge | 1일 | 브라우저 쿠키 유효 기간 |
+
+> **Note:** JWT 만료와 쿠키 maxAge가 동일하게 1일로 설정되어 있습니다.
+
 ---
 
 ## JWT 처리
