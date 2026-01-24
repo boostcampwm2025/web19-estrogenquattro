@@ -122,11 +122,32 @@ export default class SocketManager {
       });
     });
 
-    socket.on("disconnect", (reason) => {
-      // 세션 교체가 아니고, 클라이언트가 의도적으로 끊은 것이 아닌 경우에만 오버레이 표시
-      if (!this.isSessionReplaced && reason !== "io client disconnect") {
-        callbacks.showConnectionLostOverlay();
+    // JWT 만료 시 로그인 페이지로 이동 (서버에서 주기적 검증으로 감지)
+    socket.on("auth_expired", () => {
+      window.location.href = "/login";
+    });
+
+    // 연결 끊김 시 JWT 만료 vs 서버 다운 구분
+    socket.on("disconnect", async (reason) => {
+      // 세션 교체된 경우 제외
+      if (this.isSessionReplaced) return;
+      // 클라이언트가 의도적으로 끊은 경우 제외
+      if (reason === "io client disconnect") return;
+
+      // JWT 유효성 확인 (frozen 상태에서 auth_expired 못 받았을 때 백업)
+      try {
+        const res = await fetch("/auth/me", { credentials: "include" });
+        if (res.status === 401) {
+          // JWT 만료 → 로그인 페이지
+          window.location.href = "/login";
+          return;
+        }
+      } catch {
+        // 네트워크 에러 (서버 다운) - 연결 끊김 UI 표시로 진행
       }
+
+      // 서버 문제 → 연결 끊김 UI
+      callbacks.showConnectionLostOverlay();
     });
 
     socket.on(

@@ -61,6 +61,23 @@ export class WsJwtGuard implements CanActivate {
     }
   }
 
+  /**
+   * 소켓의 JWT 토큰이 유효한지 검증
+   * 주기적 검증에서 사용
+   */
+  verifyToken(client: Socket): boolean {
+    try {
+      const token = this.extractToken(client);
+      if (!token) {
+        return false;
+      }
+      this.jwtService.verify(token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private extractToken(client: Socket): string | null {
     // 쿠키에서 추출
     const cookies = client.handshake.headers?.cookie;
