@@ -9,6 +9,7 @@ import {
 import { Socket } from 'socket.io';
 import { FocusTimeService } from './focustime.service';
 import { User } from '../auth/user.interface';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
 
 interface AuthenticatedSocket extends Socket {
   data: { user: User };
@@ -18,13 +19,18 @@ interface AuthenticatedSocket extends Socket {
 export class FocusTimeGateway implements OnGatewayDisconnect {
   private readonly logger = new Logger(FocusTimeGateway.name);
 
-  constructor(private readonly focusTimeService: FocusTimeService) {}
+  constructor(
+    private readonly focusTimeService: FocusTimeService,
+    private readonly wsJwtGuard: WsJwtGuard,
+  ) {}
 
   @SubscribeMessage('focusing')
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { taskName?: string; taskId?: number },
   ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const user = client.data.user;
     this.logger.debug(
       `Received focusing event - data: ${JSON.stringify(data)}`,
@@ -82,6 +88,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('resting')
   async handleResting(@ConnectedSocket() client: AuthenticatedSocket) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const user = client.data.user;
 
     try {
@@ -126,6 +134,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { taskName: string },
   ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const user = client.data.user;
 
     const rooms = Array.from(client.rooms);

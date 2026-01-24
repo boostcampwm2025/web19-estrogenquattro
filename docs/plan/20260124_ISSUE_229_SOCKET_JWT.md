@@ -101,13 +101,30 @@ canActivate(context: ExecutionContext): boolean {
 | 서버 다운 | 네트워크 에러 | "연결 끊김" UI |
 | 서버 일시적 문제 | 200 | "연결 끊김" UI |
 
+### 3. moving 제외 이벤트에서 JWT 검증
+
+- `moving` 이벤트는 빈번하므로 제외 (30ms 간격)
+- 나머지 이벤트에서 JWT 만료 시 즉시 `auth_expired` 전송 후 disconnect
+- 주기적 검증(1분)의 구멍을 메움
+
+**검증 대상 이벤트:**
+
+| 이벤트 | 설명 | 검증 |
+|--------|------|------|
+| `moving` | 플레이어 이동 | ❌ (부하) |
+| `focusing` | 집중 시작 | ✅ |
+| `resting` | 휴식 시작 | ✅ |
+| `chatting` | 채팅 전송 | ✅ |
+| `pet_equipping` | 펫 장착 | ✅ |
+| `focus_task_updating` | 집중 태스크 변경 | ✅ |
+
 ### 검토한 대안들
 
 | 방식 | 장점 | 단점 | 선택 |
 |------|------|------|------|
 | 모든 이벤트마다 검증 | 즉각 감지 | `moving` 이벤트 부하 큼 | ❌ |
-| `moving` 제외 이벤트만 검증 | 부하 적음 | 구멍 있음 (moving만 하면 검증 안 됨) | ❌ |
-| 주기적 서버 검증 (1분) | 확실, 부하 적당 | 최대 1분 지연 | ✅ |
+| 주기적 서버 검증만 (1분) | 부하 적음 | 최대 1분 지연 | ❌ |
+| 주기적 + `moving` 제외 이벤트 검증 | 즉각 감지 + 부하 적당 | 구멍 있음 (moving만 하면 1분 지연) | ✅ |
 
 ---
 
@@ -170,7 +187,75 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect, 
 
 > **Note:** `auth_expired` 이벤트 전송 후 즉시 disconnect합니다. 클라이언트가 frozen 상태로 이벤트를 못 받아도, `disconnect` 핸들러에서 `/auth/me` 호출로 JWT 만료를 감지합니다.
 
-### 3. 프론트엔드에서 auth_expired 및 disconnect 처리
+### 3. 이벤트별 JWT 검증 추가
+
+**파일:** `backend/src/auth/ws-jwt.guard.ts` (공유 메서드), `backend/src/player/player.gateway.ts`, `backend/src/focustime/focustime.gateway.ts`, `backend/src/chat/chat.gateway.ts`
+
+`WsJwtGuard`에 공유 헬퍼 메서드 추가 (모든 게이트웨이에서 DI로 사용):
+
+```typescript
+// ws-jwt.guard.ts
+/**
+ * JWT 검증 실패 시 auth_expired 이벤트 전송 후 disconnect
+ * @returns true if valid, false if expired (already disconnected)
+ */
+verifyAndDisconnect(client: Socket, logger?: Logger): boolean {
+  if (!this.verifyToken(client)) {
+    logger?.log(`JWT expired for socket: ${client.id}`);
+    client.emit('auth_expired');
+    client.disconnect();
+    return false;
+  }
+  return true;
+}
+```
+
+각 이벤트 핸들러에서 검증 추가:
+
+```typescript
+// player.gateway.ts, focustime.gateway.ts, chat.gateway.ts
+@SubscribeMessage('focusing')
+handleFocusing(@ConnectedSocket() client: Socket, ...) {
+  if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+  // 기존 로직
+}
+
+@SubscribeMessage('resting')
+handleResting(@ConnectedSocket() client: Socket, ...) {
+  if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+  // 기존 로직
+}
+
+@SubscribeMessage('chatting')
+handleChatting(@ConnectedSocket() client: Socket, ...) {
+  if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+  // 기존 로직
+}
+
+@SubscribeMessage('pet_equipping')
+handlePetEquipping(@ConnectedSocket() client: Socket, ...) {
+  if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+  // 기존 로직
+}
+
+@SubscribeMessage('focus_task_updating')
+handleFocusTaskUpdating(@ConnectedSocket() client: Socket, ...) {
+  if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+  // 기존 로직
+}
+```
+
+> **Note:** `moving` 이벤트는 30ms 간격으로 빈번하게 발생하므로 성능상 검증에서 제외합니다. 대신 주기적 검증(1분)이 백업으로 동작합니다.
+
+### 설계 확인 사항
+
+| 항목 | 현재 상태 | 비고 |
+|------|----------|------|
+| JWT 새로고침 | 없음 | 토큰 만료 시 재로그인 필요, 소켓 재인증 불필요 |
+| 게이트웨이 네임스페이스 | 모두 기본(`/`) | `this.server.sockets.sockets`로 전체 접근 가능 |
+| verifyAndDisconnect 공유 | WsJwtGuard에 정의 | 모든 게이트웨이에서 DI로 접근 |
+
+### 4. 프론트엔드에서 auth_expired 및 disconnect 처리
 
 **파일:** `frontend/src/game/managers/SocketManager.ts`
 
@@ -247,8 +332,10 @@ window.location.href = '/login' → 로그인 페이지로 이동
 
 | 파일 | 변경 내용 |
 |------|----------|
-| `backend/src/auth/ws-jwt.guard.ts` | `verifyToken` 메서드 추가 |
-| `backend/src/player/player.gateway.ts` | 주기적 JWT 검증 로직 추가 |
+| `backend/src/auth/ws-jwt.guard.ts` | `verifyToken`, `verifyAndDisconnect` 메서드 추가 |
+| `backend/src/player/player.gateway.ts` | 주기적 JWT 검증 + `pet_equipping` 검증 |
+| `backend/src/focustime/focustime.gateway.ts` | `focusing`, `resting`, `focus_task_updating` 이벤트 JWT 검증 추가 |
+| `backend/src/chat/chat.gateway.ts` | `chatting` 이벤트 JWT 검증 추가 |
 | `frontend/src/game/managers/SocketManager.ts` | `auth_expired` 이벤트 및 disconnect 시 JWT 확인 처리 추가 |
 | `docs/api/SOCKET_EVENTS.md` | `auth_expired` 이벤트 추가 + "연결 끊김 처리" 섹션 업데이트 (아래 참조) |
 | `docs/features/AUTH_FLOW.md` | JWT 설정 섹션 추가 (expiresIn: 1d 명시) |

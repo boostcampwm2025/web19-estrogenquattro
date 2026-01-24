@@ -78,6 +78,21 @@ export class WsJwtGuard implements CanActivate {
     }
   }
 
+  /**
+   * JWT 검증 실패 시 auth_expired 이벤트 전송 후 disconnect
+   * 이벤트 핸들러에서 사용
+   * @returns true if valid, false if expired (already disconnected)
+   */
+  verifyAndDisconnect(client: Socket, logger?: Logger): boolean {
+    if (!this.verifyToken(client)) {
+      logger?.log(`JWT expired for socket: ${client.id}`);
+      client.emit('auth_expired');
+      client.disconnect();
+      return false;
+    }
+    return true;
+  }
+
   private extractToken(client: Socket): string | null {
     // 쿠키에서 추출
     const cookies = client.handshake.headers?.cookie;

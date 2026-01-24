@@ -302,6 +302,8 @@ export class PlayerGateway
     data: { petId: number | null },
     @ConnectedSocket() client: Socket,
   ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const playerState = this.players.get(client.id);
     if (!playerState) return;
 
