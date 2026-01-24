@@ -39,6 +39,7 @@ export class MapScene extends Phaser.Scene {
   // Connection Lost Overlay
   private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
   private connectionLostText?: Phaser.GameObjects.Text;
+  private connectionLostButton?: Phaser.GameObjects.Text;
 
   // Map Configuration
   private maps: MapConfig[] = [
@@ -349,8 +350,8 @@ export class MapScene extends Phaser.Scene {
 
     this.connectionLostText = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      "서버와의 연결이 끊어졌습니다.\n재연결 시도 중...",
+      this.cameras.main.centerY - 30,
+      "서버와의 연결이 끊어졌습니다.",
       {
         fontSize: "24px",
         color: "#ffffff",
@@ -360,6 +361,22 @@ export class MapScene extends Phaser.Scene {
     this.connectionLostText.setOrigin(0.5);
     this.connectionLostText.setScrollFactor(0);
     this.connectionLostText.setDepth(1001);
+
+    this.connectionLostButton = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY + 30,
+      "[ 새로고침 ]",
+      {
+        fontSize: "20px",
+        color: "#4ade80",
+        align: "center",
+      },
+    );
+    this.connectionLostButton.setOrigin(0.5);
+    this.connectionLostButton.setScrollFactor(0);
+    this.connectionLostButton.setDepth(1001);
+    this.connectionLostButton.setInteractive({ useHandCursor: true });
+    this.connectionLostButton.on("pointerup", () => window.location.reload());
   }
 
   private hideConnectionLostOverlay() {

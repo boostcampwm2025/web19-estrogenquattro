@@ -4,11 +4,18 @@
 
 ### 연결 설정
 
+**파일:** `frontend/src/lib/socket.ts`
+
 ```typescript
 const socket = io(SOCKET_URL, {
   transports: ['websocket'],
   withCredentials: true,  // 쿠키 전송 (JWT)
   autoConnect: false,
+  // 재연결 설정 (선택)
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
 });
 ```
 
@@ -17,6 +24,37 @@ const socket = io(SOCKET_URL, {
 - `WsJwtGuard`가 handshake 시 쿠키의 JWT 검증
 - 검증 실패 시 연결 거부 (`disconnect`)
 - 검증 성공 시 `socket.data.user`에 사용자 정보 저장
+
+### 연결 끊김 처리
+
+**파일:** `frontend/src/game/managers/SocketManager.ts`, `frontend/src/game/scenes/MapScene.ts`
+
+```typescript
+// SocketManager.ts
+socket.on('disconnect', (reason) => {
+  if (!this.isSessionReplaced && reason !== 'io client disconnect') {
+    callbacks.showConnectionLostOverlay();
+  }
+});
+
+socket.on('connect', () => {
+  callbacks.hideConnectionLostOverlay();
+  // joining 이벤트 재전송 (상태 동기화)
+  socket.emit('joining', { x, y, username });
+});
+```
+
+**disconnect reason:**
+
+| reason | 설명 | 재연결 |
+|--------|------|--------|
+| `io server disconnect` | 서버가 연결 종료 | 수동 필요 |
+| `io client disconnect` | 클라이언트가 의도적 종료 | X |
+| `ping timeout` | 서버 응답 없음 | 자동 (옵션 시) |
+| `transport close` | 네트워크 끊김 | 자동 (옵션 시) |
+| `transport error` | 연결 오류 | 자동 (옵션 시) |
+
+**연결 끊김 UI:** `MapScene.showConnectionLostOverlay()`
 
 ---
 
