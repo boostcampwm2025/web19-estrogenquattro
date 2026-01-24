@@ -40,6 +40,7 @@ export class MapScene extends Phaser.Scene {
   private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
   private connectionLostText?: Phaser.GameObjects.Text;
   private connectionLostButton?: Phaser.GameObjects.Text;
+  private connectionLostButtonBorder?: Phaser.GameObjects.Graphics;
 
   // Map Configuration
   private maps: MapConfig[] = [
@@ -348,12 +349,16 @@ export class MapScene extends Phaser.Scene {
     this.connectionLostOverlay.setScrollFactor(0);
     this.connectionLostOverlay.setDepth(1000);
 
+    const screenHeight = this.cameras.main.height;
+    const messageFontSize = Math.round(screenHeight * 0.04); // 4%
+    const buttonFontSize = Math.round(screenHeight * 0.03); // 3%
+
     this.connectionLostText = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY - 30,
+      this.cameras.main.centerY - screenHeight * 0.05,
       "서버와의 연결이 끊어졌습니다.",
       {
-        fontSize: "24px",
+        fontSize: `${messageFontSize}px`,
         color: "#ffffff",
         align: "center",
       },
@@ -364,10 +369,10 @@ export class MapScene extends Phaser.Scene {
 
     this.connectionLostButton = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY + 30,
-      "[ 새로고침 ]",
+      this.cameras.main.centerY + screenHeight * 0.05,
+      "새로고침",
       {
-        fontSize: "20px",
+        fontSize: `${buttonFontSize}px`,
         color: "#4ade80",
         align: "center",
       },
@@ -377,6 +382,21 @@ export class MapScene extends Phaser.Scene {
     this.connectionLostButton.setDepth(1001);
     this.connectionLostButton.setInteractive({ useHandCursor: true });
     this.connectionLostButton.on("pointerup", () => window.location.reload());
+
+    // 버튼 테두리 박스
+    const btnBounds = this.connectionLostButton.getBounds();
+    const padding = 16;
+    this.connectionLostButtonBorder = this.add.graphics();
+    this.connectionLostButtonBorder.lineStyle(2, 0x4ade80, 1);
+    this.connectionLostButtonBorder.strokeRoundedRect(
+      btnBounds.x - padding,
+      btnBounds.y - padding / 2,
+      btnBounds.width + padding * 2,
+      btnBounds.height + padding,
+      8,
+    );
+    this.connectionLostButtonBorder.setScrollFactor(0);
+    this.connectionLostButtonBorder.setDepth(1001);
   }
 
   private hideConnectionLostOverlay() {
@@ -387,6 +407,14 @@ export class MapScene extends Phaser.Scene {
     if (this.connectionLostText) {
       this.connectionLostText.destroy();
       this.connectionLostText = undefined;
+    }
+    if (this.connectionLostButton) {
+      this.connectionLostButton.destroy();
+      this.connectionLostButton = undefined;
+    }
+    if (this.connectionLostButtonBorder) {
+      this.connectionLostButtonBorder.destroy();
+      this.connectionLostButtonBorder = undefined;
     }
   }
 
