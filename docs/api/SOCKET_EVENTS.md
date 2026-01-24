@@ -35,7 +35,7 @@ socket.on('disconnect', (reason) => {
 
 socket.on('connect', () => {
   callbacks.hideConnectionLostOverlay();
-  // joining 이벤트 재전송 (상태 동기화)
+  // joining 이벤트 전송 (초기 연결 시만 실행, reconnection: false)
   socket.emit('joining', { x, y, username });
 });
 ```
