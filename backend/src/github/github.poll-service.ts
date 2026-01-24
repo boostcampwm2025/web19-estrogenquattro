@@ -207,11 +207,19 @@ export class GithubPollService {
       Authorization: `Bearer ${accessToken}`,
     };
 
-    const res = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query, variables: { username } }),
-    });
+    let res: Response;
+    try {
+      res = await fetch('https://api.github.com/graphql', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, variables: { username } }),
+      });
+    } catch (error) {
+      this.logger.error(
+        `[${username}] GitHub API network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      return { status: 'error' };
+    }
 
     this.logger.log(
       `[GitHub Poll] ${username} - HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
