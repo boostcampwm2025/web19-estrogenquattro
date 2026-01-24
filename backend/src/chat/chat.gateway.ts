@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -6,10 +7,17 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { RoomService } from '../room/room.service';
+import { WsJwtGuard } from '../auth/ws-jwt.guard';
 
 @WebSocketGateway()
 export class ChatGateway {
-  constructor(private readonly roomService: RoomService) {}
+  private readonly logger = new Logger(ChatGateway.name);
+
+  constructor(
+    private readonly roomService: RoomService,
+    private readonly wsJwtGuard: WsJwtGuard,
+  ) {}
+
   @SubscribeMessage('chatting')
   handleMessage(
     @MessageBody()
@@ -19,6 +27,8 @@ export class ChatGateway {
     @ConnectedSocket()
     client: Socket,
   ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const roomId = this.roomService.getRoomIdBySocketId(client.id);
     if (!roomId) return;
     client

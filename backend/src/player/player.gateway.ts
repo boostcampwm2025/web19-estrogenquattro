@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -21,8 +21,11 @@ import { FocusTimeService } from '../focustime/focustime.service';
 import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 
 @WebSocketGateway()
-export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PlayerGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
+{
   private readonly logger = new Logger(PlayerGateway.name);
+  private jwtCheckInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly githubService: GithubPollService,
@@ -52,6 +55,25 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // username -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
+
+  afterInit() {
+    // 1분마다 모든 연결된 소켓의 JWT 검증
+    this.jwtCheckInterval = setInterval(() => {
+      this.server.sockets.sockets.forEach((socket) => {
+        if (!this.wsJwtGuard.verifyToken(socket)) {
+          this.logger.log(`JWT expired for socket: ${socket.id}`);
+          socket.emit('auth_expired');
+          socket.disconnect();
+        }
+      });
+    }, 60_000);
+  }
+
+  onModuleDestroy() {
+    if (this.jwtCheckInterval) {
+      clearInterval(this.jwtCheckInterval);
+    }
+  }
 
   handleConnection(client: Socket) {
     const isValid = this.wsJwtGuard.verifyClient(client);
@@ -280,6 +302,8 @@ export class PlayerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     data: { petId: number | null },
     @ConnectedSocket() client: Socket,
   ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
     const playerState = this.players.get(client.id);
     if (!playerState) return;
 
