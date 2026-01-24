@@ -115,7 +115,9 @@ pnpm build
 | `backend/src/userpet/` | `docs/features/PET_SYSTEM.md` |
 | `backend/src/point/` | `docs/features/POINT_SYSTEM.md` |
 | `backend/src/database/` | `docs/guides/ERD.md`, `docs/guides/DATABASE.md` |
+| `frontend/src/lib/socket.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `frontend/src/game/` | `docs/architecture/GAME_ENGINE.md` |
+| `frontend/src/game/scenes/` | `docs/architecture/GAME_ENGINE.md` |
 | `frontend/src/game/managers/` | `docs/architecture/GAME_MANAGERS.md` |
 | `frontend/src/stores/` | `docs/architecture/STATE_MANAGEMENT.md` |
 | `*.entity.ts` | `docs/guides/ERD.md` |
