@@ -186,6 +186,42 @@ if (res.status === 429) {
 
 ---
 
+## 네트워크 에러 처리
+
+GitHub API 호출 시 네트워크 에러(DNS 실패, 연결 타임아웃 등)가 발생할 수 있습니다.
+
+```typescript
+let res: Response;
+try {
+  res = await fetch('https://api.github.com/graphql', { ... });
+} catch (error) {
+  this.logger.error(
+    `[${username}] GitHub API network error: ${error.message}`,
+  );
+  return { status: 'error' };
+}
+```
+
+### 에러 발생 시 흐름
+
+```
+fetch() 에러 발생 → catch 블록 → 로그 출력 → { status: 'error' } 반환
+    → handlePoll() switch문 → nextInterval = 30초 → 30초 후 재시도
+```
+
+### 처리되는 에러 유형
+
+| 에러 | 원인 |
+|------|------|
+| `getaddrinfo ENOTFOUND` | DNS 조회 실패 |
+| `connect ETIMEDOUT` | 연결 타임아웃 |
+| `connect ECONNREFUSED` | 연결 거부 |
+| `fetch failed` | 일반 네트워크 에러 |
+
+> **Note:** HTTP 4xx/5xx 응답은 네트워크 에러가 아니므로 catch되지 않고, `res.ok` 체크에서 처리됩니다.
+
+---
+
 ## 로깅
 
 ```
