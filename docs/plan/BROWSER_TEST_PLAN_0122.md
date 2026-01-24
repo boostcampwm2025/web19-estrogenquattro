@@ -2,7 +2,7 @@
 
 > PR #113 이후 머지된 기능들과 Open PR들의 브라우저 수동 테스트 가이드
 
-**서비스 URL**: https://jandiplease.duckdns.org/
+**서비스 URL**: <https://jandiplease.duckdns.org/>
 
 ---
 

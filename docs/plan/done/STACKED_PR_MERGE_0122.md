@@ -307,6 +307,6 @@ git push --force-with-lease
 
 ## 관련 문서
 
-- [FocusTime 버그 계획](./20260121_1302_FOCUSTIME_BUGS.md) - #126, #164, #166 등 이슈 상세
+- [FocusTime 버그 계획](./FOCUSTIME_BUGS.md) - #126, #164, #166 등 이슈 상세
 - [PR #168 충돌 해결 코멘트](https://github.com/boostcampwm2025/web19-estrogenquattro/pull/168#issuecomment-3782647887)
 - [PR #170 충돌 해결 코멘트](https://github.com/boostcampwm2025/web19-estrogenquattro/pull/170#issuecomment-3782715713)
