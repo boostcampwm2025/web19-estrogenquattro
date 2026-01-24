@@ -11,11 +11,7 @@ const socket = io(SOCKET_URL, {
   transports: ['websocket'],
   withCredentials: true,  // 쿠키 전송 (JWT)
   autoConnect: false,
-  // 재연결 설정 (선택)
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
+  reconnection: false,    // 자동 재연결 비활성화 (수동 새로고침 방식)
 });
 ```
 
@@ -48,11 +44,11 @@ socket.on('connect', () => {
 
 | reason | 설명 | 재연결 |
 |--------|------|--------|
-| `io server disconnect` | 서버가 연결 종료 | 수동 필요 |
+| `io server disconnect` | 서버가 연결 종료 | 수동 새로고침 필요 |
 | `io client disconnect` | 클라이언트가 의도적 종료 | X |
-| `ping timeout` | 서버 응답 없음 | 자동 (옵션 시) |
-| `transport close` | 네트워크 끊김 | 자동 (옵션 시) |
-| `transport error` | 연결 오류 | 자동 (옵션 시) |
+| `ping timeout` | 서버 응답 없음 | 수동 새로고침 필요 |
+| `transport close` | 네트워크 끊김 | 수동 새로고침 필요 |
+| `transport error` | 연결 오류 | 수동 새로고침 필요 |
 
 **연결 끊김 UI:** `MapScene.showConnectionLostOverlay()`
 
