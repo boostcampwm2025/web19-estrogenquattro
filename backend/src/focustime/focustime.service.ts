@@ -172,6 +172,8 @@ export class FocusTimeService {
       }
 
       focusTime.status = FocusStatus.RESTING;
+      focusTime.currentTaskId = null;
+      focusTime.currentTask = null;
       // currentTask는 유지 (다음 집중 시작 시 덮어쓰여짐)
 
       return focusTimeRepo.save(focusTime);
