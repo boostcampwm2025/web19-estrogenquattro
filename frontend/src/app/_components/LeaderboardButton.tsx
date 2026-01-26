@@ -1,7 +1,7 @@
 "use client";
 
 import { Trophy } from "lucide-react";
-import { useLeaderboardStore } from "@/stores/leaderboardStore";
+import { useLeaderboardStore } from "@/stores/useLeaderboardStore";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 

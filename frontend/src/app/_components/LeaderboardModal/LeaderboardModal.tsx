@@ -1,6 +1,6 @@
 "use client";
 
-import { useLeaderboardStore } from "@/stores/leaderboardStore";
+import { useLeaderboardStore } from "@/stores/useLeaderboardStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useEffect, useMemo, useState } from "react";
 
