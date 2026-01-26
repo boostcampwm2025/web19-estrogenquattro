@@ -34,7 +34,7 @@ export class PointHistory {
   @Column({ type: 'int' })
   amount: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'text' })
   createdAt: string;
 
   @BeforeInsert()

@@ -20,7 +20,7 @@ export class DailyPoint {
   @Column({ type: 'int' })
   amount: number;
 
-  @Column({ name: 'created_date', type: 'date' })
+  @Column({ name: 'created_date', type: 'text' })
   createdDate: string;
 
   @BeforeInsert()
