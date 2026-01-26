@@ -16,8 +16,9 @@ export default function PlayerRow({
   const rankDisplay = getRankDisplay(player.rank);
 
   // 기본 스타일
-  const baseClasses = "grid grid-cols-4 items-center gap-2 py-2 rounded border-2";
-  
+  const baseClasses =
+    "grid grid-cols-4 items-center gap-2 py-2 rounded border-2";
+
   // 랭크 및 내 순위 여부에 따른 스타일 분기
   const variantClasses = isMyRank
     ? "border-blue-400 bg-blue-50"

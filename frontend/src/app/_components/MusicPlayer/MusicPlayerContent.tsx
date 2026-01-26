@@ -17,7 +17,9 @@ interface MusicPlayerContentProps {
   isExpanded: boolean;
 }
 
-export default function MusicPlayerContent({ isExpanded }: MusicPlayerContentProps) {
+export default function MusicPlayerContent({
+  isExpanded,
+}: MusicPlayerContentProps) {
   const {
     isPlaying,
     currentTrack,
@@ -197,7 +199,11 @@ export default function MusicPlayerContent({ isExpanded }: MusicPlayerContentPro
       </div>
 
       {/* 미니 모드 */}
-      <div className={!isExpanded ? "mt-3 border-t border-amber-900/20 pt-3" : "hidden"}>
+      <div
+        className={
+          !isExpanded ? "mt-3 border-t border-amber-900/20 pt-3" : "hidden"
+        }
+      >
         {currentTrack ? (
           <div className="flex items-center gap-2">
             <button

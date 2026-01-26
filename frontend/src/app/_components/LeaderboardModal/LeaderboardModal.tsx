@@ -21,7 +21,7 @@ export default function LeaderboardModal() {
     })),
   );
   const isOpen = activeModal === MODAL_TYPES.LEADERBOARD;
-  
+
   const [tick, setTick] = useState(0);
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,

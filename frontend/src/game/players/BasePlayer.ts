@@ -334,7 +334,9 @@ export default class BasePlayer {
     const MAX_TASK_NAME_LENGTH = 15;
     if (isFocusing && taskName) {
       const displayTaskName =
-        taskName.length > MAX_TASK_NAME_LENGTH ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..." : taskName;
+        taskName.length > MAX_TASK_NAME_LENGTH
+          ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..."
+          : taskName;
       taskLabel = this.scene.add.text(0, 0, displayTaskName, {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "12px",

@@ -71,7 +71,7 @@ export default function FocusPanel() {
           <div className={activeTab === TABS.MUSIC ? "block" : "hidden"}>
             <MusicPlayerContent isExpanded={isExpanded} />
           </div>
-          
+
           {/* Tasks 콘텐츠 - 항상 마운트, activeTab으로 표시/숨김 */}
           <div className={activeTab === TABS.TASKS ? "block" : "hidden"}>
             <TasksMenuContent

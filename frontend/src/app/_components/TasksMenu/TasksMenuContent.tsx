@@ -212,7 +212,11 @@ export default function TasksMenuContent({
       </div>
 
       {/* 미니 모드 */}
-      <div className={!isExpanded ? "mt-3 border-t border-amber-900/20 pt-3" : "hidden"}>
+      <div
+        className={
+          !isExpanded ? "mt-3 border-t border-amber-900/20 pt-3" : "hidden"
+        }
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={handleMiniControlClick}
