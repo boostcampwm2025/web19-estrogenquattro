@@ -697,21 +697,33 @@ GET /api/leaderboard
       "profileImage": "https://github.com/honki12345.png",
       "points": 54
     }
-  ]
+  ],
+  "myRank": {
+    "rank": 1,
+    "username": "ldh-dodo",
+    "profileImage": "https://github.com/ldh-dodo.png",
+    "points": 131,
+  }
 }
 ```
 
 **필드 설명:**
 - `seasonEndTime`: 현재 시즌 종료 시간 (ISO 8601 형식)
-- `players`: 순위별 플레이어 목록
+- `players`: 순위별 플레이어 목록 (상위 N명)
   - `rank`: 순위
   - `username`: GitHub 유저네임
   - `profileImage`: GitHub 프로필 이미지 URL (`https://github.com/{username}.png`)
+  - `points`: 해당 시즌 획득 포인트
+- `myRank`: 요청한 사용자 본인의 순위 정보
+  - `rank`: 순위
+  - `username`: GitHub 유저네임
+  - `profileImage`: GitHub 프로필 이미지 URL
   - `points`: 해당 시즌 획득 포인트
 
 **비고:**
 - 시즌 리셋 시간을 초 단위까지 넣어서 반환해줄 것인지 논의 필요
 - 상위 N명만 반환(추후 논의)
+- `myRank`는 상위 N명에 포함되지 않아도 항상 반환됨
 - 프론트엔드에서 `seasonEndTime`을 기준으로 카운트다운 타이머 표시
 
 ---
