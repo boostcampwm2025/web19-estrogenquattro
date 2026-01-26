@@ -4,70 +4,13 @@ import { useLeaderboardStore } from "@/stores/leaderboardStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useEffect, useMemo, useState } from "react";
 
-// Pixel Art Style Constants
+import type { LeaderboardResponse } from "./types";
+import { calculateSeasonRemaining, formatTime } from "./utils";
+import { getMockResponse } from "./mockData";
+import PlayerRow from "./PlayerRow";
+
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
-
-// 임시 목업 데이터 (API 응답 형태)
-interface LeaderboardPlayer {
-  rank: number;
-  username: string;
-  profileImage: string | null;
-  points: number;
-}
-
-interface LeaderboardResponse {
-  seasonEndTime: string; // ISO 8601 형식
-  players: LeaderboardPlayer[];
-}
-
-// 목업 API 응답 생성 함수 (실제 API 연동 시 대체)
-function getMockResponse(): LeaderboardResponse {
-  return {
-    seasonEndTime: new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000 + 0 * 60 * 60 * 1000 + 0 * 60 * 1000,
-    ).toISOString(),
-    players: [
-      {
-        rank: 1,
-        username: "ldh-dodo",
-        profileImage: "https://github.com/ldh-dodo.png",
-        points: 131,
-      },
-      {
-        rank: 2,
-        username: "heisjun",
-        profileImage: "https://github.com/heisjun.png",
-        points: 98,
-      },
-      {
-        rank: 3,
-        username: "songhaechan",
-        profileImage: "https://github.com/songhaechan.png",
-        points: 76,
-      },
-      {
-        rank: 4,
-        username: "honki12345",
-        profileImage: "https://github.com/honki12345.png",
-        points: 54,
-      },
-    ],
-  };
-}
-
-// 시즌 종료까지 남은 시간 계산
-function calculateSeasonRemaining(endTime: string) {
-  const diff = new Date(endTime).getTime() - Date.now();
-  if (diff <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-  }
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  return { days, hours, minutes, seconds };
-}
 
 export default function LeaderboardModal() {
   const { isOpen, closeModal } = useLeaderboardStore();
@@ -105,8 +48,6 @@ export default function LeaderboardModal() {
   }, [isOpen, leaderboardData]);
 
   if (!isOpen || !leaderboardData) return null;
-
-  const formatTime = (n: number) => String(n).padStart(2, "0");
 
   return (
     <div
@@ -160,41 +101,16 @@ export default function LeaderboardModal() {
             <span className="text-center">포인트</span>
           </div>
 
-          {/* 순위 목록 */}
-          <div className="space-y-2">
+          {/* 순위 목록 (스크롤 가능) */}
+          <div className="retro-scrollbar -mr-3 max-h-60 space-y-2 overflow-y-auto">
             {leaderboardData.players.map((player) => (
-              <div
-                key={player.rank}
-                className={`grid grid-cols-4 items-center gap-2 rounded border-2 border-amber-900/20 bg-amber-50 py-2 ${
-                  player.rank === 1 ? "border-amber-500 bg-amber-100" : ""
-                }`}
-              >
-                <span className="text-center text-lg font-bold text-amber-900">
-                  {player.rank}
-                </span>
-                <div className="flex justify-center">
-                  {player.profileImage ? (
-                    <img
-                      src={player.profileImage}
-                      alt={player.username}
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-400 text-sm font-bold text-white">
-                      {player.username.slice(0, 2)}
-                    </div>
-                  )}
-                </div>
-                <span className="text-center font-medium text-amber-900">
-                  {player.username}
-                </span>
-                <span className="text-center font-bold text-amber-900">
-                  {player.points}
-                </span>
-              </div>
+              <PlayerRow key={player.rank} player={player} />
             ))}
+          </div>
+
+          {/* 내 순위 */}
+          <div className="mt-3 border-t-2 border-amber-900/30 pt-3">
+            <PlayerRow player={leaderboardData.myRank} isMyRank />
           </div>
         </div>
       </div>
