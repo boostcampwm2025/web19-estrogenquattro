@@ -72,6 +72,9 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-pixel);
+  
+  /* 커스텀 브레이크*/
+  --breakpoint-modal-w: 1580px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -206,4 +209,15 @@ body {
 
 .animate-pop {
   animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 모달 반응형 높이 */
+.modal-content-height {
+  height: 300px;
+}
+
+@media (min-height: 900px) {
+  .modal-content-height {
+    height: 500px;
+  }
 }

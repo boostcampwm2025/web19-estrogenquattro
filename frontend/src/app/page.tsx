@@ -15,7 +15,7 @@ export default function Home() {
           <UserInfoModal />
           <LeaderboardModal />
         </ClientOnly>
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
         </div>
         <div className="absolute bottom-4 left-4 z-50">
