@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronDown, ChevronUp, Play, Pause } from "lucide-react";
+import { ChevronDown, ChevronUp, Play, Pause, ListTodo } from "lucide-react";
 import { TaskTimer } from "./TaskTimer";
 import { TaskList } from "./TaskList";
 import { formatTime, formatTaskTime } from "./utils/timeFormat";
@@ -198,7 +198,10 @@ export default function App() {
           }`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <h1 className="text-lg text-amber-900">► TASKS</h1>
+          <h1 className="flex items-center gap-2 text-lg text-amber-900">
+            <ListTodo className="h-5 w-5" />
+            TASKS
+          </h1>
           <button className="cursor-pointer text-amber-900 transition-colors hover:text-amber-700">
             {isExpanded ? (
               <ChevronUp className="h-5 w-5" />
