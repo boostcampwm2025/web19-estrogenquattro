@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
-import { PointType } from '../point-history/entities/point-history.entity';
-import { PointHistoryService } from '../point-history/point-history.service';
+import { PointType } from '../pointhistory/entities/point-history.entity';
+import { PointHistoryService } from '../pointhistory/point-history.service';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
-  [PointType.COMMITTED]: 3,
+  [PointType.COMMITTED]: 2,
   [PointType.PR_OPEN]: 2,
   [PointType.PR_MERGED]: 4,
   [PointType.PR_REVIEWED]: 4,

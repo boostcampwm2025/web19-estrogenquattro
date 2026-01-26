@@ -21,7 +21,7 @@ export enum PointType {
 
 @Entity('point_history')
 export class PointHistory {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
+  @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => Player)

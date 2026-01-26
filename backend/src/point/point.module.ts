@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
-import { PointHistoryModule } from '../point-history/point-history.module';
+import { PointHistoryModule } from '../pointhistory/point-history.module';
 
 import { PointService } from './point.service';
 import { PointController } from './point.controller';

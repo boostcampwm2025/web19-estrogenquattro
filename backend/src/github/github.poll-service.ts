@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { GithubGateway } from './github.gateway';
 import { GithubService } from './github.service';
 import { GithubActivityType } from './entities/daily-github-activity.entity';
+import { PointService } from '../point/point.service';
+import { PointType } from '../pointhistory/entities/point-history.entity';
 
 // 폴링 간격 설정 (밀리초)
 const POLL_INTERVAL = 30_000; // 30초마다 폴링
@@ -49,6 +51,7 @@ export class GithubPollService {
   constructor(
     private readonly githubGateway: GithubGateway,
     private readonly githubService: GithubService,
+    private readonly pointService: PointService,
   ) {}
 
   // username -> PollingSchedule (username 기준으로 중복 방지)
@@ -330,7 +333,7 @@ export class GithubPollService {
       return { status: 'no_changes' };
     }
 
-    // DB에 새 이벤트 누적
+    // DB에 새 이벤트 누적 및 포인트 적립
     const { playerId } = schedule;
     if (newIssueCount > 0) {
       await this.githubService.incrementActivity(
@@ -338,6 +341,9 @@ export class GithubPollService {
         GithubActivityType.ISSUE_OPEN,
         newIssueCount,
       );
+      for (let i = 0; i < newIssueCount; i++) {
+        await this.pointService.addPoint(playerId, PointType.ISSUE_OPEN);
+      }
     }
     if (newPRCount > 0) {
       await this.githubService.incrementActivity(
@@ -345,6 +351,9 @@ export class GithubPollService {
         GithubActivityType.PR_OPEN,
         newPRCount,
       );
+      for (let i = 0; i < newPRCount; i++) {
+        await this.pointService.addPoint(playerId, PointType.PR_OPEN);
+      }
     }
     if (newPRReviewCount > 0) {
       await this.githubService.incrementActivity(
@@ -352,6 +361,9 @@ export class GithubPollService {
         GithubActivityType.PR_REVIEWED,
         newPRReviewCount,
       );
+      for (let i = 0; i < newPRReviewCount; i++) {
+        await this.pointService.addPoint(playerId, PointType.PR_REVIEWED);
+      }
     }
     if (newCommitCount > 0) {
       await this.githubService.incrementActivity(
@@ -359,6 +371,9 @@ export class GithubPollService {
         GithubActivityType.COMMITTED,
         newCommitCount,
       );
+      for (let i = 0; i < newCommitCount; i++) {
+        await this.pointService.addPoint(playerId, PointType.COMMITTED);
+      }
     }
 
     this.logger.log(
