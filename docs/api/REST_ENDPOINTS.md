@@ -651,6 +651,71 @@ GET /api/rooms/:id/state
 
 ---
 
+## 리더보드 (Leaderboard)
+
+**Headers:**
+```
+Cookie: access_token=<JWT>
+```
+
+### 주간 리더보드 조회
+
+**Status:** Planned
+
+```
+GET /api/leaderboard
+```
+
+현재 시즌의 주간 순위와 시즌 종료 시간을 조회
+
+**Response:**
+```json
+{
+  "seasonEndTime": "2025-02-02T00:00:00.000Z",
+  "players": [
+    {
+      "rank": 1,
+      "username": "ldh-dodo",
+      "profileImage": "https://github.com/ldh-dodo.png",
+      "points": 131
+    },
+    {
+      "rank": 2,
+      "username": "heisjun",
+      "profileImage": "https://github.com/heisjun.png",
+      "points": 98
+    },
+    {
+      "rank": 3,
+      "username": "songhaechan",
+      "profileImage": "https://github.com/songhaechan.png",
+      "points": 76
+    },
+    {
+      "rank": 4,
+      "username": "honki12345",
+      "profileImage": "https://github.com/honki12345.png",
+      "points": 54
+    }
+  ]
+}
+```
+
+**필드 설명:**
+- `seasonEndTime`: 현재 시즌 종료 시간 (ISO 8601 형식)
+- `players`: 순위별 플레이어 목록
+  - `rank`: 순위
+  - `username`: GitHub 유저네임
+  - `profileImage`: GitHub 프로필 이미지 URL (`https://github.com/{username}.png`)
+  - `points`: 해당 시즌 획득 포인트
+
+**비고:**
+- 시즌 리셋 시간을 초 단위까지 넣어서 반환해줄 것인지 논의 필요
+- 상위 N명만 반환(추후 논의)
+- 프론트엔드에서 `seasonEndTime`을 기준으로 카운트다운 타이머 표시
+
+---
+
 ## 메트릭 (Monitoring)
 
 ### Prometheus 메트릭
