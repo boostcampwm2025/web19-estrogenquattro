@@ -12,8 +12,6 @@ export class FocusTimeService {
   constructor(
     @InjectRepository(DailyFocusTime)
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
-    @InjectRepository(Task)
-    private readonly taskRepository: Repository<Task>,
     private readonly dataSource: DataSource,
   ) {}
 
