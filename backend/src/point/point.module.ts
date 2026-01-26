@@ -9,5 +9,6 @@ import { PointController } from './point.controller';
   imports: [TypeOrmModule.forFeature([DailyPoint])],
   controllers: [PointController],
   providers: [PointService],
+  exports: [PointService],
 })
 export class PointModule {}
