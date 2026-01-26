@@ -52,7 +52,10 @@ export class PointSettlementScheduler {
 
       if (pointCount > 0) {
         for (let i = 0; i < pointCount; i++) {
-          await this.pointService.addPoint(focusTime.player.id, PointType.FOCUSED);
+          await this.pointService.addPoint(
+            focusTime.player.id,
+            PointType.FOCUSED,
+          );
         }
         this.logger.log(
           `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
@@ -72,7 +75,10 @@ export class PointSettlementScheduler {
     );
 
     for (const task of completedTasks) {
-      await this.pointService.addPoint(task.player.id, PointType.TASK_COMPLETED);
+      await this.pointService.addPoint(
+        task.player.id,
+        PointType.TASK_COMPLETED,
+      );
       this.logger.log(
         `Awarded TASK_COMPLETED point to player ${task.player.id} for task ${task.id}`,
       );
