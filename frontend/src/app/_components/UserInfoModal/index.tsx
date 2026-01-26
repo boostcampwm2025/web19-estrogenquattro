@@ -2,7 +2,8 @@
 
 import { useUserInfoStore } from "@/stores/userInfoStore";
 import { usePointStore } from "@/stores/pointStore";
-import { useCallback, useEffect, useState } from "react";
+import { useModalClose } from "@/hooks/useModalClose";
+import { useCallback, useState } from "react";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -20,25 +21,25 @@ export default function UserInfoModal() {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const points = usePointStore((state) => state.points);
 
-  const handleClose = useCallback(() => {
+  const onClose = useCallback(() => {
     closeModal();
     setActiveTab("profile");
   }, [closeModal]);
 
-  // ESC 키로 닫기
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [handleClose]);
+  const { contentRef, handleClose, handleBackdropClick } = useModalClose({
+    isOpen,
+    onClose,
+  });
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
+      onClick={handleBackdropClick}
+    >
       <div
+        ref={contentRef}
         className={`relative w-full max-w-4xl ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
         <div className="mb-4 flex items-start justify-between">
