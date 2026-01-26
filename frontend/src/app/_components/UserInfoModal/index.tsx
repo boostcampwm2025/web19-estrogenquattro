@@ -45,12 +45,12 @@ export default function UserInfoModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-10"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
       onClick={handleBackdropClick}
     >
       <div
         ref={contentRef}
-        className={`relative w-full max-w-2xl modal-w:max-w-4xl ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
+        className={`relative w-full max-w-2xl min-w-0 modal-w:max-w-4xl modal-w:min-w-[850px] ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
         <div className="mb-4 flex items-start justify-between">
           <div className="flex gap-2">

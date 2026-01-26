@@ -72,9 +72,15 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-pixel);
-  
-  /* 커스텀 브레이크*/
-  --breakpoint-modal-w: 1580px;
+}
+
+@media (min-width: 850px) {
+  .modal-w\:max-w-4xl {
+    max-width: 56rem;
+  }
+  .modal-w\:min-w-\[850px\] {
+    min-width: 850px;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -216,7 +222,7 @@ body {
   height: 300px;
 }
 
-@media (min-height: 900px) {
+@media (min-height: 650px) {
   .modal-content-height {
     height: 500px;
   }
