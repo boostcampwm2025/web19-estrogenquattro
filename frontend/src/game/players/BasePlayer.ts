@@ -78,7 +78,7 @@ export default class BasePlayer {
     const nameTag = scene.add
       .text(0, 50, username, {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-        fontSize: "12px",
+        fontSize: "15px",
         color: "#ffffff",
         backgroundColor: "#00000088",
         padding: { x: 4, y: 2 },
@@ -90,10 +90,10 @@ export default class BasePlayer {
     this.focusTimeText = scene.add
       .text(0, 66, formatFocusTime(0), {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-        fontSize: "10px",
+        fontSize: "13px",
         color: "#ffffff",
         backgroundColor: "#00000088",
-        padding: { x: 4, y: 2 },
+        padding: { x: 4, y: 0.5 },
       })
       .setOrigin(0.5)
       .setResolution(2);
@@ -322,7 +322,7 @@ export default class BasePlayer {
     // 상태 텍스트
     const statusLabel = this.scene.add.text(0, 0, statusText, {
       fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-      fontSize: "10px",
+      fontSize: "13px",
       color: textColor,
     });
     statusLabel.setResolution(2);
@@ -331,12 +331,13 @@ export default class BasePlayer {
 
     // 태스크명이 있으면 추가
     let taskLabel: Phaser.GameObjects.Text | null = null;
+    const MAX_TASK_NAME_LENGTH = 15;
     if (isFocusing && taskName) {
       const displayTaskName =
-        taskName.length > 30 ? taskName.slice(0, 30) + "..." : taskName;
+        taskName.length > MAX_TASK_NAME_LENGTH ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..." : taskName;
       taskLabel = this.scene.add.text(0, 0, displayTaskName, {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-        fontSize: "9px",
+        fontSize: "12px",
         color: "#374151",
       });
       taskLabel.setResolution(2);
@@ -353,7 +354,7 @@ export default class BasePlayer {
     const statusWidth = dotSize + dotGap + statusLabel.width;
     const taskWidth = taskLabel ? taskLabel.width + taskPaddingX * 2 : 0;
     const width = Math.max(statusWidth, taskWidth) + paddingX * 2;
-    const height = taskLabel ? 32 : 18;
+    const height = taskLabel ? 38 : 24;
 
     // 태그 배경 (꼬리 없음, 둥근 사각형)
     const tagGraphics = this.scene.add.graphics();
@@ -419,7 +420,7 @@ export default class BasePlayer {
     // 텍스트 생성pnp
     const chatText = this.scene.add.text(0, 0, text, {
       fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-      fontSize: "12px",
+      fontSize: "14px",
       color: "#000000",
       wordWrap: { width: 150, useAdvancedWrap: true },
     });
