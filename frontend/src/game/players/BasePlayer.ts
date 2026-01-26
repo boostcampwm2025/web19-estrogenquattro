@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { formatFocusTime } from "@/utils/timeFormat";
-import { useUserInfoStore } from "@/stores/userInfoStore";
+import { MODAL_TYPES, useModalStore } from "@/stores/useModalStore";
 import Pet from "./Pet";
 import type { Direction } from "../types/direction";
 
@@ -155,7 +155,10 @@ export default class BasePlayer {
           event.stopPropagation();
           return;
         }
-        useUserInfoStore.getState().openModal(this.playerId, this.username);
+        useModalStore.getState().openModal(MODAL_TYPES.USER_INFO, {
+          playerId: this.playerId,
+          username: this.username,
+        });
       },
     );
 

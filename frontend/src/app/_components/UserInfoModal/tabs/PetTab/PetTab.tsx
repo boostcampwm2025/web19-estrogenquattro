@@ -3,12 +3,14 @@ import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
 import PetCodex from "./components/PetCodex";
-import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
 import { UserPet } from "@/lib/api/pet";
 
 export default function PetTab() {
-  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
+  const targetPlayerId = useModalStore(
+    (state) => state.userInfoPayload?.playerId,
+  );
   const { user } = useAuthStore();
 
   const playerId = targetPlayerId!;

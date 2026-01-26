@@ -1,7 +1,8 @@
 "use client";
 
-import { useLeaderboardStore } from "@/stores/useLeaderboardStore";
+import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
+import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useState } from "react";
 
 import type { LeaderboardResponse } from "./types";
@@ -13,7 +14,14 @@ const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
 
 export default function LeaderboardModal() {
-  const { isOpen, closeModal } = useLeaderboardStore();
+  const { activeModal, closeModal } = useModalStore(
+    useShallow((state) => ({
+      activeModal: state.activeModal,
+      closeModal: state.closeModal,
+    })),
+  );
+  const isOpen = activeModal === MODAL_TYPES.LEADERBOARD;
+  
   const [tick, setTick] = useState(0);
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,

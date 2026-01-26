@@ -1,8 +1,9 @@
 "use client";
 
-import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { usePointStore } from "@/stores/pointStore";
 import { useModalClose } from "@/hooks/useModalClose";
+import { useShallow } from "zustand/react/shallow";
 import { useCallback, useState } from "react";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
@@ -17,7 +18,16 @@ const PIXEL_BTN_INACTIVE = "bg-amber-200 text-amber-900 hover:bg-amber-300";
 type TabType = "profile" | "activity" | "pet";
 
 export default function UserInfoModal() {
-  const { isOpen, targetUsername, closeModal } = useUserInfoStore();
+  const { activeModal, userInfoPayload, closeModal } = useModalStore(
+    useShallow((state) => ({
+      activeModal: state.activeModal,
+      userInfoPayload: state.userInfoPayload,
+      closeModal: state.closeModal,
+    })),
+  );
+  const isOpen = activeModal === MODAL_TYPES.USER_INFO;
+  const targetUsername = userInfoPayload?.username;
+  
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const points = usePointStore((state) => state.points);
 
