@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { Player } from '../../player/entites/player.entity';
 
@@ -34,5 +35,12 @@ export class PointHistory {
   amount: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt: string;
+
+  @BeforeInsert()
+  setCreatedDate(): void {
+    if (!this.createdAt) {
+      this.createdAt = new Date().toISOString();
+    }
+  }
 }

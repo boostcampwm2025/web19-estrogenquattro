@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../point-history/entities/point-history.entity';
+import { PointHistoryService } from '../point-history/point-history.service';
 
-const ACTIVITY_POINT_MAP: Record<PointType, number> = {
+export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 3,
   [PointType.PR_OPEN]: 2,
   [PointType.PR_MERGED]: 4,
@@ -19,6 +20,7 @@ export class PointService {
   constructor(
     @InjectRepository(DailyPoint)
     private readonly dailyPointRepository: Repository<DailyPoint>,
+    private readonly pointHistoryService: PointHistoryService,
   ) {}
 
   async getPoints(playerId: number): Promise<DailyPoint[]> {
@@ -41,6 +43,9 @@ export class PointService {
   ): Promise<DailyPoint> {
     const today = new Date().toISOString().slice(0, 10);
     const point = ACTIVITY_POINT_MAP[activityType];
+
+    // 포인트 내역 저장
+    await this.pointHistoryService.addHistory(playerId, activityType, point);
 
     const existingRecord = await this.dailyPointRepository.findOne({
       where: {
