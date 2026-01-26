@@ -94,7 +94,7 @@ export function TaskList({
               onChange={(e) => setNewTaskText(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder="새 작업..."
-              className="flex-1 rounded-none border-2 border-amber-900 bg-white px-3 py-2 text-amber-900 placeholder:text-amber-500"
+              className="flex-1 text-sm rounded-none border-2 border-amber-900 bg-white px-3 py-1 text-amber-900 placeholder:text-amber-500"
               autoFocus
             />
             <Button
