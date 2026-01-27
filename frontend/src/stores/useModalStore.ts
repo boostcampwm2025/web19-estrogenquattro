@@ -18,7 +18,7 @@ interface ModalState {
 
   openModal: (type: ModalType, payload?: UserInfoPayload) => void;
   closeModal: () => void;
-  toggleModal: (type: ModalType) => void;
+  toggleModal: (type: ModalType, payload?: UserInfoPayload) => void;
 }
 
 export const useModalStore = create<ModalState>((set, get) => ({
@@ -35,12 +35,19 @@ export const useModalStore = create<ModalState>((set, get) => ({
 
   closeModal: () => set({ activeModal: null, userInfoPayload: null }),
 
-  toggleModal: (type) => {
+  toggleModal: (type, payload) => {
     const { activeModal } = get();
     if (activeModal === type) {
       set({ activeModal: null, userInfoPayload: null });
     } else {
-      set({ activeModal: type });
+      if (type === MODAL_TYPES.USER_INFO && !payload) {
+        console.warn("UserInfo modal requires payload");
+        return;
+      }
+      set({
+        activeModal: type,
+        userInfoPayload: type === MODAL_TYPES.USER_INFO ? payload! : null,
+      });
     }
   },
 }));
