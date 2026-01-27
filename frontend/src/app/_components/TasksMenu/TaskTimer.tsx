@@ -25,7 +25,7 @@ export function TaskTimer({
       <div className="flex gap-2">
         <Button
           onClick={onToggle}
-          className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover flex flex-1 items-center justify-center gap-2 rounded-none border-2 py-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+          className="text-md border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover flex flex-1 items-center justify-center gap-2 rounded-none border-2 py-1 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
         >
           {isRunning ? (
             <>

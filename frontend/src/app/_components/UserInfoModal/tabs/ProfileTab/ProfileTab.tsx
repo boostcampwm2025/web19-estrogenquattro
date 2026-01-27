@@ -4,10 +4,12 @@ import StatsSection from "./components/StatsSection/StatsSection";
 import TaskSection from "./components/TaskSection/TaskSection";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
-import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useModalStore } from "@/stores/useModalStore";
 
 export default function ProfileTab() {
-  const targetPlayerId = useUserInfoStore((state) => state.targetPlayerId);
+  const targetPlayerId = useModalStore(
+    (state) => state.userInfoPayload?.playerId,
+  );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { dailyTaskCounts, focusTimeData, githubEvents, tasks, isLoading } =
     useProfileData(targetPlayerId ?? 0, selectedDate);

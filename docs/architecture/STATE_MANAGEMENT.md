@@ -14,7 +14,7 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **useFocusTimeStore** | `useFocusTimeStore.ts` | 집중/휴식 상태, 시간 관리 |
 | **useTasksStore** | `useTasksStore.ts` | Task CRUD, 타이머 |
 | **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
-| **useUserInfoStore** | `userInfoStore.ts` | 사용자 정보 모달 상태 |
+| **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
 
 ---
 
@@ -187,22 +187,31 @@ interface PointActions {
 
 ---
 
-### useUserInfoStore
+### useModalStore
 
-사용자 정보 모달 상태 관리
+전역 모달 상태 관리 (UserInfo, Leaderboard 등 상호 배제적 모달)
 
 ```typescript
-interface UserInfoState {
-  isOpen: boolean;
-  targetPlayerId: number | null;
-  targetUsername: string | null;
+type ModalType = "userInfo" | "leaderboard" | null;
+
+interface UserInfoPayload {
+  playerId: number;
+  username: string;
 }
 
-interface UserInfoActions {
-  openModal(playerId: number, username: string): void;
-  closeModal(): void;
+interface ModalState {
+  activeModal: ModalType;
+  userInfoPayload: UserInfoPayload | null;
+
+  openModal: (type: ModalType, payload?: UserInfoPayload) => void;
+  closeModal: () => void;
+  toggleModal: (type: ModalType) => void;
 }
 ```
+
+**특징:**
+- `activeModal`을 통해 한 번에 하나의 모달만 열리도록 관리
+- `userInfo` 모달의 경우 `userInfoPayload`로 데이터 전달
 
 ---
 
@@ -221,7 +230,7 @@ flowchart TB
     end
 
     subgraph UI
-        UserInfo[useUserInfoStore]
+        Modal[useModalStore]
     end
 
     Auth -->|user 정보| Focus
