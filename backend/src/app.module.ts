@@ -19,6 +19,7 @@ import { TaskModule } from './task/task.module';
 import { FocusTimeModule } from './focustime/focustime.module';
 import { PetModule } from './userpet/pet.module';
 import { PointModule } from './point/point.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { PointModule } from './point/point.module';
     FocusTimeModule,
     PetModule,
     PointModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

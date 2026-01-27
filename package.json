@@ -1,17 +1,17 @@
- {
-   "name": "web19-estrogenquattro",
-   "version": "1.0.0",
-   "private": true,
-   "scripts": {
-     "install:all": "cd backend && pnpm install && cd ../frontend && pnpm install",
-     "build:backend": "cd backend && pnpm build",
-     "build:frontend": "cd frontend && pnpm build",
-     "build:all": "pnpm build:backend && pnpm build:frontend",
-     "deploy": "pnpm install:all && pnpm build:all && pm2 start ecosystem.config.js --only backend",
-     "deploy:reload": "git pull && pnpm install:all && pnpm build:all && pm2 delete all && pm2 start ecosystem.config.js --only backend",
-     "start": "pm2 start ecosystem.config.js",
-     "stop": "pm2 stop ecosystem.config.js",
-     "restart": "pm2 reload ecosystem.config.js",
-     "logs": "pm2 logs"
-   }
- }
+{
+  "name": "web19-estrogenquattro",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && pnpm install && cd ../frontend && pnpm install",
+    "build:backend": "cd backend && pnpm build",
+    "build:frontend": "cd frontend && pnpm build",
+    "build:all": "pnpm build:backend && pnpm build:frontend",
+    "deploy": "pnpm install:all && pnpm build:all && pm2 start ecosystem.config.js --only backend",
+    "deploy:reload": "git pull && pnpm install:all && pnpm build:all && pm2 delete all && pm2 start ecosystem.config.js --only backend",
+    "start": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop ecosystem.config.js",
+    "restart": "pm2 reload ecosystem.config.js",
+    "logs": "pm2 logs"
+  }
+}

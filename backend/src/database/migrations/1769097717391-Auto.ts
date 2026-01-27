@@ -5,30 +5,6 @@ export class Auto1769097717391 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "pets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar(20) NOT NULL, "description" varchar(100) NOT NULL, "species" varchar(20) NOT NULL, "evolution_stage" integer NOT NULL, "evolution_required_exp" integer NOT NULL, "actual_img_url" varchar(100) NOT NULL)`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "players" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "social_id" bigint NOT NULL, "nickname" varchar(20) NOT NULL, "equipped_pet_id" integer, "total_point" integer NOT NULL DEFAULT (0), CONSTRAINT "UQ_e304f5048f92add68e1f8c0ce03" UNIQUE ("social_id"))`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "user_pets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" integer NOT NULL, "pet_id" integer NOT NULL, "exp" integer NOT NULL DEFAULT (0))`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "user_pet_codex" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" integer NOT NULL, "pet_id" integer NOT NULL, "acquired_at" datetime NOT NULL DEFAULT (datetime('now')))`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "tasks" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "description" varchar(100) NOT NULL, "total_focus_seconds" integer NOT NULL DEFAULT (0), "completed_date" date, "created_date" date NOT NULL, "player_id" integer)`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "daily_point" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" integer NOT NULL, "amount" integer NOT NULL, "created_date" date NOT NULL DEFAULT (datetime('now')))`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "daily_github_activity" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED') ) NOT NULL, "count" integer NOT NULL DEFAULT (0), "created_date" date NOT NULL, "player_id" integer)`,
-    );
-    await queryRunner.query(
-      `CREATE TABLE "daily_focus_time" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "total_focus_seconds" integer NOT NULL DEFAULT (0), "status" varchar CHECK( "status" IN ('FOCUSING','RESTING') ) NOT NULL DEFAULT ('RESTING'), "created_date" date NOT NULL, "last_focus_start_time" datetime, "current_task_id" integer, "player_id" integer)`,
-    );
-    await queryRunner.query(
       `CREATE TABLE "temporary_players" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "social_id" bigint NOT NULL, "nickname" varchar(20) NOT NULL, "equipped_pet_id" integer, "total_point" integer NOT NULL DEFAULT (0), CONSTRAINT "UQ_e304f5048f92add68e1f8c0ce03" UNIQUE ("social_id"), CONSTRAINT "FK_279a87ba077e90d4af617c09282" FOREIGN KEY ("equipped_pet_id") REFERENCES "pets" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION)`,
     );
     await queryRunner.query(
