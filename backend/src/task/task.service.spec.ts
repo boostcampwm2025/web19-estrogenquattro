@@ -125,7 +125,11 @@ describe('TaskService', () => {
       // Given
       const { start, end } = getTodayRange();
       const taskTime = new Date(start.getTime() + 60000);
-      const task = await createTestTask(testPlayer, '오늘 완료 할 일', taskTime);
+      const task = await createTestTask(
+        testPlayer,
+        '오늘 완료 할 일',
+        taskTime,
+      );
       task.completedAt = taskTime;
       await taskRepository.save(task);
 

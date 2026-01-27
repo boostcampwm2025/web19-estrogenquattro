@@ -44,7 +44,10 @@ export class TaskService {
     const tasks = await this.taskRepository
       .createQueryBuilder('task')
       .where('task.player.id = :playerId', { playerId })
-      .andWhere('task.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
+      .andWhere('task.createdAt BETWEEN :startAt AND :endAt', {
+        startAt,
+        endAt,
+      })
       .getMany();
 
     return {
