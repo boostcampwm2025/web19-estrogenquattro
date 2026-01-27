@@ -14,7 +14,7 @@ interface FocusTimeResponse {
   id: number | null;
   totalFocusSeconds: number;
   status: FocusStatus;
-  createdDate: string;
+  createdAt: string;
   lastFocusStartTime: string | null;
 }
 
@@ -26,15 +26,20 @@ export class FocustimeController {
   @Get(':playerId')
   async getFocusTime(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('date') date: string,
+    @Query('startAt') startAt: string,
+    @Query('endAt') endAt: string,
   ): Promise<FocusTimeResponse> {
-    const focusTime = await this.focusTimeService.getFocusTime(playerId, date);
+    const focusTime = await this.focusTimeService.getFocusTime(
+      playerId,
+      new Date(startAt),
+      new Date(endAt),
+    );
 
     return {
       id: focusTime.id,
       totalFocusSeconds: focusTime.totalFocusSeconds,
       status: focusTime.status,
-      createdDate: focusTime.createdAt.toISOString().slice(0, 10),
+      createdAt: focusTime.createdAt.toISOString(),
       lastFocusStartTime: focusTime.lastFocusStartTime
         ? focusTime.lastFocusStartTime.toISOString()
         : null,

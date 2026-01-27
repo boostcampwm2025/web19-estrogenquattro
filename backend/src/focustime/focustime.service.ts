@@ -1,10 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
-import { getTodayKstRange, getKstDateRange } from '../util/date.util';
+import { getTodayRange } from '../util/date.util';
 
 @Injectable()
 export class FocusTimeService {
@@ -17,7 +17,7 @@ export class FocusTimeService {
   ) {}
 
   async findOrCreate(player: Player): Promise<DailyFocusTime> {
-    const { start, end } = getTodayKstRange();
+    const { start, end } = getTodayRange();
 
     const existing = await this.focusTimeRepository
       .createQueryBuilder('ft')
@@ -46,7 +46,7 @@ export class FocusTimeService {
     taskId?: number,
   ): Promise<DailyFocusTime> {
     const now = new Date();
-    const { start, end } = getTodayKstRange();
+    const { start, end } = getTodayRange();
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
@@ -123,7 +123,7 @@ export class FocusTimeService {
 
   async startResting(playerId: number): Promise<DailyFocusTime> {
     const now = new Date();
-    const { start, end } = getTodayKstRange();
+    const { start, end } = getTodayRange();
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
@@ -203,7 +203,7 @@ export class FocusTimeService {
   async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
     if (playerIds.length === 0) return [];
 
-    const { start, end } = getTodayKstRange();
+    const { start, end } = getTodayRange();
     return this.focusTimeRepository
       .createQueryBuilder('ft')
       .leftJoinAndSelect('ft.player', 'player')
@@ -213,13 +213,15 @@ export class FocusTimeService {
       .getMany();
   }
 
-  async getFocusTime(playerId: number, date: string): Promise<DailyFocusTime> {
-    const { start, end } = getKstDateRange(date);
-
+  async getFocusTime(
+    playerId: number,
+    startAt: Date,
+    endAt: Date,
+  ): Promise<DailyFocusTime> {
     const focusTime = await this.focusTimeRepository
       .createQueryBuilder('ft')
       .where('ft.player.id = :playerId', { playerId })
-      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+      .andWhere('ft.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
       .getOne();
 
     if (!focusTime) {
