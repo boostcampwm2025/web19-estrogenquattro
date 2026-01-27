@@ -76,7 +76,7 @@ export default function FeaturesSection() {
               >
                 <img
                   src={feature.src}
-                  alt={feature.src}
+                  alt={feature.title}
                   className="h-full w-full object-cover"
                 />
               </motion.div>

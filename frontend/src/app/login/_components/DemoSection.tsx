@@ -31,7 +31,7 @@ export default function DemoSection() {
           )}
         </div>
         <div className="font-display pt-8 text-[10px] tracking-[0.2em] text-amber-900/30 uppercase">
-          © 2024 ESTROGEN QUATTRO. ALL RIGHTS RESERVED.
+          © 2026 ESTROGEN QUATTRO. ALL RIGHTS RESERVED.
         </div>
       </div>
     </footer>
