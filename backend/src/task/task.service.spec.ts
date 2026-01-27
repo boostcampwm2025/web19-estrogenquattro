@@ -9,6 +9,7 @@ import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
+import { getTodayRange } from '../util/date.util';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -108,12 +109,13 @@ describe('TaskService', () => {
   describe('getTasks', () => {
     it('오늘 날짜의 미완료 할 일을 조회한다', async () => {
       // Given
-      const now = new Date();
-      await createTestTask(testPlayer, '할 일 1', now);
-      await createTestTask(testPlayer, '할 일 2', now);
+      const { start, end } = getTodayRange();
+      const taskTime = new Date(start.getTime() + 60000); // start 이후 1분
+      await createTestTask(testPlayer, '할 일 1', taskTime);
+      await createTestTask(testPlayer, '할 일 2', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(2);
@@ -121,13 +123,14 @@ describe('TaskService', () => {
 
     it('오늘 완료된 할 일도 조회된다', async () => {
       // Given
-      const now = new Date();
-      const task = await createTestTask(testPlayer, '오늘 완료 할 일', now);
-      task.completedAt = now;
+      const { start, end } = getTodayRange();
+      const taskTime = new Date(start.getTime() + 60000);
+      const task = await createTestTask(testPlayer, '오늘 완료 할 일', taskTime);
+      task.completedAt = taskTime;
       await taskRepository.save(task);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -135,20 +138,24 @@ describe('TaskService', () => {
     });
 
     it('과거 날짜를 지정하여 조회한다', async () => {
-      // Given: KST 어제에 해당하는 UTC 시간으로 태스크 생성
+      // Given: 어제 범위 계산
       const now = new Date();
-      const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-      const yesterdayKst = new Date(kstNow);
-      yesterdayKst.setUTCDate(yesterdayKst.getUTCDate() - 1);
-      const yesterdayDateStr = yesterdayKst.toISOString().slice(0, 10);
+      const yesterdayStart = new Date(now);
+      yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+      yesterdayStart.setUTCHours(15, 0, 0, 0);
 
-      // KST 어제 중간 시간 (UTC 기준)
-      const [year, month, day] = yesterdayDateStr.split('-').map(Number);
-      const yesterdayUtc = new Date(Date.UTC(year, month - 1, day, 3, 0, 0, 0)); // KST 12:00
-      await createTestTask(testPlayer, '어제 할 일', yesterdayUtc);
+      const yesterdayEnd = new Date(now);
+      yesterdayEnd.setUTCHours(14, 59, 59, 999);
+
+      const yesterdayTaskTime = new Date(yesterdayStart.getTime() + 60000);
+      await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id, yesterdayDateStr);
+      const result = await service.getTasks(
+        testPlayer.id,
+        yesterdayStart,
+        yesterdayEnd,
+      );
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -156,19 +163,18 @@ describe('TaskService', () => {
     });
 
     it('다른 날짜의 할 일은 조회되지 않는다', async () => {
-      // Given: KST 어제에 해당하는 UTC 시간으로 태스크 생성
+      // Given: 어제 범위에 태스크 생성
       const now = new Date();
-      const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-      const yesterdayKst = new Date(kstNow);
-      yesterdayKst.setUTCDate(yesterdayKst.getUTCDate() - 1);
-      const yesterdayDateStr = yesterdayKst.toISOString().slice(0, 10);
+      const yesterdayStart = new Date(now);
+      yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+      yesterdayStart.setUTCHours(15, 0, 0, 0);
 
-      const [year, month, day] = yesterdayDateStr.split('-').map(Number);
-      const yesterdayUtc = new Date(Date.UTC(year, month - 1, day, 3, 0, 0, 0));
-      await createTestTask(testPlayer, '어제 할 일', yesterdayUtc);
+      const yesterdayTaskTime = new Date(yesterdayStart.getTime() + 60000);
+      await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
 
-      // When
-      const result = await service.getTasks(testPlayer.id); // 오늘 날짜로 조회
+      // When: 오늘 범위로 조회
+      const { start, end } = getTodayRange();
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(0);
@@ -176,12 +182,13 @@ describe('TaskService', () => {
 
     it('다른 플레이어의 할 일은 조회되지 않는다', async () => {
       // Given
-      const now = new Date();
-      await createTestTask(testPlayer, '내 할 일', now);
-      await createTestTask(otherPlayer, '다른 사람 할 일', now);
+      const { start, end } = getTodayRange();
+      const taskTime = new Date(start.getTime() + 60000);
+      await createTestTask(testPlayer, '내 할 일', taskTime);
+      await createTestTask(otherPlayer, '다른 사람 할 일', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -190,7 +197,10 @@ describe('TaskService', () => {
 
     it('존재하지 않는 플레이어로 조회 시 NotFoundException을 던진다', async () => {
       // When & Then
-      await expect(service.getTasks(99999)).rejects.toThrow(NotFoundException);
+      const { start, end } = getTodayRange();
+      await expect(service.getTasks(99999, start, end)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
