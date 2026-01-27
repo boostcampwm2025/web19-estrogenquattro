@@ -11,7 +11,7 @@ import { UserPet } from './entities/user-pet.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPetCodex } from './entities/user-pet-codex.entity';
 import sharp from 'sharp';
-import * as fs from 'fs';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 
 @Injectable()
@@ -230,28 +230,50 @@ export class PetService {
     const cachePath = path.join(cacheDir, `${petId}.png`);
 
     // 1. 캐시 확인
-    if (fs.existsSync(cachePath)) {
-      return fs.readFileSync(cachePath);
+    try {
+      return await fs.readFile(cachePath);
+    } catch (error) {
+      const err = error as { code?: string };
+      if (err.code !== 'ENOENT') throw error;
+      // 캐시가 없으면(ENOENT) 다음 단계로 진행
     }
 
     // 2. 캐시 디렉토리 생성 확인
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+    try {
+      await fs.access(cacheDir);
+    } catch (error) {
+      const err = error as { code?: string };
+      if (err.code === 'ENOENT') {
+        await fs.mkdir(cacheDir, { recursive: true });
+      } else {
+        throw error;
+      }
     }
 
-    // 3. 원본 이미지 경로 확인 (actualImgUrl이 '/assets/pets/...' 형태라고 가정)
+    // 3. 원본 이미지 경로 확인
+    const publicDir = path.join(process.cwd(), 'public');
     const originalPath = path.join(
-      process.cwd(),
-      'public',
+      publicDir,
       pet.actualImgUrl.startsWith('/')
         ? pet.actualImgUrl.substring(1)
         : pet.actualImgUrl,
     );
 
-    if (!fs.existsSync(originalPath)) {
-      throw new NotFoundException(
-        `Original image not found at ${originalPath}`,
-      );
+    // 경로 탐색 공격 방지: 최종 경로가 public 디렉토리 내에 있는지 검증
+    const resolvedPath = path.resolve(originalPath);
+    if (!resolvedPath.startsWith(path.resolve(publicDir))) {
+      throw new BadRequestException('Invalid image path');
+    }
+
+    try {
+      await fs.access(originalPath);
+    } catch (error) {
+      const err = error as { code?: string };
+      if (err.code === 'ENOENT') {
+        console.error(`Original image not found at ${originalPath}`);
+        throw new NotFoundException(`Original image not found`);
+      }
+      throw error;
     }
 
     // 4. 실루엣 생성 (sharp 사용)
@@ -267,14 +289,14 @@ export class PetService {
       .composite([
         {
           input: originalPath,
-          blend: 'dest-in', // 원본의 알파 채널에 맞춰서 회색 배경을 잘라냄
+          blend: 'dest-in',
         },
       ])
       .png()
       .toBuffer();
 
     // 5. 캐시에 저장
-    fs.writeFileSync(cachePath, finalBuffer);
+    await fs.writeFile(cachePath, finalBuffer);
 
     return finalBuffer;
   }

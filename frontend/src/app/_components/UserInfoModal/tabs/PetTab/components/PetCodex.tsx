@@ -87,7 +87,6 @@ export default function PetCodex({
                           }
                           alt={pet.name}
                           className="h-full w-full object-contain"
-                          crossOrigin="use-credentials"
                         />
                       </div>
                       <p
