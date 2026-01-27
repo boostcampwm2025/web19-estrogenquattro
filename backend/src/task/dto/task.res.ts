@@ -5,7 +5,7 @@ export class TaskRes {
   description: string;
   totalFocusSeconds: number;
   isCompleted: boolean;
-  createdDate: string;
+  createdAt: string;
 
   static of(task: Task): TaskRes {
     const res = new TaskRes();
@@ -13,7 +13,7 @@ export class TaskRes {
     res.description = task.description;
     res.totalFocusSeconds = task.totalFocusSeconds;
     res.isCompleted = task.completedAt !== null;
-    res.createdDate = task.createdAt.toISOString().slice(0, 10);
+    res.createdAt = task.createdAt.toISOString();
     return res;
   }
 }
