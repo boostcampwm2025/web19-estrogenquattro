@@ -37,6 +37,17 @@ export default function MusicPlayerContent({
     toggleLoopMode,
   } = useMusicPlayer();
 
+  const handleCanPlay = () => {
+    if (isPlaying && audioRef.current) {
+      const playPromise = audioRef.current.play();
+      if (playPromise) {
+        void playPromise.catch(() => {
+          // 필요시 재생 실패 상태 처리
+        });
+      }
+    }
+  };
+
   return (
     <>
       {/* audio element - 항상 마운트됨 */}
@@ -44,11 +55,7 @@ export default function MusicPlayerContent({
         ref={audioRef}
         src={currentTrack?.src}
         onEnded={handleTrackEnd}
-        onCanPlay={() => {
-          if (isPlaying && audioRef.current) {
-            audioRef.current.play();
-          }
-        }}
+        onCanPlay={handleCanPlay}
       />
 
       {/* 펼침 모드 */}
@@ -167,7 +174,14 @@ export default function MusicPlayerContent({
             <li
               key={track.id}
               onClick={() => handlePlayTrack(track)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handlePlayTrack(track);
+                }
+              }}
               role="button"
+              tabIndex={0}
               className={`cursor-pointer p-2 last:border-b-0 ${
                 currentTrack?.id === track.id
                   ? "bg-retro-button-bg/10"
@@ -211,6 +225,7 @@ export default function MusicPlayerContent({
                 e.stopPropagation();
                 handleTogglePlay();
               }}
+              aria-label={isPlaying ? "Pause" : "Play"}
               className="cursor-pointer text-amber-900 hover:text-amber-700"
             >
               {isPlaying ? (
