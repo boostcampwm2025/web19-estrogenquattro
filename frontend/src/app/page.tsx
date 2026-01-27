@@ -5,6 +5,7 @@ import UserInfoModal from "./_components/UserInfoModal";
 import FocusPanel from "./_components/FocusPanel";
 import LeaderboardModal from "./_components/LeaderboardModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
+import UserInfoButton from "./_components/UserInfoButton";
 
 export default function Home() {
   return (
@@ -18,7 +19,8 @@ export default function Home() {
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
         </div>
-        <div className="absolute bottom-4 left-4 z-30">
+        <div className="absolute top-4 left-4 z-30 flex gap-2">
+          <UserInfoButton />
           <LeaderboardButton />
         </div>
       </div>
