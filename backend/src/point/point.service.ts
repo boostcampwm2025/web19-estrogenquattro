@@ -57,13 +57,13 @@ export class PointService {
         totalPoint,
       );
 
-      // 비관적 락으로 조회 (다른 트랜잭션이 동시에 수정 못하게 차단)
+      // SQLite는 pessimistic lock을 지원하지 않으므로 upsert 패턴 사용
+      // 먼저 조회 후 존재하면 업데이트, 없으면 생성
       const existingRecord = await dailyPointRepo.findOne({
         where: {
           player: { id: playerId },
           createdDate: today,
         },
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (existingRecord) {

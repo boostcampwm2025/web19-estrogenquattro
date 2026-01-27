@@ -13,7 +13,7 @@ import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
-import { GithubGateway } from '../github/github.gateway';
+import { ProgressGateway } from '../github/progress.gateway';
 import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
@@ -29,7 +29,7 @@ export class PlayerGateway
 
   constructor(
     private readonly githubService: GithubPollService,
-    private readonly githubGateway: GithubGateway,
+    private readonly progressGateway: ProgressGateway,
     private readonly wsJwtGuard: WsJwtGuard,
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
@@ -256,9 +256,9 @@ export class PlayerGateway
       playerId,
     );
 
-    // 새 클라이언트에게 현재 룸의 기여 상태 전송
-    const roomState = this.githubGateway.getRoomState(roomId);
-    client.emit('github_state', roomState);
+    // 새 클라이언트에게 전역 게임 상태 전송
+    const globalState = this.progressGateway.getGlobalState();
+    client.emit('game_state', globalState);
 
     // 6. 로컬 플레이어에게 joined 이벤트 전송 (focusTime 정보 포함)
     client.emit('joined', {

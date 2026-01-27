@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GithubPollService } from './github.poll-service';
-import { GithubGateway } from './github.gateway';
+import { ProgressGateway } from './progress.gateway';
 import { GithubService } from './github.service';
 import { PointService } from '../point/point.service';
 
@@ -8,8 +8,8 @@ describe('GithubPollService', () => {
   let service: GithubPollService;
   let originalFetch: typeof global.fetch;
 
-  const mockGithubGateway = {
-    castGithubEventToRoom: jest.fn(),
+  const mockProgressGateway = {
+    castProgressUpdate: jest.fn(),
   };
 
   const mockGithubService = {
@@ -35,7 +35,7 @@ describe('GithubPollService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GithubPollService,
-        { provide: GithubGateway, useValue: mockGithubGateway },
+        { provide: ProgressGateway, useValue: mockProgressGateway },
         { provide: GithubService, useValue: mockGithubService },
         { provide: PointService, useValue: mockPointService },
       ],

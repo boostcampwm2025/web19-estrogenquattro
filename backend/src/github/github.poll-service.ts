@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GithubGateway } from './github.gateway';
+import { ProgressGateway, ProgressSource } from './progress.gateway';
 import { GithubService } from './github.service';
 import { GithubActivityType } from './entities/daily-github-activity.entity';
 import { PointService } from '../point/point.service';
@@ -49,7 +49,7 @@ export class GithubPollService {
   private readonly logger = new Logger(GithubPollService.name);
 
   constructor(
-    private readonly githubGateway: GithubGateway,
+    private readonly progressGateway: ProgressGateway,
     private readonly githubService: GithubService,
     private readonly pointService: PointService,
   ) {}
@@ -151,7 +151,11 @@ export class GithubPollService {
     switch (result.status) {
       case 'new_events':
         nextInterval = POLL_INTERVAL;
-        this.githubGateway.castGithubEventToRoom(result.data!, schedule.roomId);
+        this.progressGateway.castProgressUpdate(
+          result.data!.username,
+          ProgressSource.GITHUB,
+          result.data!,
+        );
         break;
       case 'no_changes':
         nextInterval = POLL_INTERVAL;
@@ -178,8 +182,10 @@ export class GithubPollService {
     status: 'new_events' | 'no_changes' | 'rate_limited' | 'error';
     data?: {
       username: string;
-      pushCount: number;
-      pullRequestCount: number;
+      commitCount: number;
+      prCount: number;
+      issueCount: number;
+      reviewCount: number;
     };
     retryAfter?: number;
   }> {
@@ -388,8 +394,10 @@ export class GithubPollService {
       status: 'new_events',
       data: {
         username,
-        pushCount: newCommitCount,
-        pullRequestCount: newPRCount,
+        commitCount: newCommitCount,
+        prCount: newPRCount,
+        issueCount: newIssueCount,
+        reviewCount: newPRReviewCount,
       },
     };
   }
