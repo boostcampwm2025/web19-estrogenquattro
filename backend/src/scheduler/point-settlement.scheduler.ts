@@ -87,14 +87,20 @@ export class PointSettlementScheduler {
     }
 
     for (const [playerId, count] of playerTaskCount) {
-      await this.pointService.addPoint(
-        playerId,
-        PointType.TASK_COMPLETED,
-        count,
-      );
-      this.logger.log(
-        `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
-      );
+      try {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.TASK_COMPLETED,
+          count,
+        );
+        this.logger.log(
+          `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to award TASK_COMPLETED points to player ${playerId}: ${error.message}`,
+        );
+      }
     }
   }
 }
