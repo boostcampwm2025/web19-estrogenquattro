@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
@@ -21,6 +21,7 @@ export class PointService {
     @InjectRepository(DailyPoint)
     private readonly dailyPointRepository: Repository<DailyPoint>,
     private readonly pointHistoryService: PointHistoryService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getPoints(playerId: number): Promise<DailyPoint[]> {
@@ -45,31 +46,38 @@ export class PointService {
     const today = new Date().toISOString().slice(0, 10);
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
-    // 포인트 내역 저장
-    await this.pointHistoryService.addHistory(
-      playerId,
-      activityType,
-      totalPoint,
-    );
+    return this.dataSource.transaction(async (manager) => {
+      const dailyPointRepo = manager.getRepository(DailyPoint);
 
-    const existingRecord = await this.dailyPointRepository.findOne({
-      where: {
+      // 포인트 내역 저장 (트랜잭션 내에서)
+      await this.pointHistoryService.addHistoryWithManager(
+        manager,
+        playerId,
+        activityType,
+        totalPoint,
+      );
+
+      // 비관적 락으로 조회 (다른 트랜잭션이 동시에 수정 못하게 차단)
+      const existingRecord = await dailyPointRepo.findOne({
+        where: {
+          player: { id: playerId },
+          createdDate: today,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (existingRecord) {
+        existingRecord.amount += totalPoint;
+        return dailyPointRepo.save(existingRecord);
+      }
+
+      const newRecord = dailyPointRepo.create({
         player: { id: playerId },
+        amount: totalPoint,
         createdDate: today,
-      },
+      });
+
+      return dailyPointRepo.save(newRecord);
     });
-
-    if (existingRecord) {
-      existingRecord.amount += totalPoint;
-      return this.dailyPointRepository.save(existingRecord);
-    }
-
-    const newRecord = this.dailyPointRepository.create({
-      player: { id: playerId },
-      amount: totalPoint,
-      createdDate: today,
-    });
-
-    return this.dailyPointRepository.save(newRecord);
   }
 }
