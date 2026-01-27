@@ -4,7 +4,7 @@ import { Repository, DataSource, EntityManager } from 'typeorm';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
-import { getTodayRange } from '../util/date.util';
+import { getTodayKstRangeUtc } from '../util/date.util';
 
 @Injectable()
 export class FocusTimeService {
@@ -17,7 +17,7 @@ export class FocusTimeService {
   ) {}
 
   async findOrCreate(player: Player): Promise<DailyFocusTime> {
-    const { start, end } = getTodayRange();
+    const { start, end } = getTodayKstRangeUtc();
 
     const existing = await this.focusTimeRepository
       .createQueryBuilder('ft')
@@ -46,7 +46,9 @@ export class FocusTimeService {
     taskId?: number,
   ): Promise<DailyFocusTime> {
     const now = new Date();
-    const { start, end } = getTodayRange();
+    const { start, end } = getTodayKstRangeUtc();
+
+    console.log(start, end);
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
@@ -123,7 +125,7 @@ export class FocusTimeService {
 
   async startResting(playerId: number): Promise<DailyFocusTime> {
     const now = new Date();
-    const { start, end } = getTodayRange();
+    const { start, end } = getTodayKstRangeUtc();
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
@@ -203,7 +205,7 @@ export class FocusTimeService {
   async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
     if (playerIds.length === 0) return [];
 
-    const { start, end } = getTodayRange();
+    const { start, end } = getTodayKstRangeUtc();
     return this.focusTimeRepository
       .createQueryBuilder('ft')
       .leftJoinAndSelect('ft.player', 'player')
