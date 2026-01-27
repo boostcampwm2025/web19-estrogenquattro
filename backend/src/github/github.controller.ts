@@ -19,7 +19,8 @@ export class GithubController {
   async getEvents(
     @PlayerId() currentPlayerId: number,
     @Query('playerId') playerId: string | undefined,
-    @Query('date') date: string,
+    @Query('startAt') startAt: string,
+    @Query('endAt') endAt: string,
   ): Promise<GithubEventsResDto> {
     let targetPlayerId = currentPlayerId;
     if (playerId) {
@@ -29,6 +30,10 @@ export class GithubController {
       }
       targetPlayerId = parsed;
     }
-    return this.githubService.getPlayerActivitiesByDate(targetPlayerId, date);
+    return this.githubService.getPlayerActivities(
+      targetPlayerId,
+      new Date(startAt),
+      new Date(endAt),
+    );
   }
 }

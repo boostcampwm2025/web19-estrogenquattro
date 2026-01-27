@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import {
   DailyGithubActivity,
   GithubActivityType,
 } from './entities/daily-github-activity.entity';
+import { getTodayKstRangeUtc } from '../util/date.util';
 
 @Injectable()
 export class GithubService {
@@ -13,73 +14,64 @@ export class GithubService {
     private readonly dailyGithubActivityRepository: Repository<DailyGithubActivity>,
   ) {}
 
-  private getTodayDateString(): string {
-    return new Date().toISOString().slice(0, 10);
-  }
-
   /**
-   * 특정 플레이어의 특정 타입 활동을 오늘 날짜로 누적
+   * 특정 플레이어의 특정 타입 활동을 누적
    */
   async incrementActivity(
     playerId: number,
     type: GithubActivityType,
     count: number,
   ): Promise<void> {
-    const today = this.getTodayDateString();
+    const now = new Date();
+    const { start, end } = getTodayKstRangeUtc();
 
-    // 오늘 날짜의 해당 타입 레코드 찾기
     let activity = await this.dailyGithubActivityRepository.findOne({
       where: {
         player: { id: playerId },
         type,
-        createdDate: today,
+        createdAt: Between(start, end),
       },
     });
 
     if (activity) {
-      // 기존 레코드가 있으면 count 증가
       activity.count += count;
       await this.dailyGithubActivityRepository.save(activity);
     } else {
-      // 없으면 새로 생성
       activity = this.dailyGithubActivityRepository.create({
         player: { id: playerId },
         type,
         count,
-        createdDate: today,
+        createdAt: now, // UTC now
       });
       await this.dailyGithubActivityRepository.save(activity);
     }
   }
 
   /**
-   * 플레이어의 특정 날짜 GitHub 활동 조회
+   * 플레이어의 GitHub 활동 조회 (startAt ~ endAt 범위)
    */
-  async getPlayerActivitiesByDate(
+  async getPlayerActivities(
     playerId: number,
-    dateStr: string,
+    startAt: Date,
+    endAt: Date,
   ): Promise<{
-    date: string;
+    startAt: string;
+    endAt: string;
     prCreated: number;
     prReviewed: number;
     committed: number;
     issueOpened: number;
   }> {
-    if (!dateStr) {
-      throw new BadRequestException('date 파라미터는 필수입니다.');
-    }
-
-    const targetDate = dateStr.slice(0, 10);
-
     const activities = await this.dailyGithubActivityRepository.find({
       where: {
         player: { id: playerId },
-        createdDate: targetDate,
+        createdAt: Between(startAt, endAt),
       },
     });
 
     const result = {
-      date: dateStr,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
       prCreated: 0,
       prReviewed: 0,
       committed: 0,
