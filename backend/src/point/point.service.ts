@@ -61,7 +61,6 @@ export class PointService {
         .createQueryBuilder('dp')
         .where('dp.player.id = :playerId', { playerId })
         .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
-        .setLock('pessimistic_write')
         .getOne();
 
       if (existingRecord) {
