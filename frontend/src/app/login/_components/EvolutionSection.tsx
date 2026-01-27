@@ -123,7 +123,7 @@ export default function EvolutionSection() {
 
           {/* Evolution Line Display - Minimal Style */}
           <div className="mx-auto max-w-4xl">
-            <div className="flex items-center justify-center gap-8">
+            <div className="flex flex-col items-center justify-center gap-8 sm:flex-row">
               {/* Stage 1 */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}

@@ -31,7 +31,10 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section id="features-section" className="mx-auto max-w-7xl px-6 py-32">
+    <section
+      id="features-section"
+      className="mx-auto max-w-7xl overflow-hidden px-6 py-32"
+    >
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -39,7 +42,7 @@ export default function FeaturesSection() {
         transition={{ duration: 0.6 }}
         className="mb-20 space-y-4 text-center"
       >
-        <h2 className="font-display text-4xl tracking-tight sm:text-5xl">
+        <h2 className="font-display text-3xl tracking-tight sm:text-5xl">
           개발자를 위한 완벽한 몰입 도구
         </h2>
         <motion.p
@@ -83,7 +86,9 @@ export default function FeaturesSection() {
             <div className="w-full space-y-8 lg:w-1/2">
               <div className="flex items-center space-x-4">
                 <feature.icon className="h-8 w-8 text-black" />
-                <h3 className="font-display text-4xl">{feature.title}</h3>
+                <h3 className="font-display text-2xl sm:text-4xl">
+                  {feature.title}
+                </h3>
               </div>
 
               <p className="text-xl leading-relaxed text-slate-500 dark:text-slate-400">

@@ -33,7 +33,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6 }}
-              className="font-display text-xl font-bold tracking-[0.2em] text-amber-600 uppercase dark:text-amber-400"
+              className="font-display text-lg font-bold tracking-[0.1em] text-amber-600 uppercase sm:text-xl sm:tracking-[0.2em] dark:text-amber-400"
             >
               <span className="relative inline-block">
                 잔디
@@ -57,7 +57,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
-              className="font-display text-5xl leading-[1.2] font-extrabold tracking-tight text-amber-950 sm:text-5xl dark:text-white"
+              className="font-display text-3xl leading-[1.2] font-extrabold tracking-tight text-amber-950 sm:text-5xl dark:text-white"
             >
               혼자 하는 코딩은 이제 그만!
               <br />
