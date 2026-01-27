@@ -3,11 +3,7 @@ import Player from "../players/Player";
 import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
-
-import {
-  createProgressBar,
-  ProgressBarController,
-} from "@/game/ui/createProgressBar";
+import { useProgressStore } from "@/stores/useProgressStore";
 import {
   createContributionList,
   ContributionController,
@@ -17,7 +13,7 @@ import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
 
-export type { ProgressBarController, ContributionController };
+export type { ContributionController };
 
 export class MapScene extends Phaser.Scene {
   private player?: Player;
@@ -33,7 +29,6 @@ export class MapScene extends Phaser.Scene {
   private cameraController!: CameraController;
 
   // UI Controllers
-  private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
 
   // Connection Lost Overlay
@@ -166,7 +161,6 @@ export class MapScene extends Phaser.Scene {
       () => this.player,
     );
     this.socketManager.setWalls(this.mapManager.getWalls()!);
-    this.socketManager.setProgressBarController(this.progressBarController!);
     this.socketManager.setContributionController(this.contributionController!);
     this.socketManager.connect({
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
@@ -263,16 +257,12 @@ export class MapScene extends Phaser.Scene {
   private setupUI() {
     const { width: mapWidth } = this.mapManager.getMapSize();
 
-    if (this.progressBarController) {
-      this.progressBarController.destroy();
-    }
     if (this.contributionController) {
       this.contributionController.destroy();
     }
 
-    this.progressBarController = createProgressBar(this, mapWidth);
-
-    this.progressBarController.onProgressComplete = () => {
+    // Set up progress complete callback for map switching
+    useProgressStore.getState().setOnProgressComplete(() => {
       this.mapManager.switchToNextMap(() => {
         this.setupCollisions();
         this.setupUI();
@@ -280,9 +270,6 @@ export class MapScene extends Phaser.Scene {
         this.cameraController.updateBounds(width, height);
         this.socketManager.setWalls(this.mapManager.getWalls()!);
         this.socketManager.setupCollisions();
-        this.socketManager.setProgressBarController(
-          this.progressBarController!,
-        );
         this.socketManager.setContributionController(
           this.contributionController!,
         );
@@ -293,7 +280,7 @@ export class MapScene extends Phaser.Scene {
           this.player.setPosition(spawnPos.x, spawnPos.y);
         }
       });
-    };
+    });
 
     this.contributionController = createContributionList(this, mapWidth, 50);
   }
@@ -423,10 +410,10 @@ export class MapScene extends Phaser.Scene {
 
     // 테스트: X 키로 게이지 100% 채우기
     if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      const currentProgress = this.progressBarController?.getProgress() || 0;
+      const currentProgress = useProgressStore.getState().getProgress();
       const remaining = 100 - currentProgress;
       if (remaining > 0) {
-        this.progressBarController?.addProgress(remaining);
+        useProgressStore.getState().addProgress(remaining);
       }
     }
 

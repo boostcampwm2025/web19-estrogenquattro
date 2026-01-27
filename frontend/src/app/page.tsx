@@ -6,6 +6,7 @@ import FocusPanel from "./_components/FocusPanel";
 import LeaderboardModal from "./_components/LeaderboardModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import UserInfoButton from "./_components/UserInfoButton";
+import ProgressBar from "@/_components/ui/ProgressBar";
 
 export default function Home() {
   return (
@@ -13,13 +14,14 @@ export default function Home() {
       <div className="relative h-screen w-screen overflow-hidden">
         <ClientOnly>
           <Map />
+          <ProgressBar />
           <UserInfoModal />
           <LeaderboardModal />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
         </div>
-        <div className="absolute top-4 left-4 z-30 flex gap-2">
+        <div className="absolute top-4 left-4 z-30 flex flex-col gap-4">
           <UserInfoButton />
           <LeaderboardButton />
         </div>
