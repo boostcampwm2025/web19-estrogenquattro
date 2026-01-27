@@ -191,6 +191,8 @@ export default class BasePlayer {
     if (this.container && this.maskShape) {
       this.maskShape.x = this.container.x;
       this.maskShape.y = this.container.y;
+      //y 좌표가 클수록(더 아래에 있을수록) 앞에 그려지도록 depth 설정
+      this.container.setDepth(this.container.y);
     }
   }
 
