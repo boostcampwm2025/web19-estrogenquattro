@@ -341,9 +341,11 @@ export class GithubPollService {
         GithubActivityType.ISSUE_OPEN,
         newIssueCount,
       );
-      for (let i = 0; i < newIssueCount; i++) {
-        await this.pointService.addPoint(playerId, PointType.ISSUE_OPEN);
-      }
+      await this.pointService.addPoint(
+        playerId,
+        PointType.ISSUE_OPEN,
+        newIssueCount,
+      );
     }
     if (newPRCount > 0) {
       await this.githubService.incrementActivity(
@@ -351,9 +353,7 @@ export class GithubPollService {
         GithubActivityType.PR_OPEN,
         newPRCount,
       );
-      for (let i = 0; i < newPRCount; i++) {
-        await this.pointService.addPoint(playerId, PointType.PR_OPEN);
-      }
+      await this.pointService.addPoint(playerId, PointType.PR_OPEN, newPRCount);
     }
     if (newPRReviewCount > 0) {
       await this.githubService.incrementActivity(
@@ -361,9 +361,11 @@ export class GithubPollService {
         GithubActivityType.PR_REVIEWED,
         newPRReviewCount,
       );
-      for (let i = 0; i < newPRReviewCount; i++) {
-        await this.pointService.addPoint(playerId, PointType.PR_REVIEWED);
-      }
+      await this.pointService.addPoint(
+        playerId,
+        PointType.PR_REVIEWED,
+        newPRReviewCount,
+      );
     }
     if (newCommitCount > 0) {
       await this.githubService.incrementActivity(
@@ -371,9 +373,11 @@ export class GithubPollService {
         GithubActivityType.COMMITTED,
         newCommitCount,
       );
-      for (let i = 0; i < newCommitCount; i++) {
-        await this.pointService.addPoint(playerId, PointType.COMMITTED);
-      }
+      await this.pointService.addPoint(
+        playerId,
+        PointType.COMMITTED,
+        newCommitCount,
+      );
     }
 
     this.logger.log(
