@@ -8,7 +8,7 @@ import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
 import { Task } from '../task/entites/task.entity';
-import { getTodayRange } from '../util/date.util';
+import { getTodayKstRangeUtc } from '../util/date.util';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
@@ -67,7 +67,7 @@ describe('FocusTimeService', () => {
       // Given: 플레이어와 FocusTime 레코드 생성
       const player = await createTestPlayer('TestPlayer1');
 
-      const { start, end } = getTodayRange();
+      const { start, end } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000); // start 이후 1분
       const focusTime = focusTimeRepository.create({
         player,
@@ -93,7 +93,7 @@ describe('FocusTimeService', () => {
       // Given: 플레이어와 FocusTime 레코드 생성
       const player = await createTestPlayer('TestPlayer2');
 
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
       const focusTime = focusTimeRepository.create({
         player,
@@ -122,7 +122,7 @@ describe('FocusTimeService', () => {
       // Given: 플레이어와 기존 FocusTime 레코드
       const player = await createTestPlayer('TestPlayer4');
 
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000); // start 이후 1분
       const existing = focusTimeRepository.create({
         player,
@@ -158,7 +158,7 @@ describe('FocusTimeService', () => {
     it('taskId를 전달하면 currentTaskId가 저장된다', async () => {
       // Given: 플레이어와 FocusTime 레코드, Task 생성
       const player = await createTestPlayer('TestPlayer6');
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
 
       // FocusTime 레코드를 getTodayRange() 범위 내에 생성
@@ -188,7 +188,7 @@ describe('FocusTimeService', () => {
     it('taskId 없이 호출하면 currentTaskId가 null이다', async () => {
       // Given: 플레이어와 FocusTime 레코드
       const player = await createTestPlayer('TestPlayer7');
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
 
       // FocusTime 레코드를 getTodayRange() 범위 내에 생성
@@ -213,7 +213,7 @@ describe('FocusTimeService', () => {
     it('currentTaskId가 있고 집중 시간이 있으면 Task의 totalFocusSeconds가 업데이트된다', async () => {
       // Given: 플레이어, FocusTime, Task 생성
       const player = await createTestPlayer('TestPlayer8');
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
 
       // FocusTime 레코드를 getTodayRange() 범위 내에 생성
@@ -255,7 +255,7 @@ describe('FocusTimeService', () => {
     it('currentTaskId가 없으면 Task 업데이트가 발생하지 않는다', async () => {
       // Given: 플레이어와 FocusTime 생성 (taskId 없이 집중)
       const player = await createTestPlayer('TestPlayer9');
-      const { start } = getTodayRange();
+      const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
 
       // FocusTime 레코드를 getTodayRange() 범위 내에 생성
