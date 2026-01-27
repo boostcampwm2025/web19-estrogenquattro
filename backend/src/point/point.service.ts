@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 import { getTodayKstRangeUtc } from '../util/date.util';
+import { Player } from '../player/entites/player.entity';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 2,
@@ -48,6 +49,7 @@ export class PointService {
 
     return this.dataSource.transaction(async (manager) => {
       const dailyPointRepo = manager.getRepository(DailyPoint);
+      const playerRepo: Repository<Player> = manager.getRepository(Player);
 
       await this.pointHistoryService.addHistoryWithManager(
         manager,
@@ -73,6 +75,12 @@ export class PointService {
         amount: totalPoint,
         createdAt: now,
       });
+
+      const player = await playerRepo.findOne({ where: { id: playerId } });
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+      player!.totalPoint += totalPoint;
 
       return dailyPointRepo.save(newRecord);
     });
