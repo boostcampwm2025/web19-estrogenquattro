@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@utility font-display {
+  font-family: "NeoDunggeunmo", sans-serif;
+}
+
 @font-face {
   font-family: "NeoDunggeunmo";
   src: url("/fonts/NeoDunggeunmoPro-Regular.woff2") format("woff2");
@@ -206,4 +210,21 @@ body {
 
 .animate-pop {
   animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 2D Pixel Button Effect */
+.pixel-button-2d {
+  position: relative;
+  transition: all 0.1s ease;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.pixel-button-2d:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 0.25);
+}
+
+.pixel-button-2d:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.1);
 }
