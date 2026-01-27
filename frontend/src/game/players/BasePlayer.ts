@@ -19,6 +19,7 @@ export default class BasePlayer {
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
   protected bodyGlow: Phaser.FX.Glow | null = null;
+  protected shadowGraphics: Phaser.GameObjects.Graphics;
   protected taskBubbleContainer: Phaser.GameObjects.Container | null = null;
 
   // Pet
@@ -101,8 +102,14 @@ export default class BasePlayer {
     // 7. 펫 생성
     this.pet = new Pet(scene, this.container);
 
+    // 7.1. 그림자 생성
+    this.shadowGraphics = scene.add.graphics();
+    this.shadowGraphics.fillStyle(0x000000, 0.3);
+    this.shadowGraphics.fillEllipse(0, 32, 32, 10);
+
     // 8. 컨테이너 추가
     const containerChildren: Phaser.GameObjects.GameObject[] = [
+      this.shadowGraphics,
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
