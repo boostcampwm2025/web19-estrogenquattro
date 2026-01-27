@@ -161,7 +161,9 @@ export class GithubPollService {
     // 이미 해당 username에 대한 폴링이 있으면 clientId만 추가
     if (existingSchedule) {
       existingSchedule.clientIds.add(clientId);
-      this.logger.debug(`Client ${clientId} joined existing poll for ${username}`);
+      this.logger.debug(
+        `Client ${clientId} joined existing poll for ${username}`,
+      );
       return;
     }
 
@@ -196,7 +198,9 @@ export class GithubPollService {
           this.pollingSchedules.delete(username);
           this.logger.debug(`GitHub polling stopped for ${username}`);
         } else {
-          this.logger.debug(`Client ${clientId} left poll for ${username} (${schedule.clientIds.size} remaining)`);
+          this.logger.debug(
+            `Client ${clientId} left poll for ${username} (${schedule.clientIds.size} remaining)`,
+          );
         }
         return;
       }
@@ -382,7 +386,9 @@ export class GithubPollService {
     // [DEBUG] 이벤트 분석용 raw JSON 로깅
     this.logger.log(`[${username}] New events (${newEvents.length}):`);
     for (const event of newEvents) {
-      this.logger.log(`[${username}] RAW EVENT: ${JSON.stringify(event, null, 2)}`);
+      this.logger.log(
+        `[${username}] RAW EVENT: ${JSON.stringify(event, null, 2)}`,
+      );
     }
 
     // 이벤트 처리
@@ -540,7 +546,9 @@ export class GithubPollService {
 
           for (const msg of commitDetails.messages) {
             commits.push({ repository: repoName, message: msg });
-            this.logger.debug(`[${schedule.username}] COMMIT: "${msg}" (${repoName})`);
+            this.logger.debug(
+              `[${schedule.username}] COMMIT: "${msg}" (${repoName})`,
+            );
           }
           break;
         }
@@ -550,17 +558,29 @@ export class GithubPollService {
           const prNumber = prPayload.number;
 
           if (prPayload.action === 'opened') {
-            const prTitle = await this.getPrTitle(repoName, prNumber, schedule.accessToken);
+            const prTitle = await this.getPrTitle(
+              repoName,
+              prNumber,
+              schedule.accessToken,
+            );
             prOpens.push({ repository: repoName, title: prTitle });
-            this.logger.debug(`[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`);
+            this.logger.debug(
+              `[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`,
+            );
           } else if (
             prPayload.action === 'merged' ||
             (prPayload.action === 'closed' &&
               prPayload.pull_request?.merged === true)
           ) {
-            const prTitle = await this.getPrTitle(repoName, prNumber, schedule.accessToken);
+            const prTitle = await this.getPrTitle(
+              repoName,
+              prNumber,
+              schedule.accessToken,
+            );
             prMerges.push({ repository: repoName, title: prTitle });
-            this.logger.debug(`[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`);
+            this.logger.debug(
+              `[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`,
+            );
           }
           break;
         }
@@ -568,8 +588,13 @@ export class GithubPollService {
         case 'IssuesEvent': {
           const issuePayload = event.payload as IssuesEventPayload;
           if (issuePayload.action === 'opened') {
-            issues.push({ repository: repoName, title: issuePayload.issue.title });
-            this.logger.debug(`[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`);
+            issues.push({
+              repository: repoName,
+              title: issuePayload.issue.title,
+            });
+            this.logger.debug(
+              `[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`,
+            );
           }
           break;
         }
@@ -583,7 +608,9 @@ export class GithubPollService {
               schedule.accessToken,
             );
             reviews.push({ repository: repoName, prTitle });
-            this.logger.debug(`[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`);
+            this.logger.debug(
+              `[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`,
+            );
           }
           break;
         }

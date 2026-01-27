@@ -6,13 +6,13 @@ import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
-  [PointType.COMMITTED]: 3,      // 푸시 1회
-  [PointType.PR_OPEN]: 2,        // PR 생성
-  [PointType.PR_MERGED]: 4,      // PR 머지
-  [PointType.PR_REVIEWED]: 4,    // PR 리뷰
-  [PointType.ISSUE_OPEN]: 1,     // 이슈 생성
+  [PointType.COMMITTED]: 3, // 푸시 1회
+  [PointType.PR_OPEN]: 2, // PR 생성
+  [PointType.PR_MERGED]: 4, // PR 머지
+  [PointType.PR_REVIEWED]: 4, // PR 리뷰
+  [PointType.ISSUE_OPEN]: 1, // 이슈 생성
   [PointType.TASK_COMPLETED]: 1, // 투두 완료
-  [PointType.FOCUSED]: 1,        // 집중 30분
+  [PointType.FOCUSED]: 1, // 집중 30분
 };
 
 @Injectable()

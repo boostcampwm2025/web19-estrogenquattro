@@ -52,7 +52,9 @@ describe('GitHub API 타입 변환 통합 테스트', () => {
         expect(typeof event.repo.name).toBe('string');
         expect(typeof event.created_at).toBe('string');
 
-        console.log(`✅ isGithubEventArray 타입 가드 통과: ${data.length}개 이벤트`);
+        console.log(
+          `✅ isGithubEventArray 타입 가드 통과: ${data.length}개 이벤트`,
+        );
         console.log(`   첫 번째 이벤트: ${event.type} at ${event.created_at}`);
       }
     });
@@ -155,7 +157,7 @@ describe('GitHub API 타입 변환 통합 테스트', () => {
         if (data.commits.length > 0) {
           const c = data.commits[0];
           console.log(`   첫 번째 커밋: ${c.commit.message.split('\n')[0]}`);
-          console.log(`   parents 개수: ${c.parents.length}`);
+          console.log(`   parents 개수: ${(c.parents as unknown[]).length}`);
         }
       }
     });
@@ -163,7 +165,8 @@ describe('GitHub API 타입 변환 통합 테스트', () => {
 
   describe('PR API', () => {
     // octocat/Hello-World의 실제 PR
-    const PR_URL = 'https://api.github.com/repos/octocat/Hello-World/pulls/2988';
+    const PR_URL =
+      'https://api.github.com/repos/octocat/Hello-World/pulls/2988';
 
     it('isPrResponse 타입 가드를 통과하고 프로젝트에서 사용하는 필드가 존재한다', async () => {
       // Given: GitHub PR API URL
