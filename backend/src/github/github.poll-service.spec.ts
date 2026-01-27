@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GithubPollService } from './github.poll-service';
 import { GithubGateway } from './github.gateway';
 import { GithubService } from './github.service';
+import { PointService } from '../point/point.service';
 
 describe('GithubPollService', () => {
   let service: GithubPollService;
@@ -13,6 +14,10 @@ describe('GithubPollService', () => {
 
   const mockGithubService = {
     incrementActivity: jest.fn(),
+  };
+
+  const mockPointService = {
+    addPoint: jest.fn(),
   };
 
   beforeAll(() => {
@@ -32,6 +37,7 @@ describe('GithubPollService', () => {
         GithubPollService,
         { provide: GithubGateway, useValue: mockGithubGateway },
         { provide: GithubService, useValue: mockGithubService },
+        { provide: PointService, useValue: mockPointService },
       ],
     }).compile();
 
