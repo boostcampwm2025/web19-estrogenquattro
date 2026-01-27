@@ -14,12 +14,6 @@ export default function PetTab() {
   const { user } = useAuthStore();
 
   const playerId = targetPlayerId ?? 0;
-
-  // playerId가 유효하지 않으면 early return
-  if (!playerId) {
-    return <div>Loading...</div>;
-  }
-
   const isOwner = user?.playerId === playerId;
 
   const {
@@ -143,8 +137,9 @@ export default function PetTab() {
     }
   };
 
-  // 필수 데이터(allPets)가 없으면 로딩
-  if (allPets.length === 0 && isLoading) return <div>Loading Pets...</div>;
+  // playerId가 유효하지 않거나 필수 데이터(allPets)가 없으면 로딩
+  if (!playerId || (allPets.length === 0 && isLoading))
+    return <div>Loading...</div>;
 
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
