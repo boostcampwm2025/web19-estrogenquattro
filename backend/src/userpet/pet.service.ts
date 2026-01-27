@@ -255,8 +255,8 @@ export class PetService {
     }
 
     // 4. 실루엣 생성 (sharp 사용)
-    const metadata = await (sharp as any)(originalPath).metadata();
-    const finalBuffer = await (sharp as any)({
+    const metadata = await sharp(originalPath).metadata();
+    const finalBuffer = await sharp({
       create: {
         width: metadata.width || 128,
         height: metadata.height || 128,
