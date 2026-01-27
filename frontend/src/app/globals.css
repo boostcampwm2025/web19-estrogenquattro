@@ -74,6 +74,15 @@
   --font-pixel: var(--font-pixel);
 }
 
+@media (min-width: 850px) {
+  .modal-w\:max-w-4xl {
+    max-width: 56rem;
+  }
+  .modal-w\:min-w-\[850px\] {
+    min-width: 850px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -206,4 +215,15 @@ body {
 
 .animate-pop {
   animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 모달 반응형 높이 */
+.modal-content-height {
+  height: 300px;
+}
+
+@media (min-height: 650px) {
+  .modal-content-height {
+    height: 500px;
+  }
 }

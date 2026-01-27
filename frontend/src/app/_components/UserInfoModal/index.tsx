@@ -1,8 +1,10 @@
 "use client";
 
-import { useUserInfoStore } from "@/stores/userInfoStore";
+import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { usePointStore } from "@/stores/pointStore";
-import { useCallback, useEffect, useState } from "react";
+import { useModalClose } from "@/hooks/useModalClose";
+import { useShallow } from "zustand/react/shallow";
+import { useCallback, useState } from "react";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -16,30 +18,39 @@ const PIXEL_BTN_INACTIVE = "bg-amber-200 text-amber-900 hover:bg-amber-300";
 type TabType = "profile" | "activity" | "pet";
 
 export default function UserInfoModal() {
-  const { isOpen, targetUsername, closeModal } = useUserInfoStore();
+  const { activeModal, userInfoPayload, closeModal } = useModalStore(
+    useShallow((state) => ({
+      activeModal: state.activeModal,
+      userInfoPayload: state.userInfoPayload,
+      closeModal: state.closeModal,
+    })),
+  );
+  const isOpen = activeModal === MODAL_TYPES.USER_INFO;
+  const targetUsername = userInfoPayload?.username;
+
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const points = usePointStore((state) => state.points);
 
-  const handleClose = useCallback(() => {
+  const onClose = useCallback(() => {
     closeModal();
     setActiveTab("profile");
   }, [closeModal]);
 
-  // ESC 키로 닫기
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [handleClose]);
+  const { contentRef, handleClose, handleBackdropClick } = useModalClose({
+    isOpen,
+    onClose,
+  });
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
+      onClick={handleBackdropClick}
+    >
       <div
-        className={`relative w-full max-w-4xl ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
+        ref={contentRef}
+        className={`modal-w:max-w-4xl modal-w:min-w-[850px] relative w-full max-w-2xl min-w-0 ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
         <div className="mb-4 flex items-start justify-between">
           <div className="flex gap-2">
@@ -79,7 +90,7 @@ export default function UserInfoModal() {
         </div>
 
         <div
-          className={`my-2 bg-white/50 p-4 ${PIXEL_BORDER} retro-scrollbar h-[500px] overflow-y-auto`}
+          className={`my-2 bg-white/50 p-4 ${PIXEL_BORDER} retro-scrollbar modal-content-height overflow-y-auto`}
         >
           {activeTab === "profile" && <ProfileTab />}
           {activeTab === "activity" && <ActivityTab />}

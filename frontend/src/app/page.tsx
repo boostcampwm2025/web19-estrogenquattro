@@ -1,9 +1,10 @@
 import AuthGuard from "@/_components/AuthGuard";
 import ClientOnly from "@/_components/ClientOnly";
 import Map from "@/_components/Map";
-import TasksMenu from "./_components/TasksMenu/TasksMenu";
 import UserInfoModal from "./_components/UserInfoModal";
-import MusicPlayer from "./_components/MusicPlayer/MusicPlayer";
+import FocusPanel from "./_components/FocusPanel";
+import LeaderboardModal from "./_components/LeaderboardModal";
+import LeaderboardButton from "./_components/LeaderboardButton";
 
 export default function Home() {
   return (
@@ -12,12 +13,13 @@ export default function Home() {
         <ClientOnly>
           <Map />
           <UserInfoModal />
+          <LeaderboardModal />
         </ClientOnly>
-        <div className="absolute top-4 left-4 z-50">
-          <MusicPlayer />
+        <div className="absolute top-4 right-4 z-40">
+          <FocusPanel />
         </div>
-        <div className="absolute top-4 right-4 z-50">
-          <TasksMenu />
+        <div className="absolute bottom-4 left-4 z-30">
+          <LeaderboardButton />
         </div>
       </div>
     </AuthGuard>

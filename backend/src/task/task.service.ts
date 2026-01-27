@@ -92,6 +92,7 @@ export class TaskService {
     }
 
     task.completedDate = null;
+    task.createdDate = new Date().toISOString().slice(0, 10);
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }
