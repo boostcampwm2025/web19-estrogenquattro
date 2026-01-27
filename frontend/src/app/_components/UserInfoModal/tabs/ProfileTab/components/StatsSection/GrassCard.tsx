@@ -6,7 +6,7 @@ export default function GrassCard() {
     <div className="relative size-60 shrink-0 overflow-visible rounded-none">
       {/* 잔디 배경 이미지 */}
       <Image
-        src="/assets/grass-base.png"
+        src="/assets/grass/grass_level_4.webp"
         alt="Garden"
         fill
         className="scale-115 object-fill"
