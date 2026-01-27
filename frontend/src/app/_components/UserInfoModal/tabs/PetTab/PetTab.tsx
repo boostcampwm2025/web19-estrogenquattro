@@ -13,7 +13,13 @@ export default function PetTab() {
   );
   const { user } = useAuthStore();
 
-  const playerId = targetPlayerId!;
+  const playerId = targetPlayerId ?? 0;
+
+  // playerId가 유효하지 않으면 early return
+  if (!playerId) {
+    return <div>Loading...</div>;
+  }
+
   const isOwner = user?.playerId === playerId;
 
   const {
