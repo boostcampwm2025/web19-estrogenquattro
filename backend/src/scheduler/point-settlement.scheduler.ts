@@ -51,14 +51,20 @@ export class PointSettlementScheduler {
       const pointCount = Math.floor(focusTime.totalFocusSeconds / 1800); // 30분(1800초)당 1포인트
 
       if (pointCount > 0) {
-        await this.pointService.addPoint(
-          focusTime.player.id,
-          PointType.FOCUSED,
-          pointCount,
-        );
-        this.logger.log(
-          `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
-        );
+        try {
+          await this.pointService.addPoint(
+            focusTime.player.id,
+            PointType.FOCUSED,
+            pointCount,
+          );
+          this.logger.log(
+            `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed to award FOCUSED points to player ${focusTime.player.id}: ${error.message}`,
+          );
+        }
       }
     }
   }
@@ -81,14 +87,20 @@ export class PointSettlementScheduler {
     }
 
     for (const [playerId, count] of playerTaskCount) {
-      await this.pointService.addPoint(
-        playerId,
-        PointType.TASK_COMPLETED,
-        count,
-      );
-      this.logger.log(
-        `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
-      );
+      try {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.TASK_COMPLETED,
+          count,
+        );
+        this.logger.log(
+          `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to award TASK_COMPLETED points to player ${playerId}: ${error.message}`,
+        );
+      }
     }
   }
 }
