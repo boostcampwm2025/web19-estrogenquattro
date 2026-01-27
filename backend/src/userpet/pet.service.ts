@@ -10,6 +10,9 @@ import { Pet } from './entities/pet.entity';
 import { UserPet } from './entities/user-pet.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPetCodex } from './entities/user-pet-codex.entity';
+import sharp from 'sharp';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PetService {
@@ -217,5 +220,62 @@ export class PetService {
         id: 'ASC',
       },
     });
+  }
+
+  async getSilhouette(petId: number): Promise<Buffer> {
+    const pet = await this.petRepository.findOne({ where: { id: petId } });
+    if (!pet) throw new NotFoundException('Pet not found');
+
+    const cacheDir = path.join(process.cwd(), 'public/cache/silhouettes');
+    const cachePath = path.join(cacheDir, `${petId}.png`);
+
+    // 1. 캐시 확인
+    if (fs.existsSync(cachePath)) {
+      return fs.readFileSync(cachePath);
+    }
+
+    // 2. 캐시 디렉토리 생성 확인
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    // 3. 원본 이미지 경로 확인 (actualImgUrl이 '/assets/pets/...' 형태라고 가정)
+    const originalPath = path.join(
+      process.cwd(),
+      'public',
+      pet.actualImgUrl.startsWith('/')
+        ? pet.actualImgUrl.substring(1)
+        : pet.actualImgUrl,
+    );
+
+    if (!fs.existsSync(originalPath)) {
+      throw new NotFoundException(
+        `Original image not found at ${originalPath}`,
+      );
+    }
+
+    // 4. 실루엣 생성 (sharp 사용)
+    const metadata = await (sharp as any)(originalPath).metadata();
+    const finalBuffer = await (sharp as any)({
+      create: {
+        width: metadata.width || 128,
+        height: metadata.height || 128,
+        channels: 4,
+        background: { r: 64, g: 64, b: 64, alpha: 0.4 },
+      },
+    })
+      .composite([
+        {
+          input: originalPath,
+          blend: 'dest-in', // 원본의 알파 채널에 맞춰서 회색 배경을 잘라냄
+        },
+      ])
+      .png()
+      .toBuffer();
+
+    // 5. 캐시에 저장
+    fs.writeFileSync(cachePath, finalBuffer);
+
+    return finalBuffer;
   }
 }
