@@ -58,29 +58,29 @@ enum PointType {
 
 ---
 
-## 포인트 획득 정책 (설계)
+## 포인트 획득 정책
 
 ### GitHub 활동
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 커밋 (COMMITTED) | +2 | 프로그레스와 동일 |
-| PR 생성 (PR_OPEN) | +5 | 프로그레스와 동일 |
-| PR 머지 (PR_MERGED) | +10 | 본인 PR 머지 시 |
-| PR 리뷰 (PR_REVIEWED) | +3 | 타인 PR 리뷰 시 |
-| 이슈 생성 (ISSUE_OPEN) | +3 | |
+| 푸시 (COMMITTED) | +3 | PushEvent 1회당 |
+| PR 생성 (PR_OPEN) | +2 | |
+| PR 머지 (PR_MERGED) | +4 | |
+| PR 리뷰 (PR_REVIEWED) | +4 | Submit review 시 |
+| 이슈 생성 (ISSUE_OPEN) | +1 | |
 
 ### Task 활동
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| Task 완료 | +1 | 완료 처리 시 |
+| Task 완료 (TASK_COMPLETED) | +1 | 완료 처리 시 |
 
 ### 집중 시간
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 집중 10분당 | +1 | 누적 10분마다 |
+| 집중 30분 (FOCUSED) | +1 | 누적 30분마다 |
 
 ---
 
