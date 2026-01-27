@@ -28,27 +28,13 @@ export class FocustimeController {
     @Param('playerId', ParseIntPipe) playerId: number,
     @Query('date') date: string,
   ): Promise<FocusTimeResponse> {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
-    const focusTime = await this.focusTimeService.getFocusTime(
-      playerId,
-      targetDate,
-    );
-
-    if (!focusTime) {
-      return {
-        id: null,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdDate: targetDate,
-        lastFocusStartTime: null,
-      };
-    }
+    const focusTime = await this.focusTimeService.getFocusTime(playerId, date);
 
     return {
       id: focusTime.id,
       totalFocusSeconds: focusTime.totalFocusSeconds,
       status: focusTime.status,
-      createdDate: new Date(focusTime.createdDate).toISOString().slice(0, 10),
+      createdDate: focusTime.createdAt.toISOString().slice(0, 10),
       lastFocusStartTime: focusTime.lastFocusStartTime
         ? focusTime.lastFocusStartTime.toISOString()
         : null,
