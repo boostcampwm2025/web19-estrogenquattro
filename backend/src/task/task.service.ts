@@ -6,10 +6,6 @@ import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res';
 import { TaskListRes } from './dto/task-list.res';
-import {
-  getKstDateRange,
-  getTodayKstDateString,
-} from '../util/date.util';
 
 @Injectable()
 export class TaskService {
@@ -38,29 +34,18 @@ export class TaskService {
     return TaskRes.of(savedTask);
   }
 
-  async getTasks(playerId: number, date?: string): Promise<TaskListRes> {
+  async getTasks(
+    playerId: number,
+    startAt: Date,
+    endAt: Date,
+  ): Promise<TaskListRes> {
     await this.playerService.findOneById(playerId);
 
-    const todayKst = getTodayKstDateString();
-    const targetDate = date ?? todayKst;
-    const isToday = targetDate === todayKst;
-
-    const { start, end } = getKstDateRange(targetDate);
-    const { start: todayStart, end: todayEnd } = getKstDateRange(todayKst);
-
-    const query = this.taskRepository
+    const tasks = await this.taskRepository
       .createQueryBuilder('task')
       .where('task.player.id = :playerId', { playerId })
-      .andWhere('task.createdAt BETWEEN :start AND :end', { start, end });
-
-    if (isToday) {
-      query.andWhere(
-        '(task.completedAt IS NULL OR task.completedAt BETWEEN :todayStart AND :todayEnd)',
-        { todayStart, todayEnd },
-      );
-    }
-
-    const tasks = await query.getMany();
+      .andWhere('task.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
+      .getMany();
 
     return {
       tasks: tasks.map((task) => TaskRes.of(task)),

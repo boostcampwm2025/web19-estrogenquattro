@@ -34,9 +34,14 @@ export class TaskController {
   @Get(':playerId')
   async getTasks(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('date') date?: string,
+    @Query('startAt') startAt: string,
+    @Query('endAt') endAt: string,
   ): Promise<TaskListRes> {
-    return this.taskService.getTasks(playerId, date);
+    return this.taskService.getTasks(
+      playerId,
+      new Date(startAt),
+      new Date(endAt),
+    );
   }
 
   @Patch('completion/:taskId')
