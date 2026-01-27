@@ -48,8 +48,6 @@ export class FocusTimeService {
     const now = new Date();
     const { start, end } = getTodayKstRangeUtc();
 
-    console.log(start, end);
-
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
       const taskRepo = manager.getRepository(Task);
