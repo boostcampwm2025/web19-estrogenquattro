@@ -61,8 +61,10 @@ export class PointSettlementScheduler {
             `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
           );
         } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
           this.logger.error(
-            `Failed to award FOCUSED points to player ${focusTime.player.id}: ${error.message}`,
+            `Failed to award FOCUSED points to player ${focusTime.player.id}: ${message}`,
           );
         }
       }
@@ -97,8 +99,9 @@ export class PointSettlementScheduler {
           `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
         );
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         this.logger.error(
-          `Failed to award TASK_COMPLETED points to player ${playerId}: ${error.message}`,
+          `Failed to award TASK_COMPLETED points to player ${playerId}: ${message}`,
         );
       }
     }
