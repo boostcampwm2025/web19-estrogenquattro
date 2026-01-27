@@ -2,9 +2,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/_components/ui/button";
 import { useHeatmapData, DayData, DailyTaskCount } from "./useHeatmapData";
-import { getHeatmapColorClass } from "../../lib/heatmapColors";
-import { isSameDay } from "../../lib/dateUtils";
 import { HeatmapTooltip } from "./HeatmapTooltip";
+import { HeatmapInfoLink } from "./HeatmapInfoLink";
+import { HeatmapCell } from "./HeatmapCell";
+import { HeatmapLegend } from "./HeatmapLegend";
 
 interface CalendarHeatmapProps {
   dailyTaskCounts: DailyTaskCount[];
@@ -82,10 +83,15 @@ export function CalendarHeatmap({
 
   return (
     <div className="mb-6 rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
+      {/* 포인트 획득 정책 링크 */}
+      <div className="mb-6">
+        <HeatmapInfoLink />
+      </div>
+
       <div className="flex items-center gap-2">
         <Button
           onClick={() => handleScroll("left")}
-          className="h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+          className="h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none mr-1"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -126,20 +132,13 @@ export function CalendarHeatmap({
                 {weeks.map((week, weekIndex) => (
                   <div key={weekIndex} className="flex flex-col gap-0.75">
                     {week.map((day, dayIndex) => (
-                      <div
+                      <HeatmapCell
                         key={`${weekIndex}-${dayIndex}`}
-                        className={`h-3 w-3 rounded-sm transition-colors ${getHeatmapColorClass(day.value)} ${
-                          day.value === -1
-                            ? "cursor-default"
-                            : isSameDay(day.date, selectedDate)
-                              ? "ring-2 ring-amber-900"
-                              : "cursor-pointer ring-1 ring-amber-300 hover:ring-2 hover:ring-amber-800"
-                        }`}
-                        onClick={() =>
-                          day.value !== -1 && onSelectDate(day.date)
-                        }
-                        onMouseEnter={(e) => handleMouseMove(e, day)}
-                        onMouseMove={(e) => handleMouseMove(e, day)}
+                        day={day}
+                        selectedDate={selectedDate}
+                        onSelectDate={onSelectDate}
+                        onMouseEnter={handleMouseMove}
+                        onMouseMove={handleMouseMove}
                         onMouseLeave={handleMouseLeave}
                       />
                     ))}
@@ -157,6 +156,8 @@ export function CalendarHeatmap({
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+
+      <HeatmapLegend />
 
       {hoveredDay && hoveredDay.value !== -1 && (
         <HeatmapTooltip day={hoveredDay} position={mousePosition} />
