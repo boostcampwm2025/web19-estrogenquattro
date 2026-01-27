@@ -80,7 +80,7 @@ export class PointService {
       if (!player) {
         throw new NotFoundException('Player not found');
       }
-      player!.totalPoint += totalPoint;
+      player.totalPoint += totalPoint;
 
       return dailyPointRepo.save(newRecord);
     });
