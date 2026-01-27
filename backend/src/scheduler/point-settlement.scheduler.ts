@@ -51,12 +51,11 @@ export class PointSettlementScheduler {
       const pointCount = Math.floor(focusTime.totalFocusSeconds / 1800); // 30분(1800초)당 1포인트
 
       if (pointCount > 0) {
-        for (let i = 0; i < pointCount; i++) {
-          await this.pointService.addPoint(
-            focusTime.player.id,
-            PointType.FOCUSED,
-          );
-        }
+        await this.pointService.addPoint(
+          focusTime.player.id,
+          PointType.FOCUSED,
+          pointCount,
+        );
         this.logger.log(
           `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
         );
@@ -74,13 +73,21 @@ export class PointSettlementScheduler {
       `Found ${completedTasks.length} completed tasks for ${dateStr}`,
     );
 
+    // 플레이어별 task 개수 집계 - O(n)
+    const playerTaskCount = new Map<number, number>();
     for (const task of completedTasks) {
+      const playerId = task.player.id;
+      playerTaskCount.set(playerId, (playerTaskCount.get(playerId) ?? 0) + 1);
+    }
+
+    for (const [playerId, count] of playerTaskCount) {
       await this.pointService.addPoint(
-        task.player.id,
+        playerId,
         PointType.TASK_COMPLETED,
+        count,
       );
       this.logger.log(
-        `Awarded TASK_COMPLETED point to player ${task.player.id} for task ${task.id}`,
+        `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
       );
     }
   }

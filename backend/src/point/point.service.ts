@@ -40,12 +40,17 @@ export class PointService {
   async addPoint(
     playerId: number,
     activityType: PointType,
+    count: number,
   ): Promise<DailyPoint> {
     const today = new Date().toISOString().slice(0, 10);
-    const point = ACTIVITY_POINT_MAP[activityType];
+    const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
     // 포인트 내역 저장
-    await this.pointHistoryService.addHistory(playerId, activityType, point);
+    await this.pointHistoryService.addHistory(
+      playerId,
+      activityType,
+      totalPoint,
+    );
 
     const existingRecord = await this.dailyPointRepository.findOne({
       where: {
@@ -55,13 +60,13 @@ export class PointService {
     });
 
     if (existingRecord) {
-      existingRecord.amount += point;
+      existingRecord.amount += totalPoint;
       return this.dailyPointRepository.save(existingRecord);
     }
 
     const newRecord = this.dailyPointRepository.create({
       player: { id: playerId },
-      amount: point,
+      amount: totalPoint,
       createdDate: today,
     });
 
