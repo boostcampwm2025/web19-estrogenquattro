@@ -6,7 +6,7 @@ import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
 import { PointService } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
-import { getYesterdayKstRange } from '../util/date.util';
+import { getYesterdayRange } from '../util/date.util';
 
 @Injectable()
 export class PointSettlementScheduler {
@@ -20,12 +20,12 @@ export class PointSettlementScheduler {
     private readonly pointService: PointService,
   ) {}
 
-  // KST 자정 = UTC 15:00 (전날)
+  // KST 24시 동작
   @Cron('0 0 15 * * *')
   async handlePointSettlement(): Promise<void> {
-    this.logger.log('Starting daily point settlement...');
+    this.logger.log('KST 24:00:00 Point Settlement Scheduling Start');
 
-    const { start, end } = getYesterdayKstRange();
+    const { start, end } = getYesterdayRange();
     this.logger.log(
       `Settlement range: ${start.toISOString()} ~ ${end.toISOString()}`,
     );
@@ -33,7 +33,7 @@ export class PointSettlementScheduler {
     await this.settleFocusTimePoints(start, end);
     await this.settleTaskCompletedPoints(start, end);
 
-    this.logger.log('Daily point settlement completed.');
+    this.logger.log('KST 24:00:00 Point Settlement Scheduling Completed');
   }
 
   private async settleFocusTimePoints(start: Date, end: Date): Promise<void> {

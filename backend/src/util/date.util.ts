@@ -38,3 +38,21 @@ export function getYesterdayRange(): DateRange {
 
   return { start, end };
 }
+
+export function getTodayKstRangeUtc(): { start: Date; end: Date } {
+  const now = new Date();
+
+  // 현재 시각을 KST 기준으로 맞춘 뒤 날짜만 사용
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+
+  const year = kst.getUTCFullYear();
+  const month = kst.getUTCMonth();
+  const day = kst.getUTCDate();
+
+  // KST 00:00 → UTC 전날 15:00
+  const start = new Date(Date.UTC(year, month, day - 1, 15, 0, 0, 0));
+  // KST 23:59:59.999 → UTC 당일 14:59:59.999
+  const end = new Date(Date.UTC(year, month, day, 14, 59, 59, 999));
+
+  return { start, end };
+}
