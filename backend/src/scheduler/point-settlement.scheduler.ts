@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
 import { PointService } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
+import { getYesterdayKstRange } from '../util/date.util';
 
 @Injectable()
 export class PointSettlementScheduler {
@@ -19,33 +20,29 @@ export class PointSettlementScheduler {
     private readonly pointService: PointService,
   ) {}
 
-  private getYesterdayDateString(): string {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().slice(0, 10);
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // KST 자정 = UTC 15:00 (전날)
+  @Cron('0 0 15 * * *')
   async handlePointSettlement(): Promise<void> {
     this.logger.log('Starting daily point settlement...');
 
-    const yesterday = this.getYesterdayDateString();
+    const { start, end } = getYesterdayKstRange();
+    this.logger.log(
+      `Settlement range: ${start.toISOString()} ~ ${end.toISOString()}`,
+    );
 
-    await this.settleFocusTimePoints(yesterday);
-    await this.settleTaskCompletedPoints(yesterday);
+    await this.settleFocusTimePoints(start, end);
+    await this.settleTaskCompletedPoints(start, end);
 
     this.logger.log('Daily point settlement completed.');
   }
 
-  private async settleFocusTimePoints(dateStr: string): Promise<void> {
+  private async settleFocusTimePoints(start: Date, end: Date): Promise<void> {
     const focusTimes = await this.dailyFocusTimeRepository.find({
-      where: { createdDate: dateStr },
+      where: { createdAt: Between(start, end) },
       relations: ['player'],
     });
 
-    this.logger.log(
-      `Found ${focusTimes.length} focus time records for ${dateStr}`,
-    );
+    this.logger.log(`Found ${focusTimes.length} focus time records for range`);
 
     for (const focusTime of focusTimes) {
       const pointCount = Math.floor(focusTime.totalFocusSeconds / 1800); // 30분(1800초)당 1포인트
@@ -71,15 +68,16 @@ export class PointSettlementScheduler {
     }
   }
 
-  private async settleTaskCompletedPoints(dateStr: string): Promise<void> {
+  private async settleTaskCompletedPoints(
+    start: Date,
+    end: Date,
+  ): Promise<void> {
     const completedTasks = await this.taskRepository.find({
-      where: { completedDate: dateStr },
+      where: { completedAt: Between(start, end) },
       relations: ['player'],
     });
 
-    this.logger.log(
-      `Found ${completedTasks.length} completed tasks for ${dateStr}`,
-    );
+    this.logger.log(`Found ${completedTasks.length} completed tasks for range`);
 
     // 플레이어별 task 개수 집계 - O(n)
     const playerTaskCount = new Map<number, number>();

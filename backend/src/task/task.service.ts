@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entites/task.entity';
@@ -6,7 +6,10 @@ import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res';
 import { TaskListRes } from './dto/task-list.res';
-import { NotFoundException } from '@nestjs/common';
+import {
+  getKstDateRange,
+  getTodayKstDateString,
+} from '../util/date.util';
 
 @Injectable()
 export class TaskService {
@@ -24,7 +27,7 @@ export class TaskService {
     const newTask = this.taskRepository.create({
       player,
       description: dto.description,
-      createdDate: new Date().toISOString().slice(0, 10),
+      createdAt: new Date(),
     });
 
     const savedTask = await this.taskRepository.save(newTask);
@@ -38,19 +41,22 @@ export class TaskService {
   async getTasks(playerId: number, date?: string): Promise<TaskListRes> {
     await this.playerService.findOneById(playerId);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const targetDate = date ?? today;
-    const isToday = targetDate === today;
+    const todayKst = getTodayKstDateString();
+    const targetDate = date ?? todayKst;
+    const isToday = targetDate === todayKst;
+
+    const { start, end } = getKstDateRange(targetDate);
+    const { start: todayStart, end: todayEnd } = getKstDateRange(todayKst);
 
     const query = this.taskRepository
       .createQueryBuilder('task')
       .where('task.player.id = :playerId', { playerId })
-      .andWhere('task.createdDate = :targetDate', { targetDate });
+      .andWhere('task.createdAt BETWEEN :start AND :end', { start, end });
 
     if (isToday) {
       query.andWhere(
-        '(task.completedDate IS NULL OR task.completedDate = :today)',
-        { today },
+        '(task.completedAt IS NULL OR task.completedAt BETWEEN :todayStart AND :todayEnd)',
+        { todayStart, todayEnd },
       );
     }
 
@@ -79,7 +85,7 @@ export class TaskService {
       throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
-    task.completedDate = new Date().toISOString().slice(0, 10);
+    task.completedAt = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }
@@ -91,8 +97,8 @@ export class TaskService {
       throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
-    task.completedDate = null;
-    task.createdDate = new Date().toISOString().slice(0, 10);
+    task.completedAt = null;
+    task.createdAt = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }

@@ -62,97 +62,71 @@ describe('FocusTimeService', () => {
   });
 
   describe('Date 비교 로직', () => {
-    it('YYYY-MM-DD 문자열로 저장한 레코드를 같은 형식의 문자열로 조회할 수 있다', async () => {
-      // Given: 플레이어와 FocusTime 레코드 생성 (YYYY-MM-DD 문자열 사용)
+    it('datetime으로 저장한 레코드를 범위 쿼리로 조회할 수 있다', async () => {
+      // Given: 플레이어와 FocusTime 레코드 생성
       const player = await createTestPlayer('TestPlayer1');
 
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
       const focusTime = focusTimeRepository.create({
         player,
         totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
-        createdDate: today,
+        createdAt: now,
       });
       await focusTimeRepository.save(focusTime);
 
-      // When: 같은 YYYY-MM-DD 문자열로 조회
-      const queryDate = new Date().toISOString().slice(0, 10);
-      const found = await focusTimeRepository.findOne({
-        where: {
-          player: { id: player.id },
-          createdDate: queryDate,
-        },
-      });
+      // When: 범위 쿼리로 조회
+      const start = new Date(now.getTime() - 60000); // 1분 전
+      const end = new Date(now.getTime() + 60000); // 1분 후
+      const found = await focusTimeRepository
+        .createQueryBuilder('ft')
+        .where('ft.player.id = :playerId', { playerId: player.id })
+        .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
 
       // Then: 레코드를 찾을 수 있어야 함
       expect(found).toBeDefined();
       expect(found?.id).toBe(focusTime.id);
     });
 
-    it('SQLite에 저장된 date 컬럼의 실제 값을 확인한다', async () => {
+    it('SQLite에 저장된 datetime 컬럼의 실제 값을 확인한다', async () => {
       // Given: 플레이어와 FocusTime 레코드 생성
       const player = await createTestPlayer('TestPlayer2');
 
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
       const focusTime = focusTimeRepository.create({
         player,
         totalFocusSeconds: 0,
         status: FocusStatus.RESTING,
-        createdDate: today,
+        createdAt: now,
       });
       await focusTimeRepository.save(focusTime);
 
       // When: Raw query로 실제 저장된 값 확인
-      const raw: { created_date: string }[] = await focusTimeRepository.query(
-        'SELECT created_date FROM daily_focus_time WHERE id = ?',
+      const raw: { created_at: string }[] = await focusTimeRepository.query(
+        'SELECT created_at FROM daily_focus_time WHERE id = ?',
         [focusTime.id],
       );
 
       // Then: 저장된 형식 출력
-      console.log('Input Date String:', today);
-      console.log('Stored value in SQLite:', raw[0].created_date);
+      console.log('Input Date:', now.toISOString());
+      console.log('Stored value in SQLite:', raw[0].created_at);
 
-      expect(raw[0].created_date).toBe(today);
-    });
-
-    it('string 타입으로 변경 후 올바른 형식으로 조회 성공', async () => {
-      // Given: 플레이어와 FocusTime 레코드 생성 (문자열로 저장)
-      const player = await createTestPlayer('TestPlayer3');
-
-      const today = new Date().toISOString().slice(0, 10);
-      const focusTime = focusTimeRepository.create({
-        player,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdDate: today,
-      });
-      await focusTimeRepository.save(focusTime);
-
-      // When: 같은 형식의 문자열로 조회 시도
-      const found = await focusTimeRepository.findOne({
-        where: {
-          player: { id: player.id },
-          createdDate: new Date().toISOString().slice(0, 10),
-        },
-      });
-
-      // Then: string 타입으로 변경 후 조회 성공
-      expect(found).toBeDefined();
-      expect(found?.id).toBe(focusTime.id);
+      expect(raw[0].created_at).toBeDefined();
     });
   });
 
   describe('findOrCreate', () => {
     it('기존 레코드가 있으면 해당 레코드를 반환한다', async () => {
-      // Given: 플레이어와 기존 FocusTime 레코드 (YYYY-MM-DD 문자열로 저장)
+      // Given: 플레이어와 기존 FocusTime 레코드
       const player = await createTestPlayer('TestPlayer4');
 
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
       const existing = focusTimeRepository.create({
         player,
         totalFocusSeconds: 30,
         status: FocusStatus.FOCUSING,
-        createdDate: today,
+        createdAt: now,
       });
       await focusTimeRepository.save(existing);
 
@@ -187,7 +161,7 @@ describe('FocusTimeService', () => {
       const task = taskRepository.create({
         player,
         description: '테스트 태스크',
-        createdDate: new Date().toISOString().slice(0, 10),
+        createdAt: new Date(),
       });
       await taskRepository.save(task);
 
@@ -223,7 +197,7 @@ describe('FocusTimeService', () => {
         player,
         description: '테스트 태스크',
         totalFocusSeconds: 100,
-        createdDate: new Date().toISOString().slice(0, 10),
+        createdAt: new Date(),
       });
       await taskRepository.save(task);
 
@@ -243,7 +217,7 @@ describe('FocusTimeService', () => {
       const updatedTask = await taskRepository.findOne({
         where: { id: task.id },
       });
-      expect(updatedTask.totalFocusSeconds).toBeGreaterThanOrEqual(110);
+      expect(updatedTask!.totalFocusSeconds).toBeGreaterThanOrEqual(110);
     });
 
     it('currentTaskId가 없으면 Task 업데이트가 발생하지 않는다', async () => {
