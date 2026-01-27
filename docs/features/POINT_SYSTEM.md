@@ -66,7 +66,7 @@ enum PointType {
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 푸시 (COMMITTED) | +3 | PushEvent 1회당 |
+| 커밋 (COMMITTED) | +3 | 커밋 1개당 |
 | PR 생성 (PR_OPEN) | +2 | |
 | PR 머지 (PR_MERGED) | +4 | |
 | PR 리뷰 (PR_REVIEWED) | +4 | Submit review 시 |

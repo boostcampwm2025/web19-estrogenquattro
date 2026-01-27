@@ -109,7 +109,7 @@ interface PollingSchedule {
 ```
 
 1. **첫 폴링**: `lastEventId` 설정, 이벤트 전송 없음
-2. **이후 폴링**: `lastEventId` 이전 이벤트들만 처리
+2. **이후 폴링**: `lastEventId` 이후의 새 이벤트만 처리
 3. **새로고침**: 기존 기준점 유지 (중복 알림 방지)
 
 ---

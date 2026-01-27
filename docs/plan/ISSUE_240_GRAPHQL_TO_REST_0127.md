@@ -708,7 +708,7 @@ PR #242에 Submit review (Approve) → PullRequestReviewEvent (state: "approved"
 
 ---
 
-### 2.8 ReleaseEvent
+### 2.9 ReleaseEvent
 
 릴리스가 생성/수정/삭제될 때 발생합니다.
 
@@ -796,7 +796,7 @@ PR #242에 Submit review (Approve) → PullRequestReviewEvent (state: "approved"
 
 ---
 
-### 2.9 Compare API 응답 구조 (실제 사용 중)
+### 2.10 Compare API 응답 구조 (실제 사용 중)
 
 PushEvent 감지 시 **커밋 개수**와 **커밋 메시지**를 조회하기 위해 Compare API를 사용합니다.
 
@@ -1363,7 +1363,7 @@ Commits: +3, PRs: +0, Merged: +1, Issues: +0, Reviews: +0
 
 ---
 
-### 2.10 PR API 응답 구조 (실제 사용 중)
+### 2.11 PR API 응답 구조 (실제 사용 중)
 
 PullRequestEvent, PullRequestReviewEvent 감지 시 **PR 제목**을 조회하기 위해 PR API를 사용합니다.
 
