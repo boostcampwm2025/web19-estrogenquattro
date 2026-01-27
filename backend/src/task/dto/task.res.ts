@@ -12,8 +12,8 @@ export class TaskRes {
     res.id = task.id;
     res.description = task.description;
     res.totalFocusSeconds = task.totalFocusSeconds;
-    res.isCompleted = task.completedDate !== null;
-    res.createdDate = task.createdDate;
+    res.isCompleted = task.completedAt !== null;
+    res.createdDate = task.createdAt.toISOString().slice(0, 10);
     return res;
   }
 }
