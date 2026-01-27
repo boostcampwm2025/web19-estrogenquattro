@@ -6,42 +6,133 @@ import { PointService } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 
 // 폴링 간격 설정 (밀리초)
-const POLL_INTERVAL = 30_000; // 30초마다 폴링
-const POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시 (rate limit)
+const POLL_INTERVAL = 120_000; // 120초마다 폴링 (REST API 이벤트 갱신 지연 고려)
+const POLL_INTERVAL_BACKOFF = 600_000; // 10분 (rate limit 시)
+
+// 첫 폴링에서 이벤트가 없을 때 사용하는 sentinel 값
+const NO_EVENTS_SENTINEL = '-1';
 
 interface PollingSchedule {
   timeout: NodeJS.Timeout;
   username: string;
   accessToken: string;
   roomId: string;
-  clientIds: Set<string>; // 같은 유저의 여러 클라이언트 추적
+  clientIds: Set<string>;
   playerId: number;
+  etag: string | null; // ETag 저장
+  lastEventId: string | null; // 마지막 이벤트 ID
 }
 
-// 기준점 저장 (새로고침해도 유지)
-interface UserBaseline {
-  lastCommitCount: number;
-  lastPRCount: number;
-  lastIssueCount: number;
-  lastPRReviewCount: number;
-  isFirstPoll: boolean;
+// REST API 이벤트 타입
+interface GithubEvent {
+  id: string;
+  type: string;
+  actor: {
+    id: number;
+    login: string;
+  };
+  repo: {
+    id: number;
+    name: string; // "owner/repo" 형식
+  };
+  payload: object;
+  created_at: string;
 }
 
-// GraphQL 응답 타입
-interface GraphQLResponse {
-  errors?: Array<{ message: string }>;
-  data?: {
-    user?: {
-      contributionsCollection?: ContributionsCollection;
-    };
+// 이벤트 Payload 타입들
+interface PullRequestEventPayload {
+  action: 'opened' | 'closed' | 'merged' | 'reopened';
+  number: number;
+  pull_request: {
+    id: number;
+    number: number;
+    url: string;
+    merged?: boolean;
+    head: { ref: string; sha: string };
+    base: { ref: string; sha: string };
   };
 }
 
-interface ContributionsCollection {
-  totalCommitContributions?: number;
-  totalIssueContributions?: number;
-  totalPullRequestContributions?: number;
-  totalPullRequestReviewContributions?: number;
+interface IssuesEventPayload {
+  action: 'opened' | 'closed' | 'reopened';
+  issue: {
+    id: number;
+    number: number;
+    title: string;
+    state: 'open' | 'closed';
+  };
+}
+
+interface PullRequestReviewEventPayload {
+  action: 'created' | 'edited' | 'dismissed';
+  pull_request: {
+    id: number;
+    number: number;
+  };
+  review: {
+    id: number;
+    state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
+  };
+}
+
+interface PushEventPayload {
+  repository_id: number;
+  push_id: number;
+  ref: string;
+  head: string;
+  before: string;
+}
+
+interface CompareResponse {
+  total_commits: number;
+  commits: Array<{
+    sha: string;
+    commit: {
+      message: string;
+    };
+  }>;
+}
+
+interface PrResponse {
+  number: number;
+  title: string;
+  state: string;
+  merged: boolean;
+}
+
+// 타입 가드 함수 (export for testing)
+export function isGithubEventArray(data: unknown): data is GithubEvent[] {
+  return (
+    Array.isArray(data) &&
+    data.every(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'type' in item,
+    )
+  );
+}
+
+export function isCompareResponse(data: unknown): data is CompareResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'total_commits' in data &&
+    typeof (data as CompareResponse).total_commits === 'number' &&
+    'commits' in data &&
+    Array.isArray((data as CompareResponse).commits)
+  );
+}
+
+export function isPrResponse(data: unknown): data is PrResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'number' in data &&
+    'title' in data &&
+    typeof (data as PrResponse).title === 'string'
+  );
 }
 
 @Injectable()
@@ -57,9 +148,6 @@ export class GithubPollService {
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
 
-  // username -> 기준점 (새로고침해도 유지)
-  private readonly userBaselines = new Map<string, UserBaseline>();
-
   subscribeGithubEvent(
     connectedAt: Date,
     clientId: string,
@@ -73,9 +161,7 @@ export class GithubPollService {
     // 이미 해당 username에 대한 폴링이 있으면 clientId만 추가
     if (existingSchedule) {
       existingSchedule.clientIds.add(clientId);
-      this.logger.log(
-        `Client ${clientId} joined existing poll for user: ${username}`,
-      );
+      this.logger.debug(`Client ${clientId} joined existing poll for ${username}`);
       return;
     }
 
@@ -91,23 +177,11 @@ export class GithubPollService {
       roomId,
       clientIds: new Set([clientId]),
       playerId,
+      etag: null,
+      lastEventId: null,
     });
 
-    // 기준점이 없으면 새로 생성 (있으면 유지 - 새로고침 시 복원)
-    const hasBaseline = this.userBaselines.has(username);
-    if (!hasBaseline) {
-      this.userBaselines.set(username, {
-        lastCommitCount: 0,
-        lastPRCount: 0,
-        lastIssueCount: 0,
-        lastPRReviewCount: 0,
-        isFirstPoll: true,
-      });
-    }
-
-    this.logger.log(
-      `GitHub polling started for user: ${username} (baseline: ${hasBaseline ? 'restored' : 'new'})`,
-    );
+    this.logger.debug(`GitHub polling started for ${username}`);
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -120,14 +194,21 @@ export class GithubPollService {
         if (schedule.clientIds.size === 0) {
           clearTimeout(schedule.timeout);
           this.pollingSchedules.delete(username);
-          this.logger.log(`GitHub polling stopped for user: ${username}`);
+          this.logger.debug(`GitHub polling stopped for ${username}`);
         } else {
-          this.logger.log(
-            `Client ${clientId} left poll for user: ${username} (${schedule.clientIds.size} remaining)`,
-          );
+          this.logger.debug(`Client ${clientId} left poll for ${username} (${schedule.clientIds.size} remaining)`);
         }
         return;
       }
+    }
+  }
+
+  private stopPolling(username: string) {
+    const schedule = this.pollingSchedules.get(username);
+    if (schedule) {
+      clearTimeout(schedule.timeout);
+      this.pollingSchedules.delete(username);
+      this.logger.debug(`GitHub polling stopped for ${username}`);
     }
   }
 
@@ -146,6 +227,11 @@ export class GithubPollService {
 
     const result = await this.pollGithubEvents(username);
 
+    // 폴링 중지된 경우 (401 토큰 만료)
+    if (result.status === 'stopped') {
+      return;
+    }
+
     // 다음 폴링 간격 결정
     let nextInterval: number;
     switch (result.status) {
@@ -153,13 +239,14 @@ export class GithubPollService {
         nextInterval = POLL_INTERVAL;
         this.githubGateway.castGithubEventToRoom(result.data!, schedule.roomId);
         break;
+      case 'first_poll':
       case 'no_changes':
         nextInterval = POLL_INTERVAL;
         break;
       case 'rate_limited':
-        nextInterval = result.retryAfter || POLL_INTERVAL_BACKOFF;
+        nextInterval = POLL_INTERVAL_BACKOFF;
         this.logger.warn(
-          `Rate limited for user: ${schedule.username}, retry after ${nextInterval}ms`,
+          `Rate limited for user: ${schedule.username}, retry after ${nextInterval / 1000}s`,
         );
         break;
       case 'error':
@@ -175,48 +262,40 @@ export class GithubPollService {
   }
 
   private async pollGithubEvents(username: string): Promise<{
-    status: 'new_events' | 'no_changes' | 'rate_limited' | 'error';
+    status:
+      | 'new_events'
+      | 'first_poll'
+      | 'no_changes'
+      | 'rate_limited'
+      | 'stopped'
+      | 'error';
     data?: {
       username: string;
       pushCount: number;
       pullRequestCount: number;
     };
-    retryAfter?: number;
   }> {
     const schedule = this.pollingSchedules.get(username);
     if (!schedule) return { status: 'error' };
 
-    const baseline = this.userBaselines.get(username);
-    if (!baseline) return { status: 'error' };
-
     const { accessToken } = schedule;
 
-    // GraphQL API 사용 (REST API 캐시 문제 우회)
-    const query = `
-      query($username: String!) {
-        user(login: $username) {
-          contributionsCollection {
-            totalCommitContributions
-            totalIssueContributions
-            totalPullRequestContributions
-            totalPullRequestReviewContributions
-          }
-        }
-      }
-    `;
-
+    // REST API 호출 (최근 100개 조회)
+    const url = `https://api.github.com/users/${username}/events/public?per_page=100`;
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
     };
+
+    // ETag 있으면 조건부 요청
+    if (schedule.etag) {
+      headers['If-None-Match'] = schedule.etag;
+    }
 
     let res: Response;
     try {
-      res = await fetch('https://api.github.com/graphql', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ query, variables: { username } }),
-      });
+      res = await fetch(url, { headers });
     } catch (error) {
       this.logger.error(
         `[${username}] GitHub API network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -224,21 +303,27 @@ export class GithubPollService {
       return { status: 'error' };
     }
 
-    this.logger.log(
-      `[GitHub Poll] ${username} - HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
+    this.logger.debug(
+      `[${username}] HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
     );
 
-    // 429 Too Many Requests - rate limit 초과
-    if (res.status === 429) {
-      const resetHeader = res.headers.get('X-RateLimit-Reset');
-      let retryAfter = POLL_INTERVAL_BACKOFF;
+    // 401: 토큰 만료 또는 무효 → 폴링 중지
+    if (res.status === 401) {
+      this.logger.error(`[${username}] Token expired or invalid`);
+      this.stopPolling(username);
+      return { status: 'stopped' };
+    }
 
-      if (resetHeader) {
-        const resetTime = parseInt(resetHeader, 10) * 1000;
-        retryAfter = Math.max(resetTime - Date.now(), POLL_INTERVAL_BACKOFF);
-      }
+    // 403/429: Rate Limit → 10분 대기
+    if (res.status === 403 || res.status === 429) {
+      this.logger.warn(`[${username}] Rate limit, waiting 10 minutes`);
+      return { status: 'rate_limited' };
+    }
 
-      return { status: 'rate_limited', retryAfter };
+    // 304: 변화 없음 (Rate Limit 소모 안 함)
+    if (res.status === 304) {
+      this.logger.debug(`[${username}] No changes (304)`);
+      return { status: 'no_changes' };
     }
 
     if (!res.ok) {
@@ -246,151 +331,340 @@ export class GithubPollService {
       return { status: 'error' };
     }
 
-    const json = (await res.json()) as GraphQLResponse;
+    // ETag 저장
+    const newEtag = res.headers.get('ETag');
+    if (newEtag) {
+      schedule.etag = newEtag;
+    }
 
-    if (json.errors) {
-      this.logger.error(`GitHub GraphQL error: ${JSON.stringify(json.errors)}`);
+    const eventsData: unknown = await res.json();
+
+    if (!isGithubEventArray(eventsData)) {
+      this.logger.error(`[${username}] Invalid events response format`);
       return { status: 'error' };
     }
 
-    const contributionsCollection = json.data?.user?.contributionsCollection;
-    if (!contributionsCollection) {
-      this.logger.debug(`[${username}] No contributions data`);
+    const events = eventsData;
+
+    // 첫 폴링: lastEventId 설정, 브로드캐스트 안 함
+    if (!schedule.lastEventId) {
+      schedule.lastEventId = events[0]?.id ?? NO_EVENTS_SENTINEL;
+      this.logger.debug(`[${username}] First poll - baseline set`);
+      return { status: 'first_poll' };
+    }
+
+    // 이후 폴링: lastEventId 위치 기반으로 새 이벤트 필터링
+    // GitHub 이벤트 ID는 시간순이 아니므로 findIndex 사용
+    let newEvents: GithubEvent[];
+    if (schedule.lastEventId === NO_EVENTS_SENTINEL) {
+      newEvents = events;
+    } else {
+      const lastIndex = events.findIndex((e) => e.id === schedule.lastEventId);
+
+      if (lastIndex === -1) {
+        newEvents = events;
+      } else if (lastIndex === 0) {
+        newEvents = [];
+      } else {
+        newEvents = events.slice(0, lastIndex);
+      }
+    }
+
+    if (newEvents.length > 0) {
+      schedule.lastEventId = events[0].id; // 최신 이벤트 ID로 업데이트
+    }
+
+    if (newEvents.length === 0) {
+      this.logger.debug(`[${username}] No new events`);
       return { status: 'no_changes' };
     }
 
-    // 커밋 기여 파싱 - 총 개수
-    const currentCommitCount =
-      contributionsCollection.totalCommitContributions ?? 0;
-
-    // PR 기여 파싱 - 총 개수 (total 필드 사용)
-    const currentPRCount =
-      contributionsCollection.totalPullRequestContributions ?? 0;
-
-    // 이슈 기여 파싱 - 총 개수
-    const currentIssueCount =
-      contributionsCollection.totalIssueContributions ?? 0;
-
-    // PR 리뷰 기여 파싱 - 총 개수
-    const currentPRReviewCount =
-      contributionsCollection.totalPullRequestReviewContributions ?? 0;
-
-    const { isFirstPoll } = baseline;
-
-    this.logger.log(
-      `[${username}] GraphQL Response: ` +
-        `Commits: ${currentCommitCount}, PRs: ${currentPRCount}, ` +
-        `Issues: ${currentIssueCount}, Reviews: ${currentPRReviewCount}, isFirstPoll: ${isFirstPoll}`,
-    );
-
-    // 첫 폴링이면 기준점만 설정하고 알림 안 보냄
-    if (isFirstPoll) {
-      baseline.lastCommitCount = currentCommitCount;
-      baseline.lastPRCount = currentPRCount;
-      baseline.lastIssueCount = currentIssueCount;
-      baseline.lastPRReviewCount = currentPRReviewCount;
-      baseline.isFirstPoll = false;
-      this.logger.log(
-        `[${username}] First poll - baseline set, no notification`,
-      );
-      return { status: 'no_changes' };
+    // [DEBUG] 이벤트 분석용 raw JSON 로깅
+    this.logger.log(`[${username}] New events (${newEvents.length}):`);
+    for (const event of newEvents) {
+      this.logger.log(`[${username}] RAW EVENT: ${JSON.stringify(event, null, 2)}`);
     }
 
-    // 새로운 커밋 수 계산
-    const newCommitCount = Math.max(
-      0,
-      currentCommitCount - baseline.lastCommitCount,
-    );
+    // 이벤트 처리
+    const details = await this.processEvents(newEvents, schedule);
 
-    // 새로운 PR 수 계산
-    const newPRCount = Math.max(0, currentPRCount - baseline.lastPRCount);
+    const totalEvents =
+      details.commits.length +
+      details.prOpens.length +
+      details.prMerges.length +
+      details.issues.length +
+      details.reviews.length;
 
-    // 새로운 이슈 수 계산
-    const newIssueCount = Math.max(
-      0,
-      currentIssueCount - baseline.lastIssueCount,
-    );
-
-    // 새로운 PR 리뷰 수 계산
-    const newPRReviewCount = Math.max(
-      0,
-      currentPRReviewCount - baseline.lastPRReviewCount,
-    );
-
-    // 기준점 갱신
-    baseline.lastCommitCount = currentCommitCount;
-    baseline.lastPRCount = currentPRCount;
-    baseline.lastIssueCount = currentIssueCount;
-    baseline.lastPRReviewCount = currentPRReviewCount;
-
-    if (
-      newCommitCount === 0 &&
-      newPRCount === 0 &&
-      newIssueCount === 0 &&
-      newPRReviewCount === 0
-    ) {
-      this.logger.debug(`[${username}] No new contributions`);
+    if (totalEvents === 0) {
       return { status: 'no_changes' };
     }
 
     // DB에 새 이벤트 누적 및 포인트 적립
     const { playerId } = schedule;
-    if (newIssueCount > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.ISSUE_OPEN,
-        newIssueCount,
-      );
-      await this.pointService.addPoint(
-        playerId,
-        PointType.ISSUE_OPEN,
-        newIssueCount,
-      );
-    }
-    if (newPRCount > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.PR_OPEN,
-        newPRCount,
-      );
-      await this.pointService.addPoint(playerId, PointType.PR_OPEN, newPRCount);
-    }
-    if (newPRReviewCount > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.PR_REVIEWED,
-        newPRReviewCount,
-      );
-      await this.pointService.addPoint(
-        playerId,
-        PointType.PR_REVIEWED,
-        newPRReviewCount,
-      );
-    }
-    if (newCommitCount > 0) {
+
+    // 커밋
+    if (details.commits.length > 0) {
       await this.githubService.incrementActivity(
         playerId,
         GithubActivityType.COMMITTED,
-        newCommitCount,
+        details.commits.length,
       );
-      await this.pointService.addPoint(
+      for (const commit of details.commits) {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.COMMITTED,
+          1,
+          commit.repository,
+          commit.message,
+        );
+      }
+    }
+
+    // PR 생성
+    if (details.prOpens.length > 0) {
+      await this.githubService.incrementActivity(
         playerId,
-        PointType.COMMITTED,
-        newCommitCount,
+        GithubActivityType.PR_OPEN,
+        details.prOpens.length,
       );
+      for (const pr of details.prOpens) {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.PR_OPEN,
+          1,
+          pr.repository,
+          pr.title,
+        );
+      }
+    }
+
+    // PR 머지
+    if (details.prMerges.length > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_MERGED,
+        details.prMerges.length,
+      );
+      for (const pr of details.prMerges) {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.PR_MERGED,
+          1,
+          pr.repository,
+          pr.title,
+        );
+      }
+    }
+
+    // 이슈 생성
+    if (details.issues.length > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.ISSUE_OPEN,
+        details.issues.length,
+      );
+      for (const issue of details.issues) {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.ISSUE_OPEN,
+          1,
+          issue.repository,
+          issue.title,
+        );
+      }
+    }
+
+    // PR 리뷰
+    if (details.reviews.length > 0) {
+      await this.githubService.incrementActivity(
+        playerId,
+        GithubActivityType.PR_REVIEWED,
+        details.reviews.length,
+      );
+      for (const review of details.reviews) {
+        await this.pointService.addPoint(
+          playerId,
+          PointType.PR_REVIEWED,
+          1,
+          review.repository,
+          review.prTitle,
+        );
+      }
     }
 
     this.logger.log(
-      `[${username}] New contributions detected! Commits: +${newCommitCount}, PRs: +${newPRCount}, Issues: +${newIssueCount}, Reviews: +${newPRReviewCount}`,
+      `[${username}] Commits: +${details.commits.length}, PRs: +${details.prOpens.length}, ` +
+        `Merged: +${details.prMerges.length}, Issues: +${details.issues.length}, Reviews: +${details.reviews.length}`,
     );
 
     return {
       status: 'new_events',
       data: {
         username,
-        pushCount: newCommitCount,
-        pullRequestCount: newPRCount,
+        pushCount: details.commits.length,
+        pullRequestCount: details.prOpens.length,
       },
     };
+  }
+
+  private async processEvents(
+    events: GithubEvent[],
+    schedule: PollingSchedule,
+  ): Promise<{
+    commits: Array<{ repository: string; message: string }>;
+    prOpens: Array<{ repository: string; title: string }>;
+    prMerges: Array<{ repository: string; title: string }>;
+    issues: Array<{ repository: string; title: string }>;
+    reviews: Array<{ repository: string; prTitle: string }>;
+  }> {
+    const commits: Array<{ repository: string; message: string }> = [];
+    const prOpens: Array<{ repository: string; title: string }> = [];
+    const prMerges: Array<{ repository: string; title: string }> = [];
+    const issues: Array<{ repository: string; title: string }> = [];
+    const reviews: Array<{ repository: string; prTitle: string }> = [];
+
+    for (const event of events) {
+      const repoName = event.repo.name;
+
+      switch (event.type) {
+        case 'PushEvent': {
+          const pushPayload = event.payload as PushEventPayload;
+
+          // Compare API로 실제 커밋 정보 조회
+          const commitDetails = await this.getCommitDetails(
+            repoName,
+            pushPayload.before,
+            pushPayload.head,
+            schedule.accessToken,
+          );
+
+          for (const msg of commitDetails.messages) {
+            commits.push({ repository: repoName, message: msg });
+            this.logger.debug(`[${schedule.username}] COMMIT: "${msg}" (${repoName})`);
+          }
+          break;
+        }
+
+        case 'PullRequestEvent': {
+          const prPayload = event.payload as PullRequestEventPayload;
+          const prNumber = prPayload.number;
+
+          if (prPayload.action === 'opened') {
+            const prTitle = await this.getPrTitle(repoName, prNumber, schedule.accessToken);
+            prOpens.push({ repository: repoName, title: prTitle });
+            this.logger.debug(`[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`);
+          } else if (
+            prPayload.action === 'merged' ||
+            (prPayload.action === 'closed' &&
+              prPayload.pull_request?.merged === true)
+          ) {
+            const prTitle = await this.getPrTitle(repoName, prNumber, schedule.accessToken);
+            prMerges.push({ repository: repoName, title: prTitle });
+            this.logger.debug(`[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`);
+          }
+          break;
+        }
+
+        case 'IssuesEvent': {
+          const issuePayload = event.payload as IssuesEventPayload;
+          if (issuePayload.action === 'opened') {
+            issues.push({ repository: repoName, title: issuePayload.issue.title });
+            this.logger.debug(`[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`);
+          }
+          break;
+        }
+
+        case 'PullRequestReviewEvent': {
+          const reviewPayload = event.payload as PullRequestReviewEventPayload;
+          if (reviewPayload.action === 'created') {
+            const prTitle = await this.getPrTitle(
+              repoName,
+              reviewPayload.pull_request.number,
+              schedule.accessToken,
+            );
+            reviews.push({ repository: repoName, prTitle });
+            this.logger.debug(`[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`);
+          }
+          break;
+        }
+      }
+    }
+
+    return { commits, prOpens, prMerges, issues, reviews };
+  }
+
+  /**
+   * Compare API로 실제 커밋 정보 조회
+   * PushEvent 1개에 여러 커밋이 포함될 수 있으므로 Compare API로 정확한 개수와 메시지 확인
+   */
+  private async getCommitDetails(
+    repoName: string,
+    before: string,
+    head: string,
+    accessToken: string,
+  ): Promise<{ count: number; messages: string[] }> {
+    const url = `https://api.github.com/repos/${repoName}/compare/${before}...${head}`;
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    try {
+      const res = await fetch(url, { headers });
+
+      if (!res.ok) {
+        // Compare API 실패 시 fallback
+        return { count: 1, messages: ['(unknown)'] };
+      }
+
+      const data: unknown = await res.json();
+
+      if (!isCompareResponse(data)) {
+        return { count: 1, messages: ['(unknown)'] };
+      }
+
+      // 커밋 메시지 추출 (첫 줄만)
+      const messages = data.commits.map((c) => c.commit.message.split('\n')[0]);
+
+      return { count: data.total_commits, messages };
+    } catch {
+      // 네트워크 에러 시 fallback
+      return { count: 1, messages: ['(unknown)'] };
+    }
+  }
+
+  /**
+   * PR API로 PR 제목 조회
+   */
+  private async getPrTitle(
+    repoName: string,
+    prNumber: number,
+    accessToken: string,
+  ): Promise<string> {
+    const url = `https://api.github.com/repos/${repoName}/pulls/${prNumber}`;
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+
+    try {
+      const res = await fetch(url, { headers });
+
+      if (!res.ok) {
+        return `#${prNumber}`;
+      }
+
+      const data: unknown = await res.json();
+
+      if (!isPrResponse(data)) {
+        return `#${prNumber}`;
+      }
+
+      return data.title;
+    } catch {
+      return `#${prNumber}`;
+    }
   }
 }
