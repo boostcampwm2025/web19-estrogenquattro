@@ -7,6 +7,7 @@ import { toDateString } from "@/utils/timeFormat";
 import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
 import { useQuery } from "@tanstack/react-query";
 import { petApi } from "@/lib/api/pet";
+import { queryKeys } from "@/lib/api/hooks/queryKeys";
 
 interface GrassCardProps {
   dailyPoints: DailyPoints;
@@ -25,7 +26,7 @@ export default function GrassCard({
   const grassImagePath = getGrassImageFromData(dailyPoints, dateStr);
 
   const { data: inventory = [] } = useQuery({
-    queryKey: ["pets", "inventory", playerId],
+    queryKey: queryKeys.pets.inventory(playerId),
     queryFn: () => petApi.getInventory(playerId),
     enabled: !!playerId,
     staleTime: 0,
