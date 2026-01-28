@@ -9,12 +9,13 @@ import {
 import { FocusTimeService } from './focustime.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FocusStatus } from './entites/daily-focus-time.entity';
+import { ParseDatePipe } from '../common/parse-date.pipe';
 
 interface FocusTimeResponse {
   id: number | null;
   totalFocusSeconds: number;
   status: FocusStatus;
-  createdDate: string;
+  createdAt: string;
   lastFocusStartTime: string | null;
 }
 
@@ -26,29 +27,20 @@ export class FocustimeController {
   @Get(':playerId')
   async getFocusTime(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('date') date: string,
+    @Query('startAt', ParseDatePipe) startAt: Date,
+    @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<FocusTimeResponse> {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
     const focusTime = await this.focusTimeService.getFocusTime(
       playerId,
-      targetDate,
+      startAt,
+      endAt,
     );
-
-    if (!focusTime) {
-      return {
-        id: null,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdDate: targetDate,
-        lastFocusStartTime: null,
-      };
-    }
 
     return {
       id: focusTime.id,
       totalFocusSeconds: focusTime.totalFocusSeconds,
       status: focusTime.status,
-      createdDate: new Date(focusTime.createdDate).toISOString().slice(0, 10),
+      createdAt: focusTime.createdAt.toISOString(),
       lastFocusStartTime: focusTime.lastFocusStartTime
         ? focusTime.lastFocusStartTime.toISOString()
         : null,

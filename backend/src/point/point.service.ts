@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
+import { getTodayKstRangeUtc } from '../util/date.util';
+import { Player } from '../player/entites/player.entity';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 2,
@@ -25,15 +27,14 @@ export class PointService {
   ) {}
 
   async getPoints(playerId: number): Promise<DailyPoint[]> {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const oneYearAgoStr = oneYearAgo.toISOString().slice(0, 10);
 
     return this.dailyPointRepository.find({
       where: {
         player: { id: playerId },
-        createdDate: Between(oneYearAgoStr, today),
+        createdAt: Between(oneYearAgo, now),
       },
     });
   }
@@ -43,28 +44,33 @@ export class PointService {
     activityType: PointType,
     count: number,
   ): Promise<DailyPoint> {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
     return this.dataSource.transaction(async (manager) => {
       const dailyPointRepo = manager.getRepository(DailyPoint);
+      const playerRepo: Repository<Player> = manager.getRepository(Player);
 
-      // 포인트 내역 저장 (트랜잭션 내에서)
       await this.pointHistoryService.addHistoryWithManager(
         manager,
         playerId,
         activityType,
         totalPoint,
       );
+      const { start, end } = getTodayKstRangeUtc();
 
-      // 비관적 락으로 조회 (다른 트랜잭션이 동시에 수정 못하게 차단)
-      const existingRecord = await dailyPointRepo.findOne({
-        where: {
-          player: { id: playerId },
-          createdDate: today,
-        },
-        lock: { mode: 'pessimistic_write' },
-      });
+      const existingRecord = await dailyPointRepo
+        .createQueryBuilder('dp')
+        .where('dp.player.id = :playerId', { playerId })
+        .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
+
+      const player = await playerRepo.findOne({ where: { id: playerId } });
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+      player.totalPoint += totalPoint;
+      await playerRepo.save(player);
 
       if (existingRecord) {
         existingRecord.amount += totalPoint;
@@ -74,9 +80,8 @@ export class PointService {
       const newRecord = dailyPointRepo.create({
         player: { id: playerId },
         amount: totalPoint,
-        createdDate: today,
+        createdAt: now,
       });
-
       return dailyPointRepo.save(newRecord);
     });
   }
