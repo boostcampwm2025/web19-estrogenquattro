@@ -353,7 +353,7 @@
           "id": 18,
           "name": "",
           "rotation": 0,
-          "type": "",
+          "type": "wall",
           "visible": true,
           "width": 126.6666,
           "x": 2068,
