@@ -8,5 +8,8 @@ export interface DailyPointRes {
 
 export const pointApi = {
   /** 1년치 포인트 조회 (히트맵용) */
-  getPoints: () => fetchApi<DailyPointRes[]>("/api/points"),
+  getPoints: (targetPlayerId: number, currentTime: string) =>
+    fetchApi<DailyPointRes[]>(
+      `/api/points?targetPlayerId=${targetPlayerId}&currentTime=${encodeURIComponent(currentTime)}`,
+    ),
 };

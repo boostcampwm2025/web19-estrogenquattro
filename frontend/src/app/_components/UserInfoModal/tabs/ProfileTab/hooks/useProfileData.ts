@@ -26,7 +26,7 @@ export function useProfileData(
   const dateStr = toDateString(selectedDate);
 
   // 히트맵 데이터 (1년치 포인트)
-  const { points, isLoading: isPointsLoading } = usePoint();
+  const { points, isLoading: isPointsLoading } = usePoint(playerId);
 
   // 선택된 날짜의 집중시간
   const { focustime: focusTimeData, isLoading: isFocusLoading } = useFocustime(
