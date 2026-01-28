@@ -9,6 +9,7 @@ import {
 import { FocusTimeService } from './focustime.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FocusStatus } from './entites/daily-focus-time.entity';
+import { ParseDatePipe } from '../common/parse-date.pipe';
 
 interface FocusTimeResponse {
   id: number | null;
@@ -26,13 +27,13 @@ export class FocustimeController {
   @Get(':playerId')
   async getFocusTime(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('startAt') startAt: string,
-    @Query('endAt') endAt: string,
+    @Query('startAt', ParseDatePipe) startAt: Date,
+    @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<FocusTimeResponse> {
     const focusTime = await this.focusTimeService.getFocusTime(
       playerId,
-      new Date(startAt),
-      new Date(endAt),
+      startAt,
+      endAt,
     );
 
     return {

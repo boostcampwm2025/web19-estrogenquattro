@@ -17,6 +17,7 @@ import { TaskListRes } from './dto/task-list.res';
 import { TaskRes } from './dto/task.res';
 import { JwtGuard } from '../auth/jwt.guard';
 import { PlayerId } from '../auth/player-id.decorator';
+import { ParseDatePipe } from '../common/parse-date.pipe';
 
 @UseGuards(JwtGuard)
 @Controller('api/tasks')
@@ -34,13 +35,13 @@ export class TaskController {
   @Get(':playerId')
   async getTasks(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('startAt') startAt: string,
-    @Query('endAt') endAt: string,
+    @Query('startAt', ParseDatePipe) startAt: Date,
+    @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<TaskListRes> {
     return this.taskService.getTasks(
       playerId,
-      new Date(startAt),
-      new Date(endAt),
+      startAt,
+      endAt,
     );
   }
 
