@@ -32,8 +32,10 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "msw": "^2.6.0",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^2.1.0"
   }
