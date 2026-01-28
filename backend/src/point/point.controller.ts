@@ -1,4 +1,10 @@
-import { Controller, Get, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { PointService } from './point.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
@@ -16,6 +22,10 @@ export class PointController {
     @Query('targetPlayerId', ParseIntPipe) targetPlayerId: number,
     @Query('currentTime', ParseDatePipe) currentTime: Date,
   ): Promise<DailyPoint[]> {
-    return this.pointService.getPoints(currentPlayerId, targetPlayerId, currentTime);
+    return this.pointService.getPoints(
+      currentPlayerId,
+      targetPlayerId,
+      currentTime,
+    );
   }
 }

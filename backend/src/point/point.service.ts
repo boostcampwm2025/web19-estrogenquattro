@@ -40,7 +40,9 @@ export class PointService {
     ]);
 
     if (!currentPlayer) {
-      throw new NotFoundException(`Player with ID ${currentPlayerId} not found`);
+      throw new NotFoundException(
+        `Player with ID ${currentPlayerId} not found`,
+      );
     }
     if (!targetPlayer) {
       throw new NotFoundException(`Player with ID ${targetPlayerId} not found`);
