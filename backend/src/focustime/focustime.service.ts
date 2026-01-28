@@ -250,9 +250,15 @@ export class FocusTimeService {
       .getOne();
 
     if (!focusTime) {
-      throw new NotFoundException(
-        'FocusTime record not found. Please join the room first.',
-      );
+      const defaultFocusTime = new DailyFocusTime();
+      defaultFocusTime.id = null as unknown as number;
+      defaultFocusTime.totalFocusSeconds = 0;
+      defaultFocusTime.status = FocusStatus.RESTING;
+      defaultFocusTime.createdAt = startAt;
+      defaultFocusTime.lastFocusStartTime = null as unknown as Date;
+      defaultFocusTime.currentTaskId = null;
+      defaultFocusTime.currentTask = null;
+      return defaultFocusTime;
     }
 
     return focusTime;
