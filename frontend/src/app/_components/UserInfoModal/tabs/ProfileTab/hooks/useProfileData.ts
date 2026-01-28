@@ -6,12 +6,12 @@ import {
   useTasks,
 } from "@/lib/api/hooks";
 import { DailyFocusTimeRes, GithubEventsRes } from "@/lib/api";
-import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
+import { DailyPoint } from "../components/CalendarHeatmap/useHeatmapData";
 import { toDateString } from "@/utils/timeFormat";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
 
 interface UseProfileDataReturn {
-  dailyTaskCounts: DailyTaskCount[];
+  dailyPoints: DailyPoint[];
   focusTimeData: DailyFocusTimeRes | undefined;
   githubEvents: GithubEventsRes | undefined;
   tasks: Task[];
@@ -50,15 +50,15 @@ export function useProfileData(
     return tasksData.map(mapTaskResToTask);
   }, [tasksData]);
 
-  const dailyTaskCounts: DailyTaskCount[] = useMemo(() => {
+  const dailyPoints: DailyPoint[] = useMemo(() => {
     return points.map((point) => ({
       date: point.createdDate,
-      taskCount: point.amount,
+      points: point.amount,
     }));
   }, [points]);
 
   return {
-    dailyTaskCounts,
+    dailyPoints,
     focusTimeData,
     githubEvents,
     tasks,

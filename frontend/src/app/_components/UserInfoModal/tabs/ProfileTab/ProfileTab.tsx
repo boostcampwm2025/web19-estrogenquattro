@@ -11,7 +11,7 @@ export default function ProfileTab() {
     (state) => state.userInfoPayload?.playerId,
   );
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, githubEvents, tasks, isLoading } =
+  const { dailyPoints, focusTimeData, githubEvents, tasks, isLoading } =
     useProfileData(targetPlayerId ?? 0, selectedDate);
 
   if (isLoading) {
@@ -25,7 +25,7 @@ export default function ProfileTab() {
   return (
     <div className="space-y-4">
       <CalendarHeatmap
-        dailyTaskCounts={dailyTaskCounts}
+        dailyPoints={dailyPoints}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
@@ -36,6 +36,7 @@ export default function ProfileTab() {
           selectedDate={selectedDate}
           focusTimeSeconds={focusTimeData?.totalFocusSeconds}
           githubEvents={githubEvents}
+          dailyPoints={dailyPoints}
         />
         <TaskSection tasks={tasks} selectedDate={selectedDate} />
       </div>

@@ -6,10 +6,10 @@ export interface DayData {
   value: number;
 }
 
-// DB에서 받아올 날짜별 데이터 타입
-export interface DailyTaskCount {
+// DB에서 받아올 날짜별 포인트 데이터 타입
+export interface DailyPoint {
   date: string; // "YYYY-MM-DD" 형식
-  taskCount: number;
+  points: number;
 }
 
 interface UseHeatmapDataResult {
@@ -18,13 +18,13 @@ interface UseHeatmapDataResult {
 }
 
 export function useHeatmapData(
-  dailyTaskCounts: DailyTaskCount[],
+  dailyPoints: DailyPoint[],
 ): UseHeatmapDataResult {
   const yearData = useMemo(() => {
     // DB에서 받은 데이터를 Map으로 변환 (빠른 조회용)
-    const taskCountByDate = new Map<string, number>();
-    dailyTaskCounts.forEach((item) => {
-      taskCountByDate.set(item.date, item.taskCount);
+    const pointsByDate = new Map<string, number>();
+    dailyPoints.forEach((item) => {
+      pointsByDate.set(item.date, item.points);
     });
 
     const days: DayData[] = [];
@@ -36,11 +36,11 @@ export function useHeatmapData(
       const dateKey = toDateString(d); // "YYYY-MM-DD" 형식
       days.push({
         date: new Date(d),
-        value: taskCountByDate.get(dateKey) || 0,
+        value: pointsByDate.get(dateKey) || 0,
       });
     }
     return days;
-  }, [dailyTaskCounts]);
+  }, [dailyPoints]);
 
   const weeks = useMemo(() => {
     const weeksArray: DayData[][] = [];

@@ -1,20 +1,20 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/_components/ui/button";
-import { useHeatmapData, DayData, DailyTaskCount } from "./useHeatmapData";
+import { useHeatmapData, DayData, DailyPoint } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
 import { HeatmapInfoLink } from "./HeatmapInfoLink";
 import { HeatmapCell } from "./HeatmapCell";
 import { HeatmapLegend } from "./HeatmapLegend";
 
 interface CalendarHeatmapProps {
-  dailyTaskCounts: DailyTaskCount[];
+  dailyPoints: DailyPoint[];
   onSelectDate: (date: Date) => void;
   selectedDate?: Date;
 }
 
 export function CalendarHeatmap({
-  dailyTaskCounts,
+  dailyPoints,
   onSelectDate,
   selectedDate,
 }: CalendarHeatmapProps) {
@@ -23,7 +23,7 @@ export function CalendarHeatmap({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { weeks } = useHeatmapData(dailyTaskCounts);
+  const { weeks } = useHeatmapData(dailyPoints);
 
   const handleScroll = (direction: "left" | "right") => {
     const container = containerRef.current;
