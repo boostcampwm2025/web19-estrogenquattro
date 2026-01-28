@@ -9,6 +9,7 @@ export interface Pet {
   evolutionStage: number;
   evolutionRequiredExp: number;
   actualImgUrl: string;
+  silhouetteImgUrl: string;
 }
 
 export interface UserPet {
