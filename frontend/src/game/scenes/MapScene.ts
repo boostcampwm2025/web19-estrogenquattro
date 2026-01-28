@@ -58,21 +58,9 @@ export class MapScene extends Phaser.Scene {
       tilemapPath: "/assets/tilemaps/desert_stage3.json",
     },
     {
-      image: "tiles3.5",
-      tilemap: "tilemap3",
-      imagePath: "/assets/maps/desert_stage3.5.webp",
-      tilemapPath: "/assets/tilemaps/desert_stage3.json",
-    },
-    {
       image: "tiles4",
       tilemap: "tilemap4",
       imagePath: "/assets/maps/desert_stage4.webp",
-      tilemapPath: "/assets/tilemaps/desert_stage4.json",
-    },
-    {
-      image: "tiles4.5",
-      tilemap: "tilemap4",
-      imagePath: "/assets/maps/desert_stage4.5.webp",
       tilemapPath: "/assets/tilemaps/desert_stage4.json",
     },
     {
