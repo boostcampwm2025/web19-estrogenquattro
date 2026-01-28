@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
+import { Player } from '../player/entites/player.entity';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 2, // 커밋 1회
@@ -50,6 +51,7 @@ export class PointService {
 
     return this.dataSource.transaction(async (manager) => {
       const dailyPointRepo = manager.getRepository(DailyPoint);
+      const playerRepo: Repository<Player> = manager.getRepository(Player);
 
       // 포인트 내역 저장 (트랜잭션 내에서)
       await this.pointHistoryService.addHistoryWithManager(
@@ -61,7 +63,15 @@ export class PointService {
         description,
       );
 
-      // 트랜잭션 내에서 조회 (SQLite는 트랜잭션 레벨 잠금 사용)
+      // 플레이어 조회 및 totalPoint 업데이트
+      const player = await playerRepo.findOne({ where: { id: playerId } });
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+      player.totalPoint += totalPoint;
+      await playerRepo.save(player);
+
+      // 일일 포인트 레코드 조회
       const existingRecord = await dailyPointRepo.findOne({
         where: {
           player: { id: playerId },
