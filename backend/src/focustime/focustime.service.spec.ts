@@ -243,7 +243,7 @@ describe('FocusTimeService', () => {
       const updatedTask = await taskRepository.findOne({
         where: { id: task.id },
       });
-      expect(updatedTask.totalFocusSeconds).toBeGreaterThanOrEqual(110);
+      expect(updatedTask!.totalFocusSeconds).toBeGreaterThanOrEqual(110);
     });
 
     it('currentTaskId가 없으면 Task 업데이트가 발생하지 않는다', async () => {
