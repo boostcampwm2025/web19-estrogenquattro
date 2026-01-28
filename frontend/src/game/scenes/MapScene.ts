@@ -172,6 +172,8 @@ export class MapScene extends Phaser.Scene {
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
       showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
       hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
+      onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
+      onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
     });
 
     // 9. Chat Setup
@@ -271,31 +273,31 @@ export class MapScene extends Phaser.Scene {
     }
 
     this.progressBarController = createProgressBar(this, mapWidth);
-
-    this.progressBarController.onProgressComplete = () => {
-      this.mapManager.switchToNextMap(() => {
-        this.setupCollisions();
-        this.setupUI();
-        const { width, height } = this.mapManager.getMapSize();
-        this.cameraController.updateBounds(width, height);
-        this.socketManager.setWalls(this.mapManager.getWalls()!);
-        this.socketManager.setupCollisions();
-        this.socketManager.setProgressBarController(
-          this.progressBarController!,
-        );
-        this.socketManager.setContributionController(
-          this.contributionController!,
-        );
-
-        // 플레이어 리스폰 (wall 피해 랜덤 위치)
-        if (this.player) {
-          const spawnPos = this.mapManager.getRandomSpawnPosition();
-          this.player.setPosition(spawnPos.x, spawnPos.y);
-        }
-      });
-    };
-
     this.contributionController = createContributionList(this, mapWidth, 50);
+  }
+
+  /**
+   * 맵 전환 공통 로직 (서버 map_switch/game_state 이벤트에서 호출)
+   */
+  private performMapSwitch(mapIndex: number) {
+    this.mapManager.switchToMap(mapIndex, () => {
+      this.setupCollisions();
+      this.setupUI();
+      const { width, height } = this.mapManager.getMapSize();
+      this.cameraController.updateBounds(width, height);
+      this.socketManager.setWalls(this.mapManager.getWalls()!);
+      this.socketManager.setupCollisions();
+      this.socketManager.setProgressBarController(this.progressBarController!);
+      this.socketManager.setContributionController(
+        this.contributionController!,
+      );
+
+      // 플레이어 리스폰 (wall 피해 랜덤 위치)
+      if (this.player) {
+        const spawnPos = this.mapManager.getRandomSpawnPosition();
+        this.player.setPosition(spawnPos.x, spawnPos.y);
+      }
+    });
   }
 
   private setupCollisions() {
@@ -421,13 +423,9 @@ export class MapScene extends Phaser.Scene {
   update() {
     if (!this.player || !this.cursors) return;
 
-    // 테스트: X 키로 게이지 100% 채우기
+    // 테스트: X 키로 게이지 100% 채우기 (서버 주도이므로 클라이언트 테스트만)
     if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      const currentProgress = this.progressBarController?.getProgress() || 0;
-      const remaining = 100 - currentProgress;
-      if (remaining > 0) {
-        this.progressBarController?.addProgress(remaining);
-      }
+      this.progressBarController?.setProgress(100);
     }
 
     // 집중 시간 업데이트 (타임스탬프 기반 계산)

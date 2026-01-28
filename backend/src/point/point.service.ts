@@ -61,7 +61,7 @@ export class PointService {
         description,
       );
 
-      // 트랜잭션 내에서 조회 (SQLite는 트랜잭션 레벨 잠금 사용)
+      // 먼저 조회 후 존재하면 업데이트, 없으면 생성
       const existingRecord = await dailyPointRepo.findOne({
         where: {
           player: { id: playerId },

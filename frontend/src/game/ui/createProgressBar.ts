@@ -2,12 +2,7 @@ import * as Phaser from "phaser";
 
 export interface ProgressBarController {
   /**
-   * 프로그레스를 특정 양만큼 증가시킵니다.
-   * @param amount - 증가시킬 양 (%)
-   */
-  addProgress: (amount: number) => void;
-  /**
-   * 프로그레스를 특정 값으로 설정합니다.
+   * 프로그레스를 특정 값으로 설정합니다. (절대값 동기화)
    * @param value - 설정할 값 (0-100)
    */
   setProgress: (value: number) => void;
@@ -19,10 +14,6 @@ export interface ProgressBarController {
    * 현재 프로그레스 값을 반환합니다.
    */
   getProgress: () => number;
-  /**
-   * 프로그레스가 100%에 도달했을 때 호출되는 콜백
-   */
-  onProgressComplete?: () => void;
   /**
    * 프로그레스바의 모든 그래픽 요소를 제거합니다.
    */
@@ -37,9 +28,8 @@ export interface ProgressBarController {
  * @returns 프로그레스바를 제어할 수 있는 컨트롤러
  *
  * @remarks
- * - 프로그레스바 규칙:
- *   - 커밋당 증가량: 5%
- *   - 100% 도달 시: 리셋 (0%로 초기화)
+ * - 절대값 동기화: 서버에서 받은 값을 그대로 표시
+ * - 맵 전환은 서버의 map_switch 이벤트로 처리
  */
 export function createProgressBar(
   scene: Phaser.Scene,
@@ -144,31 +134,11 @@ export function createProgressBar(
   };
 
   /**
-   * 프로그레스를 특정 양만큼 증가시킵니다.
-   * 100%에 도달하면 콜백을 호출하고 자동으로 리셋됩니다.
-   */
-  const addProgress = (amount: number) => {
-    const newProgress = Math.min(progress + amount, 100);
-
-    animateToProgress(newProgress, () => {
-      if (progress >= 100) {
-        // 100% 도달 시 콜백 호출
-        controller.onProgressComplete?.();
-
-        // 잠시 후 리셋
-        scene.time.delayedCall(1000, () => {
-          animateToProgress(0);
-        });
-      }
-    });
-  };
-
-  /**
-   * 프로그레스를 특정 값으로 설정합니다. (초기화용)
+   * 프로그레스를 특정 값으로 설정합니다. (절대값 동기화)
    */
   const setProgress = (value: number) => {
-    progress = Math.max(0, Math.min(100, value));
-    updateBar();
+    const targetProgress = Math.max(0, Math.min(100, value));
+    animateToProgress(targetProgress);
   };
 
   /**
@@ -192,7 +162,6 @@ export function createProgressBar(
   };
 
   const controller: ProgressBarController = {
-    addProgress,
     setProgress,
     reset,
     getProgress,
