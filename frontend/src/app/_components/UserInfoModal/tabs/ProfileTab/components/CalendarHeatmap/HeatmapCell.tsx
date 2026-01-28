@@ -1,4 +1,4 @@
-import { getHeatmapColorClass } from "../../lib/heatmapColors";
+import { getHeatmapColorClass } from "../../lib/grassLevel";
 import { isSameDay } from "../../lib/dateUtils";
 import { DayData } from "./useHeatmapData";
 

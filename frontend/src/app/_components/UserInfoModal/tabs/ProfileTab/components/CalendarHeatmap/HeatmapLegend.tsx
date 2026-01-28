@@ -8,7 +8,6 @@ export function HeatmapLegend() {
           <div className="h-3 w-3 rounded-sm bg-heatmap-level-1 ring-1 ring-amber-300" />
           <div className="h-3 w-3 rounded-sm bg-heatmap-level-2 ring-1 ring-amber-300" />
           <div className="h-3 w-3 rounded-sm bg-heatmap-level-3 ring-1 ring-amber-300" />
-          <div className="h-3 w-3 rounded-sm bg-heatmap-level-4 ring-1 ring-amber-300" />
         </div>
         <span className="opacity-80">more</span>
       </div>
