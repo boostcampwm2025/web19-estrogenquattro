@@ -85,6 +85,7 @@ erDiagram
         bigint player_id FK
         enum type "포인트 타입"
         int amount "포인트 량"
+        varchar description "활동 상세 (레포명, PR/이슈 제목)"
         datetime created_at "생성 시각"
     }
 
@@ -223,11 +224,9 @@ erDiagram
 
 ---
 
-### point_history (포인트 내역) - Planned
+### point_history (포인트 내역)
 
-> **Status:** Planned - 아직 구현되지 않음
-
-포인트 획득/차감 상세 내역
+포인트 획득/차감 상세 내역 및 GitHub 활동 상세 정보
 
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
@@ -235,6 +234,7 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | type | enum | NOT NULL | 포인트 타입 |
 | amount | int | NOT NULL | 포인트 량 |
+| description | varchar(200) | NULL 허용 | 활동 상세 (레포명, PR/이슈 제목) |
 | created_at | datetime | NOT NULL | 생성 시각 |
 
 **포인트 타입 (type):**
@@ -245,6 +245,18 @@ erDiagram
 - `COMMITTED` - 커밋
 - `TASK_COMPLETED` - 작업 완료
 - `FOCUSED` - 집중 시간
+
+**description 컬럼 예시:**
+
+| type | description 예시 |
+|------|-----------------|
+| COMMITTED | `"owner/repo"` (레포지토리 이름) |
+| PR_OPEN | `"feat: 로그인 기능 구현"` (PR 제목) |
+| PR_MERGED | `"fix: 버그 수정"` (PR 제목) |
+| ISSUE_OPEN | `"버그: 로그인 실패"` (이슈 제목) |
+| PR_REVIEWED | `"feat: 새 기능"` (리뷰한 PR 제목) |
+| TASK_COMPLETED | `"오늘 할 일"` (Task 설명) |
+| FOCUSED | `null` |
 
 ---
 
