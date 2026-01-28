@@ -12,8 +12,8 @@ export function toDateString(date: Date): string {
 /**
  * 로컬 타임존 기준으로 특정 날짜의 하루 범위를 UTC ISO8601 형식으로 반환
  * 사용자가 "오늘"이라고 생각하는 날짜의 시작/끝을 서버에 전송할 때 사용
- * 
- * 예: 한국 시간 2026-01-28 하루 → 
+ *
+ * 예: 한국 시간 2026-01-28 하루 →
  *     startAt: 2026-01-27T15:00:00.000Z (28일 00:00:00 KST)
  *     endAt: 2026-01-28T14:59:59.999Z (28일 23:59:59 KST)
  *
@@ -42,7 +42,7 @@ export function getLocalDayRange(date: Date): {
 /**
  * 오늘 로컬 날짜의 자정 시각을 UTC ISO8601 형식으로 반환
  * 웹소켓 이벤트 전송 시 사용 (joining, focusing, resting)
- * 
+ *
  * 예: 한국 시간 2026-01-28 00:00:00 → UTC 2026-01-27T15:00:00.000Z
  *
  * @returns 오늘 로컬 자정의 UTC ISO8601 문자열
