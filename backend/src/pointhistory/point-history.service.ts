@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, EntityManager, Repository } from 'typeorm';
 import { PointHistory, PointType } from './entities/point-history.entity';
-import { PlayerService } from '../player/player.service';
+import { Player } from '../player/entites/player.entity';
 
 @Injectable()
 export class PointHistoryService {
   constructor(
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
-    private readonly playerService: PlayerService,
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
   ) {}
 
   async addHistoryWithManager(
@@ -33,25 +34,23 @@ export class PointHistoryService {
     return historyRepo.save(history);
   }
 
-  /**
-   * 특정 기간의 포인트 이력 조회
-   */
   async getGitEventHistories(
     currentPlayerId: number,
     targetPlayerId: number,
     startAt: Date,
     endAt: Date,
   ): Promise<PointHistory[]> {
-    // currentPlayerId 검증
-    await this.playerService.findOneById(currentPlayerId);
+    const player = await this.playerRepository.findOne({
+      where: { id: currentPlayerId },
+    });
+    if (!player) {
+      throw new NotFoundException(`Player with ID ${currentPlayerId} not found`);
+    }
 
     return this.pointHistoryRepository.find({
       where: {
         player: { id: targetPlayerId },
         createdAt: Between(startAt, endAt),
-      },
-      order: {
-        createdAt: 'ASC',
       },
     });
   }
