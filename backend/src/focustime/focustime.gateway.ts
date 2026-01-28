@@ -27,7 +27,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   @SubscribeMessage('focusing')
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { taskName?: string; taskId?: number },
+    @MessageBody()
+    data: { taskName?: string; taskId?: number; startAt: string },
   ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
 
@@ -39,6 +40,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     try {
       const focusTime = await this.focusTimeService.startFocusing(
         user.playerId,
+        new Date(data.startAt),
         data?.taskId,
       );
 
@@ -87,13 +89,20 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('resting')
-  async handleResting(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handleResting(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody()
+    data: { startAt: string },
+  ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
 
     const user = client.data.user;
 
     try {
-      const focusTime = await this.focusTimeService.startResting(user.playerId);
+      const focusTime = await this.focusTimeService.startResting(
+        user.playerId,
+        new Date(data.startAt),
+      );
 
       const rooms = Array.from(client.rooms);
       const roomId = rooms.find((room) => room !== client.id);
