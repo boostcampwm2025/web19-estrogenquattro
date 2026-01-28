@@ -4,14 +4,14 @@ import GrassCard from "./GrassCard";
 import StatCard from "./StatCard";
 import { formatTimeFromSeconds } from "../../lib/dateStats";
 import { isSameDay } from "../../lib/dateUtils";
-import { DailyPoint } from "../CalendarHeatmap/useHeatmapData";
+import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
 
 interface StatsSectionProps {
   tasks: Task[];
   selectedDate: Date;
   focusTimeSeconds?: number;
   githubEvents: GithubEventsRes | undefined;
-  dailyPoints: DailyPoint[];
+  dailyPoints: DailyPoints;
 }
 
 export default function StatsSection({

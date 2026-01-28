@@ -6,11 +6,8 @@ export interface DayData {
   value: number;
 }
 
-// DB에서 받아올 날짜별 포인트 데이터 타입
-export interface DailyPoint {
-  date: string; // "YYYY-MM-DD" 형식
-  points: number;
-}
+// DB에서 받아올 날짜별 포인트 데이터 타입 (Map 형태)
+export type DailyPoints = Map<string, number>;
 
 interface UseHeatmapDataResult {
   yearData: DayData[];
@@ -18,15 +15,9 @@ interface UseHeatmapDataResult {
 }
 
 export function useHeatmapData(
-  dailyPoints: DailyPoint[],
+  dailyPoints: DailyPoints,
 ): UseHeatmapDataResult {
   const yearData = useMemo(() => {
-    // DB에서 받은 데이터를 Map으로 변환 (빠른 조회용)
-    const pointsByDate = new Map<string, number>();
-    dailyPoints.forEach((item) => {
-      pointsByDate.set(item.date, item.points);
-    });
-
     const days: DayData[] = [];
     const today = new Date();
     const oneYearAgo = new Date(today);
@@ -36,7 +27,7 @@ export function useHeatmapData(
       const dateKey = toDateString(d); // "YYYY-MM-DD" 형식
       days.push({
         date: new Date(d),
-        value: pointsByDate.get(dateKey) || 0,
+        value: dailyPoints.get(dateKey) || 0,
       });
     }
     return days;

@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Mascot from "./Mascot";
-import { DailyPoint } from "../CalendarHeatmap/useHeatmapData";
 import { getGrassImageFromData } from "../../lib/grassLevel";
 import { toDateString } from "@/utils/timeFormat";
+import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
 
 interface GrassCardProps {
-  dailyPoints: DailyPoint[];
+  dailyPoints: DailyPoints;
   selectedDate: Date;
 }
 

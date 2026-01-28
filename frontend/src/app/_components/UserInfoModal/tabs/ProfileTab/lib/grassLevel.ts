@@ -1,4 +1,4 @@
-import { DailyPoint } from "../components/CalendarHeatmap/useHeatmapData";
+import { DailyPoints } from "../components/CalendarHeatmap/useHeatmapData";
 
 // 레벨별 에셋 정의 (이미지 경로와 색상 클래스)
 const GRASS_LEVEL_ASSETS = {
@@ -38,12 +38,11 @@ function getLevel(points: number): GrassLevel {
 
 /**
  * 특정 날짜의 포인트를 기반으로 잔디 레벨을 계산합니다.
- * @param dailyPoints 전체 포인트 데이터 배열
+ * @param dailyPoints 날짜별 포인트 Map
  * @param targetDate 조회할 날짜 (YYYY-MM-DD 형식)
  */
-export function calculateGrassLevel(dailyPoints: DailyPoint[], targetDate: string): GrassLevel {
-  const dayData = dailyPoints.find(day => day.date === targetDate);
-  const points = dayData?.points ?? 0;
+export function calculateGrassLevel(dailyPoints: DailyPoints, targetDate: string): GrassLevel {
+  const points = dailyPoints.get(targetDate) ?? 0;
   return getLevel(points);
 }
 
@@ -56,10 +55,10 @@ export function getGrassImagePath(level: GrassLevel): string {
 
 /**
  * 히트맵 데이터로부터 직접 잔디 이미지 경로를 반환합니다.
- * @param dailyPoints 전체 포인트 데이터 배열
+ * @param dailyPoints 날짜별 포인트 Map
  * @param targetDate 조회할 날짜 (YYYY-MM-DD 형식)
  */
-export function getGrassImageFromData(dailyPoints: DailyPoint[], targetDate: string): string {
+export function getGrassImageFromData(dailyPoints: DailyPoints, targetDate: string): string {
   const level = calculateGrassLevel(dailyPoints, targetDate);
   return getGrassImagePath(level);
 }

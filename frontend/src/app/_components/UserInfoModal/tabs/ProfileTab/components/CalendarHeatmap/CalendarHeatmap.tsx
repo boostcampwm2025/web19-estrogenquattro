@@ -1,14 +1,14 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/_components/ui/button";
-import { useHeatmapData, DayData, DailyPoint } from "./useHeatmapData";
+import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
 import { HeatmapInfoLink } from "./HeatmapInfoLink";
 import { HeatmapCell } from "./HeatmapCell";
 import { HeatmapLegend } from "./HeatmapLegend";
 
 interface CalendarHeatmapProps {
-  dailyPoints: DailyPoint[];
+  dailyPoints: DailyPoints;
   onSelectDate: (date: Date) => void;
   selectedDate?: Date;
 }
