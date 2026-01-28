@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
 import { taskApi } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
-import { useFocusTimeStore } from "./useFocusTimeStore";
+import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
 import { getSocket } from "@/lib/socket";
 import { useAuthStore } from "./authStore";
 
@@ -199,7 +199,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         // 집중 중인 Task 이름 변경 시 다른 플레이어에게 브로드캐스트
         if (task.isRunning) {
           const { status } = useFocusTimeStore.getState();
-          if (status === "FOCUSING") {
+          if (status === FOCUS_STATUS.FOCUSING) {
             const socket = getSocket();
             if (socket?.connected) {
               socket.emit("focus_task_updating", { taskName: trimmedText });

@@ -1,11 +1,14 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { ACTIVITY_POINT_MAP } from '../point/point.service';
+import { PointType } from '../pointhistory/entities/point-history.entity';
 
 // poll-service에서 사용하는 GitHub 이벤트 데이터
 export interface GithubEventData {
   username: string;
   commitCount: number;
   prCount: number;
+  mergeCount: number;
   issueCount: number;
   reviewCount: number;
 }
@@ -42,12 +45,6 @@ export interface GameStateData {
 
 // 상수 정의
 const MAP_COUNT = 5;
-const PROGRESS_PER_COMMIT = 2;
-const PROGRESS_PER_PR = 5;
-const PROGRESS_PER_ISSUE = 3;
-const PROGRESS_PER_REVIEW = 3;
-const PROGRESS_PER_TASK = 1;
-const PROGRESS_PER_FOCUS_30MIN = 1;
 
 @WebSocketGateway()
 export class ProgressGateway {
@@ -89,9 +86,9 @@ export class ProgressGateway {
     let progressIncrement = 0;
 
     if (source === ProgressSource.TASK) {
-      progressIncrement = count * PROGRESS_PER_TASK;
+      progressIncrement = count * ACTIVITY_POINT_MAP[PointType.TASK_COMPLETED];
     } else if (source === ProgressSource.FOCUSTIME) {
-      progressIncrement = count * PROGRESS_PER_FOCUS_30MIN;
+      progressIncrement = count * ACTIVITY_POINT_MAP[PointType.FOCUSED];
     }
 
     if (progressIncrement === 0) return;
@@ -127,13 +124,15 @@ export class ProgressGateway {
 
     if (source === ProgressSource.GITHUB) {
       progressIncrement =
-        rawData.commitCount * PROGRESS_PER_COMMIT +
-        rawData.prCount * PROGRESS_PER_PR +
-        rawData.issueCount * PROGRESS_PER_ISSUE +
-        rawData.reviewCount * PROGRESS_PER_REVIEW;
+        rawData.commitCount * ACTIVITY_POINT_MAP[PointType.COMMITTED] +
+        rawData.prCount * ACTIVITY_POINT_MAP[PointType.PR_OPEN] +
+        rawData.mergeCount * ACTIVITY_POINT_MAP[PointType.PR_MERGED] +
+        rawData.issueCount * ACTIVITY_POINT_MAP[PointType.ISSUE_OPEN] +
+        rawData.reviewCount * ACTIVITY_POINT_MAP[PointType.PR_REVIEWED];
       contributionCount =
         rawData.commitCount +
         rawData.prCount +
+        rawData.mergeCount +
         rawData.issueCount +
         rawData.reviewCount;
     }

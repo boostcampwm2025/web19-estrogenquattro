@@ -9,6 +9,8 @@ export class PointHistoryService {
     playerId: number,
     type: PointType,
     amount: number,
+    repository?: string | null,
+    description?: string | null,
   ): Promise<PointHistory> {
     const historyRepo = manager.getRepository(PointHistory);
 
@@ -16,6 +18,8 @@ export class PointHistoryService {
       player: { id: playerId },
       type,
       amount,
+      repository: repository ?? null,
+      description: description ?? null,
     });
 
     return historyRepo.save(history);

@@ -4,8 +4,6 @@
 
 플레이어의 활동에 따라 포인트를 획득하고 소비하는 시스템
 
-> **Note:** 현재 최소 구현 상태이며, 획득/소비 로직은 미구현
-
 ---
 
 ## 현재 구현 상태
@@ -13,9 +11,11 @@
 | 기능 | 상태 | 비고 |
 |------|------|------|
 | 포인트 조회 | ✅ 구현 | GET `/api/points` |
-| 포인트 획득 | ❌ 미구현 | 정책 정의 필요 |
+| 포인트 획득 (GitHub) | ✅ 구현 | 폴링 시 자동 적립 |
+| 포인트 획득 (Task) | ✅ 구현 | Task 완료 시 +1 |
+| 포인트 획득 (집중) | ✅ 구현 | 30분마다 +1 |
 | 포인트 소비 | ❌ 미구현 | 펫 시스템 연동 필요 |
-| 포인트 히스토리 | ❌ 미구현 | point_history 테이블 사용 |
+| 포인트 히스토리 | ✅ 구현 | point_history 테이블 사용 |
 
 ---
 
@@ -33,7 +33,7 @@ class DailyPoint {
 }
 ```
 
-### PointHistory (포인트 내역) - Planned
+### PointHistory (포인트 내역)
 
 ```typescript
 @Entity('point_history')
@@ -42,6 +42,8 @@ class PointHistory {
   playerId: number;
   type: PointType;          // 포인트 타입
   amount: number;           // 획득/차감량
+  repository: string | null; // 레포지토리명 (GitHub 활동)
+  description: string | null; // 상세 설명 (PR/이슈 제목, 커밋 메시지)
   createdAt: Date;          // 생성 시각
 }
 
@@ -58,29 +60,29 @@ enum PointType {
 
 ---
 
-## 포인트 획득 정책 (설계)
+## 포인트 획득 정책
 
 ### GitHub 활동
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 커밋 (COMMITTED) | +2 | 프로그레스와 동일 |
-| PR 생성 (PR_OPEN) | +5 | 프로그레스와 동일 |
-| PR 머지 (PR_MERGED) | +10 | 본인 PR 머지 시 |
-| PR 리뷰 (PR_REVIEWED) | +3 | 타인 PR 리뷰 시 |
-| 이슈 생성 (ISSUE_OPEN) | +3 | |
+| 커밋 (COMMITTED) | +2 | 커밋 1개당 |
+| PR 생성 (PR_OPEN) | +2 | |
+| PR 머지 (PR_MERGED) | +4 | |
+| PR 리뷰 (PR_REVIEWED) | +4 | Submit review 시 |
+| 이슈 생성 (ISSUE_OPEN) | +1 | |
 
 ### Task 활동
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| Task 완료 | +1 | 완료 처리 시 |
+| Task 완료 (TASK_COMPLETED) | +1 | 완료 처리 시 |
 
 ### 집중 시간
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 집중 10분당 | +1 | 누적 10분마다 |
+| 집중 30분 (FOCUSED) | +1 | 누적 30분마다 |
 
 ---
 
@@ -180,23 +182,34 @@ interface PointActions {
 
 ## 구현 계획
 
-### Phase 1: GitHub 활동 포인트
+### Phase 1: GitHub 활동 포인트 ✅ 구현 완료
 
 ```mermaid
 sequenceDiagram
     participant Poll as GithubPollService
-    participant GW as GithubGateway
     participant PS as PointService
     participant DB as Database
+    participant GW as GithubGateway
 
-    Poll->>Poll: GitHub 이벤트 감지
-    Poll->>GW: castGithubEventToRoom()
-    GW->>PS: addPoints(playerId, type, amount)
+    Poll->>Poll: GitHub REST API 이벤트 감지
+    Poll->>PS: addPoint(playerId, type, count, repository, description)
+    Note right of PS: count는 이벤트 개수<br/>포인트 = ACTIVITY_POINT_MAP[type] × count
     PS->>DB: DailyPoint 업데이트
-    PS->>DB: PointHistory 추가
+    PS->>DB: PointHistory 추가 (상세 정보 포함)
+    Poll->>GW: castGithubEventToRoom()
 ```
 
-### Phase 2: Task/집중 포인트
+**point_history 저장 예시:**
+
+| type | repository | description |
+|------|------------|-------------|
+| COMMITTED | `owner/repo` | `feat: 새 기능 추가` (커밋 메시지) |
+| PR_OPEN | `owner/repo` | `로그인 기능 구현` (PR 제목) |
+| PR_MERGED | `owner/repo` | `버그 수정` (PR 제목) |
+| ISSUE_OPEN | `owner/repo` | `버그 리포트` (이슈 제목) |
+| PR_REVIEWED | `owner/repo` | `새 기능` (리뷰한 PR 제목) |
+
+### Phase 2: Task/집중 포인트 ✅ 구현 완료
 
 ```mermaid
 sequenceDiagram
@@ -205,10 +218,10 @@ sequenceDiagram
     participant PS as PointService
 
     Task->>PS: Task 완료 시 +1
-    Focus->>PS: 10분 누적 시 +1
+    Focus->>PS: 30분 누적 시 +1
 ```
 
-### Phase 3: 포인트 소비
+### Phase 3: 포인트 소비 (Planned)
 
 ```mermaid
 sequenceDiagram
@@ -271,6 +284,8 @@ erDiagram
         bigint player_id FK
         enum type
         int amount
+        varchar repository "레포지토리명 (nullable)"
+        varchar description "상세 설명 (nullable)"
         datetime created_at
     }
 ```

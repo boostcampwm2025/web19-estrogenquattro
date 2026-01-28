@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@utility font-display {
+  font-family: "NeoDunggeunmo", sans-serif;
+}
+
 @font-face {
   font-family: "NeoDunggeunmo";
   src: url("/fonts/NeoDunggeunmoPro-Regular.woff2") format("woff2");
@@ -34,12 +38,11 @@
   --retro-shadow-lg: 3px 3px 0px 0px #5d4e37;
   --retro-shadow-xl: 4px 4px 0px 0px #6b5335;
 
-  /* Heatmap colors (GitHub style) */
+  /* Heatmap colors (GitHub style - dark to light, 3 levels) */
   --heatmap-empty: #ebedf0;
-  --heatmap-level-1: #9be9a8;
-  --heatmap-level-2: #40c463;
-  --heatmap-level-3: #30a14e;
-  --heatmap-level-4: #216e39;
+  --heatmap-level-1: rgba(34, 197, 94, 0.25);
+  --heatmap-level-2: rgba(34, 197, 94, 0.5);
+  --heatmap-level-3: rgba(34, 197, 94, 1);
 }
 
 @theme inline {
@@ -68,7 +71,6 @@
   --color-heatmap-level-1: var(--heatmap-level-1);
   --color-heatmap-level-2: var(--heatmap-level-2);
   --color-heatmap-level-3: var(--heatmap-level-3);
-  --color-heatmap-level-4: var(--heatmap-level-4);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-pixel);
@@ -90,7 +92,9 @@
   }
 }
 
+html,
 body {
+  overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: "NeoDunggeunmo", sans-serif;
@@ -215,6 +219,23 @@ body {
 
 .animate-pop {
   animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 2D Pixel Button Effect */
+.pixel-button-2d {
+  position: relative;
+  transition: all 0.1s ease;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.pixel-button-2d:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 0.25);
+}
+
+.pixel-button-2d:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.1);
 }
 
 /* 모달 반응형 높이 */

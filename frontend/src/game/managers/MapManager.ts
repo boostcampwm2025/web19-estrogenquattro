@@ -26,8 +26,8 @@ export default class MapManager {
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private tileSize: number = 32;
 
-  // 월드 스케일: 이미지는 2배 크기, 좌표는 원본 크기 기준
-  private worldScale: number = 2;
+  // 월드 스케일: 이미지는 4배 크기, 좌표는 원본 크기 기준
+  private worldScale: number = 4;
 
   constructor(scene: Phaser.Scene, maps: MapConfig[]) {
     this.scene = scene;

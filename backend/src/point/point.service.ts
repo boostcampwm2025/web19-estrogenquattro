@@ -6,13 +6,13 @@ import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
-  [PointType.COMMITTED]: 2,
-  [PointType.PR_OPEN]: 2,
-  [PointType.PR_MERGED]: 4,
-  [PointType.PR_REVIEWED]: 4,
-  [PointType.ISSUE_OPEN]: 1,
-  [PointType.TASK_COMPLETED]: 1,
-  [PointType.FOCUSED]: 1,
+  [PointType.COMMITTED]: 2, // 커밋 1회
+  [PointType.PR_OPEN]: 2, // PR 생성
+  [PointType.PR_MERGED]: 4, // PR 머지
+  [PointType.PR_REVIEWED]: 4, // PR 리뷰
+  [PointType.ISSUE_OPEN]: 1, // 이슈 생성
+  [PointType.TASK_COMPLETED]: 1, // 투두 완료
+  [PointType.FOCUSED]: 1, // 집중 30분
 };
 
 @Injectable()
@@ -42,6 +42,8 @@ export class PointService {
     playerId: number,
     activityType: PointType,
     count: number,
+    repository?: string | null,
+    description?: string | null,
   ): Promise<DailyPoint> {
     const today = new Date().toISOString().slice(0, 10);
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
@@ -55,10 +57,11 @@ export class PointService {
         playerId,
         activityType,
         totalPoint,
+        repository,
+        description,
       );
 
-      // SQLite는 pessimistic lock을 지원하지 않으므로 upsert 패턴 사용
-      // 먼저 조회 후 존재하면 업데이트, 없으면 생성
+      // 트랜잭션 내에서 조회 (SQLite는 트랜잭션 레벨 잠금 사용)
       const existingRecord = await dailyPointRepo.findOne({
         where: {
           player: { id: playerId },

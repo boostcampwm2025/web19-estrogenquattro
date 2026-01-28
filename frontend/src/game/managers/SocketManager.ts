@@ -1,10 +1,8 @@
 import * as Phaser from "phaser";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
-import type {
-  ProgressBarController,
-  ContributionController,
-} from "../scenes/MapScene";
+import type { ContributionController } from "../scenes/MapScene";
+import { useProgressStore } from "../../stores/useProgressStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -52,7 +50,6 @@ export default class SocketManager {
   private roomId: string = "";
   private username: string;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
-  private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
   private isSessionReplaced: boolean = false;
   private currentMapIndex: number = 0;
@@ -84,10 +81,6 @@ export default class SocketManager {
 
   setWalls(walls: Phaser.Physics.Arcade.StaticGroup) {
     this.walls = walls;
-  }
-
-  setProgressBarController(controller: ProgressBarController) {
-    this.progressBarController = controller;
   }
 
   setContributionController(controller: ContributionController) {
@@ -211,7 +204,7 @@ export default class SocketManager {
 
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
-      this.progressBarController?.setProgress(data.progress);
+      useProgressStore.getState().setProgress(data.progress);
       this.contributionController?.setContributions(data.contributions);
 
       // 신규/재접속자: 현재 맵으로 동기화
@@ -223,7 +216,7 @@ export default class SocketManager {
 
     // 실시간 progress 업데이트 (절대값 동기화)
     socket.on("progress_update", (data: ProgressUpdateData) => {
-      this.progressBarController?.setProgress(data.targetProgress);
+      useProgressStore.getState().setProgress(data.targetProgress);
       this.contributionController?.setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구

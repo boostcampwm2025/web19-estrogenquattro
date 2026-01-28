@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Pet } from "@/lib/api/pet";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
@@ -78,16 +77,15 @@ export default function PetCodex({
                           대표펫
                         </div>
                       )}
-                      <div className="relative mb-2 h-14 w-14">
-                        <Image
-                          src={pet.actualImgUrl}
-                          alt={pet.name}
-                          fill
-                          className={`object-contain ${
+                      <div className="relative mb-2 flex h-14 w-14 items-center justify-center">
+                        <img
+                          src={
                             isCollected
-                              ? ""
-                              : "pointer-events-none opacity-40 brightness-0 grayscale"
-                          }`}
+                              ? pet.actualImgUrl
+                              : pet.silhouetteImgUrl
+                          }
+                          alt={isCollected ? pet.name : "???"}
+                          className="h-full w-full object-contain"
                         />
                       </div>
                       <p
