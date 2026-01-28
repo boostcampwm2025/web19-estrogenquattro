@@ -44,7 +44,9 @@ export class PointHistoryService {
       where: { id: currentPlayerId },
     });
     if (!player) {
-      throw new NotFoundException(`Player with ID ${currentPlayerId} not found`);
+      throw new NotFoundException(
+        `Player with ID ${currentPlayerId} not found`,
+      );
     }
 
     return this.pointHistoryRepository.find({

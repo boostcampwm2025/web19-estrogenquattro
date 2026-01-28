@@ -12,4 +12,3 @@ import { Player } from '../player/entites/player.entity';
   exports: [PointHistoryService],
 })
 export class PointHistoryModule {}
-
