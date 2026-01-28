@@ -78,6 +78,15 @@
   --font-pixel: var(--font-pixel);
 }
 
+@media (min-width: 850px) {
+  .modal-w\:max-w-4xl {
+    max-width: 56rem;
+  }
+  .modal-w\:min-w-\[850px\] {
+    min-width: 850px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -229,4 +238,15 @@ body {
 .pixel-button-2d:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.1);
+}
+
+/* 모달 반응형 높이 */
+.modal-content-height {
+  height: 300px;
+}
+
+@media (min-height: 650px) {
+  .modal-content-height {
+    height: 500px;
+  }
 }

@@ -12,8 +12,6 @@ export class FocusTimeService {
   constructor(
     @InjectRepository(DailyFocusTime)
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
-    @InjectRepository(Task)
-    private readonly taskRepository: Repository<Task>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -174,7 +172,8 @@ export class FocusTimeService {
       }
 
       focusTime.status = FocusStatus.RESTING;
-      // currentTask는 유지 (다음 집중 시작 시 덮어쓰여짐)
+      focusTime.currentTaskId = null;
+      focusTime.currentTask = null;
 
       return focusTimeRepo.save(focusTime);
     });
