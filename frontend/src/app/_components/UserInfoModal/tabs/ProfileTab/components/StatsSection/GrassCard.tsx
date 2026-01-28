@@ -1,12 +1,26 @@
 import Image from "next/image";
 import Mascot from "./Mascot";
+import { getGrassImageFromData } from "../../lib/grassLevel";
+import { toDateString } from "@/utils/timeFormat";
+import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
 
-export default function GrassCard() {
+interface GrassCardProps {
+  dailyPoints: DailyPoints;
+  selectedDate: Date;
+}
+
+export default function GrassCard({
+  dailyPoints,
+  selectedDate,
+}: GrassCardProps) {
+  const dateStr = toDateString(selectedDate);
+  const grassImagePath = getGrassImageFromData(dailyPoints, dateStr);
+
   return (
     <div className="relative size-60 shrink-0 overflow-visible rounded-none">
       {/* 잔디 배경 이미지 */}
       <Image
-        src="/assets/grass-base.png"
+        src={grassImagePath}
         alt="Garden"
         fill
         className="scale-115 object-fill"

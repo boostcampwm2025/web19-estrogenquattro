@@ -1,10 +1,8 @@
 import * as Phaser from "phaser";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
-import type {
-  ProgressBarController,
-  ContributionController,
-} from "../scenes/MapScene";
+import type { ContributionController } from "../scenes/MapScene";
+import { useProgressStore } from "../../stores/useProgressStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -51,7 +49,6 @@ export default class SocketManager {
   private roomId: string = "";
   private username: string;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
-  private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
   private isSessionReplaced: boolean = false;
   private getPlayer: () =>
@@ -82,10 +79,6 @@ export default class SocketManager {
 
   setWalls(walls: Phaser.Physics.Arcade.StaticGroup) {
     this.walls = walls;
-  }
-
-  setProgressBarController(controller: ProgressBarController) {
-    this.progressBarController = controller;
   }
 
   setContributionController(controller: ContributionController) {
@@ -206,7 +199,7 @@ export default class SocketManager {
     });
 
     socket.on("github_state", (data: GithubStateData) => {
-      this.progressBarController?.setProgress(data.progress);
+      useProgressStore.getState().setProgress(data.progress);
       this.contributionController?.setContributions(data.contributions);
     });
 
@@ -216,7 +209,7 @@ export default class SocketManager {
         data.pullRequestCount * PROGRESS_PER_PR;
 
       if (progressIncrement > 0) {
-        this.progressBarController?.addProgress(progressIncrement);
+        useProgressStore.getState().addProgress(progressIncrement);
         const totalCount = data.pushCount + data.pullRequestCount;
         this.contributionController?.addContribution(data.username, totalCount);
       }
