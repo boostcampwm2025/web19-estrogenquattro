@@ -26,15 +26,34 @@ export class PointService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getPoints(playerId: number): Promise<DailyPoint[]> {
-    const now = new Date();
-    const oneYearAgo = new Date();
+  async getPoints(
+    currentPlayerId: number,
+    targetPlayerId: number,
+    currentTime: Date,
+  ): Promise<DailyPoint[]> {
+    // currentPlayerId와 targetPlayerId 존재 여부 검증
+    const playerRepo = this.dataSource.getRepository(Player);
+
+    const [currentPlayer, targetPlayer] = await Promise.all([
+      playerRepo.findOne({ where: { id: currentPlayerId } }),
+      playerRepo.findOne({ where: { id: targetPlayerId } }),
+    ]);
+
+    if (!currentPlayer) {
+      throw new NotFoundException(`Player with ID ${currentPlayerId} not found`);
+    }
+    if (!targetPlayer) {
+      throw new NotFoundException(`Player with ID ${targetPlayerId} not found`);
+    }
+
+    // currentTime 기준 1년치 데이터 조회
+    const oneYearAgo = new Date(currentTime);
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
     return this.dailyPointRepository.find({
       where: {
-        player: { id: playerId },
-        createdAt: Between(oneYearAgo, now),
+        player: { id: targetPlayerId },
+        createdAt: Between(oneYearAgo, currentTime),
       },
     });
   }
