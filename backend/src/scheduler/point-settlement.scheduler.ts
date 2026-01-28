@@ -21,7 +21,7 @@ export class PointSettlementScheduler {
   ) {}
 
   // KST 24시 동작
-  @Cron('0 0 15 * * *')
+  @Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
   async handlePointSettlement(): Promise<void> {
     this.logger.log('KST 24:00:00 Point Settlement Scheduling Start');
 
