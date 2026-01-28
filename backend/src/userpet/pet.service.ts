@@ -10,9 +10,6 @@ import { Pet } from './entities/pet.entity';
 import { UserPet } from './entities/user-pet.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPetCodex } from './entities/user-pet-codex.entity';
-import sharp from 'sharp';
-import { promises as fs } from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class PetService {
@@ -220,84 +217,5 @@ export class PetService {
         id: 'ASC',
       },
     });
-  }
-
-  async getSilhouette(petId: number): Promise<Buffer> {
-    const pet = await this.petRepository.findOne({ where: { id: petId } });
-    if (!pet) throw new NotFoundException('Pet not found');
-
-    const cacheDir = path.join(process.cwd(), 'public/cache/silhouettes');
-    const cachePath = path.join(cacheDir, `${petId}.png`);
-
-    // 1. 캐시 확인
-    try {
-      return await fs.readFile(cachePath);
-    } catch (error) {
-      const err = error as { code?: string };
-      if (err.code !== 'ENOENT') throw error;
-      // 캐시가 없으면(ENOENT) 다음 단계로 진행
-    }
-
-    // 2. 캐시 디렉토리 생성 확인
-    try {
-      await fs.access(cacheDir);
-    } catch (error) {
-      const err = error as { code?: string };
-      if (err.code === 'ENOENT') {
-        await fs.mkdir(cacheDir, { recursive: true });
-      } else {
-        throw error;
-      }
-    }
-
-    // 3. 원본 이미지 경로 확인
-    const publicDir = path.join(process.cwd(), 'public');
-    const originalPath = path.join(
-      publicDir,
-      pet.actualImgUrl.startsWith('/')
-        ? pet.actualImgUrl.substring(1)
-        : pet.actualImgUrl,
-    );
-
-    // 경로 탐색 공격 방지: 최종 경로가 public 디렉토리 내에 있는지 검증
-    const resolvedPath = path.resolve(originalPath);
-    if (!resolvedPath.startsWith(path.resolve(publicDir))) {
-      throw new BadRequestException('Invalid image path');
-    }
-
-    try {
-      await fs.access(originalPath);
-    } catch (error) {
-      const err = error as { code?: string };
-      if (err.code === 'ENOENT') {
-        console.error(`Original image not found at ${originalPath}`);
-        throw new NotFoundException(`Original image not found`);
-      }
-      throw error;
-    }
-
-    // 4. 실루엣 생성 (sharp 사용)
-    const metadata = await sharp(originalPath).metadata();
-    const finalBuffer = await sharp({
-      create: {
-        width: metadata.width || 128,
-        height: metadata.height || 128,
-        channels: 4,
-        background: { r: 64, g: 64, b: 64, alpha: 0.4 },
-      },
-    })
-      .composite([
-        {
-          input: originalPath,
-          blend: 'dest-in',
-        },
-      ])
-      .png()
-      .toBuffer();
-
-    // 5. 캐시에 저장
-    await fs.writeFile(cachePath, finalBuffer);
-
-    return finalBuffer;
   }
 }

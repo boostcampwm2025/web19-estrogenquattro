@@ -6,9 +6,7 @@ import {
   UseGuards,
   Param,
   ParseIntPipe,
-  Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
 import { PetService } from './pet.service';
 import { JwtGuard } from '../auth/jwt.guard';
 import { FeedPetDto } from './dto/feed-pet.dto';
@@ -48,18 +46,5 @@ export class PetController {
   @Get('all')
   async getAllPets() {
     return this.petService.getAllPets();
-  }
-
-  @Get('silhouette/:petId')
-  async getSilhouette(
-    @Param('petId', ParseIntPipe) petId: number,
-    @Res() res: Response,
-  ) {
-    const buffer = await this.petService.getSilhouette(petId);
-    res.set({
-      'Content-Type': 'image/png',
-      'Cache-Control': 'public, max-age=86400',
-    });
-    res.send(buffer);
   }
 }
