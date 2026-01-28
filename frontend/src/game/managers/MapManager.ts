@@ -26,8 +26,8 @@ export default class MapManager {
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private tileSize: number = 32;
 
-  // 월드 스케일: 이미지는 2배 크기, 좌표는 원본 크기 기준
-  private worldScale: number = 2;
+  // 월드 스케일: 이미지는 4배 크기, 좌표는 원본 크기 기준
+  private worldScale: number = 4;
 
   constructor(scene: Phaser.Scene, maps: MapConfig[]) {
     this.scene = scene;
@@ -111,8 +111,14 @@ export default class MapManager {
     return this.tileSize;
   }
 
-  switchToNextMap(onMapReady: () => void): void {
-    this.currentMapIndex = (this.currentMapIndex + 1) % this.maps.length;
+  /**
+   * 특정 맵으로 전환 (서버 주도 맵 전환)
+   */
+  switchToMap(mapIndex: number, onMapReady: () => void): void {
+    // 이미 해당 맵이면 무시
+    if (mapIndex === this.currentMapIndex) return;
+
+    this.currentMapIndex = mapIndex;
 
     this.scene.cameras.main.fadeOut(500, 0, 0, 0);
 

@@ -7,6 +7,7 @@ import { Task } from '../task/entites/task.entity';
 import { PointService } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { getYesterdayRange } from '../util/date.util';
+import { ProgressGateway, ProgressSource } from '../github/progress.gateway';
 
 @Injectable()
 export class PointSettlementScheduler {
@@ -18,6 +19,7 @@ export class PointSettlementScheduler {
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
     private readonly pointService: PointService,
+    private readonly progressGateway: ProgressGateway,
   ) {}
 
   // KST 24시 동작
@@ -49,9 +51,15 @@ export class PointSettlementScheduler {
 
       if (pointCount > 0) {
         try {
+          // addPoint + addProgress 나란히 호출
           await this.pointService.addPoint(
             focusTime.player.id,
             PointType.FOCUSED,
+            pointCount,
+          );
+          this.progressGateway.addProgress(
+            focusTime.player.nickname,
+            ProgressSource.FOCUSTIME,
             pointCount,
           );
           this.logger.log(
@@ -80,19 +88,32 @@ export class PointSettlementScheduler {
     this.logger.log(`Found ${completedTasks.length} completed tasks for range`);
 
     // 플레이어별 task 개수 집계 - O(n)
-    const playerTaskCount = new Map<number, number>();
+    const playerTaskData = new Map<
+      number,
+      { count: number; nickname: string }
+    >();
     for (const task of completedTasks) {
       const playerId = task.player.id;
-      playerTaskCount.set(playerId, (playerTaskCount.get(playerId) ?? 0) + 1);
+      const existing = playerTaskData.get(playerId);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        playerTaskData.set(playerId, {
+          count: 1,
+          nickname: task.player.nickname,
+        });
+      }
     }
 
-    for (const [playerId, count] of playerTaskCount) {
+    for (const [playerId, { count, nickname }] of playerTaskData) {
       try {
+        // addPoint + addProgress 나란히 호출
         await this.pointService.addPoint(
           playerId,
           PointType.TASK_COMPLETED,
           count,
         );
+        this.progressGateway.addProgress(nickname, ProgressSource.TASK, count);
         this.logger.log(
           `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
         );

@@ -1,10 +1,8 @@
 import * as Phaser from "phaser";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
-import type {
-  ProgressBarController,
-  ContributionController,
-} from "../scenes/MapScene";
+import type { ContributionController } from "../scenes/MapScene";
+import { useProgressStore } from "../../stores/useProgressStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -30,20 +28,21 @@ interface PlayerData {
   taskName?: string | null; // 현재 집중 중인 태스크 이름
 }
 
-interface GithubEventData {
+// progress_update 이벤트 페이로드 (S→C)
+interface ProgressUpdateData {
   username: string;
-  pushCount: number;
-  pullRequestCount: number;
+  source: string;
+  targetProgress: number;
+  contributions: Record<string, number>;
+  mapIndex: number;
 }
 
-interface GithubStateData {
+// game_state 이벤트 페이로드 (S→C, 입장 시)
+interface GameStateData {
   progress: number;
   contributions: Record<string, number>;
+  mapIndex: number;
 }
-
-// 프로그레스 증가량 설정
-const PROGRESS_PER_COMMIT = 2;
-const PROGRESS_PER_PR = 5;
 
 export default class SocketManager {
   private scene: Phaser.Scene;
@@ -51,9 +50,9 @@ export default class SocketManager {
   private roomId: string = "";
   private username: string;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
-  private progressBarController?: ProgressBarController;
   private contributionController?: ContributionController;
   private isSessionReplaced: boolean = false;
+  private currentMapIndex: number = 0;
   private getPlayer: () =>
     | {
         id: string;
@@ -84,10 +83,6 @@ export default class SocketManager {
     this.walls = walls;
   }
 
-  setProgressBarController(controller: ProgressBarController) {
-    this.progressBarController = controller;
-  }
-
   setContributionController(controller: ContributionController) {
     this.contributionController = controller;
   }
@@ -100,6 +95,8 @@ export default class SocketManager {
     showSessionEndedOverlay: () => void;
     showConnectionLostOverlay: () => void;
     hideConnectionLostOverlay: () => void;
+    onMapSwitch: (mapIndex: number) => void;
+    onMapSyncRequired: (mapIndex: number) => void;
   }): void {
     const socket = connectSocket();
     if (!socket) return;
@@ -205,21 +202,35 @@ export default class SocketManager {
       }
     });
 
-    socket.on("github_state", (data: GithubStateData) => {
-      this.progressBarController?.setProgress(data.progress);
+    // 입장 시 초기 상태 수신
+    socket.on("game_state", (data: GameStateData) => {
+      useProgressStore.getState().setProgress(data.progress);
       this.contributionController?.setContributions(data.contributions);
+
+      // 신규/재접속자: 현재 맵으로 동기화
+      if (data.mapIndex !== this.currentMapIndex) {
+        callbacks.onMapSyncRequired(data.mapIndex);
+        this.currentMapIndex = data.mapIndex;
+      }
     });
 
-    socket.on("github_event", (data: GithubEventData) => {
-      const progressIncrement =
-        data.pushCount * PROGRESS_PER_COMMIT +
-        data.pullRequestCount * PROGRESS_PER_PR;
+    // 실시간 progress 업데이트 (절대값 동기화)
+    socket.on("progress_update", (data: ProgressUpdateData) => {
+      useProgressStore.getState().setProgress(data.targetProgress);
+      this.contributionController?.setContributions(data.contributions);
 
-      if (progressIncrement > 0) {
-        this.progressBarController?.addProgress(progressIncrement);
-        const totalCount = data.pushCount + data.pullRequestCount;
-        this.contributionController?.addContribution(data.username, totalCount);
+      // mapIndex 동기화: map_switch 유실 시 복구
+      if (data.mapIndex !== this.currentMapIndex) {
+        callbacks.onMapSyncRequired(data.mapIndex);
+        this.currentMapIndex = data.mapIndex;
       }
+    });
+
+    // 정상 맵 전환 (progress 100% 도달)
+    socket.on("map_switch", (data: { mapIndex: number }) => {
+      if (data.mapIndex === this.currentMapIndex) return;
+      this.currentMapIndex = data.mapIndex;
+      callbacks.onMapSwitch(data.mapIndex);
     });
 
     socket.on("chatted", (data: { userId: string; message: string }) => {

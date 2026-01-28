@@ -1,6 +1,7 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 import type { AddressInfo } from "net";
+import { FOCUS_STATUS } from "../../src/stores/useFocusTimeStore";
 
 type TestSocketServer = {
   url: string;
@@ -47,7 +48,7 @@ export const createTestSocketServer = async (): Promise<TestSocketServer> => {
           x: player.x,
           y: player.y,
           playerId: 1,
-          status: "RESTING",
+          status: FOCUS_STATUS.RESTING,
           lastFocusStartTime: null,
         }));
 
@@ -60,7 +61,7 @@ export const createTestSocketServer = async (): Promise<TestSocketServer> => {
       socket.to(player.roomId).emit("focused", {
         userId: socket.id,
         username: player.username,
-        status: "FOCUSING",
+        status: FOCUS_STATUS.FOCUSING,
         lastFocusStartTime: new Date().toISOString(),
       });
     });

@@ -4,12 +4,14 @@ import GrassCard from "./GrassCard";
 import StatCard from "./StatCard";
 import { formatTimeFromSeconds } from "../../lib/dateStats";
 import { isSameDay } from "../../lib/dateUtils";
+import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
 
 interface StatsSectionProps {
   tasks: Task[];
   selectedDate: Date;
   focusTimeSeconds?: number;
   githubEvents: GithubEventsRes | undefined;
+  dailyPoints: DailyPoints;
 }
 
 export default function StatsSection({
@@ -17,6 +19,7 @@ export default function StatsSection({
   selectedDate,
   focusTimeSeconds,
   githubEvents,
+  dailyPoints,
 }: StatsSectionProps) {
   const focusTimeStr = formatTimeFromSeconds(focusTimeSeconds ?? 0);
   const isToday = isSameDay(selectedDate, new Date());
@@ -26,7 +29,7 @@ export default function StatsSection({
 
   return (
     <div className="flex h-60 gap-4">
-      <GrassCard />
+      <GrassCard dailyPoints={dailyPoints} selectedDate={selectedDate} />
       <div className="grid h-full flex-1 grid-cols-3 grid-rows-2 gap-2">
         <StatCard title="집중시간" value={focusTimeStr} />
         <StatCard title="TASK" value={String(taskCount)} />

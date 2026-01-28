@@ -87,7 +87,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     // Guard: taskId가 없고 이미 FOCUSING이면 무시 (no-op)
     // taskId가 있으면 Task 전환이므로 서버에 알려야 함
     const isTaskSwitch = taskId !== undefined;
-    if (prev.status === "FOCUSING" && !isTaskSwitch) {
+    if (prev.status === FOCUS_STATUS.FOCUSING && !isTaskSwitch) {
       return;
     }
 
