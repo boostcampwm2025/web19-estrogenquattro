@@ -64,12 +64,15 @@ export function CalendarHeatmap({
   const monthLabelsMap = new Map<number, string>();
 
   weeks.forEach((week, weekIndex) => {
-    const sunday = week[0];
-    if (sunday && sunday.value !== -1) {
-      const date = sunday.date.getDate();
-      // 일요일이 해당 월의 1-7일 사이에 있으면 월 레이블 표시
-      if (date >= 1 && date <= 7) {
-        const monthStr = sunday.date.toLocaleDateString("en-US", {
+    // 주 내에 1일이 포함되어 있으면 월 레이블 표시 (GitHub 스타일)
+    const hasFirstDay = week.some(
+      (day) => day.value !== -1 && day.date.getDate() === 1,
+    );
+
+    if (hasFirstDay) {
+      const firstDay = week.find((day) => day.value !== -1 && day.date.getDate() === 1);
+      if (firstDay) {
+        const monthStr = firstDay.date.toLocaleDateString("en-US", {
           month: "short",
         });
         monthLabelsMap.set(weekIndex, monthStr);

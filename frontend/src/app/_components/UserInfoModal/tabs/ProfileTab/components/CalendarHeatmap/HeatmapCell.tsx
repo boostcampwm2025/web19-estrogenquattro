@@ -19,8 +19,17 @@ export function HeatmapCell({
   onMouseMove,
   onMouseLeave,
 }: HeatmapCellProps) {
+  const isClickable = day.value !== -1;
+
   return (
     <div
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      aria-label={
+        isClickable
+          ? `${day.date.toLocaleDateString()}: ${day.value} points`
+          : undefined
+      }
       className={`h-3 w-3 rounded-sm transition-colors ${getHeatmapColorClass(day.value)} ${
         day.value === -1
           ? "cursor-default"
@@ -28,7 +37,13 @@ export function HeatmapCell({
             ? "ring-2 ring-amber-900"
             : "cursor-pointer ring-1 ring-amber-300 hover:ring-2 hover:ring-amber-800"
       }`}
-      onClick={() => day.value !== -1 && onSelectDate(day.date)}
+      onClick={() => isClickable && onSelectDate(day.date)}
+      onKeyDown={(e) => {
+        if (isClickable && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onSelectDate(day.date);
+        }
+      }}
       onMouseEnter={(e) => onMouseEnter(e, day)}
       onMouseMove={(e) => onMouseMove(e, day)}
       onMouseLeave={onMouseLeave}

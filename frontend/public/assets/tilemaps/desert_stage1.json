@@ -190,9 +190,9 @@
     },
     {
       "id": 2,
-      "image": "dessert_stage1.webp",
-      "imageheight": 1536,
-      "imagewidth": 2752,
+      "image": "desert_stage1.webp",
+      "imageheight": 3072,
+      "imagewidth": 5504,
       "name": "Image Layer 1",
       "opacity": 1,
       "type": "imagelayer",
