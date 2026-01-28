@@ -84,7 +84,7 @@ export default function PetCodex({
                               ? pet.actualImgUrl
                               : pet.silhouetteImgUrl
                           }
-                          alt={pet.name}
+                          alt={isCollected ? pet.name : "???"}
                           className="h-full w-full object-contain"
                         />
                       </div>

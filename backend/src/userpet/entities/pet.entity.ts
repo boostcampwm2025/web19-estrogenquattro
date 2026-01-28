@@ -28,7 +28,6 @@ export class Pet {
     type: 'varchar',
     length: 100,
     name: 'silhouette_img_url',
-    nullable: true,
   })
   silhouetteImgUrl: string;
 
