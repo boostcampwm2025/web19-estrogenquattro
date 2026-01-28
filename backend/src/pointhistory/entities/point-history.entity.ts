@@ -34,6 +34,12 @@ export class PointHistory {
   @Column({ type: 'int' })
   amount: number;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  repository: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  description: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'date' })
   createdAt: string;
 
