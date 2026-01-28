@@ -91,7 +91,7 @@ export function CalendarHeatmap({
       <div className="flex items-center gap-2">
         <Button
           onClick={() => handleScroll("left")}
-          className="h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none mr-1"
+          className="mr-1 h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
