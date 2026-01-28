@@ -111,8 +111,14 @@ export default class MapManager {
     return this.tileSize;
   }
 
-  switchToNextMap(onMapReady: () => void): void {
-    this.currentMapIndex = (this.currentMapIndex + 1) % this.maps.length;
+  /**
+   * 특정 맵으로 전환 (서버 주도 맵 전환)
+   */
+  switchToMap(mapIndex: number, onMapReady: () => void): void {
+    // 이미 해당 맵이면 무시
+    if (mapIndex === this.currentMapIndex) return;
+
+    this.currentMapIndex = mapIndex;
 
     this.scene.cameras.main.fadeOut(500, 0, 0, 0);
 

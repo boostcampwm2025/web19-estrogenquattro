@@ -99,7 +99,7 @@ socket.emit('joining', {
 5. 다른 플레이어에게 입장 알림 (`player_joined`)
 6. 포커스 타임 레코드 생성/조회
 7. GitHub 폴링 시작
-8. 현재 룸 상태 전송 (`github_state`)
+8. 전역 게임 상태 전송 (`game_state`)
 
 ---
 
@@ -354,36 +354,66 @@ socket.on('chatted', (data: {
 
 ---
 
-### github_event
+### progress_update
 
-GitHub 활동 감지 알림
+프로그레스/기여도 업데이트 알림 (전체 방 브로드캐스트)
 
 ```typescript
-socket.on('github_event', (data: {
+socket.on('progress_update', (data: {
   username: string,
-  pushCount: number,      // 새 커밋 수
-  pullRequestCount: number // 새 PR 수
+  source: 'github' | 'task' | 'focustime',  // 기여 출처
+  targetProgress: number,                    // 현재 progress 절대값 (0-99)
+  contributions: Record<string, number>,     // 전체 기여도
+  mapIndex: number                           // 현재 맵 인덱스 (0-4)
 }) => {
-  // 프로그레스바 업데이트
+  // 프로그레스바 절대값 설정 (클라이언트 계산 없음)
   // 기여도 목록 업데이트
+  // mapIndex 동기화 (map_switch 유실 복구용)
+});
+```
+
+**특징:**
+- 절대값 동기화: 서버가 계산한 `targetProgress`를 그대로 사용
+- 클라이언트에서 점수 계산 불필요
+- 이벤트 순서에 무관하게 정합성 보장
+
+---
+
+### game_state
+
+전역 게임 상태 (입장 시 수신)
+
+```typescript
+socket.on('game_state', (state: {
+  progress: number,                         // 현재 progress (0-99)
+  contributions: Record<string, number>,    // username -> count
+  mapIndex: number                          // 현재 맵 인덱스 (0-4)
+}) => {
+  // 프로그레스바 초기값 설정
+  // 기여도 목록 초기값 설정
+  // 현재 맵으로 동기화 (신규/재접속자)
 });
 ```
 
 ---
 
-### github_state
+### map_switch
 
-현재 룸의 GitHub 상태 (입장 시 수신)
+맵 전환 알림 (progress 100% 도달 시, 전체 방 브로드캐스트)
 
 ```typescript
-socket.on('github_state', (state: {
-  progress: number,
-  contributions: Record<string, number>  // username -> count
+socket.on('map_switch', (data: {
+  mapIndex: number  // 전환된 맵 인덱스 (0-4)
 }) => {
-  // 프로그레스바 초기값 설정
-  // 기여도 목록 초기값 설정
+  // 새 맵으로 전환
+  // 플레이어 리스폰
 });
 ```
+
+**특징:**
+- 서버 주도 맵 전환: 서버가 100% 도달 감지 시 브로드캐스트
+- 모든 클라이언트 동시 맵 전환
+- progress는 자동으로 0으로 리셋
 
 ---
 
@@ -503,7 +533,7 @@ Client A                    Server                    Client B
     |-- joining ------------->|                          |
     |                         |-- player_joined -------->|
     |<-- players_synced ------|                          |
-    |<-- github_state --------|                          |
+    |<-- game_state ----------|                          |
     |                         |                          |
     |-- moving -------------->|                          |
     |                         |-- moved ---------------->|
@@ -512,7 +542,10 @@ Client A                    Server                    Client B
     |                         |-- chatted -------------->|
     |                         |                          |
     |                   [GitHub Poll]                    |
-    |<-- github_event --------|-- github_event --------->|
+    |<-- progress_update -----|-- progress_update ------>|
+    |                         |                          |
+    |                   [progress 100% 도달]             |
+    |<-- map_switch ----------|-- map_switch ----------->|
     |                         |                          |
     |-- pet_equipping ------->|                          |
     |                   [DB 검증: petId == equippedPetId]|
