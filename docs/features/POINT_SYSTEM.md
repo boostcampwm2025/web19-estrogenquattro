@@ -66,7 +66,7 @@ enum PointType {
 
 | 활동 | 포인트 | 비고 |
 |------|--------|------|
-| 커밋 (COMMITTED) | +3 | 커밋 1개당 |
+| 커밋 (COMMITTED) | +2 | 커밋 1개당 |
 | PR 생성 (PR_OPEN) | +2 | |
 | PR 머지 (PR_MERGED) | +4 | |
 | PR 리뷰 (PR_REVIEWED) | +4 | Submit review 시 |
@@ -192,7 +192,8 @@ sequenceDiagram
     participant GW as GithubGateway
 
     Poll->>Poll: GitHub REST API 이벤트 감지
-    Poll->>PS: addPoint(playerId, type, 1, repository, description)
+    Poll->>PS: addPoint(playerId, type, count, repository, description)
+    Note right of PS: count는 이벤트 개수<br/>포인트 = ACTIVITY_POINT_MAP[type] × count
     PS->>DB: DailyPoint 업데이트
     PS->>DB: PointHistory 추가 (상세 정보 포함)
     Poll->>GW: castGithubEventToRoom()

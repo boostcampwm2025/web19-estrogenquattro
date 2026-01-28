@@ -77,7 +77,7 @@ const headers = {
 
 | 이벤트 | 처리 | 포인트 |
 |--------|------|--------|
-| `PushEvent` | Compare API로 커밋 개수/메시지 조회 | +3/커밋 |
+| `PushEvent` | Compare API로 커밋 개수/메시지 조회 | +2/커밋 |
 | `PullRequestEvent` (opened) | PR API로 제목 조회 | +2 |
 | `PullRequestEvent` (merged/closed+merged) | PR API로 제목 조회 | +4 |
 | `IssuesEvent` (opened) | 이슈 제목 직접 사용 | +1 |
@@ -257,7 +257,7 @@ fetch() 에러 발생 → catch 블록 → 로그 출력 → { status: 'error' }
 
 | 이벤트 | 포인트 | DB 저장 |
 |--------|--------|---------|
-| 커밋 | +3/개 | daily_github_activity + point_history |
+| 커밋 | +2/개 | daily_github_activity + point_history |
 | PR 생성 | +2 | daily_github_activity + point_history |
 | PR 머지 | +4 | daily_github_activity + point_history |
 | 이슈 생성 | +1 | daily_github_activity + point_history |
@@ -266,22 +266,25 @@ fetch() 에러 발생 → catch 블록 → 로그 출력 → { status: 'error' }
 ### point_history 상세 정보
 
 ```typescript
-// 커밋
+// addPoint(playerId, type, count, repository, description)
+// count는 이벤트 개수이며, 실제 포인트는 ACTIVITY_POINT_MAP[type] * count로 계산
+
+// 커밋 1개 → +2 포인트
 await this.pointService.addPoint(
   playerId,
   PointType.COMMITTED,
-  1,
-  commit.repository,  // "owner/repo"
-  commit.message,     // 커밋 메시지 첫 줄
+  1,                    // 커밋 개수
+  commit.repository,    // "owner/repo"
+  commit.message,       // 커밋 메시지 첫 줄
 );
 
-// PR
+// PR 생성 1개 → +2 포인트
 await this.pointService.addPoint(
   playerId,
   PointType.PR_OPEN,
-  1,
-  pr.repository,      // "owner/repo"
-  pr.title,           // PR 제목
+  1,                    // PR 개수
+  pr.repository,        // "owner/repo"
+  pr.title,             // PR 제목
 );
 ```
 

@@ -6,7 +6,7 @@ import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
-  [PointType.COMMITTED]: 3, // 푸시 1회
+  [PointType.COMMITTED]: 2, // 커밋 1회
   [PointType.PR_OPEN]: 2, // PR 생성
   [PointType.PR_MERGED]: 4, // PR 머지
   [PointType.PR_REVIEWED]: 4, // PR 리뷰
