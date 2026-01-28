@@ -81,6 +81,7 @@ export class PointService {
         throw new NotFoundException('Player not found');
       }
       player.totalPoint += totalPoint;
+      await playerRepo.save(player);
 
       return dailyPointRepo.save(newRecord);
     });
