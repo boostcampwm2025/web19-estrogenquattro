@@ -228,6 +228,7 @@ export default class SocketManager {
 
     // 정상 맵 전환 (progress 100% 도달)
     socket.on("map_switch", (data: { mapIndex: number }) => {
+      if (data.mapIndex === this.currentMapIndex) return;
       this.currentMapIndex = data.mapIndex;
       callbacks.onMapSwitch(data.mapIndex);
     });
