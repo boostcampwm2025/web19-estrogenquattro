@@ -10,4 +10,13 @@ export interface DailyPointRes {
 export const pointApi = {
   /** 1년치 포인트 조회 (히트맵용) */
   getPoints: () => fetchApi<DailyPointRes[]>("/api/points"),
+
+  /** 테스트용 포인트 10P 적립 */
+  addDebugPoint: () =>
+    fetchApi<{ success: boolean; addedPoint: number }>(
+      "/api/points/debug/add",
+      {
+        method: "POST",
+      },
+    ),
 };
