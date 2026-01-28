@@ -9,6 +9,7 @@ import {
   useFocusTimeStore,
   type FocusTimeData,
 } from "../../stores/useFocusTimeStore";
+import { getTodayStartTime } from "@/utils/timeFormat";
 
 interface PlayerData {
   userId: string;
@@ -112,6 +113,7 @@ export default class SocketManager {
         x: player?.getContainer().x,
         y: player?.getContainer().y,
         username: this.username,
+        startAt: getTodayStartTime(),
       });
     });
 

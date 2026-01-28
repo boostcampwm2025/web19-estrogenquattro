@@ -53,7 +53,8 @@ export function useProfileData(
   const dailyPoints: DailyPoints = useMemo(() => {
     const map = new Map<string, number>();
     points.forEach((point) => {
-      map.set(point.createdDate, point.amount);
+      const dateKey = toDateString(new Date(point.createdAt));
+      map.set(dateKey, point.amount);
     });
     return map;
   }, [points]);

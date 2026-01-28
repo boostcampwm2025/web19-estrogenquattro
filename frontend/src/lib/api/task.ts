@@ -5,7 +5,7 @@ export interface TaskRes {
   description: string;
   totalFocusSeconds: number;
   isCompleted: boolean;
-  createdDate: string;
+  createdAt: string;
 }
 
 export interface TaskListRes {
@@ -13,9 +13,9 @@ export interface TaskListRes {
 }
 
 export const taskApi = {
-  getTasks: (playerId: number, date?: string) =>
+  getTasks: (playerId: number, startAt?: string, endAt?: string) =>
     fetchApi<TaskListRes>(
-      `/api/tasks/${playerId}${date ? `?date=${encodeURIComponent(date)}` : ""}`,
+      `/api/tasks/${playerId}${startAt && endAt ? `?startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}` : ""}`,
     ),
 
   createTask: (description: string) =>
