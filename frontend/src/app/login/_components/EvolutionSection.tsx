@@ -5,7 +5,7 @@ export default function EvolutionSection() {
   const features = [
     {
       icon: Sparkles,
-      emoji: "🥚",
+      emoji: "🐣",
       title: "가챠",
       description: "랜덤으로 귀여운 펫을 뽑으세요!",
       color: "from-yellow-500 to-orange-500",
@@ -27,12 +27,6 @@ export default function EvolutionSection() {
       color: "from-purple-500 to-indigo-500",
       textColor: "text-violet-600",
     },
-  ];
-
-  const pointSystem = [
-    { action: "커밋 (Push)", points: "3P", icon: "💻" },
-    { action: "PR 머지", points: "4P", icon: "🔀" },
-    { action: "집중 30분", points: "1P", icon: "⏰" },
   ];
 
   const containerVariants = {

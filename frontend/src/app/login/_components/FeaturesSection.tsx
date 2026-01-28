@@ -1,4 +1,4 @@
-import { Github, BarChart3, Map } from "lucide-react";
+import { Github, BarChart3, Map as MapIcon } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function FeaturesSection() {
@@ -21,7 +21,7 @@ export default function FeaturesSection() {
       src: "/assets/landing/feature2.jpg",
     },
     {
-      icon: Map,
+      icon: MapIcon,
       title: "변화하는 가상 공간",
       description:
         "7일 시즌제로 운영되는 맵!<br> 공동의 목표가 달성되면 맵이 확장되고 성장합니다.",
