@@ -133,7 +133,7 @@ describe('FocusTimeService', () => {
       await focusTimeRepository.save(existing);
 
       // When: findOrCreate 호출
-      const result = await service.findOrCreate(player);
+      const result = await service.findOrCreate(player, start);
 
       // Then: 기존 레코드 반환
       expect(result.id).toBe(existing.id);
@@ -145,7 +145,8 @@ describe('FocusTimeService', () => {
       const player = await createTestPlayer('TestPlayer5');
 
       // When: findOrCreate 호출
-      const result = await service.findOrCreate(player);
+      const { start } = getTodayKstRangeUtc();
+      const result = await service.findOrCreate(player, start);
 
       // Then: 새 레코드 생성됨
       expect(result).toBeDefined();
@@ -178,7 +179,7 @@ describe('FocusTimeService', () => {
       await taskRepository.save(task);
 
       // When: startFocusing에 taskId 전달
-      const result = await service.startFocusing(player.id, task.id);
+      const result = await service.startFocusing(player.id, start, task.id);
 
       // Then: currentTask가 저장됨
       expect(result.currentTask?.id).toBe(task.id);
@@ -201,7 +202,7 @@ describe('FocusTimeService', () => {
       await focusTimeRepository.save(focusTime);
 
       // When: startFocusing에 taskId 없이 호출
-      const result = await service.startFocusing(player.id);
+      const result = await service.startFocusing(player.id, start);
 
       // Then: currentTask가 null
       expect(result.currentTask).toBeNull();
@@ -234,7 +235,7 @@ describe('FocusTimeService', () => {
       await taskRepository.save(task);
 
       // 집중 시작 (currentTaskId 설정)
-      await service.startFocusing(player.id, task.id);
+      await service.startFocusing(player.id, start, task.id);
 
       // lastFocusStartTime을 과거로 직접 설정 (10초 전)
       await focusTimeRepository.update(
@@ -243,7 +244,7 @@ describe('FocusTimeService', () => {
       );
 
       // When: startResting 호출
-      await service.startResting(player.id);
+      await service.startResting(player.id, start);
 
       // Then: Task의 totalFocusSeconds가 증가함
       const updatedTask = await taskRepository.findOne({
@@ -268,10 +269,10 @@ describe('FocusTimeService', () => {
       await focusTimeRepository.save(focusTime);
 
       // taskId 없이 집중 시작
-      await service.startFocusing(player.id);
+      await service.startFocusing(player.id, start);
 
       // When: startResting 호출
-      const result = await service.startResting(player.id);
+      const result = await service.startResting(player.id, start);
 
       // Then: 정상적으로 RESTING 상태가 됨
       expect(result.status).toBe(FocusStatus.RESTING);
