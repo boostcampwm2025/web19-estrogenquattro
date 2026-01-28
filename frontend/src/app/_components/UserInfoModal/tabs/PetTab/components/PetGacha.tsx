@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Image from "next/image";
-import { usePointStore } from "@/stores/pointStore";
 import { Pet, UserPet } from "@/lib/api/pet";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
@@ -9,14 +8,19 @@ const PIXEL_BTN =
 
 interface PetGachaProps {
   onPetCollected: (petId: number) => void;
-  onGacha: () => Promise<UserPet["pet"]>;
+  onGacha: () => Promise<{ pet: UserPet["pet"]; isDuplicate: boolean }>;
+  onGachaRefund?: () => Promise<{ refundAmount: number; totalPoint: number }>;
+  points: number;
 }
 
-export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
+export default function PetGacha({
+  onPetCollected,
+  onGacha,
+  onGachaRefund,
+  points,
+}: PetGachaProps) {
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
   const [resultPet, setResultPet] = useState<Pet | null>(null);
-
-  const points = usePointStore((state) => state.points);
 
   const handleSummon = async () => {
     if (points < 100) {
@@ -27,14 +31,20 @@ export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
     setStatus("animating");
 
     try {
+      const { pet, isDuplicate } = await onGacha();
+
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const pet = await onGacha();
+      if (isDuplicate && onGachaRefund) {
+        await onGachaRefund();
+      }
 
       if (pet) {
         setResultPet(pet);
         setStatus("result");
-        onPetCollected(pet.id);
+        if (!isDuplicate) {
+          onPetCollected(pet.id);
+        }
       } else {
         throw new Error("Unknown pet received");
       }

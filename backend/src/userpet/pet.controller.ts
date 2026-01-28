@@ -28,6 +28,11 @@ export class PetController {
     return this.petService.gacha(playerId);
   }
 
+  @Post('gacha/refund')
+  async gachaRefund(@PlayerId() playerId: number) {
+    return this.petService.refundGachaCost(playerId);
+  }
+
   @Post('feed')
   async feed(@PlayerId() playerId: number, @Body() dto: FeedPetDto) {
     return this.petService.feed(dto.userPetId, playerId);
