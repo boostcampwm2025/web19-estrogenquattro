@@ -4,8 +4,8 @@
 
 ## 참조한 문서
 
-- [GITHUB_POLLING.md](../api/GITHUB_POLLING.md): roomStates 구조 및 github_event 브로드캐스트
-- [SOCKET_EVENTS.md](../api/SOCKET_EVENTS.md): github_event, github_state 이벤트 명세
+- [GITHUB_POLLING.md](../api/GITHUB_POLLING.md): roomStates 구조 및 progress_update 브로드캐스트
+- [SOCKET_EVENTS.md](../api/SOCKET_EVENTS.md): progress_update, game_state 이벤트 명세
 
 ## 이슈 요약
 
@@ -24,8 +24,8 @@ private roomStates = new Map<string, RoomGithubState>();
 // room-1: { progress: 30, contributions: { "userA": 5 } }
 // room-2: { progress: 50, contributions: { "userB": 10 } }
 
-// 방별 브로드캐스트
-this.server.to(roomId).emit('github_event', githubEvent);
+// 방별 브로드캐스트 (기존)
+this.server.to(roomId).emit('github_event', githubEvent);  // → progress_update로 변경됨
 ```
 
 | 항목 | 현재 |
@@ -47,7 +47,7 @@ private globalState: RoomGithubState = { progress: 0, contributions: {} };
 // { progress: 50, contributions: { "userA": 5, "userB": 10 } }
 
 // 전체 브로드캐스트
-this.server.emit('github_event', githubEvent);
+this.server.emit('progress_update', progressData);  // 절대값 동기화
 ```
 
 | 항목 | 변경 후 |
@@ -69,7 +69,7 @@ private roomStates = new Map<string, RoomGithubState>();
 
 public castGithubEventToRoom(githubEvent: GithubEventData, roomId: string) {
   this.updateRoomState(roomId, githubEvent);
-  this.server.to(roomId).emit('github_event', githubEvent);
+  this.server.to(roomId).emit('github_event', githubEvent);  // 기존 이벤트명
 }
 
 private updateRoomState(roomId: string, event: GithubEventData) {
@@ -86,9 +86,9 @@ public getRoomState(roomId: string): RoomGithubState {
 // 변경 후
 private globalState: RoomGithubState = { progress: 0, contributions: {} };
 
-public castGithubEvent(githubEvent: GithubEventData) {
+public castProgressUpdate(githubEvent: GithubEventData) {
   this.updateGlobalState(githubEvent);
-  this.server.emit('github_event', githubEvent);  // 전체 브로드캐스트
+  this.server.emit('progress_update', progressData);  // 전체 브로드캐스트 (절대값)
 }
 
 private updateGlobalState(event: GithubEventData) {
@@ -122,11 +122,11 @@ this.githubGateway.castGithubEvent(result.data!);
 ```typescript
 // 변경 전
 const roomState = this.githubGateway.getRoomState(roomId);
-client.emit('github_state', roomState);
+client.emit('github_state', roomState);  // 기존 이벤트명
 
 // 변경 후
-const globalState = this.githubGateway.getGlobalState();
-client.emit('github_state', globalState);
+const globalState = this.progressGateway.getGlobalState();
+client.emit('game_state', globalState);  // 새 이벤트명
 ```
 
 ---
@@ -135,9 +135,9 @@ client.emit('github_state', globalState);
 
 | 파일 | 변경 내용 |
 |------|----------|
-| `backend/src/github/github.gateway.ts` | roomStates → globalState, 메서드명 변경 |
-| `backend/src/github/github.poll-service.ts` | castGithubEventToRoom → castGithubEvent |
-| `backend/src/player/player.gateway.ts` | getRoomState → getGlobalState |
+| `backend/src/github/progress.gateway.ts` | roomStates → globalState, progress_update 이벤트 |
+| `backend/src/github/github.poll-service.ts` | castGithubEventToRoom → castProgressUpdate |
+| `backend/src/player/player.gateway.ts` | game_state 이벤트로 변경 |
 
 ---
 
@@ -228,16 +228,16 @@ if (progress >= 100) {
 
 | 파일 | 변경 내용 |
 |------|----------|
-| `backend/src/github/github.gateway.ts` | roomStates → globalState, 100% 감지 시 map_switch emit |
-| `backend/src/github/github.poll-service.ts` | castGithubEventToRoom → castGithubEvent |
-| `backend/src/player/player.gateway.ts` | getRoomState → getGlobalState |
+| `backend/src/github/progress.gateway.ts` | roomStates → globalState, 100% 감지 시 map_switch emit, progress_update 이벤트 |
+| `backend/src/github/github.poll-service.ts` | castGithubEventToRoom → castProgressUpdate |
+| `backend/src/player/player.gateway.ts` | game_state 이벤트로 변경 |
 | `frontend/src/game/managers/SocketManager.ts` | map_switch 이벤트 핸들러 추가 |
 | `frontend/src/game/ui/createProgressBar.ts` | onProgressComplete 콜백 제거 |
 | `frontend/src/game/scenes/MapScene.ts` | 맵 전환 트리거 변경 (콜백 → 소켓 이벤트) |
 
 ---
 
-## 관련 이슈 영향
+## 관련 이슈 해결 상태
 
 ### #201 프로그레스바 동기화
 
