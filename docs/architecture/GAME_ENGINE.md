@@ -251,7 +251,7 @@ Tiled 에디터로 충돌 영역을 정의하고 JSON으로 export
 
 ### 맵 전환
 
-프로그레스바 100% 도달 시 다음 맵으로 전환
+서버에서 progress 100% 도달 감지 시 `map_switch` 이벤트로 전체 클라이언트에 맵 전환 지시
 
 #### 맵 순환 상태
 
@@ -264,28 +264,29 @@ stateDiagram-v2
     Stage5: dessert_stage5
 
     [*] --> Stage1: 게임 시작
-    Stage1 --> Stage2: progress 100%
-    Stage2 --> Stage3: progress 100%
-    Stage3 --> Stage4: progress 100%
-    Stage4 --> Stage5: progress 100%
-    Stage5 --> Stage1: progress 100%
+    Stage1 --> Stage2: map_switch (서버)
+    Stage2 --> Stage3: map_switch (서버)
+    Stage3 --> Stage4: map_switch (서버)
+    Stage4 --> Stage5: map_switch (서버)
+    Stage5 --> Stage1: map_switch (서버)
 ```
 
-#### 맵 전환 시퀀스
+#### 맵 전환 시퀀스 (서버 주도)
 
 ```mermaid
 sequenceDiagram
-    participant PB as ProgressBar
+    participant SV as Server
+    participant SM as SocketManager
     participant S as MapScene
     participant MM as MapManager
-    participant SM as SocketManager
     participant CC as CameraController
 
-    PB->>PB: progress = 100%
-    PB->>S: onProgressComplete()
+    SV->>SV: progress >= 100% 감지
+    SV->>SV: progress = 0, mapIndex = (index + 1) % 5
+    SV->>SM: map_switch { mapIndex }
 
-    S->>MM: switchToNextMap(callback)
-    MM->>MM: currentMapIndex = (index + 1) % 5
+    SM->>S: onMapSwitch(mapIndex)
+    S->>MM: switchToMap(mapIndex, callback)
 
     Note over MM: 1. Fade Out
     MM->>MM: cameras.main.fadeOut(500ms)
@@ -301,7 +302,7 @@ sequenceDiagram
 
     Note over S: 3. 재설정
     S->>S: setupCollisions()
-    S->>S: setupUI() - 프로그레스바 리셋
+    S->>S: setupUI()
     S->>CC: updateBounds(width, height)
     S->>SM: setWalls(), setupCollisions()
 
@@ -314,6 +315,15 @@ sequenceDiagram
     MM->>MM: cameras.main.fadeIn(500ms)
 ```
 
+**맵 전환 트리거:**
+
+| 케이스 | 트리거 | 경로 |
+|--------|--------|------|
+| 정상 전환 | `map_switch` | `onMapSwitch` → `performMapSwitch` |
+| 신규 접속 | `game_state` | `onMapSyncRequired` → `performMapSwitch` |
+| 재접속 | `game_state` | `onMapSyncRequired` → `performMapSwitch` |
+| 유실 복구 | `progress_update` | `onMapSyncRequired` → `performMapSwitch` |
+
 ---
 
 ## UI 컴포넌트
@@ -323,15 +333,16 @@ sequenceDiagram
 ```typescript
 // frontend/src/game/ui/createProgressBar.ts
 export interface ProgressBarController {
-  addProgress(amount: number): void;
+  setProgress(value: number): void;  // 절대값 설정 (서버 값 그대로 사용)
   reset(): void;
   getProgress(): number;
-  setProgress(value: number): void;
+  destroy(): void;
 }
 ```
 
 - Phaser Graphics로 렌더링
 - 맵 좌표 기준 중앙 상단 배치
+- **절대값 동기화**: 서버에서 받은 `targetProgress`를 그대로 표시 (클라이언트 계산 없음)
 - Tween 애니메이션으로 부드러운 진행
 
 ### 기여도 목록
@@ -367,8 +378,19 @@ socket.on('moved', (data) => {
   // RemotePlayer 위치 업데이트
 });
 
-socket.on('github_event', (data) => {
-  // 프로그레스바 업데이트
+socket.on('game_state', (data) => {
+  // 프로그레스바/기여도 초기값 설정
+  // mapIndex 동기화 (신규/재접속자)
+});
+
+socket.on('progress_update', (data) => {
+  // 프로그레스바 절대값 설정 (data.targetProgress)
+  // 기여도 목록 업데이트
+  // mapIndex 동기화 (map_switch 유실 복구)
+});
+
+socket.on('map_switch', (data) => {
+  // 서버 지시로 맵 전환 (data.mapIndex)
 });
 
 socket.on('focused', (data) => {

@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Auto1769431764107 implements MigrationInterface {
-  name = 'Auto1769431764107';
+export class Auto1769520963916 implements MigrationInterface {
+  name = 'Auto1769520963916';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -15,7 +15,7 @@ export class Auto1769431764107 implements MigrationInterface {
       `ALTER TABLE "temporary_daily_point" RENAME TO "daily_point"`,
     );
     await queryRunner.query(
-      `CREATE TABLE "point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" datetime NOT NULL DEFAULT (datetime('now')), "player_id" integer)`,
+      `CREATE TABLE "point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" date NOT NULL DEFAULT (datetime('now')), "player_id" integer)`,
     );
     await queryRunner.query(
       `CREATE TABLE "temporary_daily_point" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "player_id" integer NOT NULL, "amount" integer NOT NULL, "created_date" date NOT NULL)`,
@@ -38,7 +38,7 @@ export class Auto1769431764107 implements MigrationInterface {
       `ALTER TABLE "temporary_daily_point" RENAME TO "daily_point"`,
     );
     await queryRunner.query(
-      `CREATE TABLE "temporary_point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" datetime NOT NULL DEFAULT (datetime('now')), "player_id" integer, CONSTRAINT "FK_bde9ee86c7f23ee5fff3318ce6f" FOREIGN KEY ("player_id") REFERENCES "players" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION)`,
+      `CREATE TABLE "temporary_point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" date NOT NULL DEFAULT (datetime('now')), "player_id" integer, CONSTRAINT "FK_bde9ee86c7f23ee5fff3318ce6f" FOREIGN KEY ("player_id") REFERENCES "players" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION)`,
     );
     await queryRunner.query(
       `INSERT INTO "temporary_point_history"("id", "type", "amount", "created_at", "player_id") SELECT "id", "type", "amount", "created_at", "player_id" FROM "point_history"`,
@@ -94,7 +94,7 @@ export class Auto1769431764107 implements MigrationInterface {
       `ALTER TABLE "point_history" RENAME TO "temporary_point_history"`,
     );
     await queryRunner.query(
-      `CREATE TABLE "point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" datetime NOT NULL DEFAULT (datetime('now')), "player_id" integer)`,
+      `CREATE TABLE "point_history" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "type" varchar CHECK( "type" IN ('ISSUE_OPEN','PR_OPEN','PR_MERGED','PR_REVIEWED','COMMITTED','TASK_COMPLETED','FOCUSED') ) NOT NULL, "amount" integer NOT NULL, "created_at" date NOT NULL DEFAULT (datetime('now')), "player_id" integer)`,
     );
     await queryRunner.query(
       `INSERT INTO "point_history"("id", "type", "amount", "created_at", "player_id") SELECT "id", "type", "amount", "created_at", "player_id" FROM "temporary_point_history"`,

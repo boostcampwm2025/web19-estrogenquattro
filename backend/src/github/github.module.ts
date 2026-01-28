@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GithubGateway } from './github.gateway';
+import { ProgressGateway } from './progress.gateway';
 import { GithubPollService } from './github.poll-service';
 import { GithubService } from './github.service';
 import { GithubController } from './github.controller';
@@ -10,7 +10,7 @@ import { PointModule } from '../point/point.module';
 @Module({
   imports: [TypeOrmModule.forFeature([DailyGithubActivity]), PointModule],
   controllers: [GithubController],
-  providers: [GithubGateway, GithubPollService, GithubService],
-  exports: [GithubGateway, GithubPollService, GithubService],
+  providers: [ProgressGateway, GithubPollService, GithubService],
+  exports: [ProgressGateway, GithubPollService, GithubService],
 })
 export class GithubModule {}

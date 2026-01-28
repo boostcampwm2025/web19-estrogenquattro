@@ -166,6 +166,8 @@ export class MapScene extends Phaser.Scene {
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
       showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
       hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
+      onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
+      onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
     });
 
     // 9. Chat Setup
@@ -261,28 +263,33 @@ export class MapScene extends Phaser.Scene {
       this.contributionController.destroy();
     }
 
-    // Set up progress complete callback for map switching
-    useProgressStore.getState().setOnProgressComplete(() => {
-      this.mapManager.switchToNextMap(() => {
-        this.setupCollisions();
-        this.setupUI();
-        const { width, height } = this.mapManager.getMapSize();
-        this.cameraController.updateBounds(width, height);
-        this.socketManager.setWalls(this.mapManager.getWalls()!);
-        this.socketManager.setupCollisions();
-        this.socketManager.setContributionController(
-          this.contributionController!,
-        );
-
-        // 플레이어 리스폰 (wall 피해 랜덤 위치)
-        if (this.player) {
-          const spawnPos = this.mapManager.getRandomSpawnPosition();
-          this.player.setPosition(spawnPos.x, spawnPos.y);
-        }
-      });
-    });
+    // 프로그레스바는 React ProgressBar.tsx 컴포넌트로 이동
+    // 맵 전환은 서버 map_switch 이벤트 → performMapSwitch()로 처리
 
     this.contributionController = createContributionList(this, mapWidth, 50);
+  }
+
+  /**
+   * 맵 전환 공통 로직 (서버 map_switch/game_state 이벤트에서 호출)
+   */
+  private performMapSwitch(mapIndex: number) {
+    this.mapManager.switchToMap(mapIndex, () => {
+      this.setupCollisions();
+      this.setupUI();
+      const { width, height } = this.mapManager.getMapSize();
+      this.cameraController.updateBounds(width, height);
+      this.socketManager.setWalls(this.mapManager.getWalls()!);
+      this.socketManager.setupCollisions();
+      this.socketManager.setContributionController(
+        this.contributionController!,
+      );
+
+      // 플레이어 리스폰 (wall 피해 랜덤 위치)
+      if (this.player) {
+        const spawnPos = this.mapManager.getRandomSpawnPosition();
+        this.player.setPosition(spawnPos.x, spawnPos.y);
+      }
+    });
   }
 
   private setupCollisions() {
