@@ -70,7 +70,9 @@ export function CalendarHeatmap({
     );
 
     if (hasFirstDay) {
-      const firstDay = week.find((day) => day.value !== -1 && day.date.getDate() === 1);
+      const firstDay = week.find(
+        (day) => day.value !== -1 && day.date.getDate() === 1,
+      );
       if (firstDay) {
         const monthStr = firstDay.date.toLocaleDateString("en-US", {
           month: "short",
