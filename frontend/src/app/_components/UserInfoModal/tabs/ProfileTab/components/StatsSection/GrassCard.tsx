@@ -9,7 +9,10 @@ interface GrassCardProps {
   selectedDate: Date;
 }
 
-export default function GrassCard({ dailyPoints, selectedDate }: GrassCardProps) {
+export default function GrassCard({
+  dailyPoints,
+  selectedDate,
+}: GrassCardProps) {
   const dateStr = toDateString(selectedDate);
   const grassImagePath = getGrassImageFromData(dailyPoints, dateStr);
 

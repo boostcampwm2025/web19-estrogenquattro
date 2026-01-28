@@ -41,7 +41,10 @@ function getLevel(points: number): GrassLevel {
  * @param dailyPoints 날짜별 포인트 Map
  * @param targetDate 조회할 날짜 (YYYY-MM-DD 형식)
  */
-export function calculateGrassLevel(dailyPoints: DailyPoints, targetDate: string): GrassLevel {
+export function calculateGrassLevel(
+  dailyPoints: DailyPoints,
+  targetDate: string,
+): GrassLevel {
   const points = dailyPoints.get(targetDate) ?? 0;
   return getLevel(points);
 }
@@ -58,7 +61,10 @@ export function getGrassImagePath(level: GrassLevel): string {
  * @param dailyPoints 날짜별 포인트 Map
  * @param targetDate 조회할 날짜 (YYYY-MM-DD 형식)
  */
-export function getGrassImageFromData(dailyPoints: DailyPoints, targetDate: string): string {
+export function getGrassImageFromData(
+  dailyPoints: DailyPoints,
+  targetDate: string,
+): string {
   const level = calculateGrassLevel(dailyPoints, targetDate);
   return getGrassImagePath(level);
 }

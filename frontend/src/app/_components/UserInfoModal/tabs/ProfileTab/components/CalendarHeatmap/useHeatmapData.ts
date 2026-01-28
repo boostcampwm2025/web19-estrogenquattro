@@ -14,9 +14,7 @@ interface UseHeatmapDataResult {
   weeks: DayData[][];
 }
 
-export function useHeatmapData(
-  dailyPoints: DailyPoints,
-): UseHeatmapDataResult {
+export function useHeatmapData(dailyPoints: DailyPoints): UseHeatmapDataResult {
   const yearData = useMemo(() => {
     const days: DayData[] = [];
     const today = new Date();
