@@ -65,6 +65,13 @@ export class PointService {
         .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
         .getOne();
 
+      const player = await playerRepo.findOne({ where: { id: playerId } });
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+      player.totalPoint += totalPoint;
+      await playerRepo.save(player);
+
       if (existingRecord) {
         existingRecord.amount += totalPoint;
         return dailyPointRepo.save(existingRecord);
@@ -75,14 +82,6 @@ export class PointService {
         amount: totalPoint,
         createdAt: now,
       });
-
-      const player = await playerRepo.findOne({ where: { id: playerId } });
-      if (!player) {
-        throw new NotFoundException('Player not found');
-      }
-      player.totalPoint += totalPoint;
-      await playerRepo.save(player);
-
       return dailyPointRepo.save(newRecord);
     });
   }
