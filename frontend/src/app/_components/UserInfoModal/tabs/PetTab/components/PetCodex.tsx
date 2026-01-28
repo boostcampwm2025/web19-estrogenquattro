@@ -1,5 +1,4 @@
 import { Pet } from "@/lib/api/pet";
-import { API_URL } from "@/lib/api/client";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_CARD =
@@ -83,7 +82,7 @@ export default function PetCodex({
                           src={
                             isCollected
                               ? pet.actualImgUrl
-                              : `${API_URL}/api/pets/silhouette/${pet.id}`
+                              : pet.silhouetteImgUrl
                           }
                           alt={pet.name}
                           className="h-full w-full object-contain"

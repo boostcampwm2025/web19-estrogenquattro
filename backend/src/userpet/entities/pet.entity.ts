@@ -24,6 +24,14 @@ export class Pet {
   @Column({ type: 'varchar', length: 100, name: 'actual_img_url' })
   actualImgUrl: string;
 
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'silhouette_img_url',
+    nullable: true,
+  })
+  silhouetteImgUrl: string;
+
   @OneToMany(() => UserPet, (userPet) => userPet.pet)
   userPets: UserPet[];
 }
