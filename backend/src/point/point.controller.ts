@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Query,
   ParseIntPipe,
   UseGuards,
@@ -10,6 +11,7 @@ import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 import { DailyPoint } from './entities/daily-point.entity';
 import { ParseDatePipe } from '../common/parse-date.pipe';
+import { PointType } from '../pointhistory/entities/point-history.entity';
 
 @UseGuards(JwtGuard)
 @Controller('api/points')

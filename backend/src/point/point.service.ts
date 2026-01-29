@@ -97,7 +97,6 @@ export class PointService {
       player.totalPoint += totalPoint;
       await playerRepo.save(player);
 
-
       if (existingRecord) {
         existingRecord.amount += totalPoint;
         return dailyPointRepo.save(existingRecord);
