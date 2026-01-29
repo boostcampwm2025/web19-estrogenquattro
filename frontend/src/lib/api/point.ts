@@ -2,9 +2,8 @@ import { fetchApi } from "./client";
 
 export interface DailyPointRes {
   id: number;
-  playerId: number;
   amount: number;
-  createdDate: string;
+  createdAt: string; // ISO8601 UTC 문자열
 }
 
 export const pointApi = {

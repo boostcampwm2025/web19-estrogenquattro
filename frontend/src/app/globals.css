@@ -12,6 +12,7 @@
 }
 
 :root {
+  color-scheme: light; /* 브라우저 다크모드 무시, 항상 라이트모드로 표시 */
   --background: #ffffff;
   --foreground: #171717;
 
@@ -85,12 +86,14 @@
   }
 }
 
+/* Dark mode disabled - always use light mode
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
+*/
 
 html,
 body {

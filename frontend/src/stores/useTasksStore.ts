@@ -5,6 +5,7 @@ import { devLogger } from "@/lib/devLogger";
 import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
 import { getSocket } from "@/lib/socket";
 import { useAuthStore } from "./authStore";
+import { getLocalDayRange, parseLocalDate } from "@/utils/timeFormat";
 
 const MAX_TASK_TEXT_LENGTH = 100;
 
@@ -63,9 +64,14 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         });
         return;
       }
+
+      // date가 없으면 오늘 날짜로 기본 설정, 있으면 해당 날짜의 로컬 날짜 범위로 변환
+      const dateObj = date ? parseLocalDate(date) : new Date();
+      const { startAt, endAt } = getLocalDayRange(dateObj);
+
       set({ isLoading: true, error: null });
       try {
-        const response = await taskApi.getTasks(playerId, date);
+        const response = await taskApi.getTasks(playerId, startAt, endAt);
         const tasks = response.tasks.map(mapTaskResToTask);
         set({ tasks, isLoading: false });
       } catch (error) {
