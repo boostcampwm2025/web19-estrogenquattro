@@ -1,6 +1,5 @@
 import { Task } from "@/app/_components/TasksMenu/types";
-import { getTasksByDate, formatTimeFromSeconds } from "../../lib/dateStats";
-import { isSameDay } from "../../lib/dateUtils";
+import { formatTimeFromSeconds } from "../../lib/dateStats";
 
 interface TaskSectionProps {
   tasks: Task[];
@@ -8,10 +7,7 @@ interface TaskSectionProps {
 }
 
 export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
-  const isToday = isSameDay(selectedDate, new Date());
-  const dailyTasks = getTasksByDate(tasks, selectedDate).filter(
-    (task) => isToday || task.completed,
-  );
+  const dailyTasks = tasks;
 
   const formatSelectedDate = () => {
     const year = selectedDate.getFullYear();
