@@ -16,6 +16,10 @@ import { FocusTimeMidnightScheduler } from './focustime-midnight.scheduler';
     PointModule,
     GithubModule,
   ],
-  providers: [PointSettlementScheduler, SeasonResetScheduler, FocusTimeMidnightScheduler],
+  providers: [
+    PointSettlementScheduler,
+    SeasonResetScheduler,
+    FocusTimeMidnightScheduler,
+  ],
 })
 export class SchedulerModule {}

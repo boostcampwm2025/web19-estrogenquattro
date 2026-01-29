@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { DailyFocusTime, FocusStatus } from '../focustime/entites/daily-focus-time.entity';
+import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { getYesterdayKstRange } from '../util/date.util';
 
 @Injectable()
@@ -20,7 +20,9 @@ export class FocusTimeMidnightScheduler {
    */
   @Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
   async handleMidnight(): Promise<void> {
-    this.logger.log('🌙 Midnight scheduler started - copying focustime records');
+    this.logger.log(
+      '🌙 Midnight scheduler started - copying focustime records',
+    );
 
     const { start, end } = getYesterdayKstRange();
     const now = new Date();
@@ -50,6 +52,8 @@ export class FocusTimeMidnightScheduler {
       }),
     );
     await this.focusTimeRepository.save(newRecords);
-    this.logger.log(`Successfully created ${newRecords.length} new focustime records for today`);
+    this.logger.log(
+      `Successfully created ${newRecords.length} new focustime records for today`,
+    );
   }
 }
