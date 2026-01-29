@@ -132,24 +132,29 @@ export class PointService {
       .groupBy('ph.player_id')
       .orderBy('totalPoints', 'DESC')
       .getRawMany();
-    // 동점자 처리: 같은 점수면 같은 등수
+
     let currentRank = 1;
     let previousPoints: number | null = null;
 
-    return results.map((row, index) => {
-      const totalPoints = Number(row.totalPoints);
+    return results.map(
+      (
+        row: { playerId: number; nickname: string; totalPoints: string },
+        index,
+      ) => {
+        const totalPoints = Number(row.totalPoints);
 
-      if (previousPoints !== null && totalPoints < previousPoints) {
-        currentRank = index + 1; // 점수가 다르면 현재 순서로 등수 갱신
-      }
-      previousPoints = totalPoints;
+        if (previousPoints !== null && totalPoints < previousPoints) {
+          currentRank = index + 1;
+        }
+        previousPoints = totalPoints;
 
-      return {
-        playerId: row.playerId,
-        nickname: row.nickname,
-        totalPoints,
-        rank: currentRank,
-      };
-    });
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          totalPoints,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }
