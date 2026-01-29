@@ -1,7 +1,8 @@
 export const queryKeys = {
   points: {
     all: ["points"] as const,
-    list: () => [...queryKeys.points.all, "list"] as const,
+    list: (targetPlayerId: number) =>
+      [...queryKeys.points.all, "list", targetPlayerId] as const,
   },
   focustime: {
     all: ["focustime"] as const,

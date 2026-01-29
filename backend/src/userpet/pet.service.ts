@@ -25,11 +25,13 @@ export class PetService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async gacha(playerId: number): Promise<UserPet> {
-    const GACHA_COST = 0;
+  async gacha(
+    playerId: number,
+  ): Promise<{ userPet: UserPet; isDuplicate: boolean }> {
+    const GACHA_COST = 100;
 
     return this.dataSource.transaction(async (manager) => {
-      // 1. 플레이어 포인트 확인 및 차감
+      // 1. 플레이어 포인트 확인 및 즉시 차감
       const player = await manager.findOne(Player, {
         where: { id: playerId },
       });
@@ -62,12 +64,13 @@ export class PetService {
       });
 
       if (existingCodex) {
+        // 중복 펫 - 환급은 애니메이션 후 별도 API로 처리
         const dummyUserPet = new UserPet();
         dummyUserPet.id = -1; // 저장되지 않음을 의미
         dummyUserPet.pet = selectedPet;
         dummyUserPet.player = player;
         dummyUserPet.exp = 0;
-        return dummyUserPet;
+        return { userPet: dummyUserPet, isDuplicate: true };
       }
 
       // 4. UserPet 생성 (미보유 시)
@@ -78,19 +81,41 @@ export class PetService {
       });
 
       // 5. 도감(Codex)에 등록
-      // 위에서 이미 검사했으므로 여기서는 무조건 없음 -> 생성
       const codex = this.userPetCodexRepository.create({
         player,
         pet: selectedPet,
       });
       await manager.save(UserPetCodex, codex);
 
-      return manager.save(UserPet, userPet);
+      const savedUserPet = await manager.save(UserPet, userPet);
+      return { userPet: savedUserPet, isDuplicate: false };
+    });
+  }
+
+  async refundGachaCost(
+    playerId: number,
+  ): Promise<{ refundAmount: number; totalPoint: number }> {
+    const GACHA_COST = 100;
+    const refundAmount = Math.floor(GACHA_COST / 2);
+
+    return this.dataSource.transaction(async (manager) => {
+      const player = await manager.findOne(Player, {
+        where: { id: playerId },
+      });
+
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+
+      player.totalPoint += refundAmount;
+      await manager.save(player);
+
+      return { refundAmount, totalPoint: player.totalPoint };
     });
   }
 
   async feed(userPetId: number, playerId: number): Promise<UserPet> {
-    const FEED_COST = 0;
+    const FEED_COST = 10;
     const GAIN_EXP = 10;
 
     return this.dataSource.transaction(async (manager) => {

@@ -1,10 +1,13 @@
 "use client";
 
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
-import { usePointStore } from "@/stores/pointStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useModalClose } from "@/hooks/useModalClose";
+import { usePetSystem } from "./tabs/PetTab/hooks/usePetSystem";
 import { useShallow } from "zustand/react/shallow";
 import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { pointApi } from "@/lib/api/point";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -29,7 +32,26 @@ export default function UserInfoModal() {
   const targetUsername = userInfoPayload?.username;
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
-  const points = usePointStore((state) => state.points);
+  const { user: currentUser } = useAuthStore();
+  const { player } = usePetSystem(userInfoPayload?.playerId ?? 0);
+  const queryClient = useQueryClient();
+
+  const isOwner = currentUser?.playerId === userInfoPayload?.playerId;
+  const points = player?.totalPoint ?? 0;
+
+  /** 테스트용 포인트 10P 적립 */
+  const handleAddDebugPoint = async () => {
+    try {
+      await pointApi.addDebugPoint();
+      // Refresh player info to show updated points
+      await queryClient.invalidateQueries({
+        queryKey: ["player", "info", userInfoPayload?.playerId],
+      });
+    } catch (error) {
+      console.error("Failed to add debug points:", error);
+      alert("포인트 추가 실패");
+    }
+  };
 
   const onClose = useCallback(() => {
     closeModal();
@@ -59,9 +81,20 @@ export default function UserInfoModal() {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded border-2 border-amber-900/20 bg-amber-100 px-3 py-1 font-bold text-amber-800">
-              <span>{points.toLocaleString()} P</span>
-            </div>
+            {isOwner && (
+              <>
+                <div className="flex items-center gap-2 rounded border-2 border-amber-900/20 bg-amber-100 px-3 py-1 font-bold text-amber-800">
+                  <span>{points.toLocaleString()} P</span>
+                </div>
+                {/* 테스트용 포인트 10P 적립버튼 */}
+                <button
+                  onClick={handleAddDebugPoint}
+                  className="rounded border-2 border-green-600 bg-green-500 px-3 py-1 text-sm font-bold text-white hover:bg-green-600 active:translate-y-[1px]"
+                >
+                  +10P
+                </button>
+              </>
+            )}
             <button
               onClick={handleClose}
               className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}

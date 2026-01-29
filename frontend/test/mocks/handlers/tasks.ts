@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { TaskEntity, toDateString, toTaskRes } from "../../shared/task";
+import { TaskEntity, toTaskRes } from "../../shared/task";
 
 let taskStore: TaskEntity[] = [];
 let nextId = 1;
@@ -21,19 +21,19 @@ const findTaskOrNull = (taskId: number) =>
 export const taskHandlers = [
   http.get("*/api/tasks/:playerId", ({ request }) => {
     const url = new URL(request.url);
-    const today = toDateString(new Date());
-    const targetDate = url.searchParams.get("date") ?? today;
-    const isToday = targetDate === today;
+    const startAt = url.searchParams.get("startAt");
+    const endAt = url.searchParams.get("endAt");
 
     const tasks = taskStore.filter((task) => {
-      const createdDate = toDateString(new Date(task.createdDate));
-      if (createdDate !== targetDate) return false;
+      const createdDate = new Date(task.createdDate);
 
-      if (!isToday) return true;
-      if (!task.completedDate) return true;
+      if (startAt && endAt) {
+        const start = new Date(startAt);
+        const end = new Date(endAt);
+        return createdDate >= start && createdDate < end;
+      }
 
-      const completedDate = toDateString(new Date(task.completedDate));
-      return completedDate === today;
+      return true;
     });
 
     return HttpResponse.json({
