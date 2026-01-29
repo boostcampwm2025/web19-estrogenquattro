@@ -562,7 +562,7 @@ this.scene.load.image(mapKey, `${API_URL}/api/maps/${index}`);
 
 ## 작업 순서
 
-```
+```text
 1. [ ] 브랜치 생성: fix/#214-global-state-persist
 
 === Part 1: globalState 영속화 (#214) ===
