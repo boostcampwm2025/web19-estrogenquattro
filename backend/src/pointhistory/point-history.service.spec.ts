@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PointHistoryService } from './point-history.service';
 import { PointHistory, PointType } from './entities/point-history.entity';
@@ -13,7 +13,6 @@ describe('PointHistoryService', () => {
   let pointHistoryRepository: Repository<PointHistory>;
   let playerRepository: Repository<Player>;
   let module: TestingModule;
-  let dataSource: DataSource;
 
   let player1: Player;
   let player2: Player;
@@ -40,7 +39,6 @@ describe('PointHistoryService', () => {
     playerRepository = module.get<Repository<Player>>(
       getRepositoryToken(Player),
     );
-    dataSource = module.get<DataSource>(DataSource);
   }, 30000);
 
   afterAll(async () => {
