@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GithubPollService } from './github.poll-service';
-import { GithubGateway } from './github.gateway';
+import { ProgressGateway } from './progress.gateway';
 import { GithubService } from './github.service';
 import { PointService } from '../point/point.service';
 import { GithubActivityType } from './entities/daily-github-activity.entity';
@@ -9,8 +9,8 @@ describe('GithubPollService', () => {
   let service: GithubPollService;
   let originalFetch: typeof global.fetch;
 
-  const mockGithubGateway = {
-    castGithubEventToRoom: jest.fn(),
+  const mockProgressGateway = {
+    castProgressUpdate: jest.fn(),
   };
 
   const mockGithubService = {
@@ -36,7 +36,7 @@ describe('GithubPollService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GithubPollService,
-        { provide: GithubGateway, useValue: mockGithubGateway },
+        { provide: ProgressGateway, useValue: mockProgressGateway },
         { provide: GithubService, useValue: mockGithubService },
         { provide: PointService, useValue: mockPointService },
       ],
@@ -189,7 +189,7 @@ describe('GithubPollService', () => {
       await Promise.resolve();
 
       // Then: 두 번째 요청 후에도 브로드캐스트가 호출되지 않음
-      expect(mockGithubGateway.castGithubEventToRoom).not.toHaveBeenCalled();
+      expect(mockProgressGateway.castProgressUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -312,7 +312,7 @@ describe('GithubPollService', () => {
       await Promise.resolve();
 
       // Then: 브로드캐스트가 호출되지 않음
-      expect(mockGithubGateway.castGithubEventToRoom).not.toHaveBeenCalled();
+      expect(mockProgressGateway.castProgressUpdate).not.toHaveBeenCalled();
     });
 
     it('첫 폴링에서 이벤트가 없으면 NO_EVENTS_SENTINEL을 설정한다', async () => {
@@ -425,9 +425,10 @@ describe('GithubPollService', () => {
       jest.advanceTimersByTime(120000);
       for (let i = 0; i < 10; i++) await Promise.resolve();
 
-      expect(mockGithubGateway.castGithubEventToRoom).toHaveBeenCalledWith(
-        expect.objectContaining({ pullRequestCount: 1 }),
-        'room-1',
+      expect(mockProgressGateway.castProgressUpdate).toHaveBeenCalledWith(
+        'testuser',
+        'github',
+        expect.objectContaining({ prCount: 1 }),
       );
     });
 

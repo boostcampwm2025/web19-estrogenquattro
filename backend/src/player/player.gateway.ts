@@ -13,7 +13,7 @@ import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { User } from '../auth/user.interface';
 import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
-import { GithubGateway } from '../github/github.gateway';
+import { ProgressGateway } from '../github/progress.gateway';
 import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
@@ -29,7 +29,7 @@ export class PlayerGateway
 
   constructor(
     private readonly githubService: GithubPollService,
-    private readonly githubGateway: GithubGateway,
+    private readonly progressGateway: ProgressGateway,
     private readonly wsJwtGuard: WsJwtGuard,
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
@@ -109,7 +109,7 @@ export class PlayerGateway
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string },
+    data: { x: number; y: number; username: string; startAt: string },
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = this.roomService.randomJoin(client.id);
@@ -163,8 +163,10 @@ export class PlayerGateway
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지
     const roomPlayerIds = this.roomService.getPlayerIds(roomId);
-    const focusStatuses =
-      await this.focusTimeService.findAllStatuses(roomPlayerIds);
+    const focusStatuses = await this.focusTimeService.findAllStatuses(
+      roomPlayerIds,
+      new Date(data.startAt),
+    );
     // Map playerId -> status info
     const statusMap = new Map<
       number,
@@ -216,7 +218,10 @@ export class PlayerGateway
     client.emit('players_synced', existingPlayers);
 
     // 4. Update FocusTime (이미 조회한 player 객체 재사용 가능하지만 findOrCreate 로직 유지)
-    const myFocusTime = await this.focusTimeService.findOrCreate(player);
+    const myFocusTime = await this.focusTimeService.findOrCreate(
+      player,
+      new Date(data.startAt),
+    );
 
     // 서버에서 현재 세션 경과 시간 계산
     const myCurrentSessionSeconds =
@@ -256,9 +261,9 @@ export class PlayerGateway
       playerId,
     );
 
-    // 새 클라이언트에게 현재 룸의 기여 상태 전송
-    const roomState = this.githubGateway.getRoomState(roomId);
-    client.emit('github_state', roomState);
+    // 새 클라이언트에게 전역 게임 상태 전송
+    const globalState = this.progressGateway.getGlobalState();
+    client.emit('game_state', globalState);
 
     // 6. 로컬 플레이어에게 joined 이벤트 전송 (focusTime 정보 포함)
     client.emit('joined', {

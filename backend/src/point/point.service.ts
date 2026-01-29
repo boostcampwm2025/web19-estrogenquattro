@@ -4,6 +4,7 @@ import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
+import { getTodayKstRangeUtc } from '../util/date.util';
 import { Player } from '../player/entites/player.entity';
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
@@ -25,16 +26,36 @@ export class PointService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getPoints(playerId: number): Promise<DailyPoint[]> {
-    const today = new Date().toISOString().slice(0, 10);
-    const oneYearAgo = new Date();
+  async getPoints(
+    currentPlayerId: number,
+    targetPlayerId: number,
+    currentTime: Date,
+  ): Promise<DailyPoint[]> {
+    // currentPlayerId와 targetPlayerId 존재 여부 검증
+    const playerRepo = this.dataSource.getRepository(Player);
+
+    const [currentPlayer, targetPlayer] = await Promise.all([
+      playerRepo.findOne({ where: { id: currentPlayerId } }),
+      playerRepo.findOne({ where: { id: targetPlayerId } }),
+    ]);
+
+    if (!currentPlayer) {
+      throw new NotFoundException(
+        `Player with ID ${currentPlayerId} not found`,
+      );
+    }
+    if (!targetPlayer) {
+      throw new NotFoundException(`Player with ID ${targetPlayerId} not found`);
+    }
+
+    // currentTime 기준 1년치 데이터 조회
+    const oneYearAgo = new Date(currentTime);
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const oneYearAgoStr = oneYearAgo.toISOString().slice(0, 10);
 
     return this.dailyPointRepository.find({
       where: {
-        player: { id: playerId },
-        createdDate: Between(oneYearAgoStr, today),
+        player: { id: targetPlayerId },
+        createdAt: Between(oneYearAgo, currentTime),
       },
     });
   }
@@ -46,14 +67,13 @@ export class PointService {
     repository?: string | null,
     description?: string | null,
   ): Promise<DailyPoint> {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
     return this.dataSource.transaction(async (manager) => {
       const dailyPointRepo = manager.getRepository(DailyPoint);
       const playerRepo: Repository<Player> = manager.getRepository(Player);
 
-      // 포인트 내역 저장 (트랜잭션 내에서)
       await this.pointHistoryService.addHistoryWithManager(
         manager,
         playerId,
@@ -62,8 +82,14 @@ export class PointService {
         repository,
         description,
       );
+      const { start, end } = getTodayKstRangeUtc();
 
-      // 플레이어 조회 및 totalPoint 업데이트
+      const existingRecord = await dailyPointRepo
+        .createQueryBuilder('dp')
+        .where('dp.player.id = :playerId', { playerId })
+        .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
+
       const player = await playerRepo.findOne({ where: { id: playerId } });
       if (!player) {
         throw new NotFoundException('Player not found');
@@ -71,13 +97,6 @@ export class PointService {
       player.totalPoint += totalPoint;
       await playerRepo.save(player);
 
-      // 일일 포인트 레코드 조회
-      const existingRecord = await dailyPointRepo.findOne({
-        where: {
-          player: { id: playerId },
-          createdDate: today,
-        },
-      });
 
       if (existingRecord) {
         existingRecord.amount += totalPoint;
@@ -87,9 +106,8 @@ export class PointService {
       const newRecord = dailyPointRepo.create({
         player: { id: playerId },
         amount: totalPoint,
-        createdDate: today,
+        createdAt: now,
       });
-
       return dailyPointRepo.save(newRecord);
     });
   }

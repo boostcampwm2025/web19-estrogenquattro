@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entites/task.entity';
@@ -6,7 +6,6 @@ import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res';
 import { TaskListRes } from './dto/task-list.res';
-import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class TaskService {
@@ -24,7 +23,7 @@ export class TaskService {
     const newTask = this.taskRepository.create({
       player,
       description: dto.description,
-      createdDate: new Date().toISOString().slice(0, 10),
+      createdAt: new Date(),
     });
 
     const savedTask = await this.taskRepository.save(newTask);
@@ -35,26 +34,21 @@ export class TaskService {
     return TaskRes.of(savedTask);
   }
 
-  async getTasks(playerId: number, date?: string): Promise<TaskListRes> {
+  async getTasks(
+    playerId: number,
+    startAt: Date,
+    endAt: Date,
+  ): Promise<TaskListRes> {
     await this.playerService.findOneById(playerId);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const targetDate = date ?? today;
-    const isToday = targetDate === today;
-
-    const query = this.taskRepository
+    const tasks = await this.taskRepository
       .createQueryBuilder('task')
       .where('task.player.id = :playerId', { playerId })
-      .andWhere('task.createdDate = :targetDate', { targetDate });
-
-    if (isToday) {
-      query.andWhere(
-        '(task.completedDate IS NULL OR task.completedDate = :today)',
-        { today },
-      );
-    }
-
-    const tasks = await query.getMany();
+      .andWhere('task.createdAt BETWEEN :startAt AND :endAt', {
+        startAt,
+        endAt,
+      })
+      .getMany();
 
     return {
       tasks: tasks.map((task) => TaskRes.of(task)),
@@ -79,7 +73,7 @@ export class TaskService {
       throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
-    task.completedDate = new Date().toISOString().slice(0, 10);
+    task.completedAt = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }
@@ -91,8 +85,8 @@ export class TaskService {
       throw new NotFoundException(`Task does not belong to player ${playerId}`);
     }
 
-    task.completedDate = null;
-    task.createdDate = new Date().toISOString().slice(0, 10);
+    task.completedAt = null;
+    task.createdAt = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }
