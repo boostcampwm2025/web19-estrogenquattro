@@ -14,11 +14,11 @@ export const pointApi = {
     ),
 
   /** 테스트용 포인트 10P 적립 */
-  addDebugPoint: () =>
+  /*   addDebugPoint: () =>
     fetchApi<{ success: boolean; addedPoint: number }>(
       "/api/points/debug/add",
       {
         method: "POST",
       },
-    ),
+    ), */
 };
