@@ -22,6 +22,8 @@ export default function OnboardingTour() {
     setChatOpen,
     isWaitingForModalGuide,
     setWaitingForModalGuide,
+    modalSubStepIndex,
+    nextModalSubStep,
   } = useOnboardingStore();
 
   const { closeModal } = useModalStore();
@@ -43,14 +45,55 @@ export default function OnboardingTour() {
 
   const step = ONBOARDING_STEPS[currentStep];
 
+  // 현재 서브 스텝 정보 가져오기
+  const getCurrentSubStep = () => {
+    if (!isWaitingForModalGuide || !step) return null;
+
+    // modalSubStepIndex가 -1이면 afterModal 단계
+    if (modalSubStepIndex === -1) {
+      return {
+        highlight: step.afterModalHighlight ?? null,
+        message: step.afterModalMessage ?? step.message,
+        triggerType: "manual" as const,
+        triggerTarget: undefined,
+      };
+    }
+
+    // modalSubSteps가 있으면 해당 인덱스의 서브 스텝 반환
+    if (step.modalSubSteps && modalSubStepIndex < step.modalSubSteps.length) {
+      return step.modalSubSteps[modalSubStepIndex];
+    }
+
+    return null;
+  };
+
+  const currentSubStep = getCurrentSubStep();
+
   // (펫 투어 단계)에서 다음으로 넘어갈 때 모달 닫기
   const handleNextWithModalClose = useCallback(() => {
+    // 모달 가이드 중이고 서브 스텝이 있는 경우
+    if (isWaitingForModalGuide && step.modalSubSteps) {
+      const nextSubIndex = modalSubStepIndex + 1;
+      if (nextSubIndex < step.modalSubSteps.length) {
+        // 다음 서브 스텝으로
+        nextModalSubStep();
+        return;
+      }
+    }
+
     // 펫 투어 단계에서 다음으로 넘어갈 때 모달 닫기
     if (step.id === "pet") {
       closeModal();
     }
     nextStep();
-  }, [step, closeModal, nextStep]);
+  }, [
+    step,
+    closeModal,
+    nextStep,
+    isWaitingForModalGuide,
+    modalSubStepIndex,
+    nextModalSubStep,
+  ]);
 
   // 키보드 이벤트 핸들러
   const handleKeyDown = useCallback(
@@ -109,26 +152,57 @@ export default function OnboardingTour() {
 
       const target = e.target as HTMLElement;
 
-      // 모달 내부 펫 탭 클릭 트리거 (먼저 체크해서 modal-click보다 우선 처리)
-      if (isWaitingForModalGuide && step.afterModalHighlight) {
-        const petTabButton = document.querySelector(step.afterModalHighlight);
+      // 모달 서브 스텝 클릭 처리
+      if (isWaitingForModalGuide && currentSubStep?.triggerType === "click") {
+        const triggerSelector = currentSubStep.triggerTarget;
+        if (triggerSelector) {
+          const triggerElement = document.querySelector(triggerSelector);
 
-        if (
-          petTabButton &&
-          (petTabButton === target || petTabButton.contains(target))
-        ) {
-          // 배경 숨기고 잠시 후 다음 스텝으로 (UI 깜빡임 방지)
-          setShowingAction(true);
-          setWaitingForModalGuide(false);
+          if (
+            triggerElement &&
+            (triggerElement === target || triggerElement.contains(target))
+          ) {
+            setShowingAction(true);
 
-          if (actionTimeoutRef.current) {
-            clearTimeout(actionTimeoutRef.current);
+            if (actionTimeoutRef.current) {
+              clearTimeout(actionTimeoutRef.current);
+            }
+
+            // 서브 스텝이 더 있는지 확인
+            const nextSubIndex = modalSubStepIndex + 1;
+            const hasMoreSubSteps =
+              step.modalSubSteps && nextSubIndex < step.modalSubSteps.length;
+
+            // 현재 서브 스텝의 딜레이 설정 (기본 500ms)
+            const delay = currentSubStep.delayAfterClick ?? 500;
+
+            actionTimeoutRef.current = setTimeout(() => {
+              setShowingAction(false);
+              if (hasMoreSubSteps) {
+                // 다음 서브 스텝으로 이동하기 전에 scrollIntoView 처리
+                const nextSubStep = step.modalSubSteps![nextSubIndex];
+                if (nextSubStep.scrollIntoView && nextSubStep.triggerTarget) {
+                  setTimeout(() => {
+                    const element = document.querySelector(
+                      nextSubStep.triggerTarget!,
+                    );
+                    if (element) {
+                      element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }
+                  }, 100);
+                }
+                nextModalSubStep();
+              } else {
+                // 모든 서브 스텝 완료, 다음 메인 스텝으로
+                setWaitingForModalGuide(false);
+                nextStep();
+              }
+            }, delay);
+            return;
           }
-          actionTimeoutRef.current = setTimeout(() => {
-            setShowingAction(false);
-            nextStep();
-          }, 300);
-          return; // 다른 핸들러 실행 방지
         }
       }
 
@@ -189,6 +263,9 @@ export default function OnboardingTour() {
       closeModal,
       isWaitingForModalGuide,
       setWaitingForModalGuide,
+      currentSubStep,
+      modalSubStepIndex,
+      nextModalSubStep,
     ],
   );
 
@@ -210,13 +287,23 @@ export default function OnboardingTour() {
   }
 
   // 현재 스텝이 트리거 대기 중인지 확인
-  const isWaitingForTrigger =
-    step.triggerType !== "manual" && !isWaitingForModalGuide;
+  const isWaitingForTrigger = () => {
+    if (isWaitingForModalGuide && currentSubStep) {
+      return currentSubStep.triggerType === "click";
+    }
+    return step.triggerType !== "manual";
+  };
 
   // 트리거 힌트 메시지 생성
   const getTriggerHint = () => {
-    if (isWaitingForModalGuide) {
-      return "펫 탭을 클릭해보세요!";
+    if (isWaitingForModalGuide && currentSubStep?.triggerType === "click") {
+      if (currentSubStep.triggerTarget === "#pet-tab-button") {
+        return "펫 탭을 클릭해보세요!";
+      }
+      if (currentSubStep.triggerTarget === "#pet-gacha-button") {
+        return "펫 뽑기 버튼을 클릭해보세요!";
+      }
+      return "해당 버튼을 클릭해보세요!";
     }
 
     switch (step.triggerType) {
@@ -240,14 +327,16 @@ export default function OnboardingTour() {
     return null;
   }
 
-  // 모달 가이드 대기 중이면 펫 탭 하이라이트
-  const currentHighlight = isWaitingForModalGuide
-    ? (step.afterModalHighlight ?? null)
-    : step.highlight;
+  // 현재 하이라이트와 메시지 결정
+  const currentHighlight =
+    isWaitingForModalGuide && currentSubStep
+      ? currentSubStep.highlight
+      : step.highlight;
 
-  const currentMessage = isWaitingForModalGuide
-    ? (step.afterModalMessage ?? step.message)
-    : step.message;
+  const currentMessage =
+    isWaitingForModalGuide && currentSubStep
+      ? currentSubStep.message
+      : step.message;
 
   return (
     <>
@@ -261,7 +350,7 @@ export default function OnboardingTour() {
         onSkip={skipOnboarding}
         isFirstStep={currentStep === 0}
         isLastStep={currentStep === totalSteps - 1}
-        isWaitingForTrigger={isWaitingForTrigger || isWaitingForModalGuide}
+        isWaitingForTrigger={isWaitingForTrigger()}
         triggerHint={getTriggerHint()}
       />
     </>

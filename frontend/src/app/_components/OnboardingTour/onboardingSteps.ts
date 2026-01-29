@@ -10,6 +10,17 @@ export interface OnboardingStep {
   afterModalHighlight?: string;
   /** 모달 열린 후 표시할 메시지 */
   afterModalMessage?: string;
+  /** 추가 하이라이트 단계들 (모달 내 여러 단계 진행용) */
+  modalSubSteps?: {
+    highlight: string;
+    message: string;
+    triggerType: "manual" | "click";
+    triggerTarget?: string;
+    /** 클릭 후 대기 시간 (ms) */
+    delayAfterClick?: number;
+    /** 스크롤하여 요소 보이게 할지 */
+    scrollIntoView?: boolean;
+  }[];
 }
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -45,7 +56,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "leaderboard",
     message:
-      "당신의 기여도는 몇 위인가요?누가 가장 뜨겁게 몰입했는지 확인해 보세요!<br>매주 새로운 시즌이 시작되니, 이번 주 '기여왕'에 도전해 보는 건 어떨까요?",
+      "당신의 기여도는 몇 위인가요? 누가 가장 몰입했는지 확인해 보세요!<br>매주 새로운 시즌이 시작되니, 이번 주 '기여왕' 에 도전해 보는 건 어떨까요?",
     highlight: "#leaderboard-button",
     triggerType: "click",
     triggerTarget: "#leaderboard-button",
@@ -57,14 +68,32 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     highlight: "#user-info-button",
     triggerType: "modal-click",
     triggerTarget: "#user-info-button",
-    afterModalHighlight: "#pet-tab-button",
+    afterModalHighlight: "#heatmap-info-link",
     afterModalMessage:
-      "모달이 열렸어요! 프로필 탭에서는 지금까지의 집중 이력들을 확인할 수 있어요.<br>이제 펫 탭을 클릭해서 귀여운 펫 친구들을 만나 보세요!",
+      "프로필 탭에서는 집중 이력을 확인할 수 있어요!<br>여기서 포인트 획득 정책도 확인할 수 있어요.",
+    modalSubSteps: [
+      {
+        highlight: "#pet-tab-button",
+        message: "이제 펫 탭을 클릭해서 귀여운 펫 친구들을 만나 보세요!",
+        triggerType: "click",
+        triggerTarget: "#pet-tab-button",
+        delayAfterClick: 2000,
+      },
+      {
+        highlight: "#pet-gacha-button",
+        message:
+          "처음 오셨군요! 펫 뽑기 버튼을 눌러 첫 번째 펫 친구를 만나 보세요!",
+        triggerType: "click",
+        triggerTarget: "#pet-gacha-button",
+        delayAfterClick: 6000,
+        scrollIntoView: true,
+      },
+    ],
   },
   {
     id: "pet",
     message:
-      "펫 탭에서는 포인트를 사용해 귀여운 펫을 뽑고, 먹이를 주며 성장시킬 수 있어요!<br>나만의 펫을 키워 보세요!",
+      "축하해요! 첫 펫을 만났네요!<br>펫에게 먹이를 주며 성장시키고, 진화시킬 수 있어요. 도감에서 대표 펫도 변경할 수 있어요!",
     highlight: null,
     triggerType: "manual",
   },
