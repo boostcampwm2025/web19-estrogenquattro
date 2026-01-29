@@ -7,6 +7,13 @@ import { PointHistoryService } from '../pointhistory/point-history.service';
 import { getTodayKstRangeUtc } from '../util/date.util';
 import { Player } from '../player/entites/player.entity';
 
+export interface PlayerRank {
+  playerId: number;
+  nickname: string;
+  totalPoints: number;
+  rank: number;
+}
+
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 2, // 커밋 1회
   [PointType.PR_OPEN]: 2, // PR 생성
@@ -109,5 +116,46 @@ export class PointService {
       });
       return dailyPointRepo.save(newRecord);
     });
+  }
+
+  async getWeeklyRanks(weekendStartAt: Date): Promise<PlayerRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const results = await this.dailyPointRepository
+      .createQueryBuilder('ph')
+      .select('ph.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('SUM(ph.amount)', 'totalPoints')
+      .innerJoin('ph.player', 'player')
+      .where('ph.createdAt >= :startAt', { startAt: weekendStartAt })
+      .andWhere('ph.createdAt < :endAt', { endAt: weekendEndAt })
+      .groupBy('ph.player_id')
+      .orderBy('totalPoints', 'DESC')
+      .getRawMany();
+
+    let currentRank = 1;
+    let previousPoints: number | null = null;
+
+    return results.map(
+      (
+        row: { playerId: number; nickname: string; totalPoints: string },
+        index,
+      ) => {
+        const totalPoints = Number(row.totalPoints);
+
+        if (previousPoints !== null && totalPoints < previousPoints) {
+          currentRank = index + 1;
+        }
+        previousPoints = totalPoints;
+
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          totalPoints,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }
