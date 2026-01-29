@@ -170,6 +170,13 @@ export class MapScene extends Phaser.Scene {
    * 첫 맵 로드 후 나머지 초기화 (game_state 수신 시 호출)
    */
   private initializeWithMap(mapIndex: number): void {
+    // 서버에서 잘못된 mapIndex가 오면 방어
+    if (mapIndex < 0 || mapIndex >= this.maps.length) {
+      console.warn(
+        `[MapScene] Invalid mapIndex from server: ${mapIndex}, using 0`,
+      );
+      mapIndex = 0;
+    }
     this.mapManager.loadAndSetup(mapIndex, () => {
       // Player Setup
       this.setupPlayer();
