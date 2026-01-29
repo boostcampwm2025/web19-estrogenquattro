@@ -6,7 +6,7 @@ import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
 import { PointService } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
-import { getYesterdayRange } from '../util/date.util';
+import { getYesterdayKstRange } from '../util/date.util';
 import { ProgressGateway, ProgressSource } from '../github/progress.gateway';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class PointSettlementScheduler {
   async handlePointSettlement(): Promise<void> {
     this.logger.log('KST 24:00:00 Point Settlement Scheduling Start');
 
-    const { start, end } = getYesterdayRange();
+    const { start, end } = getYesterdayKstRange();
     this.logger.log(
       `Settlement range: ${start.toISOString()} ~ ${end.toISOString()}`,
     );
