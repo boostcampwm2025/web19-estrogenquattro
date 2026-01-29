@@ -51,7 +51,9 @@ export default class SocketManager {
   private username: string;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
   private contributionController?: ContributionController;
+  private pendingContributions?: Record<string, number>;
   private isSessionReplaced: boolean = false;
+  private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
   private getPlayer: () =>
     | {
@@ -85,10 +87,32 @@ export default class SocketManager {
 
   setContributionController(controller: ContributionController) {
     this.contributionController = controller;
+    // 맵 전환 중 대기 중인 contributions가 있으면 적용
+    if (this.pendingContributions) {
+      controller.setContributions(this.pendingContributions);
+      this.pendingContributions = undefined;
+    }
   }
 
   getRoomId(): string {
     return this.roomId;
+  }
+
+  /**
+   * Player 생성 후 joining 이벤트 emit
+   * 첫 연결 시: initializeWithMap() → setupPlayer() 후 호출
+   * 재연결 시: connect 이벤트 핸들러에서 호출
+   */
+  emitJoining(): void {
+    const socket = getSocket();
+    const player = this.getPlayer();
+    if (!socket || !player) return;
+
+    socket.emit("joining", {
+      x: player.getContainer().x,
+      y: player.getContainer().y,
+      username: this.username,
+    });
   }
 
   connect(callbacks: {
@@ -97,26 +121,26 @@ export default class SocketManager {
     hideConnectionLostOverlay: () => void;
     onMapSwitch: (mapIndex: number) => void;
     onMapSyncRequired: (mapIndex: number) => void;
+    onInitialMapLoad: (mapIndex: number) => void;
   }): void {
     const socket = connectSocket();
     if (!socket) return;
-
-    const player = this.getPlayer();
 
     socket.on("connect", () => {
       // 재연결 시 오버레이 숨김 및 플래그 리셋
       callbacks.hideConnectionLostOverlay();
       this.isSessionReplaced = false;
 
+      const player = this.getPlayer();
       if (player && socket.id) {
         player.id = socket.id;
       }
 
-      socket.emit("joining", {
-        x: player?.getContainer().x,
-        y: player?.getContainer().y,
-        username: this.username,
-      });
+      // 재연결 시에만 joining emit (Player가 이미 존재하는 경우)
+      // 첫 연결 시에는 Player 생성 후 emitJoining() 호출
+      if (player) {
+        this.emitJoining();
+      }
     });
 
     // JWT 만료 시 로그인 페이지로 이동 (서버에서 주기적 검증으로 감지)
@@ -204,33 +228,75 @@ export default class SocketManager {
 
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
+      console.log("[SocketManager] game_state received:", data);
       useProgressStore.getState().setProgress(data.progress);
-      this.contributionController?.setContributions(data.contributions);
 
-      // 신규/재접속자: 현재 맵으로 동기화
-      if (data.mapIndex !== this.currentMapIndex) {
+      // 첫 접속: 맵 로드 후 Player, UI 등 초기화
+      if (!this.isInitialized) {
+        console.log("[SocketManager] Initial map load:", data.mapIndex);
+        this.isInitialized = true;
+        this.currentMapIndex = data.mapIndex;
+        this.pendingContributions = data.contributions;
+        callbacks.onInitialMapLoad(data.mapIndex);
+        return;
+      }
+
+      // 재접속: 맵 동기화만
+      const needsMapSync = data.mapIndex !== this.currentMapIndex;
+      if (needsMapSync) {
+        console.log(
+          "[SocketManager] Map sync required:",
+          this.currentMapIndex,
+          "→",
+          data.mapIndex,
+        );
+        this.pendingContributions = data.contributions;
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
+      } else {
+        this.contributionController?.setContributions(data.contributions);
       }
     });
 
     // 실시간 progress 업데이트 (절대값 동기화)
     socket.on("progress_update", (data: ProgressUpdateData) => {
+      console.log("[SocketManager] progress_update received:", data);
       useProgressStore.getState().setProgress(data.targetProgress);
-      this.contributionController?.setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구
-      if (data.mapIndex !== this.currentMapIndex) {
+      const needsMapSync = data.mapIndex !== this.currentMapIndex;
+      if (needsMapSync) {
+        console.log(
+          "[SocketManager] Map sync from progress_update:",
+          this.currentMapIndex,
+          "→",
+          data.mapIndex,
+        );
+        // 맵 전환 시 contributionController가 새로 생성되므로 pending으로 저장
+        this.pendingContributions = data.contributions;
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
+      } else {
+        // 맵 전환 불필요 시 바로 적용
+        this.contributionController?.setContributions(data.contributions);
       }
     });
 
     // 정상 맵 전환 (progress 100% 도달)
     socket.on("map_switch", (data: { mapIndex: number }) => {
+      console.log("[SocketManager] map_switch received:", data);
       if (data.mapIndex === this.currentMapIndex) return;
       this.currentMapIndex = data.mapIndex;
       callbacks.onMapSwitch(data.mapIndex);
+    });
+
+    // 시즌 리셋 (매주 월요일 00:00 KST)
+    socket.on("season_reset", (data: { mapIndex: number }) => {
+      console.log("[SocketManager] season_reset received:", data);
+      useProgressStore.getState().setProgress(0);
+      this.contributionController?.setContributions({});
+      this.currentMapIndex = data.mapIndex;
+      callbacks.onMapSyncRequired(data.mapIndex);
     });
 
     socket.on("chatted", (data: { userId: string; message: string }) => {
