@@ -36,7 +36,7 @@ export const queryKeys = {
   },
   leaderboard: {
     all: ["leaderboard"] as const,
-    ranks: (weekendStartAt: string) =>
-      [...queryKeys.leaderboard.all, "ranks", weekendStartAt] as const,
+    ranks: (weekendStartAt: string, type: string) =>
+      [...queryKeys.leaderboard.all, "ranks", weekendStartAt, type] as const,
   },
 };
