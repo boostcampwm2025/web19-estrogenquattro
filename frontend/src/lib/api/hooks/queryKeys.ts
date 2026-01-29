@@ -34,4 +34,9 @@ export const queryKeys = {
     info: (playerId: number) =>
       [...queryKeys.player.all, "info", playerId] as const,
   },
+  leaderboard: {
+    all: ["leaderboard"] as const,
+    ranks: (weekendStartAt: string) =>
+      [...queryKeys.leaderboard.all, "ranks", weekendStartAt] as const,
+  },
 };
