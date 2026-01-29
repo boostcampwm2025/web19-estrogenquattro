@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { CalendarHeatmap } from "./components/CalendarHeatmap/CalendarHeatmap";
 import StatsSection from "./components/StatsSection/StatsSection";
-import TaskSection from "./components/TaskSection/TaskSection";
+import DetailSection from "./components/DetailSection/DetailSection";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
 import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
+import { STAT_CARD_TYPES, StatCardType } from "./constants/constants";
 
 export default function ProfileTab() {
   const targetPlayerId = useModalStore(
@@ -14,6 +15,9 @@ export default function ProfileTab() {
   const { user } = useAuthStore();
   const playerId = targetPlayerId ?? user?.playerId ?? 0;
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedCard, setSelectedCard] = useState<StatCardType>(
+    STAT_CARD_TYPES.TASK,
+  );
   const { dailyPoints, focusTimeData, githubEvents, tasks, isLoading } =
     useProfileData(playerId, selectedDate);
 
@@ -41,8 +45,15 @@ export default function ProfileTab() {
           githubEvents={githubEvents}
           dailyPoints={dailyPoints}
           playerId={playerId}
+          selectedCard={selectedCard}
+          onCardSelect={setSelectedCard}
         />
-        <TaskSection tasks={tasks} selectedDate={selectedDate} />
+        <DetailSection
+          selectedCard={selectedCard}
+          tasks={tasks}
+          selectedDate={selectedDate}
+          playerId={playerId}
+        />
       </div>
     </div>
   );

@@ -3,3 +3,5 @@ export { taskApi, type TaskRes, type TaskListRes } from "./task";
 export { pointApi, type DailyPointRes } from "./point";
 export { focustimeApi, type DailyFocusTimeRes } from "./focustime";
 export { githubApi, type GithubEventsRes } from "./github";
+export { type GitEventHistoryRes, type GitEventType } from "./types/types";
+export { GIT_EVENT_TYPES } from "./constants/constants";

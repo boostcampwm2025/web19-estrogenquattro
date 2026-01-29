@@ -1,6 +1,7 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { getTasksByDate, formatTimeFromSeconds } from "../../lib/dateStats";
 import { isSameDay } from "../../lib/dateUtils";
+import { formatSelectedDate } from "@/utils/timeFormat";
 
 interface TaskSectionProps {
   tasks: Task[];
@@ -13,22 +14,13 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
     (task) => isToday || task.completed,
   );
 
-  const formatSelectedDate = () => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    const day = selectedDate.getDate();
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-    const weekday = weekdays[selectedDate.getDay()];
-
-    // 일자를 항상 2자리로 표시하여 너비 고정
-    return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
-  };
-
   return (
     <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold">Task 목록</p>
-        <p className="text-xs text-amber-700">{formatSelectedDate()}</p>
+        <p className="text-xs text-amber-700">
+          {formatSelectedDate(selectedDate)}
+        </p>
       </div>
 
       <div className="space-y-2">
