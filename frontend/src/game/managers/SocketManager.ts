@@ -296,6 +296,7 @@ export default class SocketManager {
     socket.on("season_reset", (data: { mapIndex: number }) => {
       console.log("[SocketManager] season_reset received:", data);
       useProgressStore.getState().setProgress(0);
+      this.pendingContributions = undefined;
       this.contributionController?.setContributions({});
       this.currentMapIndex = data.mapIndex;
       callbacks.onMapSyncRequired(data.mapIndex);
