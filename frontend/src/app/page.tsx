@@ -7,6 +7,7 @@ import LeaderboardModal from "./_components/LeaderboardModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import UserInfoButton from "./_components/UserInfoButton";
 import ProgressBar from "@/_components/ui/ProgressBar";
+import { OnboardingTour } from "./_components/OnboardingTour";
 
 export default function Home() {
   return (
@@ -17,6 +18,7 @@ export default function Home() {
           <ProgressBar />
           <UserInfoModal />
           <LeaderboardModal />
+          <OnboardingTour />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
