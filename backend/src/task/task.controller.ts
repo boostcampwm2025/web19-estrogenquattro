@@ -36,7 +36,7 @@ export class TaskController {
   @Get(':playerId')
   async getTasks(
     @Param('playerId', ParseIntPipe) playerId: number,
-    @Query('today', ParseBoolPipe) isToday: boolean,
+    @Query('isToday', ParseBoolPipe) isToday: boolean,
     @Query('startAt', ParseDatePipe) startAt: Date,
     @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<TaskListRes> {
