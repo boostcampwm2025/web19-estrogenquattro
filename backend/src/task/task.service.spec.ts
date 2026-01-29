@@ -152,7 +152,11 @@ describe('TaskService', () => {
       yesterdayEnd.setUTCHours(14, 59, 59, 999);
 
       const yesterdayTaskTime = new Date(yesterdayStart.getTime() + 60000);
-      const task = await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
+      const task = await createTestTask(
+        testPlayer,
+        '어제 할 일',
+        yesterdayTaskTime,
+      );
       // isToday=false일 때는 completedAt이 NOT NULL이어야 조회됨
       task.completedAt = yesterdayTaskTime;
       await taskRepository.save(task);
@@ -177,7 +181,11 @@ describe('TaskService', () => {
         start.getTime() - 2 * 24 * 60 * 60 * 1000,
       );
 
-      const task = await createTestTask(testPlayer, '과거 완료된 할 일', twoDaysAgoTime);
+      const task = await createTestTask(
+        testPlayer,
+        '과거 완료된 할 일',
+        twoDaysAgoTime,
+      );
       task.completedAt = twoDaysAgoTime; // 과거에 완료됨
       await taskRepository.save(task);
 
