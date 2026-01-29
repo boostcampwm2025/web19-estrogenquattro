@@ -40,7 +40,7 @@ export default function UserInfoModal() {
   const points = player?.totalPoint ?? 0;
 
   /** 테스트용 포인트 10P 적립 */
-  const handleAddDebugPoint = async () => {
+  /* const handleAddDebugPoint = async () => {
     try {
       await pointApi.addDebugPoint();
       // Refresh player info to show updated points
@@ -51,7 +51,7 @@ export default function UserInfoModal() {
       console.error("Failed to add debug points:", error);
       alert("포인트 추가 실패");
     }
-  };
+  }; */
 
   const onClose = useCallback(() => {
     closeModal();
@@ -87,12 +87,12 @@ export default function UserInfoModal() {
                   <span>{points.toLocaleString()} P</span>
                 </div>
                 {/* 테스트용 포인트 10P 적립버튼 */}
-                <button
+                {/* <button
                   onClick={handleAddDebugPoint}
                   className="rounded border-2 border-green-600 bg-green-500 px-3 py-1 text-sm font-bold text-white hover:bg-green-600 active:translate-y-[1px]"
                 >
                   +10P
-                </button>
+                </button> */}
               </>
             )}
             <button
