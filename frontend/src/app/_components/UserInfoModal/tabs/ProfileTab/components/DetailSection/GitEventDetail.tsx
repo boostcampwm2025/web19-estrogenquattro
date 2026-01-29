@@ -47,7 +47,8 @@ export default function GitEventDetail({
     .filter((event) => event.type === GIT_EVENT_TYPE_MAP[selectedCard])
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.activityAt || b.createdAt).getTime() -
+        new Date(a.activityAt || a.createdAt).getTime(),
     );
 
   const formatTime = (isoString: string) => {
@@ -111,7 +112,7 @@ export default function GitEventDetail({
                   )}
                 </div>
                 <span className="w-36 text-center text-xs text-amber-600">
-                  {formatTime(event.createdAt)}
+                  {formatTime(event.activityAt || event.createdAt)}
                 </span>
                 <span className="w-16 text-center text-xs font-bold text-amber-700">
                   +{event.amount}P

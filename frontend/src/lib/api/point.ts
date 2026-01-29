@@ -5,6 +5,7 @@ export interface DailyPointRes {
   id: number;
   amount: number;
   createdAt: string; // ISO8601 UTC 문자열
+  activityAt: string | null; // ISO8601 UTC 문자열 (실제 GitHub 활동 시간)
 }
 
 export const pointApi = {

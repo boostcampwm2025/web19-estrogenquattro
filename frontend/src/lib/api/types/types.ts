@@ -10,4 +10,5 @@ export interface GitEventHistoryRes {
   repository: string | null;
   description: string | null;
   createdAt: string; // ISO8601 UTC 문자열
+  activityAt: string | null; // ISO8601 UTC 문자열 (실제 GitHub 활동 시간)
 }
