@@ -3,16 +3,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { taskApi } from "../task";
 import { queryKeys } from "./queryKeys";
-import { getLocalDayRange, parseLocalDate } from "@/utils/timeFormat";
+import {
+  getLocalDayRange,
+  parseLocalDate,
+  toDateString,
+} from "@/utils/timeFormat";
 
 export function useTasks(playerId: number, date?: string) {
   // date가 없으면 오늘 로컬 날짜로 기본 설정
   const dateObj = date ? parseLocalDate(date) : new Date();
+  const dateString = toDateString(dateObj);
   const { startAt, endAt } = getLocalDayRange(dateObj);
+  const isToday = dateString === toDateString(new Date());
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.tasks.list(playerId, date),
-    queryFn: () => taskApi.getTasks(playerId, startAt, endAt),
+    queryKey: queryKeys.tasks.list(playerId, dateString),
+    queryFn: () => taskApi.getTasks(playerId, isToday, startAt, endAt),
     enabled: playerId > 0,
     staleTime: 0,
   });

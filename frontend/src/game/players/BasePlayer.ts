@@ -192,7 +192,8 @@ export default class BasePlayer {
       this.maskShape.x = this.container.x;
       this.maskShape.y = this.container.y;
       //y 좌표가 클수록(더 아래에 있을수록) 앞에 그려지도록 depth 설정
-      this.container.setDepth(this.container.y);
+      // 최소값을 0으로 설정하여 맵 이미지(depth: -1)보다 항상 앞에 표시
+      this.container.setDepth(Math.max(0, this.container.y));
     }
   }
 

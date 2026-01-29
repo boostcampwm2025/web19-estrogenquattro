@@ -1,4 +1,5 @@
 export interface LeaderboardPlayer {
+  playerId: number;
   rank: number;
   username: string;
   profileImage: string | null;
