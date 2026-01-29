@@ -39,15 +39,26 @@ export const usePetSystem = (playerId: number) => {
   const isLoading =
     isInventoryLoading || isCodexLoading || isPlayerLoading || isAllPetsLoading;
 
-  // 가챠
   const gachaMutation = useMutation({
     mutationFn: petApi.gacha,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["pets", "inventory", playerId],
-      });
-      queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
-      // 포인트 차감 동기화를 위해 플레이어 정보 갱신
+      // 포인트 즉시 차감 동기화를 위해 플레이어 정보는 즉시 갱신
+      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
+    },
+  });
+
+  const refreshPets = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["pets", "inventory", playerId],
+    });
+    queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
+  };
+
+  // 가챠 환급 (중복 펫 시)
+  const gachaRefundMutation = useMutation({
+    mutationFn: petApi.gachaRefund,
+    onSuccess: () => {
+      // 환급 후 포인트 갱신
       queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
     },
   });
@@ -112,6 +123,8 @@ export const usePetSystem = (playerId: number) => {
     player,
     isLoading,
     gacha: gachaMutation.mutateAsync,
+    gachaRefund: gachaRefundMutation.mutateAsync,
+    refreshPets,
     feed: feedMutation.mutateAsync,
     evolve: evolveMutation.mutateAsync,
     equip: equipMutation.mutateAsync,

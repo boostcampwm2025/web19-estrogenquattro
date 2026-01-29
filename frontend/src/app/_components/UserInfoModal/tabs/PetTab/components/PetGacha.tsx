@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Image from "next/image";
-import { usePointStore } from "@/stores/pointStore";
 import { Pet, UserPet } from "@/lib/api/pet";
+import { motion, AnimatePresence } from "motion/react";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -9,14 +9,21 @@ const PIXEL_BTN =
 
 interface PetGachaProps {
   onPetCollected: (petId: number) => void;
-  onGacha: () => Promise<UserPet["pet"]>;
+  onGacha: () => Promise<{ pet: UserPet["pet"]; isDuplicate: boolean }>;
+  onGachaRefund?: () => Promise<{ refundAmount: number; totalPoint: number }>;
+  points: number;
 }
 
-export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
+export default function PetGacha({
+  onPetCollected,
+  onGacha,
+  onGachaRefund,
+  points,
+}: PetGachaProps) {
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
   const [resultPet, setResultPet] = useState<Pet | null>(null);
-
-  const points = usePointStore((state) => state.points);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [showRefundAnim, setShowRefundAnim] = useState(false);
 
   const handleSummon = async () => {
     if (points < 100) {
@@ -27,14 +34,24 @@ export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
     setStatus("animating");
 
     try {
+      const { pet, isDuplicate } = await onGacha();
+
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const pet = await onGacha();
+      if (isDuplicate && onGachaRefund) {
+        await onGachaRefund();
+      }
 
       if (pet) {
         setResultPet(pet);
+        setIsDuplicate(isDuplicate);
         setStatus("result");
-        onPetCollected(pet.id);
+        if (!isDuplicate) {
+          onPetCollected(pet.id);
+        } else {
+          // 중복일 경우 0.5초 후 환급 애니메이션 시작
+          setTimeout(() => setShowRefundAnim(true), 500);
+        }
       } else {
         throw new Error("Unknown pet received");
       }
@@ -47,6 +64,8 @@ export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
   const resetGacha = () => {
     setStatus("idle");
     setResultPet(null);
+    setIsDuplicate(false);
+    setShowRefundAnim(false);
   };
 
   return (
@@ -96,15 +115,53 @@ export default function PetGacha({ onPetCollected, onGacha }: PetGachaProps) {
                 style={{ imageRendering: "pixelated" }}
               />
             </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-amber-900">축하합니다!</p>
-              <p className="text-sm text-amber-700">
-                <span className="font-bold text-amber-900">
-                  {resultPet.name}
-                </span>
-                을(를) 만났습니다!
-              </p>
+            <div className="flex flex-col items-center text-center">
+              {isDuplicate ? (
+                <>
+                  <p className="font-bold text-amber-700">
+                    이미 함께하고 있는 친구네요!
+                  </p>
+                  <span className="font mt-1 font-bold text-amber-800">
+                    중복으로 뽑은 펫은{" "}
+                    <span className="font mt-1 rounded bg-amber-200 px-2 py-0.5 text-amber-800">
+                      50P가 환급
+                    </span>{" "}
+                    됩니다.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-bold text-amber-900">
+                    축하합니다!
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    <span className="font-bold text-amber-900">
+                      {resultPet.name}
+                    </span>
+                    을(를) 만났습니다!
+                  </p>
+                </>
+              )}
             </div>
+
+            {/* 환급 애니메이션 */}
+            <AnimatePresence>
+              {showRefundAnim && (
+                <motion.div
+                  initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, y: -200, scale: 1.2 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="absolute z-50 flex items-center gap-1 font-bold text-yellow-500 drop-shadow-md"
+                  style={{ top: "40%" }}
+                  onAnimationComplete={() => setShowRefundAnim(false)}
+                >
+                  <span className="text-2xl">💰</span>
+                  <span className="text-xl">+50P</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <button onClick={resetGacha} className={PIXEL_BTN}>
               확인
             </button>

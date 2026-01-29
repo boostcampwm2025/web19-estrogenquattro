@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Query,
   ParseIntPipe,
   UseGuards,
@@ -10,6 +11,7 @@ import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 import { DailyPoint } from './entities/daily-point.entity';
 import { ParseDatePipe } from '../common/parse-date.pipe';
+import { PointType } from '../pointhistory/entities/point-history.entity';
 
 @UseGuards(JwtGuard)
 @Controller('api/points')
@@ -27,5 +29,13 @@ export class PointController {
       targetPlayerId,
       currentTime,
     );
+  }
+
+  @Post('debug/add')
+  async addDebugPoint(
+    @PlayerId() playerId: number,
+  ): Promise<{ success: boolean; addedPoint: number }> {
+    await this.pointService.addPoint(playerId, PointType.TASK_COMPLETED, 10);
+    return { success: true, addedPoint: 10 };
   }
 }

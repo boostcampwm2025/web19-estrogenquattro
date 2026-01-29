@@ -12,4 +12,13 @@ export const pointApi = {
     fetchApi<DailyPointRes[]>(
       `/api/points?targetPlayerId=${targetPlayerId}&currentTime=${encodeURIComponent(currentTime)}`,
     ),
+
+  /** 테스트용 포인트 10P 적립 */
+  addDebugPoint: () =>
+    fetchApi<{ success: boolean; addedPoint: number }>(
+      "/api/points/debug/add",
+      {
+        method: "POST",
+      },
+    ),
 };
