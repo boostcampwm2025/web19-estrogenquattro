@@ -77,7 +77,7 @@ export default function OnboardingTour() {
           }
           actionTimeoutRef.current = setTimeout(() => {
             nextStep();
-          }, 2000);
+          }, 1000);
         }
       }
 

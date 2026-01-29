@@ -141,10 +141,12 @@ export default function OnboardingHighlight({
         className="absolute"
         style={{
           top: rect.top + rect.height + padding + 8,
-          left: rect.left + rect.width / 2 - 12,
+          left: rect.left + rect.width / 2 - 24,
         }}
       >
-        <div className="animate-bounce text-2xl">👆</div>
+        <div className="size-12 animate-bounce">
+          <img src="/assets/arrow.png" alt="arrow-up" />
+        </div>
       </div>
     </div>
   );
