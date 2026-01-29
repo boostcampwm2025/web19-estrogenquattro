@@ -129,6 +129,7 @@ export class PointService {
       .addSelect('SUM(ph.amount)', 'totalPoints')
       .innerJoin('ph.player', 'player')
       .where('ph.createdAt >= :startAt', { startAt: weekendStartAt })
+      .andWhere('ph.createdAt < :endAt', { endAt: weekendEndAt })
       .groupBy('ph.player_id')
       .orderBy('totalPoints', 'DESC')
       .getRawMany();
