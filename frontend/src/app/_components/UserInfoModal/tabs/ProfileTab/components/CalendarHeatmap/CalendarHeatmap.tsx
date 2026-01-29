@@ -1,19 +1,20 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/_components/ui/button";
-import { useHeatmapData, DayData, DailyTaskCount } from "./useHeatmapData";
-import { getHeatmapColorClass } from "../../lib/heatmapColors";
-import { isSameDay } from "../../lib/dateUtils";
+import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
+import { HeatmapInfoLink } from "./HeatmapInfoLink";
+import { HeatmapCell } from "./HeatmapCell";
+import { HeatmapLegend } from "./HeatmapLegend";
 
 interface CalendarHeatmapProps {
-  dailyTaskCounts: DailyTaskCount[];
+  dailyPoints: DailyPoints;
   onSelectDate: (date: Date) => void;
   selectedDate?: Date;
 }
 
 export function CalendarHeatmap({
-  dailyTaskCounts,
+  dailyPoints,
   onSelectDate,
   selectedDate,
 }: CalendarHeatmapProps) {
@@ -22,7 +23,7 @@ export function CalendarHeatmap({
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { weeks } = useHeatmapData(dailyTaskCounts);
+  const { weeks } = useHeatmapData(dailyPoints);
 
   const handleScroll = (direction: "left" | "right") => {
     const container = containerRef.current;
@@ -60,46 +61,95 @@ export function CalendarHeatmap({
     setScrollPosition(maxScroll);
   }, []);
 
+  const monthLabelsMap = new Map<number, string>();
+
+  weeks.forEach((week, weekIndex) => {
+    // 주 내에 1일이 포함되어 있으면 월 레이블 표시 (GitHub 스타일)
+    const hasFirstDay = week.some(
+      (day) => day.value !== -1 && day.date.getDate() === 1,
+    );
+
+    if (hasFirstDay) {
+      const firstDay = week.find(
+        (day) => day.value !== -1 && day.date.getDate() === 1,
+      );
+      if (firstDay) {
+        const monthStr = firstDay.date.toLocaleDateString("en-US", {
+          month: "short",
+        });
+        monthLabelsMap.set(weekIndex, monthStr);
+      }
+    }
+  });
+
+  // 요일 레이블 (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
+  // Mon, Wed, Fri만 표시
+  const weekdayLabels = ["", "Mon", "", "Wed", "", "Fri", ""];
+
   return (
     <div className="mb-6 rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
+      {/* 포인트 획득 정책 링크 */}
+      <div className="mb-6">
+        <HeatmapInfoLink />
+      </div>
+
       <div className="flex items-center gap-2">
         <Button
           onClick={() => handleScroll("left")}
-          className="h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+          className="mr-1 h-7 w-7 shrink-0 rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div className="flex flex-1 gap-1 overflow-hidden">
+          {/* 요일 레이블 */}
+          <div className="flex shrink-0 flex-col pt-[21px]">
+            {weekdayLabels.map((label, index) => (
+              <div
+                key={index}
+                className={`flex h-3 items-center text-xs leading-3 font-bold text-amber-800 ${index < 6 ? "mb-0.75" : ""}`}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+
+          {/* 월 레이블 + 히트맵 */}
           <div
             ref={containerRef}
-            className="scrollbar-hide overflow-x-auto overflow-y-visible"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="scrollbar-hide flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            <div
-              className="inline-flex gap-1 py-0.5 pr-1"
-              style={{ minWidth: "max-content" }}
-            >
-              {weeks.map((week, weekIndex) => (
-                <div key={weekIndex} className="flex flex-col gap-0.75">
-                  {week.map((day, dayIndex) => (
-                    <div
-                      key={`${weekIndex}-${dayIndex}`}
-                      className={`h-3 w-3 rounded-sm transition-colors ${getHeatmapColorClass(day.value)} ${
-                        day.value === -1
-                          ? "cursor-default"
-                          : isSameDay(day.date, selectedDate)
-                            ? "ring-2 ring-amber-900"
-                            : "cursor-pointer ring-1 ring-amber-300 hover:ring-2 hover:ring-amber-800"
-                      }`}
-                      onClick={() => day.value !== -1 && onSelectDate(day.date)}
-                      onMouseEnter={(e) => handleMouseMove(e, day)}
-                      onMouseMove={(e) => handleMouseMove(e, day)}
-                      onMouseLeave={handleMouseLeave}
-                    />
-                  ))}
-                </div>
-              ))}
+            <div className="min-w-max">
+              {/* 월 레이블 */}
+              <div className="mb-1 flex h-3">
+                {weeks.map((_, weekIndex) => (
+                  <div
+                    key={`month-${weekIndex}`}
+                    className="w-4 text-xs font-bold whitespace-nowrap text-amber-800"
+                  >
+                    {monthLabelsMap.get(weekIndex) || ""}
+                  </div>
+                ))}
+              </div>
+
+              {/* 히트맵 */}
+              <div className="inline-flex gap-1 px-1 pb-1">
+                {weeks.map((week, weekIndex) => (
+                  <div key={weekIndex} className="flex flex-col gap-0.75">
+                    {week.map((day, dayIndex) => (
+                      <HeatmapCell
+                        key={`${weekIndex}-${dayIndex}`}
+                        day={day}
+                        selectedDate={selectedDate}
+                        onSelectDate={onSelectDate}
+                        onMouseEnter={handleMouseMove}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -111,6 +161,8 @@ export function CalendarHeatmap({
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+
+      <HeatmapLegend />
 
       {hoveredDay && hoveredDay.value !== -1 && (
         <HeatmapTooltip day={hoveredDay} position={mousePosition} />

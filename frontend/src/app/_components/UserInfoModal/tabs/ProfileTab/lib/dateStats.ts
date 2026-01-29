@@ -5,8 +5,12 @@ import { toDateString } from "@/utils/timeFormat";
  * 특정 날짜의 Task들을 필터링
  */
 export function getTasksByDate(tasks: Task[], date: Date): Task[] {
-  const dateStr = toDateString(date);
-  return tasks.filter((task) => task.createdDate === dateStr);
+  const targetDateStr = toDateString(date);
+
+  return tasks.filter((task) => {
+    const taskDateStr = toDateString(new Date(task.createdAt));
+    return taskDateStr === targetDateStr;
+  });
 }
 
 /**

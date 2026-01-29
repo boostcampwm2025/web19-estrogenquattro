@@ -12,6 +12,7 @@
 }
 
 :root {
+  color-scheme: light; /* 브라우저 다크모드 무시, 항상 라이트모드로 표시 */
   --background: #ffffff;
   --foreground: #171717;
 
@@ -38,12 +39,11 @@
   --retro-shadow-lg: 3px 3px 0px 0px #5d4e37;
   --retro-shadow-xl: 4px 4px 0px 0px #6b5335;
 
-  /* Heatmap colors (GitHub style) */
+  /* Heatmap colors (GitHub style - dark to light, 3 levels) */
   --heatmap-empty: #ebedf0;
-  --heatmap-level-1: #9be9a8;
-  --heatmap-level-2: #40c463;
-  --heatmap-level-3: #30a14e;
-  --heatmap-level-4: #216e39;
+  --heatmap-level-1: rgba(34, 197, 94, 0.25);
+  --heatmap-level-2: rgba(34, 197, 94, 0.5);
+  --heatmap-level-3: rgba(34, 197, 94, 1);
 }
 
 @theme inline {
@@ -72,7 +72,6 @@
   --color-heatmap-level-1: var(--heatmap-level-1);
   --color-heatmap-level-2: var(--heatmap-level-2);
   --color-heatmap-level-3: var(--heatmap-level-3);
-  --color-heatmap-level-4: var(--heatmap-level-4);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-pixel);
@@ -87,12 +86,14 @@
   }
 }
 
+/* Dark mode disabled - always use light mode
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
+*/
 
 html,
 body {

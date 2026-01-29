@@ -6,12 +6,12 @@ import {
   useTasks,
 } from "@/lib/api/hooks";
 import { DailyFocusTimeRes, GithubEventsRes } from "@/lib/api";
-import { DailyTaskCount } from "../components/CalendarHeatmap/useHeatmapData";
-import { toDateString } from "@/utils/timeFormat";
+import { toDateString, toUTCDateString } from "@/utils/timeFormat";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
+import { DailyPoints } from "../components/CalendarHeatmap/useHeatmapData";
 
 interface UseProfileDataReturn {
-  dailyTaskCounts: DailyTaskCount[];
+  dailyPoints: DailyPoints;
   focusTimeData: DailyFocusTimeRes | undefined;
   githubEvents: GithubEventsRes | undefined;
   tasks: Task[];
@@ -26,7 +26,7 @@ export function useProfileData(
   const dateStr = toDateString(selectedDate);
 
   // 히트맵 데이터 (1년치 포인트)
-  const { points, isLoading: isPointsLoading } = usePoint();
+  const { points, isLoading: isPointsLoading } = usePoint(playerId);
 
   // 선택된 날짜의 집중시간
   const { focustime: focusTimeData, isLoading: isFocusLoading } = useFocustime(
@@ -50,15 +50,17 @@ export function useProfileData(
     return tasksData.map(mapTaskResToTask);
   }, [tasksData]);
 
-  const dailyTaskCounts: DailyTaskCount[] = useMemo(() => {
-    return points.map((point) => ({
-      date: point.createdDate,
-      taskCount: point.amount,
-    }));
+  const dailyPoints: DailyPoints = useMemo(() => {
+    const map = new Map<string, number>();
+    points.forEach((point) => {
+      const dateKey = toUTCDateString(new Date(point.createdAt));
+      map.set(dateKey, point.amount);
+    });
+    return map;
   }, [points]);
 
   return {
-    dailyTaskCounts,
+    dailyPoints,
     focusTimeData,
     githubEvents,
     tasks,

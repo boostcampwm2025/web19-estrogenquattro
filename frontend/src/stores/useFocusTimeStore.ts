@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getSocket } from "@/lib/socket";
+import { getTodayStartTime } from "@/utils/timeFormat";
 
 export const FOCUS_STATUS = {
   FOCUSING: "FOCUSING",
@@ -87,7 +88,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     // Guard: taskId가 없고 이미 FOCUSING이면 무시 (no-op)
     // taskId가 있으면 Task 전환이므로 서버에 알려야 함
     const isTaskSwitch = taskId !== undefined;
-    if (prev.status === "FOCUSING" && !isTaskSwitch) {
+    if (prev.status === FOCUS_STATUS.FOCUSING && !isTaskSwitch) {
       return;
     }
 
@@ -114,7 +115,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     // 소켓 이벤트 전송 (응답 callback 포함)
     socket.emit(
       "focusing",
-      { taskName, taskId },
+      { taskName, taskId, startAt: getTodayStartTime() },
       (response: { success: boolean; error?: string }) => {
         if (!response?.success) {
           // 에러 시 이전 상태로 완전 롤백 (집중 세션 유지)
@@ -159,7 +160,7 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     // 소켓 이벤트 전송 (응답 callback 포함)
     socket.emit(
       "resting",
-      {},
+      { startAt: getTodayStartTime() },
       (response: { success: boolean; error?: string }) => {
         if (!response?.success) {
           // 에러 시 이전 상태로 롤백 (시간 연속성 유지)

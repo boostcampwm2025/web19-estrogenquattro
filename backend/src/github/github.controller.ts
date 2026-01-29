@@ -9,6 +9,7 @@ import { GithubService } from './github.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { GithubEventsResDto } from './dto/get-github-events.res';
 import { JwtGuard } from '../auth/jwt.guard';
+import { ParseDatePipe } from '../common/parse-date.pipe';
 
 @Controller('api/github')
 @UseGuards(JwtGuard)
@@ -19,7 +20,8 @@ export class GithubController {
   async getEvents(
     @PlayerId() currentPlayerId: number,
     @Query('playerId') playerId: string | undefined,
-    @Query('date') date: string,
+    @Query('startAt', ParseDatePipe) startAt: Date,
+    @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<GithubEventsResDto> {
     let targetPlayerId = currentPlayerId;
     if (playerId) {
@@ -29,6 +31,10 @@ export class GithubController {
       }
       targetPlayerId = parsed;
     }
-    return this.githubService.getPlayerActivitiesByDate(targetPlayerId, date);
+    return this.githubService.getPlayerActivities(
+      targetPlayerId,
+      startAt,
+      endAt,
+    );
   }
 }

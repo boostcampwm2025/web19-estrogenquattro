@@ -281,6 +281,7 @@ export class GithubPollService {
       username: string;
       commitCount: number;
       prCount: number;
+      mergeCount: number;
       issueCount: number;
       reviewCount: number;
     };
@@ -514,7 +515,8 @@ export class GithubPollService {
       data: {
         username,
         commitCount: details.commits.length,
-        prCount: details.prOpens.length + details.prMerges.length,
+        prCount: details.prOpens.length,
+        mergeCount: details.prMerges.length,
         issueCount: details.issues.length,
         reviewCount: details.reviews.length,
       },

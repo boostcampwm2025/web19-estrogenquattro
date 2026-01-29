@@ -32,8 +32,8 @@ export class DailyFocusTime {
   })
   status: FocusStatus;
 
-  @Column({ name: 'created_date', type: 'date', nullable: false })
-  createdDate: string;
+  @Column({ name: 'created_at', type: 'datetime', nullable: false })
+  createdAt: Date;
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;

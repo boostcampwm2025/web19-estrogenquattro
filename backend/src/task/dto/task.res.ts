@@ -5,15 +5,15 @@ export class TaskRes {
   description: string;
   totalFocusSeconds: number;
   isCompleted: boolean;
-  createdDate: string;
+  createdAt: string;
 
   static of(task: Task): TaskRes {
     const res = new TaskRes();
     res.id = task.id;
     res.description = task.description;
     res.totalFocusSeconds = task.totalFocusSeconds;
-    res.isCompleted = task.completedDate !== null;
-    res.createdDate = task.createdDate;
+    res.isCompleted = task.completedAt !== null;
+    res.createdAt = task.createdAt.toISOString();
     return res;
   }
 }

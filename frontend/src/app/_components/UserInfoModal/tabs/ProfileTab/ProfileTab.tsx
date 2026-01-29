@@ -5,14 +5,17 @@ import TaskSection from "./components/TaskSection/TaskSection";
 import { Loading } from "@/_components/ui/loading";
 import { useProfileData } from "./hooks/useProfileData";
 import { useModalStore } from "@/stores/useModalStore";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function ProfileTab() {
   const targetPlayerId = useModalStore(
     (state) => state.userInfoPayload?.playerId,
   );
+  const { user } = useAuthStore();
+  const playerId = targetPlayerId ?? user?.playerId ?? 0;
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const { dailyTaskCounts, focusTimeData, githubEvents, tasks, isLoading } =
-    useProfileData(targetPlayerId ?? 0, selectedDate);
+  const { dailyPoints, focusTimeData, githubEvents, tasks, isLoading } =
+    useProfileData(playerId, selectedDate);
 
   if (isLoading) {
     return (
@@ -25,7 +28,7 @@ export default function ProfileTab() {
   return (
     <div className="space-y-4">
       <CalendarHeatmap
-        dailyTaskCounts={dailyTaskCounts}
+        dailyPoints={dailyPoints}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
@@ -36,6 +39,8 @@ export default function ProfileTab() {
           selectedDate={selectedDate}
           focusTimeSeconds={focusTimeData?.totalFocusSeconds}
           githubEvents={githubEvents}
+          dailyPoints={dailyPoints}
+          playerId={playerId}
         />
         <TaskSection tasks={tasks} selectedDate={selectedDate} />
       </div>

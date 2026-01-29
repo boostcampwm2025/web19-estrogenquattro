@@ -2,9 +2,10 @@ import { create } from "zustand";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
 import { taskApi } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
-import { useFocusTimeStore } from "./useFocusTimeStore";
+import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
 import { getSocket } from "@/lib/socket";
 import { useAuthStore } from "./authStore";
+import { getLocalDayRange, parseLocalDate } from "@/utils/timeFormat";
 
 const MAX_TASK_TEXT_LENGTH = 100;
 
@@ -63,9 +64,14 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         });
         return;
       }
+
+      // date가 없으면 오늘 날짜로 기본 설정, 있으면 해당 날짜의 로컬 날짜 범위로 변환
+      const dateObj = date ? parseLocalDate(date) : new Date();
+      const { startAt, endAt } = getLocalDayRange(dateObj);
+
       set({ isLoading: true, error: null });
       try {
-        const response = await taskApi.getTasks(playerId, date);
+        const response = await taskApi.getTasks(playerId, startAt, endAt);
         const tasks = response.tasks.map(mapTaskResToTask);
         set({ tasks, isLoading: false });
       } catch (error) {
@@ -199,7 +205,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         // 집중 중인 Task 이름 변경 시 다른 플레이어에게 브로드캐스트
         if (task.isRunning) {
           const { status } = useFocusTimeStore.getState();
-          if (status === "FOCUSING") {
+          if (status === FOCUS_STATUS.FOCUSING) {
             const socket = getSocket();
             if (socket?.connected) {
               socket.emit("focus_task_updating", { taskName: trimmedText });
