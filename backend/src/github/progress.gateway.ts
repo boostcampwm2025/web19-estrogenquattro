@@ -100,18 +100,30 @@ export class ProgressGateway implements OnModuleInit {
         });
       }
 
-      const parsedContributions: unknown = JSON.parse(saved.contributions);
-      if (!isContributionsRecord(parsedContributions)) {
+      // JSON 파싱 및 mapIndex 검증 - 둘 중 하나라도 실패하면 기본값 유지
+      let parsedContributions: Record<string, number> | null = null;
+      try {
+        const raw: unknown = JSON.parse(saved.contributions);
+        if (isContributionsRecord(raw)) {
+          parsedContributions = raw;
+        }
+      } catch {
+        // 파싱 실패
+      }
+
+      const isMapIndexValid =
+        saved.mapIndex >= 0 && saved.mapIndex < MAP_COUNT;
+
+      if (parsedContributions === null || !isMapIndexValid) {
         this.logger.warn(
-          'Invalid contributions format in DB, resetting to empty',
+          `Invalid GlobalState in DB (contributions: ${parsedContributions === null ? 'invalid' : 'valid'}, mapIndex: ${isMapIndexValid ? 'valid' : 'invalid'}), using defaults`,
         );
+        return; // 기본값 유지
       }
 
       this.globalState = {
         progress: saved.progress,
-        contributions: isContributionsRecord(parsedContributions)
-          ? parsedContributions
-          : {},
+        contributions: parsedContributions,
         mapIndex: saved.mapIndex,
       };
       this.logger.log(
