@@ -1,4 +1,5 @@
 import { fetchApi } from "./client";
+import { GitEventHistoryRes } from "./types/types";
 
 export interface DailyPointRes {
   id: number;
@@ -11,6 +12,16 @@ export const pointApi = {
   getPoints: (targetPlayerId: number, currentTime: string) =>
     fetchApi<DailyPointRes[]>(
       `/api/points?targetPlayerId=${targetPlayerId}&currentTime=${encodeURIComponent(currentTime)}`,
+    ),
+
+  /** Git 이벤트 히스토리 조회 */
+  getGitEventHistories: (
+    targetPlayerId: number,
+    startAt: string,
+    endAt: string,
+  ) =>
+    fetchApi<GitEventHistoryRes[]>(
+      `/api/git-histories?targetPlayerId=${targetPlayerId}&startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}`,
     ),
 
   /** 테스트용 포인트 10P 적립 */
