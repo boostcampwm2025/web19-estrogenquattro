@@ -5,11 +5,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { PointHistoryService } from './point-history.service';
+import { PointHistoryService, HistoryRank } from './point-history.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 import { ParseDatePipe } from '../common/parse-date.pipe';
-import { PointHistory } from './entities/point-history.entity';
+import { PointHistory, PointType } from './entities/point-history.entity';
 
 @Controller('api')
 @UseGuards(JwtGuard)
@@ -29,5 +29,16 @@ export class PointHistoryController {
       startAt,
       endAt,
     );
+  }
+
+  @Get('history-ranks')
+  async getHistoryRanks(
+    @Query('type') type: PointType,
+    @Query('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
+  ): Promise<HistoryRank[]> {
+    if (!Object.values(PointType).includes(type)) {
+      throw new BadRequestException('Invalid PointType');
+    }
+    return this.pointHistoryService.getHistoryRanks(type, weekendStartAt);
   }
 }

@@ -4,6 +4,13 @@ import { Between, EntityManager, Repository } from 'typeorm';
 import { PointHistory, PointType } from './entities/point-history.entity';
 import { Player } from '../player/entites/player.entity';
 
+export interface HistoryRank {
+  playerId: number;
+  nickname: string;
+  count: number;
+  rank: number;
+}
+
 @Injectable()
 export class PointHistoryService {
   constructor(
@@ -57,5 +64,50 @@ export class PointHistoryService {
         createdAt: Between(startAt, endAt),
       },
     });
+  }
+
+  async getHistoryRanks(
+    type: PointType,
+    weekendStartAt: Date,
+  ): Promise<HistoryRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const results = await this.pointHistoryRepository
+      .createQueryBuilder('ph')
+      .select('ph.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('COUNT(*)', 'count')
+      .innerJoin('ph.player', 'player')
+      .where('ph.type = :type', { type })
+      .andWhere('ph.createdAt BETWEEN :startAt AND :endAt', {
+        startAt: weekendStartAt,
+        endAt: weekendEndAt,
+      })
+      .groupBy('ph.player_id')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    // 동점자 처리: 같은 개수면 같은 등수
+    let currentRank = 1;
+    let previousCount: number | null = null;
+
+    return results.map(
+      (row: { playerId: number; nickname: string; count: string }, index) => {
+        const count = Number(row.count);
+
+        if (previousCount !== null && count < previousCount) {
+          currentRank = index + 1;
+        }
+        previousCount = count;
+
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          count,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }
