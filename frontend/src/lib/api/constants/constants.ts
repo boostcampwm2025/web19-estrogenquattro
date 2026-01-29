@@ -1,0 +1,6 @@
+export const GIT_EVENT_TYPES = {
+  COMMITTED: "COMMITTED",
+  ISSUE_OPEN: "ISSUE_OPEN",
+  PR_OPEN: "PR_OPEN",
+  PR_REVIEWED: "PR_REVIEWED",
+} as const;

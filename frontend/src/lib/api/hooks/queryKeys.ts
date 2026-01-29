@@ -3,6 +3,8 @@ export const queryKeys = {
     all: ["points"] as const,
     list: (targetPlayerId: number) =>
       [...queryKeys.points.all, "list", targetPlayerId] as const,
+    gitEventHistories: (playerId: number, date: string) =>
+      [...queryKeys.points.all, "gitEventHistories", playerId, date] as const,
   },
   focustime: {
     all: ["focustime"] as const,

@@ -102,6 +102,20 @@ export function toUTCDateString(date: Date): string {
 }
 
 /**
+ * Date 객체를 "YYYY년 M월 DD일 요일" 형식으로 변환
+ * @param date - 포맷팅할 날짜
+ * @returns 포맷된 날짜 문자열 (예: "2026년 1월 29일 수")
+ */
+export function formatSelectedDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = weekdays[date.getDay()];
+  return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
+}
+
+/**
  * 이번 주 월요일 00:00:00 (로컬 타임존)을 UTC ISO8601로 반환
  * 리더보드 주간 랭킹 조회 시 사용
  *

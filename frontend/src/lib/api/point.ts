@@ -1,9 +1,18 @@
 import { fetchApi } from "./client";
+import { GitEventHistoryRes } from "./types/types";
 
 export interface DailyPointRes {
   id: number;
   amount: number;
   createdAt: string; // ISO8601 UTC 문자열
+  activityAt: string | null; // ISO8601 UTC 문자열 (실제 GitHub 활동 시간)
+}
+
+export interface PlayerRankRes {
+  playerId: number;
+  nickname: string;
+  totalPoints: number;
+  rank: number;
 }
 
 export interface PlayerRankRes {
@@ -18,6 +27,16 @@ export const pointApi = {
   getPoints: (targetPlayerId: number, currentTime: string) =>
     fetchApi<DailyPointRes[]>(
       `/api/points?targetPlayerId=${targetPlayerId}&currentTime=${encodeURIComponent(currentTime)}`,
+    ),
+
+  /** Git 이벤트 히스토리 조회 */
+  getGitEventHistories: (
+    targetPlayerId: number,
+    startAt: string,
+    endAt: string,
+  ) =>
+    fetchApi<GitEventHistoryRes[]>(
+      `/api/git-histories?targetPlayerId=${targetPlayerId}&startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}`,
     ),
 
   /** 주간 리더보드 조회 */
