@@ -429,6 +429,7 @@ export class GithubPollService {
           1,
           commit.repository,
           commit.message,
+          commit.activityAt,
         );
       }
     }
@@ -447,6 +448,7 @@ export class GithubPollService {
           1,
           pr.repository,
           pr.title,
+          pr.activityAt,
         );
       }
     }
@@ -465,6 +467,7 @@ export class GithubPollService {
           1,
           pr.repository,
           pr.title,
+          pr.activityAt,
         );
       }
     }
@@ -483,6 +486,7 @@ export class GithubPollService {
           1,
           issue.repository,
           issue.title,
+          issue.activityAt,
         );
       }
     }
@@ -501,6 +505,7 @@ export class GithubPollService {
           1,
           review.repository,
           review.prTitle,
+          review.activityAt,
         );
       }
     }
@@ -527,20 +532,41 @@ export class GithubPollService {
     events: GithubEvent[],
     schedule: PollingSchedule,
   ): Promise<{
-    commits: Array<{ repository: string; message: string }>;
-    prOpens: Array<{ repository: string; title: string }>;
-    prMerges: Array<{ repository: string; title: string }>;
-    issues: Array<{ repository: string; title: string }>;
-    reviews: Array<{ repository: string; prTitle: string }>;
+    commits: Array<{ repository: string; message: string; activityAt: Date }>;
+    prOpens: Array<{ repository: string; title: string; activityAt: Date }>;
+    prMerges: Array<{ repository: string; title: string; activityAt: Date }>;
+    issues: Array<{ repository: string; title: string; activityAt: Date }>;
+    reviews: Array<{ repository: string; prTitle: string; activityAt: Date }>;
   }> {
-    const commits: Array<{ repository: string; message: string }> = [];
-    const prOpens: Array<{ repository: string; title: string }> = [];
-    const prMerges: Array<{ repository: string; title: string }> = [];
-    const issues: Array<{ repository: string; title: string }> = [];
-    const reviews: Array<{ repository: string; prTitle: string }> = [];
+    const commits: Array<{
+      repository: string;
+      message: string;
+      activityAt: Date;
+    }> = [];
+    const prOpens: Array<{
+      repository: string;
+      title: string;
+      activityAt: Date;
+    }> = [];
+    const prMerges: Array<{
+      repository: string;
+      title: string;
+      activityAt: Date;
+    }> = [];
+    const issues: Array<{
+      repository: string;
+      title: string;
+      activityAt: Date;
+    }> = [];
+    const reviews: Array<{
+      repository: string;
+      prTitle: string;
+      activityAt: Date;
+    }> = [];
 
     for (const event of events) {
       const repoName = event.repo.name;
+      const activityAt = new Date(event.created_at);
 
       switch (event.type) {
         case 'PushEvent': {
@@ -555,7 +581,7 @@ export class GithubPollService {
           );
 
           for (const msg of commitDetails.messages) {
-            commits.push({ repository: repoName, message: msg });
+            commits.push({ repository: repoName, message: msg, activityAt });
             this.logger.debug(
               `[${schedule.username}] COMMIT: "${msg}" (${repoName})`,
             );
@@ -573,7 +599,7 @@ export class GithubPollService {
               prNumber,
               schedule.accessToken,
             );
-            prOpens.push({ repository: repoName, title: prTitle });
+            prOpens.push({ repository: repoName, title: prTitle, activityAt });
             this.logger.debug(
               `[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`,
             );
@@ -587,7 +613,7 @@ export class GithubPollService {
               prNumber,
               schedule.accessToken,
             );
-            prMerges.push({ repository: repoName, title: prTitle });
+            prMerges.push({ repository: repoName, title: prTitle, activityAt });
             this.logger.debug(
               `[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`,
             );
@@ -601,6 +627,7 @@ export class GithubPollService {
             issues.push({
               repository: repoName,
               title: issuePayload.issue.title,
+              activityAt,
             });
             this.logger.debug(
               `[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`,
@@ -617,7 +644,7 @@ export class GithubPollService {
               reviewPayload.pull_request.number,
               schedule.accessToken,
             );
-            reviews.push({ repository: repoName, prTitle });
+            reviews.push({ repository: repoName, prTitle, activityAt });
             this.logger.debug(
               `[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`,
             );

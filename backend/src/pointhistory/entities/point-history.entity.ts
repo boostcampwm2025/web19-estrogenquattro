@@ -43,6 +43,9 @@ export class PointHistory {
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
+  @Column({ name: 'activity_at', type: 'datetime', nullable: true })
+  activityAt: Date | null;
+
   @BeforeInsert()
   setCreatedDate(): void {
     if (!this.createdAt) {
