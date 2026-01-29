@@ -41,7 +41,7 @@ export default function LeaderboardModal() {
 
   // 백엔드 응답을 프론트엔드 타입으로 변환
   const leaderboardData = useMemo<LeaderboardResponse | null>(() => {
-    if (!isOpen || isLoading || ranks.length === 0) return null;
+    if (!isOpen || isLoading) return null;
 
     return {
       seasonEndTime: getNextMonday(),
@@ -126,9 +126,15 @@ export default function LeaderboardModal() {
 
           {/* 순위 목록 (스크롤 가능) */}
           <div className="retro-scrollbar max-h-60 space-y-2 overflow-y-auto">
-            {leaderboardData.players.map((player) => (
-              <PlayerRow key={player.rank} player={player} />
-            ))}
+            {leaderboardData.players.length === 0 ? (
+              <div className="py-8 text-center text-sm text-amber-700">
+                아직 이번 주 랭킹 데이터가 없습니다.
+              </div>
+            ) : (
+              leaderboardData.players.map((player) => (
+                <PlayerRow key={player.rank} player={player} />
+              ))
+            )}
           </div>
 
           {/* 내 순위 */}
