@@ -31,14 +31,13 @@ export default function DialogBox({
     <div className="fixed right-0 bottom-0 left-0 z-[100] px-4 pb-4 md:px-8 lg:px-16">
       {/* 대화창 컨테이너 - 캐릭터 이미지를 위한 왼쪽 패딩 */}
       <div className="relative mx-auto max-w-[1200px]">
-        {/* 캐릭터 이미지 - absolute로 대화창 위에 겹침 */}
-        <div className="absolute -top-6 -left-4 z-10">
+        <div className="absolute top-1/2 -left-4 z-10 -translate-y-1/2">
           <Image
             src="/assets/mascot/tutorial_man1.png"
             alt="튜토리얼 마스코트"
             width={300}
             height={300}
-            className="h-48 w-48 object-contain drop-shadow-lg md:h-56 md:w-56 lg:h-64 lg:w-64"
+            className="h-56 w-56 object-contain drop-shadow-lg"
             priority
           />
         </div>
@@ -67,7 +66,7 @@ export default function DialogBox({
 
           {/* 트리거 힌트 (인터랙티브 스텝일 때) */}
           {isWaitingForTrigger && triggerHint && (
-            <div className="text mb-3 animate-pulse rounded bg-amber-100 text-amber-700">
+            <div className="mb-3 animate-pulse rounded bg-amber-100 text-xl text-amber-700">
               💡 {triggerHint}
             </div>
           )}
