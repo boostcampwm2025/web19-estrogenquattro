@@ -8,6 +8,7 @@ export function HeatmapInfoLink() {
 
   return (
     <button
+      id="heatmap-info-link"
       type="button"
       onClick={handleClick}
       className="flex cursor-pointer items-center gap-1 text-xs text-amber-700 transition-colors hover:text-amber-900"
