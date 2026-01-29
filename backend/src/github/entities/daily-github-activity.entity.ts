@@ -30,6 +30,6 @@ export class DailyGithubActivity {
   @Column({ type: 'int', default: 0 })
   count: number;
 
-  @Column({ name: 'created_date', type: 'date' })
-  createdDate: string;
+  @Column({ name: 'created_at', type: 'datetime' })
+  createdAt: Date;
 }

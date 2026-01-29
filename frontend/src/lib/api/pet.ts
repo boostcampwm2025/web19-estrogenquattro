@@ -33,9 +33,17 @@ export const petApi = {
     fetchApi<UserPet[]>(`/api/pets/inventory/${playerId}`),
 
   gacha: () =>
-    fetchApi<UserPet>("/api/pets/gacha", {
+    fetchApi<{ userPet: UserPet; isDuplicate: boolean }>("/api/pets/gacha", {
       method: "POST",
     }),
+
+  gachaRefund: () =>
+    fetchApi<{ refundAmount: number; totalPoint: number }>(
+      "/api/pets/gacha/refund",
+      {
+        method: "POST",
+      },
+    ),
 
   feed: (userPetId: number) =>
     fetchApi<UserPet>("/api/pets/feed", {

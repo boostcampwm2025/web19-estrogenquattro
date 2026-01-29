@@ -9,6 +9,7 @@ import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
+import { getTodayKstRangeUtc } from '../util/date.util';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -69,12 +70,12 @@ describe('TaskService', () => {
   const createTestTask = async (
     player: Player,
     description: string,
-    createdDate?: string,
+    createdAt?: Date,
   ): Promise<Task> => {
     const task = taskRepository.create({
       player,
       description,
-      createdDate: createdDate ?? new Date().toISOString().slice(0, 10),
+      createdAt: createdAt ?? new Date(),
     });
     return taskRepository.save(task);
   };
@@ -108,12 +109,13 @@ describe('TaskService', () => {
   describe('getTasks', () => {
     it('오늘 날짜의 미완료 할 일을 조회한다', async () => {
       // Given
-      const today = new Date().toISOString().slice(0, 10);
-      await createTestTask(testPlayer, '할 일 1', today);
-      await createTestTask(testPlayer, '할 일 2', today);
+      const { start, end } = getTodayKstRangeUtc();
+      const taskTime = new Date(start.getTime() + 60000); // start 이후 1분
+      await createTestTask(testPlayer, '할 일 1', taskTime);
+      await createTestTask(testPlayer, '할 일 2', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(2);
@@ -121,13 +123,18 @@ describe('TaskService', () => {
 
     it('오늘 완료된 할 일도 조회된다', async () => {
       // Given
-      const today = new Date().toISOString().slice(0, 10);
-      const task = await createTestTask(testPlayer, '오늘 완료 할 일', today);
-      task.completedDate = today;
+      const { start, end } = getTodayKstRangeUtc();
+      const taskTime = new Date(start.getTime() + 60000);
+      const task = await createTestTask(
+        testPlayer,
+        '오늘 완료 할 일',
+        taskTime,
+      );
+      task.completedAt = taskTime;
       await taskRepository.save(task);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -135,14 +142,24 @@ describe('TaskService', () => {
     });
 
     it('과거 날짜를 지정하여 조회한다', async () => {
-      // Given
-      const yesterday = new Date(Date.now() - 86400000)
-        .toISOString()
-        .slice(0, 10);
-      await createTestTask(testPlayer, '어제 할 일', yesterday);
+      // Given: 어제 범위 계산
+      const now = new Date();
+      const yesterdayStart = new Date(now);
+      yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+      yesterdayStart.setUTCHours(15, 0, 0, 0);
+
+      const yesterdayEnd = new Date(now);
+      yesterdayEnd.setUTCHours(14, 59, 59, 999);
+
+      const yesterdayTaskTime = new Date(yesterdayStart.getTime() + 60000);
+      await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id, yesterday);
+      const result = await service.getTasks(
+        testPlayer.id,
+        yesterdayStart,
+        yesterdayEnd,
+      );
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -150,14 +167,21 @@ describe('TaskService', () => {
     });
 
     it('다른 날짜의 할 일은 조회되지 않는다', async () => {
-      // Given
-      const yesterday = new Date(Date.now() - 86400000)
-        .toISOString()
-        .slice(0, 10);
-      await createTestTask(testPlayer, '어제 할 일', yesterday);
+      // Given: 2일 전 범위에 태스크 생성 (오늘 범위와 확실히 겹치지 않도록)
+      const { start } = getTodayKstRangeUtc();
+      const twoDaysAgoTime = new Date(
+        start.getTime() - 2 * 24 * 60 * 60 * 1000,
+      );
 
-      // When
-      const result = await service.getTasks(testPlayer.id); // 오늘 날짜로 조회
+      await createTestTask(testPlayer, '과거 할 일', twoDaysAgoTime);
+
+      // When: 오늘 범위로 조회
+      const { start: todayStart, end: todayEnd } = getTodayKstRangeUtc();
+      const result = await service.getTasks(
+        testPlayer.id,
+        todayStart,
+        todayEnd,
+      );
 
       // Then
       expect(result.tasks).toHaveLength(0);
@@ -165,12 +189,13 @@ describe('TaskService', () => {
 
     it('다른 플레이어의 할 일은 조회되지 않는다', async () => {
       // Given
-      const today = new Date().toISOString().slice(0, 10);
-      await createTestTask(testPlayer, '내 할 일', today);
-      await createTestTask(otherPlayer, '다른 사람 할 일', today);
+      const { start, end } = getTodayKstRangeUtc();
+      const taskTime = new Date(start.getTime() + 60000);
+      await createTestTask(testPlayer, '내 할 일', taskTime);
+      await createTestTask(otherPlayer, '다른 사람 할 일', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id);
+      const result = await service.getTasks(testPlayer.id, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -179,7 +204,10 @@ describe('TaskService', () => {
 
     it('존재하지 않는 플레이어로 조회 시 NotFoundException을 던진다', async () => {
       // When & Then
-      await expect(service.getTasks(99999)).rejects.toThrow(NotFoundException);
+      const { start, end } = getTodayKstRangeUtc();
+      await expect(service.getTasks(99999, start, end)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -245,7 +273,7 @@ describe('TaskService', () => {
     it('완료된 할 일을 미완료로 되돌린다', async () => {
       // Given
       const task = await createTestTask(testPlayer, '완료된 할 일');
-      task.completedDate = new Date().toISOString().slice(0, 10);
+      task.completedAt = new Date();
       await taskRepository.save(task);
 
       // When

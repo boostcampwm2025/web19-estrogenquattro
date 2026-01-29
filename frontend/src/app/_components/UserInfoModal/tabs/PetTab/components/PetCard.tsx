@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { useState } from "react";
-import { usePointStore } from "@/stores/pointStore";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -18,6 +17,7 @@ interface PetCardProps {
   };
   onAction: () => void;
   isOwner: boolean;
+  points: number;
 }
 
 export default function PetCard({
@@ -26,9 +26,9 @@ export default function PetCard({
   currentStageData,
   onAction,
   isOwner,
+  points,
 }: PetCardProps) {
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
-  const points = usePointStore((state) => state.points);
 
   const isMaxStage = maxExp === 0;
   const isReadyToEvolve = !isMaxStage && exp >= maxExp;

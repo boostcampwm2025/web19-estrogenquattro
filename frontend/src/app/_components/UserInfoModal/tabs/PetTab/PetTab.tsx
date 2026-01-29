@@ -24,6 +24,8 @@ export default function PetTab() {
     evolve,
     equip,
     gacha,
+    gachaRefund,
+    refreshPets,
     allPets,
     isLoading,
   } = usePetSystem(playerId);
@@ -108,7 +110,10 @@ export default function PetTab() {
   };
 
   const handlePetCollected = async (petId: number) => {
-    // 가챠 성공 콜백
+    // 가챠 성공 콜백 (애니메이션 종료 후)
+    // 인벤토리 및 도감 갱신 (스포일러 방지 해제)
+    refreshPets();
+
     // 인벤토리가 비어있었다면(첫 펫 획득), 자동으로 선택 및 장착
     if (inventory.length === 0) {
       setSelectedPetId(petId);
@@ -120,9 +125,12 @@ export default function PetTab() {
     }
   };
 
-  const handleGachaExecution = async (): Promise<UserPet["pet"]> => {
+  const handleGachaExecution = async (): Promise<{
+    pet: UserPet["pet"];
+    isDuplicate: boolean;
+  }> => {
     const response = await gacha();
-    return response.pet;
+    return { pet: response.userPet.pet, isDuplicate: response.isDuplicate };
   };
 
   const handlePetSelect = async (petId: number) => {
@@ -141,6 +149,8 @@ export default function PetTab() {
   if (!playerId || (allPets.length === 0 && isLoading))
     return <div>Loading...</div>;
 
+  const points = player?.totalPoint ?? 0;
+
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
       {/* 펫이 선택되었을 때만 카드 표시 (신규 유저는 안 보임 -> 자연스럽게 가챠 유도) */}
@@ -151,6 +161,7 @@ export default function PetTab() {
           currentStageData={petCardData}
           onAction={handleAction}
           isOwner={isOwner}
+          points={points}
         />
       ) : (
         <div className="border-4 border-amber-900/20 bg-amber-50 p-8 text-center text-amber-700">
@@ -164,7 +175,9 @@ export default function PetTab() {
       {isOwner && (
         <PetGacha
           onGacha={handleGachaExecution}
+          onGachaRefund={gachaRefund}
           onPetCollected={handlePetCollected}
+          points={points}
         />
       )}
       <PetCodex

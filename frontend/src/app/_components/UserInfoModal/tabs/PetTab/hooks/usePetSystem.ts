@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { petApi } from "@/lib/api/pet";
 import { getSocket } from "@/lib/socket";
+import { queryKeys } from "@/lib/api/hooks/queryKeys";
 
 export const usePetSystem = (playerId: number) => {
   const queryClient = useQueryClient();
 
   // 인벤토리 조회 (해당 유저의 펫 목록)
   const { data: inventory = [], isLoading: isInventoryLoading } = useQuery({
-    queryKey: ["pets", "inventory", playerId],
+    queryKey: queryKeys.pets.inventory(playerId),
     queryFn: () => petApi.getInventory(playerId),
     enabled: !!playerId,
     staleTime: 0,
@@ -15,7 +16,7 @@ export const usePetSystem = (playerId: number) => {
 
   // 도감(Codex) 조회
   const { data: codex = [], isLoading: isCodexLoading } = useQuery({
-    queryKey: ["pets", "codex", playerId],
+    queryKey: queryKeys.pets.codex(playerId),
     queryFn: () => petApi.getCodex(playerId),
     enabled: !!playerId,
     staleTime: 0,
@@ -23,7 +24,7 @@ export const usePetSystem = (playerId: number) => {
 
   // 플레이어 정보 (장착 펫 확인용)
   const { data: player, isLoading: isPlayerLoading } = useQuery({
-    queryKey: ["player", "info", playerId],
+    queryKey: queryKeys.player.info(playerId),
     queryFn: () => petApi.getPlayer(playerId),
     enabled: !!playerId,
     staleTime: 0,
@@ -31,7 +32,7 @@ export const usePetSystem = (playerId: number) => {
 
   // 전체 펫 목록 (도감용)
   const { data: allPets = [], isLoading: isAllPetsLoading } = useQuery({
-    queryKey: ["pets", "all"],
+    queryKey: queryKeys.pets.allPets(),
     queryFn: petApi.getAllPets,
     staleTime: 1000 * 60 * 60, // 1 hour (데이터가 잘 안 바뀌므로)
   });
@@ -39,16 +40,33 @@ export const usePetSystem = (playerId: number) => {
   const isLoading =
     isInventoryLoading || isCodexLoading || isPlayerLoading || isAllPetsLoading;
 
-  // 가챠
   const gachaMutation = useMutation({
     mutationFn: petApi.gacha,
     onSuccess: () => {
+      // 포인트 즉시 차감 동기화를 위해 플레이어 정보는 즉시 갱신
       queryClient.invalidateQueries({
-        queryKey: ["pets", "inventory", playerId],
+        queryKey: queryKeys.player.info(playerId),
       });
-      queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
-      // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
+    },
+  });
+
+  const refreshPets = () => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.pets.inventory(playerId),
+    });
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.pets.codex(playerId),
+    });
+  };
+
+  // 가챠 환급 (중복 펫 시)
+  const gachaRefundMutation = useMutation({
+    mutationFn: petApi.gachaRefund,
+    onSuccess: () => {
+      // 환급 후 포인트 갱신
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
     },
   });
 
@@ -57,10 +75,12 @@ export const usePetSystem = (playerId: number) => {
     mutationFn: (userPetId: number) => petApi.feed(userPetId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["pets", "inventory", playerId],
+        queryKey: queryKeys.pets.inventory(playerId),
       });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
     },
   });
 
@@ -69,9 +89,11 @@ export const usePetSystem = (playerId: number) => {
     mutationFn: (userPetId: number) => petApi.evolve(userPetId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["pets", "inventory", playerId],
+        queryKey: queryKeys.pets.inventory(playerId),
       });
-      queryClient.invalidateQueries({ queryKey: ["pets", "codex", playerId] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pets.codex(playerId),
+      });
     },
   });
 
@@ -79,7 +101,9 @@ export const usePetSystem = (playerId: number) => {
   const equipMutation = useMutation({
     mutationFn: (petId: number) => petApi.equipPet(petId),
     onSuccess: (_, petId) => {
-      queryClient.invalidateQueries({ queryKey: ["player", "info", playerId] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
 
       // 1. 소켓으로 petId 전송 (서버가 DB 검증 후 petImage 브로드캐스트)
       const socket = getSocket();
@@ -112,6 +136,8 @@ export const usePetSystem = (playerId: number) => {
     player,
     isLoading,
     gacha: gachaMutation.mutateAsync,
+    gachaRefund: gachaRefundMutation.mutateAsync,
+    refreshPets,
     feed: feedMutation.mutateAsync,
     evolve: evolveMutation.mutateAsync,
     equip: equipMutation.mutateAsync,

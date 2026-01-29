@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
@@ -15,24 +15,17 @@ export class FocusTimeService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * 오늘 날짜를 YYYY-MM-DD 문자열로 반환
-   * SQLite date 타입과 비교할 때 사용
-   */
-  private getTodayDateString(): string {
-    return new Date().toISOString().slice(0, 10);
-  }
+  async findOrCreate(player: Player, startAt: Date): Promise<DailyFocusTime> {
+    const start = startAt;
+    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-  async findOrCreate(player: Player): Promise<DailyFocusTime> {
-    const today = this.getTodayDateString();
-
-    const existing = await this.focusTimeRepository.findOne({
-      where: {
-        player: { id: player.id },
-        createdDate: today,
-      },
-      relations: ['player', 'currentTask'],
-    });
+    const existing = await this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .leftJoinAndSelect('ft.player', 'player')
+      .leftJoinAndSelect('ft.currentTask', 'currentTask')
+      .where('player.id = :playerId', { playerId: player.id })
+      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+      .getOne();
 
     if (existing) {
       return existing;
@@ -42,7 +35,7 @@ export class FocusTimeService {
       player,
       totalFocusSeconds: 0,
       status: FocusStatus.RESTING,
-      createdDate: today,
+      createdAt: new Date(),
     });
 
     return this.focusTimeRepository.save(newFocusTime);
@@ -50,22 +43,24 @@ export class FocusTimeService {
 
   async startFocusing(
     playerId: number,
+    startAt: Date,
     taskId?: number,
   ): Promise<DailyFocusTime> {
     const now = new Date();
-    const today = this.getTodayDateString();
+    const start = startAt;
+    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
       const taskRepo = manager.getRepository(Task);
 
-      const focusTime = await focusTimeRepo.findOne({
-        where: {
-          player: { id: playerId },
-          createdDate: today,
-        },
-        relations: ['player', 'currentTask'],
-      });
+      const focusTime = await focusTimeRepo
+        .createQueryBuilder('ft')
+        .leftJoinAndSelect('ft.player', 'player')
+        .leftJoinAndSelect('ft.currentTask', 'currentTask')
+        .where('player.id = :playerId', { playerId })
+        .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
 
       if (!focusTime) {
         throw new NotFoundException(
@@ -128,20 +123,39 @@ export class FocusTimeService {
     });
   }
 
-  async startResting(playerId: number): Promise<DailyFocusTime> {
+  async startResting(
+    playerId: number,
+    startAt?: Date,
+  ): Promise<DailyFocusTime> {
     const now = new Date();
-    const today = this.getTodayDateString();
 
     return this.dataSource.transaction(async (manager) => {
       const focusTimeRepo = manager.getRepository(DailyFocusTime);
 
-      const focusTime = await focusTimeRepo.findOne({
-        where: {
-          player: { id: playerId },
-          createdDate: today,
-        },
-        relations: ['player', 'currentTask'],
-      });
+      let focusTime: DailyFocusTime | null;
+
+      if (startAt) {
+        // startAt이 있을 때: 해당 날짜 범위로 조회
+        const start = startAt;
+        const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+        focusTime = await focusTimeRepo
+          .createQueryBuilder('ft')
+          .leftJoinAndSelect('ft.player', 'player')
+          .leftJoinAndSelect('ft.currentTask', 'currentTask')
+          .where('player.id = :playerId', { playerId })
+          .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+          .getOne();
+      } else {
+        // startAt이 없을 때 (disconnect): 가장 최근 focusTime 조회
+        focusTime = await focusTimeRepo
+          .createQueryBuilder('ft')
+          .leftJoinAndSelect('ft.player', 'player')
+          .leftJoinAndSelect('ft.currentTask', 'currentTask')
+          .where('player.id = :playerId', { playerId })
+          .orderBy('ft.createdAt', 'DESC')
+          .getOne();
+      }
 
       if (!focusTime) {
         throw new NotFoundException(
@@ -207,37 +221,44 @@ export class FocusTimeService {
     this.logger.log(`Added ${seconds}s to task ${taskId}`);
   }
 
-  async findAllStatuses(playerIds: number[]): Promise<DailyFocusTime[]> {
+  async findAllStatuses(
+    playerIds: number[],
+    startAt: Date,
+  ): Promise<DailyFocusTime[]> {
     if (playerIds.length === 0) return [];
 
-    const today = this.getTodayDateString();
-    return this.focusTimeRepository.find({
-      where: {
-        player: { id: In(playerIds) },
-        createdDate: today,
-      },
-      relations: ['player', 'currentTask'],
-    });
+    const start = startAt;
+    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
+    return this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .leftJoinAndSelect('ft.player', 'player')
+      .leftJoinAndSelect('ft.currentTask', 'currentTask')
+      .where('player.id IN (:...playerIds)', { playerIds })
+      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+      .getMany();
   }
 
   async getFocusTime(
     playerId: number,
-    date: string,
-  ): Promise<DailyFocusTime | null> {
-    const focusTime = await this.focusTimeRepository.findOne({
-      where: {
-        player: { id: playerId },
-        createdDate: date,
-      },
-    });
+    startAt: Date,
+    endAt: Date,
+  ): Promise<DailyFocusTime> {
+    const focusTime = await this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .where('ft.player.id = :playerId', { playerId })
+      .andWhere('ft.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
+      .getOne();
 
     if (!focusTime) {
-      const emptyRecord = new DailyFocusTime();
-      emptyRecord.totalFocusSeconds = 0;
-      emptyRecord.status = FocusStatus.RESTING;
-      emptyRecord.createdDate = date;
-      emptyRecord.lastFocusStartTime = null as unknown as Date;
-      return emptyRecord;
+      const defaultFocusTime = new DailyFocusTime();
+      defaultFocusTime.id = null as unknown as number;
+      defaultFocusTime.totalFocusSeconds = 0;
+      defaultFocusTime.status = FocusStatus.RESTING;
+      defaultFocusTime.createdAt = startAt;
+      defaultFocusTime.lastFocusStartTime = null as unknown as Date;
+      defaultFocusTime.currentTaskId = null;
+      defaultFocusTime.currentTask = null;
+      return defaultFocusTime;
     }
 
     return focusTime;
