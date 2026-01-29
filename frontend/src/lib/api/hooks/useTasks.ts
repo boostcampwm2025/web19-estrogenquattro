@@ -12,11 +12,12 @@ import {
 export function useTasks(playerId: number, date?: string) {
   // date가 없으면 오늘 로컬 날짜로 기본 설정
   const dateObj = date ? parseLocalDate(date) : new Date();
+  const dateString = toDateString(dateObj);
   const { startAt, endAt } = getLocalDayRange(dateObj);
-  const isToday = toDateString(dateObj) === toDateString(new Date());
+  const isToday = dateString === toDateString(new Date());
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: queryKeys.tasks.list(playerId, date),
+    queryKey: queryKeys.tasks.list(playerId, dateString),
     queryFn: () => taskApi.getTasks(playerId, isToday, startAt, endAt),
     enabled: playerId > 0,
     staleTime: 0,
