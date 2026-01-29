@@ -20,13 +20,13 @@ export class DailyPoint {
   @Column({ type: 'int' })
   amount: number;
 
-  @Column({ name: 'created_date', type: 'date' })
-  createdDate: string;
+  @Column({ name: 'created_at', type: 'datetime' })
+  createdAt: Date;
 
   @BeforeInsert()
-  setCreatedDate(): void {
-    if (!this.createdDate) {
-      this.createdDate = new Date().toISOString().slice(0, 10);
+  setCreatedAt(): void {
+    if (!this.createdAt) {
+      this.createdAt = new Date();
     }
   }
 }

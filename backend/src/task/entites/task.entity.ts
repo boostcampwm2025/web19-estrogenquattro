@@ -22,9 +22,9 @@ export class Task {
   @Column({ type: 'int', name: 'total_focus_seconds', default: 0 })
   totalFocusSeconds: number;
 
-  @Column({ type: 'date', name: 'completed_date', nullable: true })
-  completedDate: string | null;
+  @Column({ type: 'datetime', name: 'completed_at', nullable: true })
+  completedAt: Date | null;
 
-  @Column({ type: 'date', name: 'created_date' })
-  createdDate: string;
+  @Column({ type: 'datetime', name: 'created_at' })
+  createdAt: Date;
 }

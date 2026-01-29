@@ -1,3 +1,7 @@
+process.env.GITHUB_CLIENT_ID = 'test-client-id';
+process.env.GITHUB_CLIENT_SECRET = 'test-client-secret';
+process.env.JWT_SECRET = 'test-jwt-secret-that-is-at-least-32-chars';
+
 import { Test } from '@nestjs/testing';
 import { AppModule } from './app.module';
 
