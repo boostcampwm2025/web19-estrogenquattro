@@ -9,6 +9,7 @@ import {
   Patch,
   Delete,
   UseGuards,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskReq } from './dto/create-task.req';
@@ -35,10 +36,11 @@ export class TaskController {
   @Get(':playerId')
   async getTasks(
     @Param('playerId', ParseIntPipe) playerId: number,
+    @Query('today', ParseBoolPipe) isToday: boolean,
     @Query('startAt', ParseDatePipe) startAt: Date,
     @Query('endAt', ParseDatePipe) endAt: Date,
   ): Promise<TaskListRes> {
-    return this.taskService.getTasks(playerId, startAt, endAt);
+    return this.taskService.getTasks(playerId, isToday, startAt, endAt);
   }
 
   @Patch('completion/:taskId')

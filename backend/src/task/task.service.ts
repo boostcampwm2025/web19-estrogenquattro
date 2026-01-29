@@ -36,19 +36,33 @@ export class TaskService {
 
   async getTasks(
     playerId: number,
+    isToday: boolean,
     startAt: Date,
     endAt: Date,
   ): Promise<TaskListRes> {
     await this.playerService.findOneById(playerId);
 
-    const tasks = await this.taskRepository
+    const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
-      .where('task.player.id = :playerId', { playerId })
-      .andWhere('task.createdAt BETWEEN :startAt AND :endAt', {
-        startAt,
-        endAt,
-      })
-      .getMany();
+      .where('task.player.id = :playerId', { playerId });
+
+    if (isToday) {
+      // isToday = true: completedAt이 null이거나 startAt~endAt 범위
+      queryBuilder.andWhere(
+        '(task.completedAt IS NULL OR task.completedAt BETWEEN :startAt AND :endAt)',
+        { startAt, endAt },
+      );
+    } else {
+      // isToday = false: createdAt이 startAt~endAt 범위이면서 completedAt이 NOT NULL
+      queryBuilder
+        .andWhere('task.createdAt BETWEEN :startAt AND :endAt', {
+          startAt,
+          endAt,
+        })
+        .andWhere('task.completedAt IS NOT NULL');
+    }
+
+    const tasks = await queryBuilder.getMany();
 
     return {
       tasks: tasks.map((task) => TaskRes.of(task)),
