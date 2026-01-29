@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
-import { PointHistory, PointType } from '../pointhistory/entities/point-history.entity';
+import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 import { getTodayKstRangeUtc } from '../util/date.util';
 import { Player } from '../player/entites/player.entity';
@@ -122,9 +122,7 @@ export class PointService {
     const weekendEndAt = new Date(weekendStartAt);
     weekendEndAt.setDate(weekendEndAt.getDate() + 7);
 
-    const pointHistoryRepo = this.dataSource.getRepository(PointHistory);
-
-    const results = await pointHistoryRepo
+    const results = await this.dailyPointRepository
       .createQueryBuilder('ph')
       .select('ph.player_id', 'playerId')
       .addSelect('player.nickname', 'nickname')
@@ -134,12 +132,24 @@ export class PointService {
       .groupBy('ph.player_id')
       .orderBy('totalPoints', 'DESC')
       .getRawMany();
+    // 동점자 처리: 같은 점수면 같은 등수
+    let currentRank = 1;
+    let previousPoints: number | null = null;
 
-    return results.map((row, index) => ({
-      playerId: row.playerId,
-      nickname: row.nickname,
-      totalPoints: Number(row.totalPoints),
-      rank: index + 1,
-    }));
+    return results.map((row, index) => {
+      const totalPoints = Number(row.totalPoints);
+
+      if (previousPoints !== null && totalPoints < previousPoints) {
+        currentRank = index + 1; // 점수가 다르면 현재 순서로 등수 갱신
+      }
+      previousPoints = totalPoints;
+
+      return {
+        playerId: row.playerId,
+        nickname: row.nickname,
+        totalPoints,
+        rank: currentRank,
+      };
+    });
   }
 }
