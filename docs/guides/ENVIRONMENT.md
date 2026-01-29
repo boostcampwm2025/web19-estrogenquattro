@@ -23,6 +23,7 @@
 | `PORT` | `8080` | 서버 포트 |
 | `FRONTEND_URL` | `http://localhost:8080` | 프론트엔드 URL (리다이렉트용) |
 | `GITHUB_CALLBACK_URL` | `http://localhost:8080/auth/github/callback` | OAuth 콜백 URL |
+| `ASSETS_PATH` | `__dirname` 기반 | 맵 에셋 경로 (미설정 시 `backend/assets/`) |
 
 ---
 

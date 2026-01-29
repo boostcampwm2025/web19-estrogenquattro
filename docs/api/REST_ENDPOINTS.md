@@ -728,6 +728,39 @@ GET /api/leaderboard
 
 ---
 
+## 맵 (Maps)
+
+### 맵 이미지 조회
+
+```
+GET /api/maps/:index
+```
+
+맵 이미지를 서빙합니다. 권한 체크가 적용되어 **현재 맵만 접근 가능**합니다.
+
+**Parameters:**
+- `index`: 맵 인덱스 (0-4)
+
+**Response:**
+- 200: 맵 이미지 (webp)
+- 403: 해금되지 않은 맵 (`Map not unlocked yet`)
+- 404: 존재하지 않는 맵 인덱스
+
+**예시:**
+```
+# 현재 맵이 0일 때
+GET /api/maps/0  → 200 OK (이미지)
+GET /api/maps/1  → 403 Forbidden
+GET /api/maps/2  → 403 Forbidden
+```
+
+**특징:**
+- 맵 이미지 스포일러 방지 (해금되지 않은 맵 접근 차단)
+- 동적 로드: 게임 접속 시 `game_state`로 현재 맵 확인 후 로드
+- 맵 전환 시 서버에서 mapIndex 업데이트 → 다음 맵 접근 가능
+
+---
+
 ## 메트릭 (Monitoring)
 
 ### Prometheus 메트릭

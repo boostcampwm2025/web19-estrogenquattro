@@ -20,6 +20,7 @@ export class PointHistoryService {
     amount: number,
     repository?: string | null,
     description?: string | null,
+    activityAt?: Date | null,
   ): Promise<PointHistory> {
     const historyRepo = manager.getRepository(PointHistory);
 
@@ -29,6 +30,7 @@ export class PointHistoryService {
       amount,
       repository: repository ?? null,
       description: description ?? null,
+      activityAt: activityAt ?? null,
     });
 
     return historyRepo.save(history);

@@ -87,6 +87,10 @@ export class PlayerGateway
     const data = client.data as { user: User };
     const user = data.user;
     this.logger.log(`Client connected: ${client.id} (user: ${user.username})`);
+
+    // 연결 직후 전역 게임 상태 전송 (joining 전에 맵 로드 가능하도록)
+    const globalState = this.progressGateway.getGlobalState();
+    client.emit('game_state', globalState);
   }
 
   handleDisconnect(client: Socket) {
