@@ -95,19 +95,12 @@ export default function OnboardingTour() {
     nextModalSubStep,
   ]);
 
-  // 키보드 이벤트 핸들러
+  // 키보드 이벤트 핸들러 - 트리거 외 모든 이벤트 차단
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!isActive || !step) return;
 
-      // 채팅 스텝이 아닐 때 엔터 차단
-      if (e.key === "Enter" && step.triggerType !== "chat") {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-
-      // 방향키 트리거
+      // 방향키 트리거 스텝
       if (
         step.triggerType === "keypress" &&
         Array.isArray(step.triggerTarget)
@@ -121,89 +114,118 @@ export default function OnboardingTour() {
           actionTimeoutRef.current = setTimeout(() => {
             nextStep();
           }, 1000);
+          return;
         }
+        // 방향키 스텝에서 다른 키는 차단
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
 
-      // 채팅 트리거
-      if (step.triggerType === "chat" && e.key === "Enter") {
-        if (!isChatOpen) {
-          setChatOpen(true);
-          setShowingAction(true);
-        } else {
-          setShowingAction(false);
-          setChatOpen(false);
+      // 채팅 트리거 스텝
+      if (step.triggerType === "chat") {
+        if (e.key === "Enter") {
+          if (!isChatOpen) {
+            setChatOpen(true);
+            setShowingAction(true);
+          } else {
+            setShowingAction(false);
+            setChatOpen(false);
 
-          if (actionTimeoutRef.current) {
-            clearTimeout(actionTimeoutRef.current);
+            if (actionTimeoutRef.current) {
+              clearTimeout(actionTimeoutRef.current);
+            }
+            actionTimeoutRef.current = setTimeout(() => {
+              nextStep();
+            }, 500);
           }
-          actionTimeoutRef.current = setTimeout(() => {
-            nextStep();
-          }, 500);
+          return;
         }
+        // 채팅 중일 때는 다른 키 허용 (타이핑을 위해)
+        if (isChatOpen) return;
       }
+
+      // 그 외 모든 키 이벤트 차단
+      e.preventDefault();
+      e.stopPropagation();
     },
     [isActive, step, nextStep, setShowingAction, isChatOpen, setChatOpen],
   );
 
-  // 클릭 이벤트 핸들러
+  // 클릭 이벤트 핸들러 - 트리거 외 모든 클릭 차단
   const handleClick = useCallback(
     (e: MouseEvent) => {
       if (!isActive || !step) return;
 
       const target = e.target as HTMLElement;
 
+      // 대화창 버튼 클릭은 항상 허용 (건너뛰기, 이전, 다음 버튼)
+      const dialogBox = document.querySelector(
+        '[class*="fixed right-0 bottom-0 left-0 z-\\[100\\]"]',
+      );
+      if (dialogBox && dialogBox.contains(target)) {
+        return; // 대화창 내부 클릭은 허용
+      }
+
+      // 트리거 대상 확인용 헬퍼 함수
+      const isClickOnTrigger = (selector: string | undefined) => {
+        if (!selector) return false;
+        const triggerElement = document.querySelector(selector);
+        return (
+          triggerElement &&
+          (triggerElement === target || triggerElement.contains(target))
+        );
+      };
+
       // 모달 서브 스텝 클릭 처리
       if (isWaitingForModalGuide && currentSubStep?.triggerType === "click") {
         const triggerSelector = currentSubStep.triggerTarget;
-        if (triggerSelector) {
-          const triggerElement = document.querySelector(triggerSelector);
+        if (isClickOnTrigger(triggerSelector)) {
+          setShowingAction(true);
 
-          if (
-            triggerElement &&
-            (triggerElement === target || triggerElement.contains(target))
-          ) {
-            setShowingAction(true);
-
-            if (actionTimeoutRef.current) {
-              clearTimeout(actionTimeoutRef.current);
-            }
-
-            // 서브 스텝이 더 있는지 확인
-            const nextSubIndex = modalSubStepIndex + 1;
-            const hasMoreSubSteps =
-              step.modalSubSteps && nextSubIndex < step.modalSubSteps.length;
-
-            // 현재 서브 스텝의 딜레이 설정 (기본 500ms)
-            const delay = currentSubStep.delayAfterClick ?? 500;
-
-            actionTimeoutRef.current = setTimeout(() => {
-              setShowingAction(false);
-              if (hasMoreSubSteps) {
-                // 다음 서브 스텝으로 이동하기 전에 scrollIntoView 처리
-                const nextSubStep = step.modalSubSteps![nextSubIndex];
-                if (nextSubStep.scrollIntoView && nextSubStep.triggerTarget) {
-                  setTimeout(() => {
-                    const element = document.querySelector(
-                      nextSubStep.triggerTarget!,
-                    );
-                    if (element) {
-                      element.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                      });
-                    }
-                  }, 100);
-                }
-                nextModalSubStep();
-              } else {
-                // 모든 서브 스텝 완료, 다음 메인 스텝으로
-                setWaitingForModalGuide(false);
-                nextStep();
-              }
-            }, delay);
-            return;
+          if (actionTimeoutRef.current) {
+            clearTimeout(actionTimeoutRef.current);
           }
+
+          // 서브 스텝이 더 있는지 확인
+          const nextSubIndex = modalSubStepIndex + 1;
+          const hasMoreSubSteps =
+            step.modalSubSteps && nextSubIndex < step.modalSubSteps.length;
+
+          // 현재 서브 스텝의 딜레이 설정 (기본 500ms)
+          const delay = currentSubStep.delayAfterClick ?? 500;
+
+          actionTimeoutRef.current = setTimeout(() => {
+            setShowingAction(false);
+            if (hasMoreSubSteps) {
+              // 다음 서브 스텝으로 이동하기 전에 scrollIntoView 처리
+              const nextSubStep = step.modalSubSteps![nextSubIndex];
+              if (nextSubStep.scrollIntoView && nextSubStep.triggerTarget) {
+                setTimeout(() => {
+                  const element = document.querySelector(
+                    nextSubStep.triggerTarget!,
+                  );
+                  if (element) {
+                    element.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    });
+                  }
+                }, 100);
+              }
+              nextModalSubStep();
+            } else {
+              // 모든 서브 스텝 완료, 다음 메인 스텝으로
+              setWaitingForModalGuide(false);
+              nextStep();
+            }
+          }, delay);
+          return;
         }
+        // 트리거 아닌 클릭 차단
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
 
       // 일반 클릭 트리거 (리더보드 버튼 등)
@@ -211,12 +233,7 @@ export default function OnboardingTour() {
         step.triggerType === "click" &&
         typeof step.triggerTarget === "string"
       ) {
-        const triggerElement = document.querySelector(step.triggerTarget);
-
-        if (
-          triggerElement &&
-          (triggerElement === target || triggerElement.contains(target))
-        ) {
+        if (isClickOnTrigger(step.triggerTarget)) {
           setShowingAction(true);
 
           if (actionTimeoutRef.current) {
@@ -227,7 +244,12 @@ export default function OnboardingTour() {
             closeModal();
             nextStep();
           }, 2000);
+          return;
         }
+        // 트리거 아닌 클릭 차단
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
 
       // 모달 클릭 트리거 (유저 정보 버튼)
@@ -236,12 +258,7 @@ export default function OnboardingTour() {
         typeof step.triggerTarget === "string" &&
         !isWaitingForModalGuide
       ) {
-        const triggerElement = document.querySelector(step.triggerTarget);
-
-        if (
-          triggerElement &&
-          (triggerElement === target || triggerElement.contains(target))
-        ) {
+        if (isClickOnTrigger(step.triggerTarget)) {
           setShowingAction(true);
 
           // 모달이 열리는 것을 기다린 후 다음 가이드 표시
@@ -252,8 +269,17 @@ export default function OnboardingTour() {
             setShowingAction(false);
             setWaitingForModalGuide(true);
           }, 500);
+          return;
         }
+        // 트리거 아닌 클릭 차단
+        e.preventDefault();
+        e.stopPropagation();
+        return;
       }
+
+      // manual 타입이나 다른 타입에서도 기본적으로 클릭 이벤트 차단 (대화창 버튼 제외)
+      e.preventDefault();
+      e.stopPropagation();
     },
     [
       isActive,
