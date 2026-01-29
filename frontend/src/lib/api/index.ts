@@ -1,6 +1,11 @@
 export { fetchApi, API_URL } from "./client";
 export { taskApi, type TaskRes, type TaskListRes } from "./task";
-export { pointApi, type DailyPointRes, type TotalRankRes, type ActivityRankRes } from "./point";
+export {
+  pointApi,
+  type DailyPointRes,
+  type TotalRankRes,
+  type ActivityRankRes,
+} from "./point";
 export { focustimeApi, type DailyFocusTimeRes } from "./focustime";
 export { githubApi, type GithubEventsRes } from "./github";
 export { type GitEventHistoryRes, type GitEventType } from "./types/types";
