@@ -111,8 +111,7 @@ export class ProgressGateway implements OnModuleInit {
         // 파싱 실패
       }
 
-      const isMapIndexValid =
-        saved.mapIndex >= 0 && saved.mapIndex < MAP_COUNT;
+      const isMapIndexValid = saved.mapIndex >= 0 && saved.mapIndex < MAP_COUNT;
 
       if (parsedContributions === null || !isMapIndexValid) {
         this.logger.warn(
