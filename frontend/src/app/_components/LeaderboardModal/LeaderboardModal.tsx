@@ -105,7 +105,7 @@ export default function LeaderboardModal() {
         <div className="mb-4 text-center">
           <p className="text-sm text-amber-700">현재 시즌 타이머</p>
           <p className="text-2xl font-bold text-amber-900">
-            {seasonTime.days}d : {formatTime(seasonTime.hours)} :{" "}
+            {seasonTime.days}day : {formatTime(seasonTime.hours)} :{" "}
             {formatTime(seasonTime.minutes)} : {formatTime(seasonTime.seconds)}
           </p>
         </div>
