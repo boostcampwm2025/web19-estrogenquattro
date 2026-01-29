@@ -95,6 +95,14 @@ erDiagram
         int pet_id FK
         datetime acquired_at "획득 시각"
     }
+
+    global_state {
+        int id PK
+        int progress "프로그레스 (0-99)"
+        text contributions "기여도 JSON"
+        int map_index "현재 맵 인덱스 (0-4)"
+        datetime updated_at "마지막 업데이트"
+    }
 ```
 
 ---
@@ -272,6 +280,22 @@ erDiagram
 | acquired_at | datetime | NOT NULL | 획득 시각 |
 
 **인덱스:** `UNIQUE(player_id, pet_id)` - 플레이어별 펫 1개 레코드
+
+---
+
+### global_state (전역 게임 상태)
+
+서버 전체에서 공유하는 게임 상태 (싱글톤, id=1)
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|----------|------|
+| id | int | PK, AUTO_INCREMENT | 고유 ID (항상 1) |
+| progress | int | DEFAULT 0 | 프로그레스 (0-99) |
+| contributions | text | DEFAULT '{}' | 기여도 JSON (username → count) |
+| map_index | int | DEFAULT 0 | 현재 맵 인덱스 (0-4) |
+| updated_at | datetime | AUTO | 마지막 업데이트 시각 |
+
+> **Note:** 싱글톤 패턴으로 id=1 레코드만 사용. 서버 재시작 시 DB에서 복원.
 
 ---
 
