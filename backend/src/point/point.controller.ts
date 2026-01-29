@@ -6,7 +6,7 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { PointService } from './point.service';
+import { PointService, PlayerRank } from './point.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 import { DailyPoint } from './entities/daily-point.entity';
@@ -29,6 +29,13 @@ export class PointController {
       targetPlayerId,
       currentTime,
     );
+  }
+
+  @Get('ranks')
+  async getWeeklyRanks(
+    @Query('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
+  ): Promise<PlayerRank[]> {
+    return this.pointService.getWeeklyRanks(weekendStartAt);
   }
 
   /* @Post('debug/add')
