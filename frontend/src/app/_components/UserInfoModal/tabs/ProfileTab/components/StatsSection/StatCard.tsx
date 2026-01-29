@@ -16,7 +16,9 @@ export default function StatCard({
   return (
     <div
       className={`flex flex-col items-center justify-center rounded-none border-2 p-1 transition-all ${
-        isClickable ? "cursor-pointer hover:border-amber-600 hover:bg-amber-100" : ""
+        isClickable
+          ? "cursor-pointer hover:border-amber-600 hover:bg-amber-100"
+          : ""
       } ${
         isSelected
           ? "border-amber-600 bg-amber-100"
