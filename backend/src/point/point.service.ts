@@ -2,10 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
-import { PointType } from '../pointhistory/entities/point-history.entity';
+import { PointHistory, PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 import { getTodayKstRangeUtc } from '../util/date.util';
 import { Player } from '../player/entites/player.entity';
+
+export interface PlayerRank {
+  playerId: number;
+  nickname: string;
+  totalPoints: number;
+  rank: number;
+}
 
 export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.COMMITTED]: 2, // 커밋 1회
@@ -109,5 +116,30 @@ export class PointService {
       });
       return dailyPointRepo.save(newRecord);
     });
+  }
+
+  async getWeeklyRanks(weekendStartAt: Date): Promise<PlayerRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const pointHistoryRepo = this.dataSource.getRepository(PointHistory);
+
+    const results = await pointHistoryRepo
+      .createQueryBuilder('ph')
+      .select('ph.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('SUM(ph.amount)', 'totalPoints')
+      .innerJoin('ph.player', 'player')
+      .where('ph.createdAt >= :startAt', { startAt: weekendStartAt })
+      .groupBy('ph.player_id')
+      .orderBy('totalPoints', 'DESC')
+      .getRawMany();
+
+    return results.map((row, index) => ({
+      playerId: row.playerId,
+      nickname: row.nickname,
+      totalPoints: Number(row.totalPoints),
+      rank: index + 1,
+    }));
   }
 }
