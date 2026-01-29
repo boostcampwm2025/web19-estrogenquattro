@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/_components/ui/button";
 import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
-import { HeatmapInfoLink } from "./HeatmapInfoLink";
+import { HeatmapInfo } from "./HeatmapInfo";
 import { HeatmapCell } from "./HeatmapCell";
 import { HeatmapLegend } from "./HeatmapLegend";
 
@@ -88,9 +88,9 @@ export function CalendarHeatmap({
 
   return (
     <div className="mb-6 rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
-      {/* 포인트 획득 정책 링크 */}
-      <div className="mb-6">
-        <HeatmapInfoLink />
+      {/* 포인트 획득 정책 정보 */}
+      <div className="mb-6 flex">
+        <HeatmapInfo />
       </div>
 
       <div className="flex items-center gap-2">
