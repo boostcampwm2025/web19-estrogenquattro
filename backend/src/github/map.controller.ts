@@ -33,7 +33,7 @@ export class MapController {
 
   /**
    * 맵 이미지 서빙 (권한 체크)
-   * 현재 맵 + 다음 맵만 접근 허용
+   * 현재 맵만 접근 허용
    */
   @Get(':index')
   getMap(@Param('index', ParseIntPipe) index: number, @Res() res: Response) {
