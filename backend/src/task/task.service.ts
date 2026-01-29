@@ -47,13 +47,11 @@ export class TaskService {
       .where('task.player.id = :playerId', { playerId });
 
     if (isToday) {
-      // isToday = true: completedAt이 null이거나 startAt~endAt 범위
       queryBuilder.andWhere(
         '(task.completedAt IS NULL OR task.completedAt BETWEEN :startAt AND :endAt)',
         { startAt, endAt },
       );
     } else {
-      // isToday = false: createdAt이 startAt~endAt 범위이면서 completedAt이 NOT NULL
       queryBuilder
         .andWhere('task.createdAt BETWEEN :startAt AND :endAt', {
           startAt,
@@ -88,6 +86,7 @@ export class TaskService {
     }
 
     task.completedAt = new Date();
+    task.createdAt = new Date();
     const saved = await this.taskRepository.save(task);
     return TaskRes.of(saved);
   }

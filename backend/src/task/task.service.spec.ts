@@ -115,7 +115,7 @@ describe('TaskService', () => {
       await createTestTask(testPlayer, '할 일 2', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id, start, end);
+      const result = await service.getTasks(testPlayer.id, true, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(2);
@@ -134,7 +134,7 @@ describe('TaskService', () => {
       await taskRepository.save(task);
 
       // When
-      const result = await service.getTasks(testPlayer.id, start, end);
+      const result = await service.getTasks(testPlayer.id, true, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -152,11 +152,15 @@ describe('TaskService', () => {
       yesterdayEnd.setUTCHours(14, 59, 59, 999);
 
       const yesterdayTaskTime = new Date(yesterdayStart.getTime() + 60000);
-      await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
+      const task = await createTestTask(testPlayer, '어제 할 일', yesterdayTaskTime);
+      // isToday=false일 때는 completedAt이 NOT NULL이어야 조회됨
+      task.completedAt = yesterdayTaskTime;
+      await taskRepository.save(task);
 
       // When
       const result = await service.getTasks(
         testPlayer.id,
+        false,
         yesterdayStart,
         yesterdayEnd,
       );
@@ -166,24 +170,27 @@ describe('TaskService', () => {
       expect(result.tasks[0].description).toBe('어제 할 일');
     });
 
-    it('다른 날짜의 할 일은 조회되지 않는다', async () => {
-      // Given: 2일 전 범위에 태스크 생성 (오늘 범위와 확실히 겹치지 않도록)
+    it('다른 날짜에 완료된 할 일은 오늘 조회시 나오지 않는다', async () => {
+      // Given: 2일 전에 생성되고 완료된 태스크
       const { start } = getTodayKstRangeUtc();
       const twoDaysAgoTime = new Date(
         start.getTime() - 2 * 24 * 60 * 60 * 1000,
       );
 
-      await createTestTask(testPlayer, '과거 할 일', twoDaysAgoTime);
+      const task = await createTestTask(testPlayer, '과거 완료된 할 일', twoDaysAgoTime);
+      task.completedAt = twoDaysAgoTime; // 과거에 완료됨
+      await taskRepository.save(task);
 
-      // When: 오늘 범위로 조회
+      // When: 오늘 범위로 조회 (isToday=true)
       const { start: todayStart, end: todayEnd } = getTodayKstRangeUtc();
       const result = await service.getTasks(
         testPlayer.id,
+        true,
         todayStart,
         todayEnd,
       );
 
-      // Then
+      // Then: 과거에 완료된 태스크는 오늘 조회에서 나오지 않음
       expect(result.tasks).toHaveLength(0);
     });
 
@@ -195,7 +202,7 @@ describe('TaskService', () => {
       await createTestTask(otherPlayer, '다른 사람 할 일', taskTime);
 
       // When
-      const result = await service.getTasks(testPlayer.id, start, end);
+      const result = await service.getTasks(testPlayer.id, true, start, end);
 
       // Then
       expect(result.tasks).toHaveLength(1);
@@ -205,7 +212,7 @@ describe('TaskService', () => {
     it('존재하지 않는 플레이어로 조회 시 NotFoundException을 던진다', async () => {
       // When & Then
       const { start, end } = getTodayKstRangeUtc();
-      await expect(service.getTasks(99999, start, end)).rejects.toThrow(
+      await expect(service.getTasks(99999, true, start, end)).rejects.toThrow(
         NotFoundException,
       );
     });
