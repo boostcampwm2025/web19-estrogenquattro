@@ -10,8 +10,10 @@ interface OnboardingState {
   isShowingAction: boolean;
   /** 채팅 인풋이 열린 상태인지 */
   isChatOpen: boolean;
-  /** 모달이 열린 상태에서 다음 가이드 대기 중 */
+  /** 모달이 열린 상태에서 가이드 진행 중 */
   isWaitingForModalGuide: boolean;
+  /** 현재 모달 서브 스텝 인덱스 (-1: afterModal 단계, 0+: subSteps 인덱스) */
+  modalSubStepIndex: number;
 
   startOnboarding: () => void;
   nextStep: () => void;
@@ -22,6 +24,8 @@ interface OnboardingState {
   setShowingAction: (showing: boolean) => void;
   setChatOpen: (open: boolean) => void;
   setWaitingForModalGuide: (waiting: boolean) => void;
+  nextModalSubStep: () => void;
+  resetModalSubStep: () => void;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
@@ -31,6 +35,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   isShowingAction: false,
   isChatOpen: false,
   isWaitingForModalGuide: false,
+  modalSubStepIndex: -1,
 
   startOnboarding: () => {
     set({ isActive: true, currentStep: 0 });
@@ -44,6 +49,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         isShowingAction: false,
         isChatOpen: false,
         isWaitingForModalGuide: false,
+        modalSubStepIndex: -1,
       });
     } else {
       completeOnboarding();
@@ -58,6 +64,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         isShowingAction: false,
         isChatOpen: false,
         isWaitingForModalGuide: false,
+        modalSubStepIndex: -1,
       });
     }
   },
@@ -74,6 +81,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       isShowingAction: false,
       isChatOpen: false,
       isWaitingForModalGuide: false,
+      modalSubStepIndex: -1,
     });
     if (typeof window !== "undefined") {
       localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
@@ -101,5 +109,14 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   setWaitingForModalGuide: (waiting: boolean) => {
     set({ isWaitingForModalGuide: waiting });
+  },
+
+  nextModalSubStep: () => {
+    const { modalSubStepIndex } = get();
+    set({ modalSubStepIndex: modalSubStepIndex + 1 });
+  },
+
+  resetModalSubStep: () => {
+    set({ modalSubStepIndex: -1 });
   },
 }));
