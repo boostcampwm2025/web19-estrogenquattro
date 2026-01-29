@@ -34,6 +34,31 @@ export default class MapManager {
     this.maps = maps;
   }
 
+  /**
+   * 맵 이미지를 동적으로 로드하고 setup 호출
+   * @param mapIndex 로드할 맵 인덱스
+   * @param onComplete 로드 완료 후 콜백
+   */
+  loadAndSetup(mapIndex: number, onComplete: () => void): void {
+    this.currentMapIndex = mapIndex;
+    const currentMap = this.maps[mapIndex];
+
+    // 이미 로드된 텍스처인지 확인
+    if (this.scene.textures.exists(currentMap.image)) {
+      this.setup();
+      onComplete();
+      return;
+    }
+
+    // 동적으로 맵 이미지 로드
+    this.scene.load.image(currentMap.image, currentMap.imagePath);
+    this.scene.load.once("complete", () => {
+      this.setup();
+      onComplete();
+    });
+    this.scene.load.start();
+  }
+
   setup(): void {
     const currentMap = this.maps[this.currentMapIndex];
 
@@ -113,12 +138,11 @@ export default class MapManager {
 
   /**
    * 특정 맵으로 전환 (서버 주도 맵 전환)
+   * 맵 이미지가 없으면 동적으로 로드
    */
   switchToMap(mapIndex: number, onMapReady: () => void): void {
     // 이미 해당 맵이면 무시
     if (mapIndex === this.currentMapIndex) return;
-
-    this.currentMapIndex = mapIndex;
 
     this.scene.cameras.main.fadeOut(500, 0, 0, 0);
 
@@ -130,11 +154,11 @@ export default class MapManager {
 
       this.walls?.clear(true, true);
 
-      this.setup();
-
-      onMapReady();
-
-      this.scene.cameras.main.fadeIn(500, 0, 0, 0);
+      // 동적 로드 후 setup
+      this.loadAndSetup(mapIndex, () => {
+        onMapReady();
+        this.scene.cameras.main.fadeIn(500, 0, 0, 0);
+      });
     });
   }
 

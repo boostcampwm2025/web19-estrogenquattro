@@ -14,4 +14,7 @@ export const envValidationSchema = Joi.object({
   GITHUB_CALLBACK_URL: Joi.string().default(
     'http://localhost:8080/auth/github/callback',
   ),
+
+  // 맵 에셋 경로 (미설정 시 코드에서 __dirname 기반 자동 계산)
+  ASSETS_PATH: Joi.string().optional(),
 });

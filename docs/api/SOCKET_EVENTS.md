@@ -417,6 +417,27 @@ socket.on('map_switch', (data: {
 
 ---
 
+### season_reset
+
+시즌 리셋 알림 (매주 월요일 00:00 KST, 전체 방 브로드캐스트)
+
+```typescript
+socket.on('season_reset', (data: {
+  mapIndex: number  // 리셋된 맵 인덱스 (항상 0)
+}) => {
+  // progress를 0으로 리셋
+  // contributions를 {}로 리셋
+  // 맵을 stage 1로 전환
+});
+```
+
+**특징:**
+- 1주일(시즌) 단위로 프로그레스/기여도 초기화
+- 매주 월요일 자정(KST) 자동 실행
+- 모든 클라이언트 동시 리셋
+
+---
+
 ### focused
 
 집중 시작 알림

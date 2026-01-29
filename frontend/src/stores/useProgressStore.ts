@@ -18,7 +18,6 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
   addProgress: (amount: number) => {
     const currentProgress = get().progress;
     const newProgress = Math.min(currentProgress + amount, 100);
-
     set({ progress: newProgress });
 
     // 100% 도달 시 콜백 호출 후 1초 뒤 리셋
