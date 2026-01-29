@@ -11,7 +11,7 @@ const POINT_POLICIES = [
   { action: "PR 머지", points: 4 },
   { action: "PR 리뷰", points: 4 },
   { action: "이슈 생성", points: 1 },
-  { action: "투두 완료", points: 1 },
+  { action: "Task 완료", points: 1 },
 ];
 
 export function HeatmapInfo() {
@@ -55,7 +55,10 @@ export function HeatmapInfo() {
             top: position.y + 10,
           }}
         >
-          <div className="mb-2 font-bold text-amber-300">포인트 획득 정책</div>
+          <div className="mb-2 flex justify-between gap-12 border-b border-amber-700 pb-1 font-bold text-amber-300">
+            <span>활동</span>
+            <span>포인트</span>
+          </div>
           <div className="space-y-1">
             {POINT_POLICIES.map((policy, index) => (
               <div key={index} className="flex justify-between gap-4">
