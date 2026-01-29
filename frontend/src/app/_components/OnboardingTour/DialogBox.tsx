@@ -43,7 +43,7 @@ export default function DialogBox({
         </div>
 
         {/* 대화창 - 왼쪽에 캐릭터 공간 확보 */}
-        <div className="relative min-h-[250px] rounded-lg border-4 border-amber-900 bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] p-4 pl-44 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.4)] md:p-5 md:pl-52 lg:p-6 lg:pl-60">
+        <div className="relative flex min-h-[250px] flex-col rounded-lg border-4 border-amber-900 bg-gradient-to-b from-[#fff8e1] to-[#ffecb3] p-4 pl-44 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.4)] md:p-5 md:pl-52 lg:p-6 lg:pl-60">
           {/* 스텝 인디케이터 */}
           <div className="mb-2 flex items-center gap-2">
             <span className="rounded bg-amber-600 px-2 py-0.5 font-bold text-white">
@@ -54,25 +54,27 @@ export default function DialogBox({
             </span>
           </div>
 
-          {/* 메시지 */}
-          <p className="mb-4 text-base leading-relaxed font-medium text-amber-900 md:text-lg">
-            {message.split("<br>").map((line, index, arr) => (
-              <span key={index}>
-                {line}
-                {index < arr.length - 1 && <br />}
-              </span>
-            ))}
-          </p>
+          <div className="flex-1">
+            {/* 메시지 */}
+            <p className="mb-4 text-base leading-relaxed font-medium text-amber-900 md:text-lg">
+              {message.split("<br>").map((line, index, arr) => (
+                <span key={index}>
+                  {line}
+                  {index < arr.length - 1 && <br />}
+                </span>
+              ))}
+            </p>
 
-          {/* 트리거 힌트 (인터랙티브 스텝일 때) */}
-          {isWaitingForTrigger && triggerHint && (
-            <div className="mb-3 animate-pulse rounded bg-amber-100 text-xl text-amber-700">
-              💡 {triggerHint}
-            </div>
-          )}
+            {/* 트리거 힌트 (인터랙티브 스텝일 때) */}
+            {isWaitingForTrigger && triggerHint && (
+              <div className="mb-3 animate-pulse rounded bg-amber-100 text-xl text-amber-700">
+                💡 {triggerHint}
+              </div>
+            )}
+          </div>
 
-          {/* 버튼 영역 */}
-          <div className="flex items-center justify-between">
+          {/* 버튼 영역 - 항상 하단에 위치 */}
+          <div className="mt-auto flex items-center justify-between">
             <button
               onClick={onSkip}
               className="cursor-pointer text-sm text-amber-600 underline transition-colors hover:text-amber-800"
