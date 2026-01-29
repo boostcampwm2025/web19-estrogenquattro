@@ -40,13 +40,13 @@ export class PointHistory {
   @Column({ type: 'varchar', length: 200, nullable: true })
   description: string | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'date' })
-  createdAt: string;
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
+  createdAt: Date;
 
   @BeforeInsert()
   setCreatedDate(): void {
     if (!this.createdAt) {
-      this.createdAt = new Date().toISOString();
+      this.createdAt = new Date();
     }
   }
 }
