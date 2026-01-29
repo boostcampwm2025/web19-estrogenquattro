@@ -278,9 +278,12 @@ export default class SocketManager {
         this.pendingContributions = data.contributions;
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
-      } else {
+      } else if (this.contributionController) {
         // 맵 전환 불필요 시 바로 적용
-        this.contributionController?.setContributions(data.contributions);
+        this.contributionController.setContributions(data.contributions);
+      } else {
+        // 초기 로딩 중이면 pending에 누적
+        this.pendingContributions = data.contributions;
       }
     });
 
