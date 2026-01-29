@@ -7,6 +7,7 @@ export interface DayData {
 }
 
 // DB에서 받아올 날짜별 포인트 데이터 타입 (Map 형태)
+// key: YYYY-MM-DD 형식의 로컬 날짜 문자열, value: 해당 날짜의 포인트 총합
 export type DailyPoints = Map<string, number>;
 
 interface UseHeatmapDataResult {
