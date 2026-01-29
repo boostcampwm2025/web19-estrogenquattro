@@ -27,7 +27,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "info",
     message:
-      "안녕하세요! '잔디 심고 갈래'에 오신 것을 환영합니다!<br>저는 간단한 서비스 사용 방법을 안내해 드릴 젠킨수예요. 함께 둘러볼까요?",
+      "안녕하세요. ' 잔디 심고 갈래? ' 에 오신 것을 환영합니다!<br>저는 간단한 서비스 사용 방법을 안내해 드릴 젠킨수예요. 함께 둘러볼까요?",
     highlight: null,
     triggerType: "manual",
   },

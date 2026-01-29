@@ -95,6 +95,26 @@ export default function OnboardingTour() {
     nextModalSubStep,
   ]);
 
+  // 이전 버튼 핸들러 - 모달이 열려있으면 닫기
+  const handlePrevWithModalClose = useCallback(() => {
+    // 모달 가이드 중이거나 모달 관련 스텝에서 이전으로 가면 모달 닫기
+    if (
+      isWaitingForModalGuide ||
+      step.id === "pet" ||
+      step.id === "character"
+    ) {
+      closeModal();
+      setWaitingForModalGuide(false);
+    }
+    prevStep();
+  }, [
+    step,
+    closeModal,
+    prevStep,
+    isWaitingForModalGuide,
+    setWaitingForModalGuide,
+  ]);
+
   // 키보드 이벤트 핸들러 - 트리거 외 모든 이벤트 차단
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -372,7 +392,7 @@ export default function OnboardingTour() {
         currentStep={currentStep}
         totalSteps={totalSteps}
         onNext={handleNextWithModalClose}
-        onPrev={prevStep}
+        onPrev={handlePrevWithModalClose}
         onSkip={skipOnboarding}
         isFirstStep={currentStep === 0}
         isLastStep={currentStep === totalSteps - 1}

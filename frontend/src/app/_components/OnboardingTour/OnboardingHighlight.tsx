@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState, useMemo } from "react";
 
 interface OnboardingHighlightProps {
   selector: string | null;
@@ -13,44 +13,48 @@ interface HighlightRect {
   height: number;
 }
 
+// DOM 요소의 위치를 가져오는 헬퍼 함수
+function getElementRect(selector: string | null): HighlightRect | null {
+  if (!selector) return null;
+  const element = document.querySelector(selector);
+  if (!element) return null;
+  const domRect = element.getBoundingClientRect();
+  return {
+    top: domRect.top,
+    left: domRect.left,
+    width: domRect.width,
+    height: domRect.height,
+  };
+}
+
 export default function OnboardingHighlight({
   selector,
 }: OnboardingHighlightProps) {
-  const [rect, setRect] = useState<HighlightRect | null>(null);
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
-  useEffect(() => {
-    if (!selector) {
-      setRect(null);
-      return;
-    }
+  // selector나 updateTrigger가 변경될 때 rect 재계산
+  const rect = useMemo(() => {
+    // updateTrigger를 의존성에 포함하여 강제 재계산
+    void updateTrigger;
+    return getElementRect(selector);
+  }, [selector, updateTrigger]);
 
-    const element = document.querySelector(selector);
-    if (element) {
-      const updateRect = () => {
-        const domRect = element.getBoundingClientRect();
-        setRect({
-          top: domRect.top,
-          left: domRect.left,
-          width: domRect.width,
-          height: domRect.height,
-        });
-      };
+  // 리사이즈/스크롤 이벤트 구독
+  useLayoutEffect(() => {
+    if (!selector) return;
 
-      updateRect();
+    const handleUpdate = () => {
+      // 상태를 변경하여 useMemo 재실행 트리거
+      setUpdateTrigger((prev) => prev + 1);
+    };
 
-      // 리사이즈 시 위치 업데이트
-      window.addEventListener("resize", updateRect);
+    window.addEventListener("resize", handleUpdate);
+    window.addEventListener("scroll", handleUpdate, true);
 
-      // 스크롤 시에도 업데이트
-      window.addEventListener("scroll", updateRect, true);
-
-      return () => {
-        window.removeEventListener("resize", updateRect);
-        window.removeEventListener("scroll", updateRect, true);
-      };
-    } else {
-      setRect(null);
-    }
+    return () => {
+      window.removeEventListener("resize", handleUpdate);
+      window.removeEventListener("scroll", handleUpdate, true);
+    };
   }, [selector]);
 
   // 하이라이트 대상이 없으면 약한 오버레이만 표시
