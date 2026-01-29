@@ -1,6 +1,7 @@
 /**
- * 로컬 타임존 기준으로 YYYY-MM-DD 형식의 날짜 문자열 반환
- * 히트맵 키, API 호출 등 프론트엔드 전반에서 일관되게 사용
+ * [로컬 타임존 기준] YYYY-MM-DD 형식의 날짜 문자열 반환
+ * - 사용자가 선택한 날짜를 API에 전달할 때 사용
+ * - 캘린더 UI에서 사용자가 클릭한 날짜를 처리할 때 사용
  */
 export function toDateString(date: Date): string {
   const year = date.getFullYear();
@@ -86,4 +87,16 @@ export function formatFocusTime(seconds: number): string {
   }
 
   return result;
+}
+
+/**
+ * [UTC 기준] YYYY-MM-DD 형식의 날짜 문자열 반환
+ * - 서버에서 받은 createdAt 등 UTC ISO 문자열을 파싱할 때 사용
+ * - 타임존에 관계없이 서버 저장 날짜 그대로 추출
+ */
+export function toUTCDateString(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

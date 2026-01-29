@@ -6,7 +6,7 @@ import {
   useTasks,
 } from "@/lib/api/hooks";
 import { DailyFocusTimeRes, GithubEventsRes } from "@/lib/api";
-import { toDateString } from "@/utils/timeFormat";
+import { toDateString, toUTCDateString } from "@/utils/timeFormat";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
 import { DailyPoints } from "../components/CalendarHeatmap/useHeatmapData";
 
@@ -53,7 +53,7 @@ export function useProfileData(
   const dailyPoints: DailyPoints = useMemo(() => {
     const map = new Map<string, number>();
     points.forEach((point) => {
-      const dateKey = toDateString(new Date(point.createdAt));
+      const dateKey = toUTCDateString(new Date(point.createdAt));
       map.set(dateKey, point.amount);
     });
     return map;
