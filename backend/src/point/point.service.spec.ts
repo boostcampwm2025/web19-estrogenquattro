@@ -3,18 +3,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { PointService } from './point.service';
+import { PointService, ACTIVITY_POINT_MAP } from './point.service';
 import { DailyPoint } from './entities/daily-point.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
-import { PointHistory } from '../pointhistory/entities/point-history.entity';
+import {
+  PointHistory,
+  PointType,
+} from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 
 describe('PointService', () => {
   let service: PointService;
   let dailyPointRepository: Repository<DailyPoint>;
   let playerRepository: Repository<Player>;
+  let pointHistoryRepository: Repository<PointHistory>;
   let module: TestingModule;
 
   let testPlayer: Player;
@@ -41,6 +45,9 @@ describe('PointService', () => {
     playerRepository = module.get<Repository<Player>>(
       getRepositoryToken(Player),
     );
+    pointHistoryRepository = module.get<Repository<PointHistory>>(
+      getRepositoryToken(PointHistory),
+    );
   });
 
   afterAll(async () => {
@@ -48,6 +55,8 @@ describe('PointService', () => {
   });
 
   beforeEach(async () => {
+    // FK 제약 조건 순서: point_history → daily_point → player
+    await pointHistoryRepository.clear();
     await dailyPointRepository.clear();
     await playerRepository.clear();
 
@@ -187,6 +196,154 @@ describe('PointService', () => {
 
       // Then: 빈 배열 반환
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('addPoint', () => {
+    it('GitHub 활동 시 activityAt이 저장된다', async () => {
+      // Given: GitHub 활동 시간
+      const activityAt = new Date('2026-01-29T10:30:00Z');
+
+      // When: 커밋 포인트 적립
+      await service.addPoint(
+        testPlayer.id,
+        PointType.COMMITTED,
+        1,
+        'owner/repo',
+        'feat: 새 기능 추가',
+        activityAt,
+      );
+
+      // Then: point_history에 activityAt이 저장됨
+      const history = await pointHistoryRepository.findOne({
+        where: { player: { id: testPlayer.id } },
+      });
+
+      expect(history).toBeDefined();
+      expect(history!.type).toBe(PointType.COMMITTED);
+      expect(history!.repository).toBe('owner/repo');
+      expect(history!.description).toBe('feat: 새 기능 추가');
+      expect(history!.activityAt).toEqual(activityAt);
+      expect(history!.amount).toBe(ACTIVITY_POINT_MAP[PointType.COMMITTED]);
+    });
+
+    it('TASK_COMPLETED는 activityAt이 null로 저장된다', async () => {
+      // Given: Task 완료 (GitHub 활동 아님)
+
+      // When: Task 완료 포인트 적립 (activityAt 미전달)
+      await service.addPoint(
+        testPlayer.id,
+        PointType.TASK_COMPLETED,
+        1,
+        null,
+        '오늘 할 일',
+      );
+
+      // Then: point_history에 activityAt이 null로 저장됨
+      const history = await pointHistoryRepository.findOne({
+        where: { player: { id: testPlayer.id } },
+      });
+
+      expect(history).toBeDefined();
+      expect(history!.type).toBe(PointType.TASK_COMPLETED);
+      expect(history!.activityAt).toBeNull();
+    });
+
+    it('FOCUSED는 activityAt이 null로 저장된다', async () => {
+      // Given: 집중 시간 (GitHub 활동 아님)
+
+      // When: 집중 포인트 적립 (activityAt 미전달)
+      await service.addPoint(testPlayer.id, PointType.FOCUSED, 1, null, null);
+
+      // Then: point_history에 activityAt이 null로 저장됨
+      const history = await pointHistoryRepository.findOne({
+        where: { player: { id: testPlayer.id } },
+      });
+
+      expect(history).toBeDefined();
+      expect(history!.type).toBe(PointType.FOCUSED);
+      expect(history!.activityAt).toBeNull();
+    });
+
+    it('PR 생성 시 activityAt이 저장된다', async () => {
+      // Given: PR 생성 이벤트 시간
+      const activityAt = new Date('2026-01-29T11:00:00Z');
+
+      // When: PR 생성 포인트 적립
+      await service.addPoint(
+        testPlayer.id,
+        PointType.PR_OPEN,
+        1,
+        'owner/repo',
+        'feat: 로그인 기능 구현',
+        activityAt,
+      );
+
+      // Then: point_history에 activityAt이 저장됨
+      const history = await pointHistoryRepository.findOne({
+        where: { player: { id: testPlayer.id } },
+      });
+
+      expect(history).toBeDefined();
+      expect(history!.type).toBe(PointType.PR_OPEN);
+      expect(history!.activityAt).toEqual(activityAt);
+      expect(history!.amount).toBe(ACTIVITY_POINT_MAP[PointType.PR_OPEN]);
+    });
+
+    it('포인트 적립 시 player.totalPoint가 증가한다', async () => {
+      // Given: 초기 포인트 0
+
+      // When: 커밋 포인트 적립
+      await service.addPoint(
+        testPlayer.id,
+        PointType.COMMITTED,
+        1,
+        'owner/repo',
+        'feat: 기능 추가',
+        new Date(),
+      );
+
+      // Then: player.totalPoint 증가
+      const updatedPlayer = await playerRepository.findOne({
+        where: { id: testPlayer.id },
+      });
+
+      expect(updatedPlayer!.totalPoint).toBe(
+        ACTIVITY_POINT_MAP[PointType.COMMITTED],
+      );
+    });
+
+    it('포인트 적립 시 dailyPoint가 생성/업데이트된다', async () => {
+      // Given: dailyPoint 없음
+
+      // When: 포인트 2번 적립
+      await service.addPoint(
+        testPlayer.id,
+        PointType.COMMITTED,
+        1,
+        'owner/repo',
+        'feat: 기능1',
+        new Date(),
+      );
+      await service.addPoint(
+        testPlayer.id,
+        PointType.PR_OPEN,
+        1,
+        'owner/repo',
+        'feat: PR',
+        new Date(),
+      );
+
+      // Then: dailyPoint에 합산됨
+      const dailyPoints = await dailyPointRepository.find({
+        where: { player: { id: testPlayer.id } },
+      });
+
+      expect(dailyPoints).toHaveLength(1);
+      expect(dailyPoints[0].amount).toBe(
+        ACTIVITY_POINT_MAP[PointType.COMMITTED] +
+          ACTIVITY_POINT_MAP[PointType.PR_OPEN],
+      );
     });
   });
 });

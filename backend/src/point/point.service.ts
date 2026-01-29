@@ -73,6 +73,7 @@ export class PointService {
     count: number,
     repository?: string | null,
     description?: string | null,
+    activityAt?: Date | null,
   ): Promise<DailyPoint> {
     const now = new Date();
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
@@ -88,6 +89,7 @@ export class PointService {
         totalPoint,
         repository,
         description,
+        activityAt,
       );
       const { start, end } = getTodayKstRangeUtc();
 
