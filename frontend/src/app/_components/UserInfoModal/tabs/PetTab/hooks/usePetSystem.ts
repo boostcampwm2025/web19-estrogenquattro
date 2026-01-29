@@ -47,9 +47,13 @@ export const usePetSystem = (playerId: number) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pets.inventory(playerId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pets.codex(playerId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pets.codex(playerId),
+      });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: queryKeys.player.info(playerId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
     },
   });
 
@@ -61,7 +65,9 @@ export const usePetSystem = (playerId: number) => {
         queryKey: queryKeys.pets.inventory(playerId),
       });
       // 포인트 차감 동기화를 위해 플레이어 정보 갱신
-      queryClient.invalidateQueries({ queryKey: queryKeys.player.info(playerId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
     },
   });
 
@@ -72,7 +78,9 @@ export const usePetSystem = (playerId: number) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.pets.inventory(playerId),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pets.codex(playerId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pets.codex(playerId),
+      });
     },
   });
 
@@ -80,7 +88,9 @@ export const usePetSystem = (playerId: number) => {
   const equipMutation = useMutation({
     mutationFn: (petId: number) => petApi.equipPet(petId),
     onSuccess: (_, petId) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.player.info(playerId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.player.info(playerId),
+      });
 
       // 1. 소켓으로 petId 전송 (서버가 DB 검증 후 petImage 브로드캐스트)
       const socket = getSocket();
