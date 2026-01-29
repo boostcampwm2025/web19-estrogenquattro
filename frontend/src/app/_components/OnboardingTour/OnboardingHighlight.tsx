@@ -57,7 +57,7 @@ export default function OnboardingHighlight({
   if (!selector) {
     return (
       <div className="pointer-events-none fixed inset-0 z-[99]">
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/80" />
         {/* 하단 대화창 영역은 클릭 가능하도록 제외 */}
         <div
           className="absolute right-0 bottom-0 left-0 h-64 bg-transparent"
@@ -71,7 +71,7 @@ export default function OnboardingHighlight({
   if (!rect) {
     return (
       <div className="pointer-events-none fixed inset-0 z-[99]">
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/80" />
       </div>
     );
   }
@@ -83,7 +83,7 @@ export default function OnboardingHighlight({
       {/* 어두운 오버레이 - 4개 조각으로 나누어 하이라이트 영역을 비움 */}
       {/* 위쪽 */}
       <div
-        className="absolute bg-black/40"
+        className="absolute bg-black/80"
         style={{
           top: 0,
           left: 0,
@@ -93,7 +93,7 @@ export default function OnboardingHighlight({
       />
       {/* 아래쪽 */}
       <div
-        className="absolute bg-black/40"
+        className="absolute bg-black/80"
         style={{
           top: rect.top + rect.height + padding,
           left: 0,
@@ -103,7 +103,7 @@ export default function OnboardingHighlight({
       />
       {/* 왼쪽 */}
       <div
-        className="absolute bg-black/40"
+        className="absolute bg-black/80"
         style={{
           top: Math.max(0, rect.top - padding),
           left: 0,
@@ -113,7 +113,7 @@ export default function OnboardingHighlight({
       />
       {/* 오른쪽 */}
       <div
-        className="absolute bg-black/40"
+        className="absolute bg-black/80"
         style={{
           top: Math.max(0, rect.top - padding),
           left: rect.left + rect.width + padding,
