@@ -314,8 +314,16 @@ export default class BasePlayer {
     this.taskBubbleContainer = this.scene.add.container(0, -40);
     this.taskBubbleContainer.setName("taskBubble");
 
-    // 상태에 따른 스타일 결정
-    const statusText = isFocusing ? "작업 중" : "휴식 중";
+    // 상태에 따른 스타일 및 텍스트 결정
+    let statusText = isFocusing ? "작업 중" : "휴식 중";
+    if (isFocusing && taskName) {
+      const MAX_TASK_NAME_LENGTH = 15;
+      statusText =
+        taskName.length > MAX_TASK_NAME_LENGTH
+          ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..."
+          : taskName;
+    }
+
     // 작업 중: 초록 계열 / 휴식중: 빨강 계열
     const bgColor = isFocusing ? 0xdcfce7 : 0xfee2e2;
     const borderColor = isFocusing ? 0x86efac : 0xfca5a5;
@@ -338,34 +346,13 @@ export default class BasePlayer {
     statusLabel.setOrigin(0, 0.5);
     elements.push(statusDot, statusLabel);
 
-    // 태스크명이 있으면 추가
-    let taskLabel: Phaser.GameObjects.Text | null = null;
-    const MAX_TASK_NAME_LENGTH = 15;
-    if (isFocusing && taskName) {
-      const displayTaskName =
-        taskName.length > MAX_TASK_NAME_LENGTH
-          ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..."
-          : taskName;
-      taskLabel = this.scene.add.text(0, 0, displayTaskName, {
-        fontFamily: "NeoDunggeunmo, Arial, sans-serif",
-        fontSize: "12px",
-        color: "#374151",
-      });
-      taskLabel.setResolution(2);
-      taskLabel.setOrigin(0.5, 0.5); // 가운데 정렬
-      elements.push(taskLabel);
-    }
-
     // 태그 배경 계산
     const paddingX = 8;
-    const paddingY = 4;
     const dotSize = 5;
     const dotGap = 6;
-    const taskPaddingX = 12; // 세부 작업 글씨 좌우 여백
     const statusWidth = dotSize + dotGap + statusLabel.width;
-    const taskWidth = taskLabel ? taskLabel.width + taskPaddingX * 2 : 0;
-    const width = Math.max(statusWidth, taskWidth) + paddingX * 2;
-    const height = taskLabel ? 38 : 24;
+    const width = statusWidth + paddingX * 2;
+    const height = 24;
 
     // 태그 배경 (꼬리 없음, 둥근 사각형)
     const tagGraphics = this.scene.add.graphics();
@@ -386,27 +373,9 @@ export default class BasePlayer {
       height / 2,
     );
 
-    // 요소 위치 조정
-    if (taskLabel) {
-      // 2줄 레이아웃: 상태(위) + 태스크(아래)
-      const statusY = -6;
-      const taskY = 8;
-      // "작업 중" 텍스트의 왼쪽 시작점 (dot 오른쪽)
-      const statusTextLeftX = -width / 2 + paddingX + dotSize + dotGap;
-      statusDot.fillCircle(
-        -width / 2 + paddingX + dotSize / 2,
-        statusY,
-        dotSize / 2,
-      );
-      statusLabel.setPosition(statusTextLeftX, statusY);
-      // task를 "작" 글자 왼쪽에 맞춤 (왼쪽 정렬)
-      taskLabel.setOrigin(0, 0.5);
-      taskLabel.setPosition(statusTextLeftX, taskY);
-    } else {
-      // 1줄 레이아웃: 상태만
-      statusDot.fillCircle(-width / 2 + paddingX + dotSize / 2, 0, dotSize / 2);
-      statusLabel.setPosition(-width / 2 + paddingX + dotSize + dotGap, 0);
-    }
+    // 요소 위치 조정 (1줄 레이아웃)
+    statusDot.fillCircle(-width / 2 + paddingX + dotSize / 2, 0, dotSize / 2);
+    statusLabel.setPosition(-width / 2 + paddingX + dotSize + dotGap, 0);
 
     this.taskBubbleContainer.add([tagGraphics, ...elements]);
     this.container.add(this.taskBubbleContainer);
@@ -423,85 +392,66 @@ export default class BasePlayer {
 
     // 작업 태그 위에 채팅 말풍선 배치 (태그 높이 + 여백)
     const taskTagHeight = this.taskBubbleContainer ? 40 : 0;
-    const bubbleY = -40 - taskTagHeight;
+    const bubbleY = -20 - taskTagHeight;
 
     const bubbleContainer = this.scene.add.container(0, bubbleY);
     bubbleContainer.setName("chatBubble");
 
-    // 텍스트 생성pnp
-    const chatText = this.scene.add.text(0, 0, text, {
+    const padding = 8;
+    const tailHeight = 6;
+
+    // 텍스트 생성
+    const chatText = this.scene.add.text(0, -tailHeight - padding, text, {
       fontFamily: "NeoDunggeunmo, Arial, sans-serif",
       fontSize: "14px",
       color: "#000000",
       wordWrap: { width: 150, useAdvancedWrap: true },
     });
     chatText.setResolution(2);
-    chatText.setOrigin(0.5);
+    // 텍스트의 중심이 아닌, 하단 중심을 기준으로 배치
+    chatText.setOrigin(0.5, 1);
 
     // 말풍선 배경 (둥근 사각형 + 꼬리)
     const bounds = chatText.getBounds();
-    const padding = 12;
     const width = bounds.width + padding * 2;
-    const height = bounds.height + padding;
-    const radius = 10; // 더 둥글게
+    const height = bounds.height + padding * 2;
+    const radius = 10;
+
+    // 말풍선 본체 (위쪽으로 그려짐)
+    const rectX = -width / 2;
+    const rectY = -tailHeight - height;
 
     const bubbleGraphics = this.scene.add.graphics();
-    // 다중 레이어 그림자 (더 부드럽고 자연스러운 효과)
+    // 다중 레이어 그림자
     bubbleGraphics.fillStyle(0x000000, 0.02);
-    bubbleGraphics.fillRoundedRect(
-      -width / 2 + 5,
-      -height / 2 + 5,
-      width,
-      height,
-      radius,
-    );
+    bubbleGraphics.fillRoundedRect(rectX + 5, rectY + 5, width, height, radius);
     bubbleGraphics.fillStyle(0x000000, 0.04);
-    bubbleGraphics.fillRoundedRect(
-      -width / 2 + 3,
-      -height / 2 + 4,
-      width,
-      height,
-      radius,
-    );
+    bubbleGraphics.fillRoundedRect(rectX + 3, rectY + 4, width, height, radius);
     bubbleGraphics.fillStyle(0x000000, 0.08);
-    bubbleGraphics.fillRoundedRect(
-      -width / 2 + 1,
-      -height / 2 + 2,
-      width,
-      height,
-      radius,
-    );
+    bubbleGraphics.fillRoundedRect(rectX + 1, rectY + 2, width, height, radius);
+
     // 메인 배경
     bubbleGraphics.fillStyle(0xffffff, 1);
     bubbleGraphics.lineStyle(1, 0xd1d5db, 1);
-    bubbleGraphics.fillRoundedRect(
-      -width / 2,
-      -height / 2,
-      width,
-      height,
-      radius,
-    );
-    bubbleGraphics.strokeRoundedRect(
-      -width / 2,
-      -height / 2,
-      width,
-      height,
-      radius,
-    );
-    // 말풍선 꼬리 (더 작고 부드럽게)
+    bubbleGraphics.fillRoundedRect(rectX, rectY, width, height, radius);
+    bubbleGraphics.strokeRoundedRect(rectX, rectY, width, height, radius);
+
+    // 말풍선 꼬리 (아래쪽으로 뾰족하게)
+    // 꼬리 시작점: (0, -tailHeight) -> 여기서 아래로 (0, 0)까지
     bubbleGraphics.fillStyle(0xffffff, 1);
-    bubbleGraphics.fillTriangle(
-      -4,
-      height / 2 - 1,
-      4,
-      height / 2 - 1,
-      0,
-      height / 2 + 6,
-    );
-    // 꼬리 테두리
+    // 삼각형: 좌상(-4, -tailHeight), 우상(4, -tailHeight), 하단(0, 0)
+    bubbleGraphics.fillTriangle(-4, -tailHeight, 4, -tailHeight, 0, 0);
+
+    // 꼬리 테두리 (V자 형태)
     bubbleGraphics.lineStyle(1.5, 0xe5e7eb, 1);
-    bubbleGraphics.lineBetween(-4, height / 2, 0, height / 2 + 6);
-    bubbleGraphics.lineBetween(4, height / 2, 0, height / 2 + 6);
+    bubbleGraphics.beginPath();
+    bubbleGraphics.moveTo(-4, -tailHeight);
+    bubbleGraphics.lineTo(0, 0);
+    bubbleGraphics.lineTo(4, -tailHeight);
+    bubbleGraphics.strokePath();
+
+    bubbleGraphics.lineStyle(2, 0xffffff, 1);
+    bubbleGraphics.lineBetween(-3, -tailHeight, 3, -tailHeight);
 
     bubbleContainer.add([bubbleGraphics, chatText]);
     this.container.add(bubbleContainer);

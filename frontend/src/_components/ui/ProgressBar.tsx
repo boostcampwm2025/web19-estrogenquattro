@@ -44,7 +44,7 @@ export default function ProgressBar() {
   const fillWidth = displayProgress < 0.1 ? 0 : Math.max(calculatedWidth, 9);
 
   return (
-    <div className="fixed top-12 left-1/2 z-[999] h-6 w-96 -translate-x-1/2">
+    <div className="fixed top-12 left-1/2 z-[50] h-6 w-96 -translate-x-1/2">
       {/* Background */}
       <div className="absolute inset-0 rounded-xl border border-gray-800 bg-gray-200" />
 
