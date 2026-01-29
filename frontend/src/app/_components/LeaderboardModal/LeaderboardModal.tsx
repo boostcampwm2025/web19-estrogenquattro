@@ -132,7 +132,7 @@ export default function LeaderboardModal() {
               </div>
             ) : (
               leaderboardData.players.map((player) => (
-                <PlayerRow key={player.rank} player={player} />
+                <PlayerRow key={player.playerId} player={player} />
               ))
             )}
           </div>

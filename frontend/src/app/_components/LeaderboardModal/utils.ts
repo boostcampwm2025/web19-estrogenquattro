@@ -36,6 +36,7 @@ export function formatTime(n: number): string {
 // 백엔드 PlayerRankRes를 프론트엔드 LeaderboardPlayer로 변환
 export function toLeaderboardPlayer(rank: PlayerRankRes): LeaderboardPlayer {
   return {
+    playerId: rank.playerId,
     rank: rank.rank,
     username: rank.nickname,
     profileImage: getGithubAvatarUrl(rank.nickname),
@@ -56,6 +57,7 @@ export function toMyRankPlayer(
   }
 
   return {
+    playerId: playerId || 0,
     rank: ranks.length + 1,
     username: username || "Unknown",
     profileImage: username ? getGithubAvatarUrl(username) : null,
