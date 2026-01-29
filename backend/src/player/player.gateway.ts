@@ -109,7 +109,7 @@ export class PlayerGateway
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string },
+    data: { x: number; y: number; username: string; startAt: string },
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = this.roomService.randomJoin(client.id);
@@ -163,8 +163,10 @@ export class PlayerGateway
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지
     const roomPlayerIds = this.roomService.getPlayerIds(roomId);
-    const focusStatuses =
-      await this.focusTimeService.findAllStatuses(roomPlayerIds);
+    const focusStatuses = await this.focusTimeService.findAllStatuses(
+      roomPlayerIds,
+      new Date(data.startAt),
+    );
     // Map playerId -> status info
     const statusMap = new Map<
       number,
@@ -216,7 +218,10 @@ export class PlayerGateway
     client.emit('players_synced', existingPlayers);
 
     // 4. Update FocusTime (이미 조회한 player 객체 재사용 가능하지만 findOrCreate 로직 유지)
-    const myFocusTime = await this.focusTimeService.findOrCreate(player);
+    const myFocusTime = await this.focusTimeService.findOrCreate(
+      player,
+      new Date(data.startAt),
+    );
 
     // 서버에서 현재 세션 경과 시간 계산
     const myCurrentSessionSeconds =

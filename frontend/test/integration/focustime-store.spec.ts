@@ -148,7 +148,7 @@ describe("useFocusTimeStore 롤백", () => {
     // Then: focusing 이벤트가 전송됨
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "focusing",
-      { taskName: "Task B", taskId: 2 },
+      { taskName: "Task B", taskId: 2, startAt: expect.any(String) },
       expect.any(Function),
     );
   });

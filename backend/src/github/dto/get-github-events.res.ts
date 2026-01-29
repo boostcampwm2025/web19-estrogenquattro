@@ -1,5 +1,6 @@
 export class GithubEventsResDto {
-  date: string;
+  startAt: string;
+  endAt: string;
   prCreated: number;
   prReviewed: number;
   committed: number;

@@ -9,7 +9,7 @@ export interface Task {
   baseTime: number; // 현재 세션 시작 시점의 시간
   startTimestamp: number | null; // 타이머 시작 타임스탬프
   isRunning: boolean;
-  createdDate: string; // YYYY-MM-DD
+  createdAt: string; // ISO8601 UTC 문자열
 }
 
 // TaskRes -> Task 변환 함수
@@ -22,6 +22,6 @@ export function mapTaskResToTask(res: TaskRes): Task {
     baseTime: res.totalFocusSeconds,
     startTimestamp: null,
     isRunning: false,
-    createdDate: res.createdDate,
+    createdAt: res.createdAt,
   };
 }
