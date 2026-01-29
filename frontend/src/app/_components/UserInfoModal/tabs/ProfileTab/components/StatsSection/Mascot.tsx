@@ -56,7 +56,7 @@ export default function Mascot({ src, alt = "Mascot" }: MascotProps) {
 
       {/* hover시 하트 애니메이션 */}
       <div
-        className={`pointer-events-none absolute top-0 left-1/2 transition-opacity duration-500 ${
+        className={`pointer-events-none absolute -top-4 left-1/2 transition-opacity duration-500 ${
           isHovered ? "opacity-80" : "opacity-0"
         } ${hasFloated ? "animate-grass-heart-float" : ""}`}
       >

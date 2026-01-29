@@ -12,6 +12,7 @@ interface StatsSectionProps {
   focusTimeSeconds?: number;
   githubEvents: GithubEventsRes | undefined;
   dailyPoints: DailyPoints;
+  playerId: number;
 }
 
 export default function StatsSection({
@@ -20,6 +21,7 @@ export default function StatsSection({
   focusTimeSeconds,
   githubEvents,
   dailyPoints,
+  playerId,
 }: StatsSectionProps) {
   const focusTimeStr = formatTimeFromSeconds(focusTimeSeconds ?? 0);
   const isToday = isSameDay(selectedDate, new Date());
@@ -29,7 +31,11 @@ export default function StatsSection({
 
   return (
     <div className="flex h-60 gap-4">
-      <GrassCard dailyPoints={dailyPoints} selectedDate={selectedDate} />
+      <GrassCard
+        dailyPoints={dailyPoints}
+        selectedDate={selectedDate}
+        playerId={playerId}
+      />
       <div className="grid h-full flex-1 grid-cols-3 grid-rows-2 gap-2">
         <StatCard title="집중시간" value={focusTimeStr} />
         <StatCard title="TASK" value={String(taskCount)} />
