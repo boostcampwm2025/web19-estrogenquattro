@@ -4,10 +4,17 @@ import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useState } from "react";
+import { useLeaderboard } from "@/lib/api/hooks";
+import { getThisWeekMonday, getNextMonday } from "@/utils/timeFormat";
+import { useAuthStore } from "@/stores/authStore";
 
 import type { LeaderboardResponse } from "./types";
-import { calculateSeasonRemaining, formatTime } from "./utils";
-import { getMockResponse } from "./mockData";
+import {
+  calculateSeasonRemaining,
+  formatTime,
+  toLeaderboardPlayer,
+  toMyRankPlayer,
+} from "./utils";
 import PlayerRow from "./PlayerRow";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
@@ -28,12 +35,20 @@ export default function LeaderboardModal() {
     onClose: closeModal,
   });
 
-  // 모달이 열릴 때 데이터 로드 (목업) - useMemo로 처리
+  const user = useAuthStore((state) => state.user);
+  const weekendStartAt = useMemo(() => getThisWeekMonday(), []);
+  const { ranks, isLoading } = useLeaderboard(weekendStartAt);
+
+  // 백엔드 응답을 프론트엔드 타입으로 변환
   const leaderboardData = useMemo<LeaderboardResponse | null>(() => {
-    if (!isOpen) return null;
-    // 실제 API 호출로 대체: 이후 TanStack Query로 대체
-    return getMockResponse();
-  }, [isOpen]);
+    if (!isOpen || isLoading || ranks.length === 0) return null;
+
+    return {
+      seasonEndTime: getNextMonday(),
+      players: ranks.map(toLeaderboardPlayer),
+      myRank: toMyRankPlayer(ranks, user?.playerId, user?.username),
+    };
+  }, [isOpen, isLoading, ranks, user]);
 
   // 시즌 타이머 계산 (tick 변경 시 재계산)
   const seasonTime = useMemo(() => {
@@ -110,14 +125,14 @@ export default function LeaderboardModal() {
           </div>
 
           {/* 순위 목록 (스크롤 가능) */}
-          <div className="retro-scrollbar -mr-3 max-h-60 space-y-2 overflow-y-auto">
+          <div className="retro-scrollbar max-h-60 space-y-2 overflow-y-auto">
             {leaderboardData.players.map((player) => (
               <PlayerRow key={player.rank} player={player} />
             ))}
           </div>
 
           {/* 내 순위 */}
-          <div className="mt-3 border-t-2 border-amber-900/30 pt-3">
+          <div className="border-t-2 border-amber-900/30 pt-3">
             <PlayerRow player={leaderboardData.myRank} isMyRank />
           </div>
         </div>

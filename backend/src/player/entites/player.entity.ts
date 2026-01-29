@@ -26,6 +26,9 @@ export class Player {
   @Column({ type: 'int', name: 'total_point', default: 0 })
   totalPoint: number;
 
+  @Column({ type: 'boolean', name: 'is_newbie', default: true })
+  isNewbie: boolean;
+
   @ManyToOne(() => Pet, { nullable: true })
   @JoinColumn({ name: 'equipped_pet_id' })
   equippedPet: Pet | null;

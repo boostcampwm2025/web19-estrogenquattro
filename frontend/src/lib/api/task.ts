@@ -13,9 +13,14 @@ export interface TaskListRes {
 }
 
 export const taskApi = {
-  getTasks: (playerId: number, startAt?: string, endAt?: string) =>
+  getTasks: (
+    playerId: number,
+    isToday: boolean,
+    startAt?: string,
+    endAt?: string,
+  ) =>
     fetchApi<TaskListRes>(
-      `/api/tasks/${playerId}${startAt && endAt ? `?startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}` : ""}`,
+      `/api/tasks/${playerId}?isToday=${isToday}${startAt && endAt ? `&startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}` : ""}`,
     ),
 
   createTask: (description: string) =>
