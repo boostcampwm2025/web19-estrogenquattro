@@ -1,7 +1,7 @@
 import {
-  BadRequestException,
   Controller,
   Get,
+  ParseEnumPipe,
   ParseIntPipe,
   Query,
   UseGuards,
@@ -34,12 +34,9 @@ export class PointHistoryController {
 
   @Get('history-ranks')
   async getHistoryRanks(
-    @Query('type') type: PointType,
+    @Query('type', new ParseEnumPipe(PointType)) type: PointType,
     @Query('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
   ): Promise<HistoryRank[]> {
-    if (!Object.values(PointType).includes(type)) {
-      throw new BadRequestException('Invalid PointType');
-    }
     return this.pointHistoryService.getHistoryRanks(type, weekendStartAt);
   }
 }

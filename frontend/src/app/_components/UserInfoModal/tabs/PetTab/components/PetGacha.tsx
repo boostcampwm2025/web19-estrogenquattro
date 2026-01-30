@@ -86,6 +86,7 @@ export default function PetGacha({
               (1회: 100 P)
             </p>
             <button
+              id="pet-gacha-button"
               onClick={handleSummon}
               disabled={points < 100}
               className={PIXEL_BTN}

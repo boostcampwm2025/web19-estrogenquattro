@@ -18,7 +18,7 @@ export default function FocusPanel() {
   const [lastRunTaskId, setLastRunTaskId] = useState<number | null>(null);
 
   return (
-    <div className="w-80">
+    <div id="focus-panel" className="w-80">
       <div className="border-3 border-amber-900 bg-[#ffecb3] p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
         {/* 탭 헤더 */}
         <div

@@ -7,6 +7,7 @@ import { PointModule } from '../point/point.module';
 import { GithubModule } from '../github/github.module';
 import { PointSettlementScheduler } from './point-settlement.scheduler';
 import { SeasonResetScheduler } from './season-reset.scheduler';
+import { FocusTimeMidnightScheduler } from './focustime-midnight.scheduler';
 
 @Module({
   imports: [
@@ -15,6 +16,10 @@ import { SeasonResetScheduler } from './season-reset.scheduler';
     PointModule,
     GithubModule,
   ],
-  providers: [PointSettlementScheduler, SeasonResetScheduler],
+  providers: [
+    PointSettlementScheduler,
+    SeasonResetScheduler,
+    FocusTimeMidnightScheduler,
+  ],
 })
 export class SchedulerModule {}
