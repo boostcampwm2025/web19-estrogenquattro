@@ -32,14 +32,11 @@ export class PointHistoryController {
     );
   }
 
-  @Get('history-ranks')
+  `@Get`('history-ranks')
   async getHistoryRanks(
-    @Query('type') type: PointType,
-    @Query('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
+    `@Query`('type', new ParseEnumPipe(PointType)) type: PointType,
+    `@Query`('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
   ): Promise<HistoryRank[]> {
-    if (!(Object.values(PointType) as string[]).includes(type)) {
-      throw new BadRequestException('Invalid PointType');
-    }
     return this.pointHistoryService.getHistoryRanks(type, weekendStartAt);
   }
 }
