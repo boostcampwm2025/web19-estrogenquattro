@@ -78,7 +78,7 @@ export class PointHistoryService {
       .addSelect('COUNT(*)', 'count')
       .innerJoin('ph.player', 'player')
       .where('ph.type = :type', { type })
-      .andWhere('ph.createdAt BETWEEN :startAt AND :endAt', {
+      .andWhere('ph.createdAt >= :startAt AND ph.createdAt < :endAt', {
         startAt: weekendStartAt,
         endAt: weekendEndAt,
       })
