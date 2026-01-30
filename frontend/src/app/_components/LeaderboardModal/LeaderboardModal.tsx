@@ -4,11 +4,28 @@ import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
 import { useEffect, useMemo, useState } from "react";
+import { useLeaderboard } from "@/lib/api/hooks";
+import { getThisWeekMonday, getNextMonday } from "@/utils/timeFormat";
+import { useAuthStore } from "@/stores/authStore";
+import {
+  POINT_TYPES,
+  POINT_TYPE_LABELS,
+  POINT_TYPE_BADGE_NAMES,
+  type PointType,
+} from "@/lib/api";
 
 import type { LeaderboardResponse } from "./types";
-import { calculateSeasonRemaining, formatTime } from "./utils";
-import { getMockResponse } from "./mockData";
+import {
+  calculateSeasonRemaining,
+  formatTime,
+  toLeaderboardPlayerFromTotal,
+  toLeaderboardPlayerFromActivity,
+  toMyRankPlayerFromTotal,
+  toMyRankPlayerFromActivity,
+} from "./utils";
+import type { TotalRankRes, ActivityRankRes } from "@/lib/api/point";
 import PlayerRow from "./PlayerRow";
+import { Sparkles } from "lucide-react";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -23,17 +40,46 @@ export default function LeaderboardModal() {
   const isOpen = activeModal === MODAL_TYPES.LEADERBOARD;
 
   const [tick, setTick] = useState(0);
+  const [selectedTab, setSelectedTab] = useState<PointType>(POINT_TYPES.ALL);
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
     onClose: closeModal,
   });
 
-  // 모달이 열릴 때 데이터 로드 (목업) - useMemo로 처리
+  const user = useAuthStore((state) => state.user);
+  const weekendStartAt = useMemo(() => getThisWeekMonday(), []);
+
+  // 리더보드 데이터 (모달이 열릴 때만 API 호출)
+  const { ranks, isLoading } = useLeaderboard(
+    weekendStartAt,
+    selectedTab,
+    isOpen,
+  );
+
+  // 백엔드 응답을 프론트엔드 타입으로 변환
   const leaderboardData = useMemo<LeaderboardResponse | null>(() => {
-    if (!isOpen) return null;
-    // 실제 API 호출로 대체: 이후 TanStack Query로 대체
-    return getMockResponse();
-  }, [isOpen]);
+    if (!isOpen || isLoading) return null;
+
+    const isAll = selectedTab === POINT_TYPES.ALL;
+
+    return {
+      seasonEndTime: getNextMonday(),
+      players: isAll
+        ? (ranks as TotalRankRes[]).map(toLeaderboardPlayerFromTotal)
+        : (ranks as ActivityRankRes[]).map(toLeaderboardPlayerFromActivity),
+      myRank: isAll
+        ? toMyRankPlayerFromTotal(
+            ranks as TotalRankRes[],
+            user?.playerId,
+            user?.username,
+          )
+        : toMyRankPlayerFromActivity(
+            ranks as ActivityRankRes[],
+            user?.playerId,
+            user?.username,
+          ),
+    };
+  }, [isOpen, isLoading, ranks, user, selectedTab]);
 
   // 시즌 타이머 계산 (tick 변경 시 재계산)
   const seasonTime = useMemo(() => {
@@ -75,7 +121,7 @@ export default function LeaderboardModal() {
             id="leaderboard-title"
             className="text-xl font-extrabold tracking-wider text-amber-900"
           >
-            순위표
+            주간 순위표
           </h2>
           <button
             onClick={handleClose}
@@ -90,34 +136,88 @@ export default function LeaderboardModal() {
         <div className="mb-4 text-center">
           <p className="text-sm text-amber-700">현재 시즌 타이머</p>
           <p className="text-2xl font-bold text-amber-900">
-            {seasonTime.days}d : {formatTime(seasonTime.hours)} :{" "}
+            {seasonTime.days}day : {formatTime(seasonTime.hours)} :{" "}
             {formatTime(seasonTime.minutes)} : {formatTime(seasonTime.seconds)}
           </p>
         </div>
 
+        {/* 탭 메뉴 */}
+        <div className="mb-4">
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {Object.entries(POINT_TYPES).map(([key, value]) => (
+              <button
+                key={key}
+                onClick={() => setSelectedTab(value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.stopPropagation();
+                    setSelectedTab(value);
+                  }
+                }}
+                className={`${PIXEL_BORDER} w-[calc(25%-0.375rem)] cursor-pointer py-2.5 text-sm font-bold whitespace-nowrap transition-all ${
+                  selectedTab === value
+                    ? "translate-y-[1px] bg-amber-700 text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,0.4)]"
+                    : "bg-white text-amber-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:bg-amber-50 active:translate-y-[1px]"
+                }`}
+              >
+                {POINT_TYPE_LABELS[value]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* 주간 순위 */}
-        <div className={`${PIXEL_BORDER} bg-white/50 p-3`}>
-          <h3 className="mb-3 text-center text-lg font-bold text-amber-900">
-            주간 순위
+        <div
+          className={`${PIXEL_BORDER} relative overflow-hidden bg-white/50 p-3`}
+        >
+          {/* 대각선 스트라이프 배경 - 전체 */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                #d4a574 10px,
+                #d4a574 20px
+              )`,
+            }}
+          />
+
+          <h3 className="relative mb-3 flex items-center justify-center gap-3 py-3 text-center text-lg font-bold text-amber-900">
+            <Sparkles className="h-4 w-4 animate-pulse text-amber-600" />
+            <span>{POINT_TYPE_BADGE_NAMES[selectedTab]}</span>
+            <Sparkles className="h-4 w-4 animate-pulse text-amber-600" />
           </h3>
 
           {/* 테이블 헤더 */}
           <div className="mb-2 grid grid-cols-4 gap-2 border-b-2 border-amber-900/30 pb-2 text-sm font-bold text-amber-700">
             <span className="text-center">순위</span>
-            <span className="text-center">프로필 사진</span>
+            <span className="text-center">프로필</span>
             <span className="text-center">깃허브 네임</span>
-            <span className="text-center">포인트</span>
+            <span className="text-center">
+              {selectedTab === POINT_TYPES.ALL ||
+              selectedTab === POINT_TYPES.FOCUSED
+                ? "포인트"
+                : "횟수"}
+            </span>
           </div>
 
           {/* 순위 목록 (스크롤 가능) */}
-          <div className="retro-scrollbar -mr-3 max-h-60 space-y-2 overflow-y-auto">
-            {leaderboardData.players.map((player) => (
-              <PlayerRow key={player.rank} player={player} />
-            ))}
+          <div className="retro-scrollbar max-h-60 space-y-2 overflow-y-auto">
+            {leaderboardData.players.length === 0 ? (
+              <div className="py-8 text-center text-sm text-amber-700">
+                아직 이번 주 랭킹 데이터가 없습니다.
+              </div>
+            ) : (
+              leaderboardData.players.map((player) => (
+                <PlayerRow key={player.playerId} player={player} />
+              ))
+            )}
           </div>
 
           {/* 내 순위 */}
-          <div className="mt-3 border-t-2 border-amber-900/30 pt-3">
+          <div className="border-t-2 border-amber-900/30 pt-3">
             <PlayerRow player={leaderboardData.myRank} isMyRank />
           </div>
         </div>

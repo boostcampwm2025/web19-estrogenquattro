@@ -85,8 +85,10 @@ erDiagram
         bigint player_id FK
         enum type "포인트 타입"
         int amount "포인트 량"
-        varchar description "활동 상세 (레포명, PR/이슈 제목)"
-        datetime created_at "생성 시각"
+        varchar repository "레포지토리명"
+        varchar description "활동 상세 (PR/이슈 제목, 커밋 메시지)"
+        datetime created_at "생성 시각 (서버 기록 시점)"
+        datetime activity_at "GitHub 활동 발생 시간 (nullable)"
     }
 
     user_pet_codex {
@@ -94,6 +96,14 @@ erDiagram
         int player_id FK
         int pet_id FK
         datetime acquired_at "획득 시각"
+    }
+
+    global_state {
+        int id PK
+        int progress "프로그레스 (0-99)"
+        text contributions "기여도 JSON"
+        int map_index "현재 맵 인덱스 (0-4)"
+        datetime updated_at "마지막 업데이트"
     }
 ```
 
@@ -234,8 +244,13 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | type | enum | NOT NULL | 포인트 타입 |
 | amount | int | NOT NULL | 포인트 량 |
-| description | varchar(200) | NULL 허용 | 활동 상세 (레포명, PR/이슈 제목) |
-| created_at | datetime | NOT NULL | 생성 시각 |
+| repository | varchar(100) | NULL 허용 | 레포지토리명 ("owner/repo" 형식) |
+| description | varchar(200) | NULL 허용 | 활동 상세 (PR/이슈 제목, 커밋 메시지) |
+| created_at | datetime | NOT NULL | 생성 시각 (서버 기록 시점) |
+| activity_at | datetime | NULL 허용 | GitHub 활동 발생 시간 (UTC) |
+
+> **Note:** `activity_at`은 GitHub 이벤트의 `created_at` 값을 저장합니다.
+> `TASK_COMPLETED`, `FOCUSED` 타입은 GitHub 활동이 아니므로 null입니다.
 
 **포인트 타입 (type):**
 - `ISSUE_OPEN` - 이슈 생성
@@ -246,17 +261,17 @@ erDiagram
 - `TASK_COMPLETED` - 작업 완료
 - `FOCUSED` - 집중 시간
 
-**description 컬럼 예시:**
+**repository / description 컬럼 예시:**
 
-| type | description 예시 |
-|------|-----------------|
-| COMMITTED | `"owner/repo"` (레포지토리 이름) |
-| PR_OPEN | `"feat: 로그인 기능 구현"` (PR 제목) |
-| PR_MERGED | `"fix: 버그 수정"` (PR 제목) |
-| ISSUE_OPEN | `"버그: 로그인 실패"` (이슈 제목) |
-| PR_REVIEWED | `"feat: 새 기능"` (리뷰한 PR 제목) |
-| TASK_COMPLETED | `"오늘 할 일"` (Task 설명) |
-| FOCUSED | `null` |
+| type | repository | description |
+|------|------------|-------------|
+| COMMITTED | `"owner/repo"` | `"feat: 새 기능 추가"` (커밋 메시지) |
+| PR_OPEN | `"owner/repo"` | `"feat: 로그인 기능 구현"` (PR 제목) |
+| PR_MERGED | `"owner/repo"` | `"fix: 버그 수정"` (PR 제목) |
+| ISSUE_OPEN | `"owner/repo"` | `"버그: 로그인 실패"` (이슈 제목) |
+| PR_REVIEWED | `"owner/repo"` | `"feat: 새 기능"` (리뷰한 PR 제목) |
+| TASK_COMPLETED | `null` | `"오늘 할 일"` (Task 설명) |
+| FOCUSED | `null` | `null` |
 
 ---
 
@@ -272,6 +287,22 @@ erDiagram
 | acquired_at | datetime | NOT NULL | 획득 시각 |
 
 **인덱스:** `UNIQUE(player_id, pet_id)` - 플레이어별 펫 1개 레코드
+
+---
+
+### global_state (전역 게임 상태)
+
+서버 전체에서 공유하는 게임 상태 (싱글톤, id=1)
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|----------|------|
+| id | int | PK, AUTO_INCREMENT | 고유 ID (항상 1) |
+| progress | int | DEFAULT 0 | 프로그레스 (0-99) |
+| contributions | text | DEFAULT '{}' | 기여도 JSON (username → count) |
+| map_index | int | DEFAULT 0 | 현재 맵 인덱스 (0-4) |
+| updated_at | datetime | AUTO | 마지막 업데이트 시각 |
+
+> **Note:** 싱글톤 패턴으로 id=1 레코드만 사용. 서버 재시작 시 DB에서 복원.
 
 ---
 

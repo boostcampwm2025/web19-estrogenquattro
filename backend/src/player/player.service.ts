@@ -39,4 +39,10 @@ export class PlayerService {
     });
     return this.playerRepository.save(player);
   }
+
+  async completeOnboarding(playerId: number): Promise<void> {
+    const player = await this.findOneById(playerId);
+    player.isNewbie = false;
+    await this.playerRepository.save(player);
+  }
 }

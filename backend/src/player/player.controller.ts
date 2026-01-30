@@ -31,4 +31,10 @@ export class PlayerController {
     await this.petService.equipPet(dto.petId, playerId);
     return { success: true };
   }
+
+  @Patch('newbie')
+  async completeOnboarding(@PlayerId() playerId: number) {
+    await this.playerService.completeOnboarding(playerId);
+    return { success: true };
+  }
 }

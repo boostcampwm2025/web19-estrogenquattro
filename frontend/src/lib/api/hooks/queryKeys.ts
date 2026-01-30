@@ -3,6 +3,8 @@ export const queryKeys = {
     all: ["points"] as const,
     list: (targetPlayerId: number) =>
       [...queryKeys.points.all, "list", targetPlayerId] as const,
+    gitEventHistories: (playerId: number, date: string) =>
+      [...queryKeys.points.all, "gitEventHistories", playerId, date] as const,
   },
   focustime: {
     all: ["focustime"] as const,
@@ -31,5 +33,10 @@ export const queryKeys = {
     all: ["player"] as const,
     info: (playerId: number) =>
       [...queryKeys.player.all, "info", playerId] as const,
+  },
+  leaderboard: {
+    all: ["leaderboard"] as const,
+    ranks: (weekendStartAt: string, type: string) =>
+      [...queryKeys.leaderboard.all, "ranks", weekendStartAt, type] as const,
   },
 };

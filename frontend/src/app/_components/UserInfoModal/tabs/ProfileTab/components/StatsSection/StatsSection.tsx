@@ -5,6 +5,8 @@ import StatCard from "./StatCard";
 import { formatTimeFromSeconds } from "../../lib/dateStats";
 import { isSameDay } from "../../lib/dateUtils";
 import { DailyPoints } from "../CalendarHeatmap/useHeatmapData";
+import { StatCardType } from "../../constants/constants";
+import { getStatCards } from "../../lib/statCards";
 
 interface StatsSectionProps {
   tasks: Task[];
@@ -13,6 +15,8 @@ interface StatsSectionProps {
   githubEvents: GithubEventsRes | undefined;
   dailyPoints: DailyPoints;
   playerId: number;
+  selectedCard: StatCardType;
+  onCardSelect: (type: StatCardType) => void;
 }
 
 export default function StatsSection({
@@ -22,12 +26,16 @@ export default function StatsSection({
   githubEvents,
   dailyPoints,
   playerId,
+  selectedCard,
+  onCardSelect,
 }: StatsSectionProps) {
   const focusTimeStr = formatTimeFromSeconds(focusTimeSeconds ?? 0);
   const isToday = isSameDay(selectedDate, new Date());
   const taskCount = isToday
     ? tasks.length
     : tasks.filter((t) => t.completed).length;
+
+  const statCards = getStatCards(focusTimeStr, taskCount, githubEvents);
 
   return (
     <div className="flex h-60 gap-4">
@@ -37,21 +45,18 @@ export default function StatsSection({
         playerId={playerId}
       />
       <div className="grid h-full flex-1 grid-cols-3 grid-rows-2 gap-2">
-        <StatCard title="집중시간" value={focusTimeStr} />
-        <StatCard title="TASK" value={String(taskCount)} />
-        <StatCard title="Commit" value={String(githubEvents?.committed ?? 0)} />
-        <StatCard
-          title="ISSUE"
-          value={String(githubEvents?.issueOpened ?? 0)}
-        />
-        <StatCard
-          title="PR 생성"
-          value={String(githubEvents?.prCreated ?? 0)}
-        />
-        <StatCard
-          title="PR 리뷰"
-          value={String(githubEvents?.prReviewed ?? 0)}
-        />
+        {statCards.map((card, index) => {
+          const cardType = card.type;
+          return (
+            <StatCard
+              key={index}
+              title={card.title}
+              value={card.value}
+              onClick={cardType ? () => onCardSelect(cardType) : undefined}
+              isSelected={cardType === selectedCard}
+            />
+          );
+        })}
       </div>
     </div>
   );

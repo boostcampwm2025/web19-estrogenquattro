@@ -100,3 +100,48 @@ export function toUTCDateString(date: Date): string {
   const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Date 객체를 "YYYY년 M월 DD일 요일" 형식으로 변환
+ * @param date - 포맷팅할 날짜
+ * @returns 포맷된 날짜 문자열 (예: "2026년 1월 29일 수")
+ */
+export function formatSelectedDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+  const weekday = weekdays[date.getDay()];
+  return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
+}
+
+/**
+ * 이번 주 월요일 00:00:00 (로컬 타임존)을 UTC ISO8601로 반환
+ * 리더보드 주간 랭킹 조회 시 사용
+ *
+ * 예: 한국 시간 2026-01-29 (수요일) 기준 →
+ *     이번주 월요일: 2026-01-27 00:00:00 KST → 2026-01-26T15:00:00.000Z (UTC)
+ *
+ * @returns 이번 주 월요일 로컬 자정의 UTC ISO8601 문자열
+ */
+export function getThisWeekMonday(): string {
+  const now = new Date();
+  const day = now.getDay(); // 0(일) ~ 6(토)
+  const diff = day === 0 ? -6 : 1 - day; // 월요일까지의 차이 (일요일이면 -6, 아니면 1-day)
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0); // 로컬 타임존 기준 자정
+  return monday.toISOString(); // UTC로 변환
+}
+
+/**
+ * 다음 월요일 00:00:00 (로컬 타임존)을 UTC ISO8601로 반환
+ * 시즌 종료 시간 계산 시 사용
+ *
+ * @returns 다음 주 월요일 로컬 자정의 UTC ISO8601 문자열
+ */
+export function getNextMonday(): string {
+  const thisMonday = new Date(getThisWeekMonday());
+  thisMonday.setDate(thisMonday.getDate() + 7);
+  return thisMonday.toISOString();
+}

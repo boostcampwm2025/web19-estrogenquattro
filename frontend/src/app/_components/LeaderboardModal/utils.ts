@@ -1,3 +1,7 @@
+import type { TotalRankRes, ActivityRankRes } from "@/lib/api/point";
+import type { LeaderboardPlayer } from "./types";
+import { getGithubAvatarUrl } from "@/utils/github";
+
 // 순위에 따른 텍스트 색상
 export function getRankTextColor(rank: number): string {
   if (rank === 1) return "text-yellow-500";
@@ -27,4 +31,72 @@ export function calculateSeasonRemaining(endTime: string) {
 // 시간을 두 자리로 포맷
 export function formatTime(n: number): string {
   return String(n).padStart(2, "0");
+}
+
+// 백엔드 TotalRankRes를 프론트엔드 LeaderboardPlayer로 변환
+export function toLeaderboardPlayerFromTotal(
+  rank: TotalRankRes,
+): LeaderboardPlayer {
+  return {
+    playerId: rank.playerId,
+    rank: rank.rank,
+    username: rank.nickname,
+    profileImage: getGithubAvatarUrl(rank.nickname),
+    points: rank.totalPoints,
+  };
+}
+
+// 백엔드 ActivityRankRes를 프론트엔드 LeaderboardPlayer로 변환
+export function toLeaderboardPlayerFromActivity(
+  rank: ActivityRankRes,
+): LeaderboardPlayer {
+  return {
+    playerId: rank.playerId,
+    rank: rank.rank,
+    username: rank.nickname,
+    profileImage: getGithubAvatarUrl(rank.nickname),
+    points: rank.count,
+  };
+}
+
+// 내 랭킹 정보 생성 (전체 포인트)
+export function toMyRankPlayerFromTotal(
+  ranks: TotalRankRes[],
+  playerId: number | undefined,
+  username: string | undefined,
+): LeaderboardPlayer {
+  const myRank = ranks.find((rank) => rank.playerId === playerId);
+
+  if (myRank) {
+    return toLeaderboardPlayerFromTotal(myRank);
+  }
+
+  return {
+    playerId: playerId || 0,
+    rank: ranks.length + 1,
+    username: username || "Unknown",
+    profileImage: username ? getGithubAvatarUrl(username) : null,
+    points: 0,
+  };
+}
+
+// 내 랭킹 정보 생성 (활동별)
+export function toMyRankPlayerFromActivity(
+  ranks: ActivityRankRes[],
+  playerId: number | undefined,
+  username: string | undefined,
+): LeaderboardPlayer {
+  const myRank = ranks.find((rank) => rank.playerId === playerId);
+
+  if (myRank) {
+    return toLeaderboardPlayerFromActivity(myRank);
+  }
+
+  return {
+    playerId: playerId || 0,
+    rank: ranks.length + 1,
+    username: username || "Unknown",
+    profileImage: username ? getGithubAvatarUrl(username) : null,
+    points: 0,
+  };
 }

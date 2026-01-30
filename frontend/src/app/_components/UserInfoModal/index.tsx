@@ -71,6 +71,7 @@ export default function UserInfoModal() {
       onClick={handleBackdropClick}
     >
       <div
+        id="user-info-modal"
         ref={contentRef}
         className={`modal-w:max-w-4xl modal-w:min-w-[850px] relative w-full max-w-2xl min-w-0 ${PIXEL_BG} ${PIXEL_BORDER} p-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
@@ -116,6 +117,7 @@ export default function UserInfoModal() {
             onClick={() => setActiveTab("activity")}
           />
           <TabButton
+            id="pet-tab-button"
             label="펫"
             isActive={activeTab === "pet"}
             onClick={() => setActiveTab("pet")}
@@ -135,16 +137,19 @@ export default function UserInfoModal() {
 }
 
 function TabButton({
+  id,
   label,
   isActive,
   onClick,
 }: {
+  id?: string;
   label: string;
   isActive: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      id={id}
       onClick={onClick}
       className={`flex-1 cursor-pointer py-2 text-sm font-bold transition-all ${PIXEL_BORDER} ${isActive ? PIXEL_BTN_ACTIVE : PIXEL_BTN_INACTIVE} ${isActive && "hover:brightness-110"}`}
     >

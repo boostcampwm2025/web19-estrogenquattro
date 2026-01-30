@@ -12,6 +12,7 @@ import MapManager, { MapConfig } from "../managers/MapManager";
 import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
+import { API_URL } from "@/lib/api/client";
 
 export type { ContributionController };
 
@@ -38,35 +39,36 @@ export class MapScene extends Phaser.Scene {
   private connectionLostButtonBorder?: Phaser.GameObjects.Graphics;
 
   // Map Configuration
+  // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
   private maps: MapConfig[] = [
     {
       image: "tiles1",
       tilemap: "tilemap1",
-      imagePath: "/assets/maps/desert_stage1.webp",
+      imagePath: `${API_URL}/api/maps/0`,
       tilemapPath: "/assets/tilemaps/desert_stage1.json",
     },
     {
       image: "tiles2",
       tilemap: "tilemap2",
-      imagePath: "/assets/maps/desert_stage2.webp",
+      imagePath: `${API_URL}/api/maps/1`,
       tilemapPath: "/assets/tilemaps/desert_stage2.json",
     },
     {
       image: "tiles3",
       tilemap: "tilemap3",
-      imagePath: "/assets/maps/desert_stage3.webp",
+      imagePath: `${API_URL}/api/maps/2`,
       tilemapPath: "/assets/tilemaps/desert_stage3.json",
     },
     {
       image: "tiles4",
       tilemap: "tilemap4",
-      imagePath: "/assets/maps/desert_stage4.webp",
+      imagePath: `${API_URL}/api/maps/3`,
       tilemapPath: "/assets/tilemaps/desert_stage4.json",
     },
     {
       image: "tiles5",
       tilemap: "tilemap5",
-      imagePath: "/assets/maps/desert_stage5.webp",
+      imagePath: `${API_URL}/api/maps/4`,
       tilemapPath: "/assets/tilemaps/desert_stage5.json",
     },
   ];
@@ -78,9 +80,9 @@ export class MapScene extends Phaser.Scene {
   preload() {
     this.load.crossOrigin = "anonymous";
 
-    // Load all maps dynamically
+    // Tilemap(충돌 데이터)만 미리 로드
+    // 맵 이미지는 game_state 수신 후 동적 로드 (권한 체크)
     this.maps.forEach((map) => {
-      this.load.image(map.image, map.imagePath);
       if (map.tilemapPath) {
         this.load.tilemapTiledJSON(map.tilemap, map.tilemapPath);
       }
@@ -116,11 +118,10 @@ export class MapScene extends Phaser.Scene {
   private petImage: string | null = null;
 
   create() {
-    // 1. Map Setup
+    // 1. MapManager 생성 (맵 이미지는 game_state 수신 후 동적 로드)
     this.mapManager = new MapManager(this, this.maps);
-    this.mapManager.setup();
 
-    //React(Hooks)에서 보낸 펫 교체 이벤트 처리
+    // React(Hooks)에서 보낸 펫 교체 이벤트 처리
     const handleLocalPetUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       if (this.player && customEvent.detail?.petImage) {
@@ -134,50 +135,72 @@ export class MapScene extends Phaser.Scene {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
     });
 
-    // 2. Animations Setup
+    // 2. Animations Setup (맵 독립적)
     this.createAnimations();
 
-    // 3. Player Setup
-    this.setupPlayer();
-
-    // 4. Collisions Setup
-    this.setupCollisions();
-
-    // 5. Controls Setup
+    // 3. Controls Setup (맵 독립적)
     this.setupControls();
 
-    // 6. UI Setup
-    this.setupUI();
-
-    // 7. Camera Setup
-    this.cameraController = new CameraController(this);
-    const { width, height } = this.mapManager.getMapSize();
-    this.cameraController.setup(width, height, this.player?.getContainer());
-
-    // 8. Socket Setup
+    // 4. Socket Setup - game_state 수신 시 맵 로드 후 나머지 초기화
     this.socketManager = new SocketManager(
       this,
       this.username,
       () => this.player,
     );
-    this.socketManager.setWalls(this.mapManager.getWalls()!);
-    this.socketManager.setContributionController(this.contributionController!);
     this.socketManager.connect({
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
       showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
       hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
       onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
       onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
+      onInitialMapLoad: (mapIndex) => this.initializeWithMap(mapIndex),
     });
 
-    // 9. Chat Setup
+    // 5. Chat Setup
     this.chatManager = new ChatManager(this, (message) =>
       this.socketManager.sendChat(message),
     );
     this.chatManager.setup();
 
-    // 10. Cleanup on scene shutdown
+    // 6. Cleanup on scene shutdown
     this.events.on("shutdown", this.cleanup, this);
+  }
+
+  /**
+   * 첫 맵 로드 후 나머지 초기화 (game_state 수신 시 호출)
+   */
+  private initializeWithMap(mapIndex: number): void {
+    // 서버에서 잘못된 mapIndex가 오면 방어
+    if (mapIndex < 0 || mapIndex >= this.maps.length) {
+      console.warn(
+        `[MapScene] Invalid mapIndex from server: ${mapIndex}, using 0`,
+      );
+      mapIndex = 0;
+    }
+    this.mapManager.loadAndSetup(mapIndex, () => {
+      // Player Setup
+      this.setupPlayer();
+
+      // Player 생성 후 joining 이벤트 emit
+      this.socketManager.emitJoining();
+
+      // Collisions Setup
+      this.setupCollisions();
+
+      // UI Setup
+      this.setupUI();
+
+      // Camera Setup
+      this.cameraController = new CameraController(this);
+      const { width, height } = this.mapManager.getMapSize();
+      this.cameraController.setup(width, height, this.player?.getContainer());
+
+      // SocketManager에 walls, contributionController 설정
+      this.socketManager.setWalls(this.mapManager.getWalls()!);
+      this.socketManager.setContributionController(
+        this.contributionController!,
+      );
+    });
   }
 
   private cleanup(): void {
