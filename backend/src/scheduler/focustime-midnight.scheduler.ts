@@ -20,9 +20,7 @@ export class FocusTimeMidnightScheduler {
    */
   @Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
   async handleMidnight(): Promise<void> {
-    this.logger.log(
-      '🌙 Midnight scheduler started - copying focustime records',
-    );
+    this.logger.log('Midnight scheduler started - copying focustime records');
 
     const { start, end } = getYesterdayKstRange();
     const now = new Date();
@@ -43,7 +41,7 @@ export class FocusTimeMidnightScheduler {
     const newRecords = yesterdayRecords.map((record) =>
       this.focusTimeRepository.create({
         player: record.player,
-        totalFocusSeconds: record.totalFocusSeconds,
+        totalFocusSeconds: 0,
         status: record.status,
         createdAt: now,
         lastFocusStartTime: record.lastFocusStartTime,
