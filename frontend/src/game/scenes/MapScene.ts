@@ -307,10 +307,11 @@ export class MapScene extends Phaser.Scene {
         this.contributionController!,
       );
 
-      // 플레이어 리스폰 (wall 피해 랜덤 위치)
+      // 플레이어 리스폰 (wall 피해 랜덤 위치) + 위치 동기화
       if (this.player) {
         const spawnPos = this.mapManager.getRandomSpawnPosition();
         this.player.setPosition(spawnPos.x, spawnPos.y);
+        this.socketManager.sendRespawnPosition(spawnPos.x, spawnPos.y);
       }
     });
   }
