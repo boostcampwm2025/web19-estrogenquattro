@@ -37,7 +37,7 @@ export class PointHistoryController {
     @Query('type') type: PointType,
     @Query('weekendStartAt', ParseDatePipe) weekendStartAt: Date,
   ): Promise<HistoryRank[]> {
-    if (!Object.values(PointType).includes(type)) {
+    if (!(Object.values(PointType) as string[]).includes(type)) {
       throw new BadRequestException('Invalid PointType');
     }
     return this.pointHistoryService.getHistoryRanks(type, weekendStartAt);
