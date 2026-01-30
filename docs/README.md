@@ -123,7 +123,8 @@ pnpm build
 | `*.entity.ts` | `docs/guides/ERD.md` |
 | `*.gateway.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `*.controller.ts` | `docs/api/REST_ENDPOINTS.md` |
-| `backend/src/scheduler/` | `docs/api/SOCKET_EVENTS.md` |
+| `backend/src/scheduler/` | `docs/architecture/BACKEND_MODULES.md` |
+| `backend/src/pointhistory/` | `docs/features/POINT_SYSTEM.md`, `docs/api/REST_ENDPOINTS.md` |
 
 > 새 모듈/기능 추가 시 이 테이블도 함께 업데이트하세요.
 

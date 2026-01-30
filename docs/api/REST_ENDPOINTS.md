@@ -33,7 +33,7 @@
 | `GET /api/github/activity?date=YYYY-MM-DD` | 일별 GitHub 활동 | Planned | |
 | `GET /api/stats/daily?date=YYYY-MM-DD` | 일일 통계 조회 | Planned | 프로필 통계 |
 | `GET /api/points?date=YYYY-MM-DD&aggregate=summary` | 일별 포인트 요약 | Planned | `/api/points/summary` 대체 |
-| `GET /api/points/history?limit=...` | 포인트 히스토리 | Planned | |
+| `GET /api/point-history` | 포인트 히스토리 | Implemented | 아래 참조 |
 | `GET /api/rooms?status=active` | 활성 방 목록 | Optional | `/api/rooms/active` 대체 |
 | `GET /api/rooms/:id/state` | 방 상태 프리로드 | Optional | |
 
@@ -132,7 +132,7 @@ POST /api/tasks
   "description": "오늘 할 일",
   "totalFocusSeconds": 0,
   "isCompleted": false,
-  "createdDate": "2025-01-18"
+  "createdAt": "2025-01-18T00:00:00.000Z"
 }
 ```
 
@@ -141,10 +141,10 @@ POST /api/tasks
 ### 태스크 목록 조회
 
 ```
-GET /api/tasks?date=YYYY-MM-DD
+GET /api/tasks?startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=YYYY-MM-DDTHH:mm:ss.sssZ
 ```
 
-`date`는 선택 파라미터이며, 미지정 시 오늘 날짜 기준으로 조회
+`startDate`, `endDate`는 UTC ISO 8601 형식의 시간 범위입니다. 프론트엔드에서 로컬 타임존의 하루 범위를 UTC로 변환하여 전송합니다.
 
 **Response:**
 ```json
@@ -155,7 +155,7 @@ GET /api/tasks?date=YYYY-MM-DD
       "description": "오늘 할 일",
       "totalFocusSeconds": 0,
       "isCompleted": false,
-      "createdDate": "2025-01-18"
+      "createdAt": "2025-01-18T00:00:00.000Z"
     }
   ]
 }
@@ -200,7 +200,7 @@ PATCH /api/tasks/completion/:taskId
   "description": "오늘 할 일",
   "totalFocusSeconds": 25,
   "isCompleted": true,
-  "createdDate": "2025-01-18"
+  "createdAt": "2025-01-18T00:00:00.000Z"
 }
 ```
 
@@ -219,7 +219,7 @@ PATCH /api/tasks/uncompletion/:taskId
   "description": "오늘 할 일",
   "totalFocusSeconds": 25,
   "isCompleted": false,
-  "createdDate": "2025-01-18"
+  "createdAt": "2025-01-18T00:00:00.000Z"
 }
 ```
 
@@ -245,7 +245,7 @@ PATCH /api/tasks/:taskId
   "description": "수정된 할 일",
   "totalFocusSeconds": 25,
   "isCompleted": false,
-  "createdDate": "2025-01-18"
+  "createdAt": "2025-01-18T00:00:00.000Z"
 }
 ```
 
@@ -586,21 +586,35 @@ GET /api/points?date=YYYY-MM-DD&aggregate=summary
 ### 포인트 히스토리
 
 ```
-GET /api/points/history?limit=20
+GET /api/point-history?playerId=101&startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=YYYY-MM-DDTHH:mm:ss.sssZ
 ```
+
+`playerId`는 필수 파라미터입니다. `startDate`, `endDate`는 UTC ISO 8601 형식의 시간 범위입니다.
 
 **Response:**
 ```json
-{
-  "items": [
-    {
-      "type": "TASK_COMPLETED",
-      "amount": 10,
-      "createdAt": "2025-01-18T10:35:00.000Z"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "type": "COMMITTED",
+    "amount": 2,
+    "description": "feat: 새 기능 추가",
+    "createdAt": "2025-01-18T10:35:00.000Z"
+  },
+  {
+    "id": 2,
+    "type": "PR_OPEN",
+    "amount": 2,
+    "description": "로그인 기능 구현",
+    "createdAt": "2025-01-18T11:00:00.000Z"
+  }
+]
 ```
+
+**필드 설명:**
+- `type`: 포인트 타입 (`COMMITTED`, `PR_OPEN`, `PR_MERGED`, `PR_REVIEWED`, `ISSUE_OPEN`, `TASK_COMPLETED`, `FOCUSED`)
+- `amount`: 획득 포인트
+- `description`: 활동 상세 (커밋 메시지, PR/이슈 제목 등)
 
 ---
 

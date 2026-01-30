@@ -15,6 +15,7 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **useTasksStore** | `useTasksStore.ts` | Task CRUD, 타이머 |
 | **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
 | **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
+| **useProgressStore** | `useProgressStore.ts` | 게임 프로그레스바, 기여도 |
 
 ---
 
@@ -121,7 +122,7 @@ interface Task {
   description: string;
   isCompleted: boolean;
   totalFocusSeconds: number;
-  createdDate: string;
+  createdAt: string;  // ISO datetime
   // 로컬 전용 (타임스탬프 기반)
   isRunning?: boolean;       // 타이머 실행 중
   time: number;              // 누적 시간 (초)
@@ -215,6 +216,28 @@ interface ModalState {
 
 ---
 
+### useProgressStore
+
+게임 프로그레스바 및 기여도 상태 관리
+
+```typescript
+interface ProgressState {
+  progress: number;                           // 현재 프로그레스 (0-99)
+  contributions: Record<string, number>;      // username -> 기여 횟수
+
+  setProgress: (progress: number) => void;
+  setContributions: (contributions: Record<string, number>) => void;
+  reset: () => void;
+}
+```
+
+**특징:**
+- 소켓 이벤트(`progress_update`, `game_state`)에서 상태 업데이트
+- React 컴포넌트(`ProgressBar.tsx`)에서 구독하여 렌더링
+- 맵 전환(`map_switch`) 시 자동 리셋
+
+---
+
 ## 스토어 간 상호작용
 
 ```mermaid
@@ -227,6 +250,7 @@ flowchart TB
         Focus[useFocusTimeStore]
         Tasks[useTasksStore]
         Point[usePointStore]
+        Progress[useProgressStore]
     end
 
     subgraph UI
