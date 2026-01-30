@@ -8,7 +8,7 @@ export interface DateRange {
  * 시작: 어제 UTC 15:00
  * 끝: 오늘 UTC 14:59:59.999
  */
-export function getYesterdayRange(): DateRange {
+export function getYesterdayKstRange(): DateRange {
   const now = new Date();
 
   const start = new Date(now);
