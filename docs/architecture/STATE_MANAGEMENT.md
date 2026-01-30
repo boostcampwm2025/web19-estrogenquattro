@@ -15,7 +15,7 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **useTasksStore** | `useTasksStore.ts` | Task CRUD, 타이머 |
 | **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
 | **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
-| **useProgressStore** | `useProgressStore.ts` | 게임 프로그레스바, 기여도 |
+| **useOnboardingStore** | `useOnboardingStore.ts` | 온보딩 투어 상태 관리 |
 
 ---
 
@@ -122,7 +122,7 @@ interface Task {
   description: string;
   isCompleted: boolean;
   totalFocusSeconds: number;
-  createdAt: string;  // ISO datetime
+  createdDate: string;
   // 로컬 전용 (타임스탬프 기반)
   isRunning?: boolean;       // 타이머 실행 중
   time: number;              // 누적 시간 (초)
@@ -216,25 +216,40 @@ interface ModalState {
 
 ---
 
-### useProgressStore
+### useOnboardingStore
 
-게임 프로그레스바 및 기여도 상태 관리
+온보딩 투어 (튜토리얼) 상태 관리
 
 ```typescript
-interface ProgressState {
-  progress: number;                           // 현재 프로그레스 (0-99)
-  contributions: Record<string, number>;      // username -> 기여 횟수
+interface OnboardingState {
+  isActive: boolean;           // 온보딩 진행 중 여부
+  currentStep: number;         // 현재 스텝 (0-based)
+  totalSteps: number;          // 총 스텝 수 (기본 8)
+  isShowingAction: boolean;    // 트리거 실행 중 (배경 숨김)
+  isChatOpen: boolean;         // 채팅 인풋 열림 상태
+  isWaitingForModalGuide: boolean;  // 모달 가이드 진행 중
+  modalSubStepIndex: number;   // 모달 서브 스텝 인덱스
+}
 
-  setProgress: (progress: number) => void;
-  setContributions: (contributions: Record<string, number>) => void;
-  reset: () => void;
+interface OnboardingActions {
+  startOnboarding(): void;
+  nextStep(): void;
+  prevStep(): void;
+  skipOnboarding(): void;
+  completeOnboarding(): void;
+  checkAndStartOnboarding(): void;  // localStorage 확인 후 자동 시작
+  setShowingAction(showing: boolean): void;
+  setChatOpen(open: boolean): void;
+  setWaitingForModalGuide(waiting: boolean): void;
+  nextModalSubStep(): void;
+  resetModalSubStep(): void;
 }
 ```
 
 **특징:**
-- 소켓 이벤트(`progress_update`, `game_state`)에서 상태 업데이트
-- React 컴포넌트(`ProgressBar.tsx`)에서 구독하여 렌더링
-- 맵 전환(`map_switch`) 시 자동 리셋
+- `localStorage`에 완료 여부 저장 (`onboarding_completed`)
+- 신규 사용자 첫 접속 시 1.5초 후 자동 시작
+- 모달 내 서브 스텝 지원 (펫 뽑기 등)
 
 ---
 
@@ -250,7 +265,6 @@ flowchart TB
         Focus[useFocusTimeStore]
         Tasks[useTasksStore]
         Point[usePointStore]
-        Progress[useProgressStore]
     end
 
     subgraph UI

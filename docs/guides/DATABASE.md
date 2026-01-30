@@ -110,9 +110,11 @@ pnpm migration:revert
 
 ```
 backend/src/database/migrations/
-├── 1768270149211-Auto.ts
-└── 1768743865938-AddFocusTimeFields.ts
 ```
+
+> **Note:** 마이그레이션 파일은 `.gitignore`에 포함되어 있습니다.
+> 각 개발자가 로컬에서 `pnpm migration:generate`로 직접 생성해야 합니다.
+> 프로덕션 환경에서는 `synchronize: true` 또는 수동 스키마 관리를 권장합니다.
 
 ### 마이그레이션 예시
 

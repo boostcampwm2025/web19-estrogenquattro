@@ -674,8 +674,6 @@ Cookie: access_token=<JWT>
 
 ### 주간 리더보드 조회
 
-**Status:** Planned
-
 ```
 GET /api/leaderboard
 ```
@@ -739,6 +737,61 @@ GET /api/leaderboard
 - 상위 N명만 반환(추후 논의)
 - `myRank`는 상위 N명에 포함되지 않아도 항상 반환됨
 - 프론트엔드에서 `seasonEndTime`을 기준으로 카운트다운 타이머 표시
+
+---
+
+### GitHub 이벤트 히스토리 조회
+
+```
+GET /api/git-histories?targetPlayerId=:playerId&startAt=:date&endAt=:date
+```
+
+특정 플레이어의 GitHub 이벤트 히스토리를 조회
+
+**Query Parameters:**
+- `targetPlayerId`: 조회 대상 플레이어 ID
+- `startAt`: 조회 시작 날짜 (ISO 8601)
+- `endAt`: 조회 종료 날짜 (ISO 8601)
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "type": "COMMITTED",
+    "amount": 2,
+    "repository": "owner/repo",
+    "description": "feat: 새 기능 추가",
+    "createdAt": "2025-01-18T10:35:00.000Z",
+    "activityAt": "2025-01-18T10:30:00.000Z"
+  }
+]
+```
+
+---
+
+### 활동별 순위 조회
+
+```
+GET /api/history-ranks?type=:pointType&weekendStartAt=:date
+```
+
+특정 활동 타입의 주간 순위를 조회
+
+**Query Parameters:**
+- `type`: 포인트 타입 (`COMMITTED`, `PR_OPEN`, `PR_MERGED`, `PR_REVIEWED`, `ISSUE_OPEN`)
+- `weekendStartAt`: 주 시작 날짜 (ISO 8601)
+
+**Response:**
+```json
+[
+  {
+    "playerId": 1,
+    "nickname": "octocat",
+    "totalAmount": 42
+  }
+]
+```
 
 ---
 
