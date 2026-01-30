@@ -123,7 +123,8 @@ pnpm build
 | `*.entity.ts` | `docs/guides/ERD.md` |
 | `*.gateway.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `*.controller.ts` | `docs/api/REST_ENDPOINTS.md` |
-| `backend/src/scheduler/` | `docs/api/SOCKET_EVENTS.md` |
+| `backend/src/scheduler/` | `docs/architecture/BACKEND_MODULES.md` |
+| `backend/src/pointhistory/` | `docs/features/POINT_SYSTEM.md`, `docs/api/REST_ENDPOINTS.md` |
 
 > 새 모듈/기능 추가 시 이 테이블도 함께 업데이트하세요.
 
@@ -133,6 +134,6 @@ pnpm build
 
 | 항목 | 마지막 동기화 | 커밋 |
 |------|-------------|------|
-| 전체 문서 | 2026-01-29 | [`8dd241f`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/8dd241f) |
+| 전체 문서 | 2026-01-30 | [`745219f`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/745219f) |
 
 > 문서와 코드 불일치 발견 시 이슈로 등록해주세요.

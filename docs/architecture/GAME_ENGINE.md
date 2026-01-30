@@ -212,17 +212,22 @@ export class RemotePlayer extends BasePlayer {
 ```
 frontend/public/assets/
 ├── maps/
-│   ├── dessert_stage1.webp   # 맵 이미지 1
-│   ├── dessert_stage2.webp   # 맵 이미지 2
-│   ├── dessert_stage3.webp   # 맵 이미지 3
-│   ├── dessert_stage4.webp   # 맵 이미지 4
-│   └── dessert_stage5.webp   # 맵 이미지 5
+│   ├── desert_stage1.webp   # 맵 이미지 1
+│   ├── desert_stage2.webp   # 맵 이미지 2
+│   ├── desert_stage3.webp   # 맵 이미지 3
+│   ├── desert_stage4.webp   # 맵 이미지 4
+│   └── desert_stage5.webp   # 맵 이미지 5
 ├── tilemaps/
-│   ├── dessert_stage1.json   # Tiled 충돌 데이터 1
-│   ├── dessert_stage2.json   # Tiled 충돌 데이터 2
-│   ├── dessert_stage3.json   # Tiled 충돌 데이터 3
-│   ├── dessert_stage4.json   # Tiled 충돌 데이터 4
-│   └── dessert_stage5.json   # Tiled 충돌 데이터 5
+│   ├── desert_stage1.json   # Tiled 충돌 데이터 1
+│   ├── desert_stage2.json   # Tiled 충돌 데이터 2
+│   ├── desert_stage3.json   # Tiled 충돌 데이터 3
+│   ├── desert_stage4.json   # Tiled 충돌 데이터 4
+│   └── desert_stage5.json   # Tiled 충돌 데이터 5
+├── grass/
+│   ├── grass_level_0.webp   # 잔디 레벨 0 (활동 없음)
+│   ├── grass_level_1.webp   # 잔디 레벨 1
+│   ├── grass_level_2.webp   # 잔디 레벨 2
+│   └── grass_level_3.webp   # 잔디 레벨 3 (활동 많음)
 └── body.png                  # 캐릭터 스프라이트 시트
 ```
 
@@ -257,11 +262,11 @@ Tiled 에디터로 충돌 영역을 정의하고 JSON으로 export
 
 ```mermaid
 stateDiagram-v2
-    Stage1: dessert_stage1
-    Stage2: dessert_stage2
-    Stage3: dessert_stage3
-    Stage4: dessert_stage4
-    Stage5: dessert_stage5
+    Stage1: desert_stage1
+    Stage2: desert_stage2
+    Stage3: desert_stage3
+    Stage4: desert_stage4
+    Stage5: desert_stage5
 
     [*] --> Stage1: 게임 시작
     Stage1 --> Stage2: map_switch (서버)
@@ -330,20 +335,26 @@ sequenceDiagram
 
 ### 프로그레스바
 
+프로그래스바는 게임 외부의 React 컴포넌트로 구현되어 있으며, Zustand 스토어를 통해 상태를 관리합니다.
+
 ```typescript
-// frontend/src/game/ui/createProgressBar.ts
-export interface ProgressBarController {
-  setProgress(value: number): void;  // 절대값 설정 (서버 값 그대로 사용)
-  reset(): void;
-  getProgress(): number;
-  destroy(): void;
+// frontend/src/_components/ui/ProgressBar.tsx
+// React 컴포넌트로 구현 (맵 외부 UI)
+
+// frontend/src/stores/useProgressStore.ts
+interface ProgressState {
+  progress: number;
+  contributions: Record<string, number>;
+  setProgress: (progress: number) => void;
+  setContributions: (contributions: Record<string, number>) => void;
+  reset: () => void;
 }
 ```
 
-- Phaser Graphics로 렌더링
-- 맵 좌표 기준 중앙 상단 배치
+- React 컴포넌트로 렌더링 (게임 외부 UI)
+- `useProgressStore`를 통해 상태 관리
 - **절대값 동기화**: 서버에서 받은 `targetProgress`를 그대로 표시 (클라이언트 계산 없음)
-- Tween 애니메이션으로 부드러운 진행
+- CSS 애니메이션으로 부드러운 진행
 
 ### 기여도 목록
 

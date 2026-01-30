@@ -422,6 +422,68 @@ return this.dataSource.transaction(async (manager) => {
 
 ---
 
+## 자정 초기화 스케줄러
+
+### 문제점
+
+자정을 넘어서도 집중 중인 사용자의 경우:
+- 어제 날짜의 `daily_focus_time` 레코드에 집중 상태가 기록됨
+- 오늘 날짜로 조회 시 레코드가 없어 집중 상태가 초기화됨
+
+### 해결책: FocusTimeMidnightScheduler
+
+KST 00:00 (UTC 15:00)에 실행되는 크론 스케줄러:
+
+```typescript
+@Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
+async handleMidnight(): Promise<void> {
+  // 어제의 모든 focustime 레코드 조회
+  const yesterdayRecords = await this.focusTimeRepository.find({
+    where: { createdAt: Between(start, end) },
+    relations: ['player'],
+  });
+
+  // 새 레코드 생성 (상태 유지, 누적 시간 초기화)
+  const newRecords = yesterdayRecords.map((record) =>
+    this.focusTimeRepository.create({
+      player: record.player,
+      totalFocusSeconds: 0,           // 누적 시간 초기화
+      status: record.status,          // 상태 유지 (FOCUSING/RESTING)
+      createdAt: now,                 // 오늘 날짜
+      lastFocusStartTime: record.lastFocusStartTime,  // 시작 시간 유지
+      currentTaskId: record.currentTaskId,            // Task 연결 유지
+    }),
+  );
+  await this.focusTimeRepository.save(newRecords);
+}
+```
+
+### 동작 방식
+
+```mermaid
+sequenceDiagram
+    participant S as Scheduler
+    participant DB as Database
+    participant U as 집중 중인 사용자
+
+    Note over U: 23:30 집중 시작
+    U->>DB: daily_focus_time (1/29)<br/>status=FOCUSING
+
+    Note over S: 00:00 KST
+    S->>DB: 어제(1/29) 레코드 조회
+    S->>DB: 오늘(1/30) 레코드 생성<br/>status=FOCUSING 유지<br/>totalFocusSeconds=0
+
+    Note over U: 00:30 휴식
+    U->>DB: 오늘(1/30) 레코드에<br/>30분 누적
+```
+
+**핵심 포인트:**
+- 상태(`status`)와 시작 시간(`lastFocusStartTime`) 유지
+- 누적 시간(`totalFocusSeconds`)은 0으로 초기화 (일별 집계)
+- 현재 Task 연결(`currentTaskId`) 유지
+
+---
+
 ## 알려진 이슈
 
 ### 버그 #121: 새로고침 시 시간 초기화

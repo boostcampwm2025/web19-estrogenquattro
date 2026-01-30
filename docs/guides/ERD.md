@@ -34,8 +34,8 @@ erDiagram
         bigint player_id FK
         varchar description "작업 설명 (100자)"
         int total_focus_seconds "누적 집중 시간 (초)"
-        string completed_date "완료 날짜 (YYYY-MM-DD, nullable)"
-        string created_date "생성 날짜 (YYYY-MM-DD)"
+        datetime completed_at "완료 시각 (nullable)"
+        datetime created_at "생성 시각"
     }
 
     daily_focus_time {
@@ -43,7 +43,7 @@ erDiagram
         bigint player_id FK
         int total_focus_seconds "집중 시간 (초)"
         enum status "FOCUSING | RESTING"
-        string created_date "집계 날짜 (YYYY-MM-DD)"
+        datetime created_at "생성 시각"
         datetime last_focus_start_time "마지막 집중 시작 시각"
         int current_task_id FK "현재 집중 중인 Task ID (nullable)"
     }
@@ -56,6 +56,7 @@ erDiagram
         int evolution_stage "진화 단계"
         int evolution_required_exp "진화 필요 경험치"
         varchar actual_img_url "실제 이미지 URL"
+        varchar silhouette_img_url "실루엣 이미지 URL"
     }
 
     user_pets {
@@ -135,10 +136,10 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | description | varchar(100) | | 작업 설명 |
 | total_focus_seconds | int | DEFAULT 0 | 누적 집중 시간 (초) |
-| completed_date | string | NULL 허용 | 완료 날짜 (YYYY-MM-DD 형식) |
-| created_date | string | NOT NULL | 생성 날짜 (YYYY-MM-DD 형식) |
+| completed_at | datetime | NULL 허용 | 완료 시각 |
+| created_at | datetime | NOT NULL | 생성 시각 |
 
-> **Note:** `completed_date`, `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
+> **Note:** `completed_at`, `created_at`은 datetime 타입으로 저장되며, 프론트엔드에서 UTC 범위를 전달하여 조회
 
 ---
 
@@ -152,11 +153,11 @@ erDiagram
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | total_focus_seconds | int | DEFAULT 0 | 집중 시간 (초) |
 | status | enum | NOT NULL | `FOCUSING` 또는 `RESTING` |
-| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
+| created_at | datetime | NOT NULL | 생성 시각 |
 | last_focus_start_time | datetime | NULL 허용 | 마지막 집중 시작 시각 |
 | current_task_id | int | FK → tasks.id, NULL 허용 | 현재 집중 중인 Task ID |
 
-> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼).
+> **Note:** `created_at`은 datetime 타입으로 저장되며, 프론트엔드에서 UTC 범위를 전달하여 조회.
 > `current_task_id`는 Task 테이블과 ManyToOne 관계로 연결됨.
 
 ---
@@ -174,6 +175,7 @@ erDiagram
 | evolution_stage | int | NOT NULL | 진화 단계 (1, 2, 3...) |
 | evolution_required_exp | int | NOT NULL | 다음 진화에 필요한 경험치 |
 | actual_img_url | varchar(100) | NOT NULL | 실제 이미지 경로 |
+| silhouette_img_url | varchar(100) | NOT NULL | 실루엣 이미지 경로 (미해금 펫 표시용) |
 
 ---
 

@@ -15,6 +15,7 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **useTasksStore** | `useTasksStore.ts` | Task CRUD, 타이머 |
 | **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
 | **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
+| **useOnboardingStore** | `useOnboardingStore.ts` | 온보딩 투어 상태 관리 |
 
 ---
 
@@ -212,6 +213,43 @@ interface ModalState {
 **특징:**
 - `activeModal`을 통해 한 번에 하나의 모달만 열리도록 관리
 - `userInfo` 모달의 경우 `userInfoPayload`로 데이터 전달
+
+---
+
+### useOnboardingStore
+
+온보딩 투어 (튜토리얼) 상태 관리
+
+```typescript
+interface OnboardingState {
+  isActive: boolean;           // 온보딩 진행 중 여부
+  currentStep: number;         // 현재 스텝 (0-based)
+  totalSteps: number;          // 총 스텝 수 (기본 8)
+  isShowingAction: boolean;    // 트리거 실행 중 (배경 숨김)
+  isChatOpen: boolean;         // 채팅 인풋 열림 상태
+  isWaitingForModalGuide: boolean;  // 모달 가이드 진행 중
+  modalSubStepIndex: number;   // 모달 서브 스텝 인덱스
+}
+
+interface OnboardingActions {
+  startOnboarding(): void;
+  nextStep(): void;
+  prevStep(): void;
+  skipOnboarding(): void;
+  completeOnboarding(): void;
+  checkAndStartOnboarding(): void;  // localStorage 확인 후 자동 시작
+  setShowingAction(showing: boolean): void;
+  setChatOpen(open: boolean): void;
+  setWaitingForModalGuide(waiting: boolean): void;
+  nextModalSubStep(): void;
+  resetModalSubStep(): void;
+}
+```
+
+**특징:**
+- `localStorage`에 완료 여부 저장 (`onboarding_completed`)
+- 신규 사용자 첫 접속 시 1.5초 후 자동 시작
+- 모달 내 서브 스텝 지원 (펫 뽑기 등)
 
 ---
 
