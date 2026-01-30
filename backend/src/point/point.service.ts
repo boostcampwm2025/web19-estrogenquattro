@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { DailyPoint } from './entities/daily-point.entity';
@@ -26,6 +26,7 @@ export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
 
 @Injectable()
 export class PointService {
+  private readonly logger = new Logger(PointService.name);
   constructor(
     @InjectRepository(DailyPoint)
     private readonly dailyPointRepository: Repository<DailyPoint>,
@@ -77,47 +78,60 @@ export class PointService {
   ): Promise<DailyPoint> {
     const now = new Date();
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
+    this.logger.log(
+      `[TX START] addPoint - playerId: ${playerId}, type: ${activityType}, count: ${count}`,
+    );
+    return this.dataSource
+      .transaction(async (manager) => {
+        this.logger.log(
+          `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
+        );
+        const dailyPointRepo = manager.getRepository(DailyPoint);
+        const playerRepo: Repository<Player> = manager.getRepository(Player);
 
-    return this.dataSource.transaction(async (manager) => {
-      const dailyPointRepo = manager.getRepository(DailyPoint);
-      const playerRepo: Repository<Player> = manager.getRepository(Player);
+        await this.pointHistoryService.addHistoryWithManager(
+          manager,
+          playerId,
+          activityType,
+          totalPoint,
+          repository,
+          description,
+          activityAt,
+        );
+        const { start, end } = getTodayKstRangeUtc();
 
-      await this.pointHistoryService.addHistoryWithManager(
-        manager,
-        playerId,
-        activityType,
-        totalPoint,
-        repository,
-        description,
-        activityAt,
-      );
-      const { start, end } = getTodayKstRangeUtc();
+        const existingRecord = await dailyPointRepo
+          .createQueryBuilder('dp')
+          .where('dp.player.id = :playerId', { playerId })
+          .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
+          .getOne();
 
-      const existingRecord = await dailyPointRepo
-        .createQueryBuilder('dp')
-        .where('dp.player.id = :playerId', { playerId })
-        .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
-        .getOne();
+        const player = await playerRepo.findOne({ where: { id: playerId } });
+        if (!player) {
+          throw new NotFoundException('Player not found');
+        }
+        player.totalPoint += totalPoint;
+        await playerRepo.save(player);
 
-      const player = await playerRepo.findOne({ where: { id: playerId } });
-      if (!player) {
-        throw new NotFoundException('Player not found');
-      }
-      player.totalPoint += totalPoint;
-      await playerRepo.save(player);
+        if (existingRecord) {
+          existingRecord.amount += totalPoint;
+          return dailyPointRepo.save(existingRecord);
+        }
 
-      if (existingRecord) {
-        existingRecord.amount += totalPoint;
-        return dailyPointRepo.save(existingRecord);
-      }
-
-      const newRecord = dailyPointRepo.create({
-        player: { id: playerId },
-        amount: totalPoint,
-        createdAt: now,
+        const newRecord = dailyPointRepo.create({
+          player: { id: playerId },
+          amount: totalPoint,
+          createdAt: now,
+        });
+        const result = await dailyPointRepo.save(newRecord);
+        this.logger.log(
+          `[TX END] addPoint - playerId: ${playerId}, type: ${activityType}`,
+        );
+        return result;
+      })
+      .finally(() => {
+        this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
       });
-      return dailyPointRepo.save(newRecord);
-    });
   }
 
   async getWeeklyRanks(weekendStartAt: Date): Promise<PlayerRank[]> {
