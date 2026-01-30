@@ -35,7 +35,6 @@ export class PlayerService {
     const player = this.playerRepository.create({
       socialId,
       nickname,
-      totalPoint: 0,
     });
     return this.playerRepository.save(player);
   }
