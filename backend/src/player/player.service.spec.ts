@@ -147,16 +147,16 @@ describe('PlayerService', () => {
       expect(found!.id).toBe(result.id);
     });
 
-    it('새 플레이어 생성 시 totalPoint는 0이다', async () => {
+    it('새 플레이어 생성 시 totalPoint는 기본값 100이다', async () => {
       // Given
       const socialId = 33333;
-      const nickname = 'ZeroPointPlayer';
+      const nickname = 'DefaultPointPlayer';
 
       // When
       const result = await service.findOrCreateBySocialId(socialId, nickname);
 
       // Then
-      expect(result.totalPoint).toBe(0);
+      expect(result.totalPoint).toBe(100);
     });
 
     it('동일한 socialId로 여러 번 호출해도 하나의 플레이어만 존재한다', async () => {
@@ -171,6 +171,68 @@ describe('PlayerService', () => {
       // Then
       const count = await playerRepository.count({ where: { socialId } });
       expect(count).toBe(1);
+    });
+
+    it('새 플레이어 생성 시 isNewbie는 true이다', async () => {
+      // Given
+      const socialId = 55555;
+      const nickname = 'NewbiePlayer';
+
+      // When
+      const result = await service.findOrCreateBySocialId(socialId, nickname);
+
+      // Then
+      expect(result.isNewbie).toBe(true);
+    });
+  });
+
+  describe('completeOnboarding', () => {
+    it('온보딩 완료 시 isNewbie가 false로 변경된다', async () => {
+      // Given
+      const player = playerRepository.create({
+        socialId: 66666,
+        nickname: 'OnboardingPlayer',
+      });
+      const saved = await playerRepository.save(player);
+      expect(saved.isNewbie).toBe(true);
+
+      // When
+      await service.completeOnboarding(saved.id);
+
+      // Then
+      const updated = await playerRepository.findOne({
+        where: { id: saved.id },
+      });
+      expect(updated!.isNewbie).toBe(false);
+    });
+
+    it('존재하지 않는 플레이어의 온보딩 완료 시 NotFoundException을 던진다', async () => {
+      // Given
+      const nonExistentId = 99999;
+
+      // When & Then
+      await expect(service.completeOnboarding(nonExistentId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('온보딩 완료 후에도 totalPoint는 100 유지', async () => {
+      // Given
+      const player = playerRepository.create({
+        socialId: 77777,
+        nickname: 'PointCheckPlayer',
+      });
+      const saved = await playerRepository.save(player);
+      expect(saved.totalPoint).toBe(100);
+
+      // When
+      await service.completeOnboarding(saved.id);
+
+      // Then
+      const updated = await playerRepository.findOne({
+        where: { id: saved.id },
+      });
+      expect(updated!.totalPoint).toBe(100);
     });
   });
 });
