@@ -90,18 +90,6 @@ export function formatFocusTime(seconds: number): string {
 }
 
 /**
- * [UTC 기준] YYYY-MM-DD 형식의 날짜 문자열 반환
- * - 서버에서 받은 createdAt 등 UTC ISO 문자열을 파싱할 때 사용
- * - 타임존에 관계없이 서버 저장 날짜 그대로 추출
- */
-export function toUTCDateString(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-/**
  * Date 객체를 "YYYY년 M월 DD일 요일" 형식으로 변환
  * @param date - 포맷팅할 날짜
  * @returns 포맷된 날짜 문자열 (예: "2026년 1월 29일 수")
