@@ -40,7 +40,7 @@ github() {
 
 **OAuth Scope:**
 ```typescript
-scope: ['repo']  // private repo 활동 감지를 위한 권한
+scope: ['read:user']  // 사용자 프로필 읽기 권한 (최소 권한 원칙)
 ```
 
 ---
@@ -230,10 +230,11 @@ class UserStore {
 - CSRF 기본 보호
 - 동일 사이트 요청에만 쿠키 전송
 
-### scope: ['repo']
+### scope: ['read:user']
 
-- private 레포지토리 접근 권한
-- GitHub 활동 감지에 필요
+- 사용자 프로필 읽기 권한
+- 최소 권한 원칙에 따라 필요한 권한만 요청
+- GitHub 활동 폴링은 `/events/public` 엔드포인트 사용 (scope 불필요)
 
 ---
 
