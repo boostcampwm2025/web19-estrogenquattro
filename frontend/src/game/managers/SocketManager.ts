@@ -454,6 +454,24 @@ export default class SocketManager {
     }
   }
 
+  /**
+   * 리스폰 위치를 서버에 전송 (moving 이벤트 래퍼)
+   * - 맵 전환 후 플레이어 위치 동기화에 사용
+   * - 기존 moving 이벤트 인프라 재사용
+   */
+  sendRespawnPosition(x: number, y: number): void {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit("moving", {
+      x,
+      y,
+      isMoving: false,
+      direction: "down",
+      timestamp: Date.now(),
+    });
+  }
+
   destroy(): void {
     this.otherPlayers.forEach((player) => player.destroy());
     this.otherPlayers.clear();

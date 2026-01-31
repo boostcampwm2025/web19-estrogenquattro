@@ -121,6 +121,10 @@ socket.emit('moving', {
 - 플레이어 위치 최신화
 - 같은 방에 `moved` 브로드캐스트
 
+**용도:**
+- 일반 이동: 키보드 입력에 따른 실시간 이동
+- 리스폰 위치 동기화: 맵 전환 후 새 스폰 위치를 다른 클라이언트에 전달 (`isMoving: false`, `direction: 'down'`)
+
 ---
 
 ### chatting

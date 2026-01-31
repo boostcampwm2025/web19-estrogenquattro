@@ -186,6 +186,23 @@ updateRemotePlayers(): void {
 }
 ```
 
+### 리스폰 위치 전송
+
+맵 전환 후 플레이어 리스폰 시 다른 클라이언트에 위치 동기화:
+
+```typescript
+sendRespawnPosition(x: number, y: number): void {
+  socket.emit('moving', {
+    x, y,
+    isMoving: false,
+    direction: 'down',
+    timestamp: Date.now()
+  });
+}
+```
+
+> 기존 `moving` 이벤트 인프라를 재사용하여 리스폰 위치를 전송합니다.
+
 ---
 
 ## ChatManager
