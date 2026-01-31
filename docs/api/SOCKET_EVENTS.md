@@ -129,12 +129,22 @@ socket.emit('moving', {
 
 ```typescript
 socket.emit('chatting', {
-  message: string  // 채팅 메시지
+  message: string  // 채팅 메시지 (최대 30자)
 });
 ```
 
+**메시지 제한:**
+- 최대 길이: 30자 (원문 기준, trim 전)
+- 공백만 있는 메시지 불가
+
 **서버 동작:**
-- 같은 방에 `chatted` 브로드캐스트
+1. 타입 검증 (`message`가 문자열인지)
+2. 내용 검증 (공백만 있거나 30자 초과 시 무시)
+3. 같은 방에 `chatted` 브로드캐스트
+
+**비정상 메시지 처리:**
+- 검증 실패 시 조용히 무시 (클라이언트에 피드백 없음)
+- 정상 사용자는 클라이언트 검증(HTML maxLength)으로 차단됨
 
 ---
 
