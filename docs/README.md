@@ -134,6 +134,6 @@ pnpm build
 
 | 항목 | 마지막 동기화 | 커밋 |
 |------|-------------|------|
-| 전체 문서 | 2026-01-30 | [`aa6fe68`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/aa6fe68) |
+| 전체 문서 | 2026-01-31 | [`242df9c`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/242df9c) |
 
 > 문서와 코드 불일치 발견 시 이슈로 등록해주세요.
