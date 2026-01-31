@@ -1,7 +1,8 @@
 # Claude
 CLAUDE.md
 AGENTS.md
-.claude/
+.claude/*
+!.claude/commands/
 .agent/
 
 # IDE

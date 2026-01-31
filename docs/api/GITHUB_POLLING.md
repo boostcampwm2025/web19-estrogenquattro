@@ -251,6 +251,83 @@ fetch() 에러 발생 → catch 블록 → 로그 출력 → { status: 'error' }
 
 ---
 
+## 방어적 에러 핸들링
+
+네트워크 에러 외에도 다양한 예외 상황에 대비한 방어 로직이 적용되어 있습니다.
+
+### 보호 계층
+
+| 위치 | 보호 대상 | 실패 시 동작 |
+|------|----------|-------------|
+| `handlePoll` | 전체 폴링 흐름 | 로그 출력 후 120초 뒤 재시도 |
+| `res.json()` | JSON 파싱 | `{ status: 'error' }` 반환 |
+| `processEvents` | 개별 이벤트 처리 | 해당 이벤트 스킵, 나머지 계속 처리 |
+| DB 작업 | 활동 기록/포인트 적립 | 로그 출력 후 다음 타입 처리 |
+
+### handlePoll 최상위 보호
+
+```typescript
+private async handlePoll(username: string) {
+  try {
+    // 폴링 로직
+  } catch (error) {
+    this.logger.error(`[${username}] Unexpected error in handlePoll: ${error}`);
+    // 이미 중지된 경우(401 등) 재스케줄링하지 않음
+    if (this.pollingSchedules.has(username)) {
+      this.scheduleNextPoll(username, POLL_INTERVAL);
+    }
+  }
+}
+```
+
+### JSON 파싱 보호
+
+GitHub API가 HTML 에러 페이지 등 비정상 응답을 반환할 경우 대응:
+
+```typescript
+let eventsData: unknown;
+try {
+  eventsData = await res.json();
+} catch (error) {
+  this.logger.error(`[${username}] Failed to parse JSON response: ${error}`);
+  return { status: 'error' };
+}
+```
+
+### 개별 이벤트 처리 보호
+
+하나의 이벤트 처리 실패 시 나머지 이벤트는 계속 처리:
+
+```typescript
+for (const event of events) {
+  try {
+    // 이벤트 처리 (PushEvent, PullRequestEvent 등)
+  } catch (error) {
+    this.logger.error(`[${username}] Failed to process event ${event?.id}: ${error}`);
+    continue;
+  }
+}
+```
+
+### DB 작업 보호
+
+DB 저장 실패해도 폴링은 계속 진행 (커밋, PR, 이슈, 리뷰 각각 독립적):
+
+```typescript
+if (details.commits.length > 0) {
+  try {
+    await this.githubService.incrementActivity(...);
+    for (const commit of details.commits) {
+      await this.pointService.addPoint(...);
+    }
+  } catch (error) {
+    this.logger.error(`[${username}] Failed to save commit data: ${error}`);
+  }
+}
+```
+
+---
+
 ## 포인트 적립
 
 이벤트 감지 시 자동으로 포인트가 적립됩니다:
