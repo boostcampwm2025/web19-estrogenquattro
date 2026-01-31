@@ -8,6 +8,7 @@ import LeaderboardButton from "./_components/LeaderboardButton";
 import UserInfoButton from "./_components/UserInfoButton";
 import ProgressBar from "@/_components/ui/ProgressBar";
 import { OnboardingTour } from "./_components/OnboardingTour";
+import ConnectionLostOverlay from "@/_components/ConnectionLostOverlay";
 
 export default function Home() {
   return (
@@ -27,6 +28,7 @@ export default function Home() {
           <UserInfoButton />
           <LeaderboardButton />
         </div>
+        <ConnectionLostOverlay />
       </div>
     </AuthGuard>
   );

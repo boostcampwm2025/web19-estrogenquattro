@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (data?: unknown) => void;
 
+type ConnectionStore = typeof import("@/stores/useConnectionStore").useConnectionStore;
+
 type FakeSocket = {
   id: string;
   connected: boolean;
@@ -69,6 +71,7 @@ const createFakeSocket = (): FakeSocket => {
 describe("SocketManager 통합", () => {
   let SocketManager: SocketManagerCtor;
   let socketManager: InstanceType<SocketManagerCtor>;
+  let useConnectionStore: ConnectionStore;
 
   const scene = {
     physics: { add: { collider: vi.fn() } },
@@ -85,8 +88,9 @@ describe("SocketManager 통합", () => {
 
   const callbacks = {
     showSessionEndedOverlay: vi.fn(),
-    showConnectionLostOverlay: vi.fn(),
-    hideConnectionLostOverlay: vi.fn(),
+    onMapSwitch: vi.fn(),
+    onMapSyncRequired: vi.fn(),
+    onInitialMapLoad: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -94,11 +98,17 @@ describe("SocketManager 통합", () => {
     currentSocket = createFakeSocket();
     vi.resetModules();
     callbacks.showSessionEndedOverlay.mockClear();
-    callbacks.showConnectionLostOverlay.mockClear();
-    callbacks.hideConnectionLostOverlay.mockClear();
+    callbacks.onMapSwitch.mockClear();
+    callbacks.onMapSyncRequired.mockClear();
+    callbacks.onInitialMapLoad.mockClear();
 
     // /auth/me fetch 모킹 (기본: 200 응답 - 서버 정상, JWT 유효)
     global.fetch = vi.fn().mockResolvedValue({ status: 200 });
+
+    // 모듈 리셋 후 동적 import (SocketManager와 같은 인스턴스 사용)
+    useConnectionStore = (await import("@/stores/useConnectionStore"))
+      .useConnectionStore;
+    useConnectionStore.getState().setDisconnected(false);
 
     SocketManager = (await import("@/game/managers/SocketManager")).default;
     socketManager = new SocketManager(scene as never, "tester", () => player);
@@ -415,50 +425,52 @@ describe("SocketManager 통합", () => {
     });
   });
 
-  it("disconnect 이벤트 발생 시 showConnectionLostOverlay 콜백이 호출된다", async () => {
+  it("disconnect 이벤트 발생 시 isDisconnected가 true로 설정된다", async () => {
     // Given: 연결된 상태, /auth/me가 200 응답 (JWT 유효, 서버 정상)
 
     // When: 네트워크 오류로 disconnect 이벤트 발생
     currentSocket.trigger("disconnect", "transport close");
 
-    // Then: async 핸들러 완료 대기 후 showConnectionLostOverlay가 호출됨
+    // Then: async 핸들러 완료 대기 후 isDisconnected가 true로 설정됨
     await vi.waitFor(() => {
-      expect(callbacks.showConnectionLostOverlay).toHaveBeenCalled();
+      expect(useConnectionStore.getState().isDisconnected).toBe(true);
     });
   });
 
-  it("클라이언트가 의도적으로 연결을 끊으면 showConnectionLostOverlay가 호출되지 않는다", () => {
+  it("클라이언트가 의도적으로 연결을 끊으면 isDisconnected가 변경되지 않는다", () => {
     // Given: 연결된 상태
 
     // When: 클라이언트가 의도적으로 disconnect
     currentSocket.trigger("disconnect", "io client disconnect");
 
-    // Then: showConnectionLostOverlay가 호출되지 않음
-    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+    // Then: isDisconnected가 false 유지
+    expect(useConnectionStore.getState().isDisconnected).toBe(false);
   });
 
-  it("session_replaced 후 disconnect 시 showConnectionLostOverlay가 호출되지 않는다", () => {
+  it("session_replaced 후 disconnect 시 isDisconnected가 변경되지 않는다", () => {
     // Given: session_replaced 이벤트가 먼저 발생
     currentSocket.trigger("session_replaced");
 
     // When: 이후 disconnect 이벤트 발생
     currentSocket.trigger("disconnect", "transport close");
 
-    // Then: showConnectionLostOverlay가 호출되지 않음 (세션 교체 오버레이만 표시)
-    expect(callbacks.showConnectionLostOverlay).not.toHaveBeenCalled();
+    // Then: isDisconnected가 false 유지 (세션 교체 오버레이만 표시)
+    expect(useConnectionStore.getState().isDisconnected).toBe(false);
     expect(callbacks.showSessionEndedOverlay).toHaveBeenCalled();
   });
 
-  it("connect 이벤트 발생 시 hideConnectionLostOverlay 콜백이 호출된다", () => {
+  it("connect 이벤트 발생 시 isDisconnected가 false로 설정된다", async () => {
     // Given: 연결이 끊어진 상태 (disconnect 발생)
     currentSocket.trigger("disconnect", "transport close");
-    callbacks.hideConnectionLostOverlay.mockClear();
+    await vi.waitFor(() => {
+      expect(useConnectionStore.getState().isDisconnected).toBe(true);
+    });
 
     // When: 재연결 (connect 이벤트 발생)
     currentSocket.trigger("connect");
 
-    // Then: hideConnectionLostOverlay가 호출됨
-    expect(callbacks.hideConnectionLostOverlay).toHaveBeenCalled();
+    // Then: isDisconnected가 false로 설정됨
+    expect(useConnectionStore.getState().isDisconnected).toBe(false);
   });
 
   it("session_replaced 이벤트 발생 시 showSessionEndedOverlay 콜백이 호출된다", () => {
