@@ -1,19 +1,28 @@
 import type { LeaderboardPlayer } from "./types";
-import { getRankTextColor, getRankDisplay } from "./utils";
+import { getRankTextColor, getRankDisplay, formatSecondsToHMS } from "./utils";
+import { POINT_TYPES, type PointType } from "@/lib/api";
 
 interface PlayerRowProps {
   player: LeaderboardPlayer;
   className?: string;
   isMyRank?: boolean;
+  selectedTab?: PointType;
 }
 
 export default function PlayerRow({
   player,
   className = "",
   isMyRank = false,
+  selectedTab = POINT_TYPES.ALL,
 }: PlayerRowProps) {
   const rankTextColor = getRankTextColor(player.rank);
   const rankDisplay = getRankDisplay(player.rank);
+
+  // 집중 시간 탭일 때는 시간 형식으로 표시
+  const displayValue =
+    selectedTab === POINT_TYPES.FOCUSED
+      ? formatSecondsToHMS(player.points)
+      : player.points;
 
   // 기본 스타일
   const baseClasses =
@@ -48,7 +57,7 @@ export default function PlayerRow({
         {player.username}
       </span>
       <span className="text-center font-bold text-amber-900">
-        {player.points}
+        {displayValue}
       </span>
     </div>
   );
