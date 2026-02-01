@@ -53,7 +53,7 @@ export default function ProgressBar() {
   return (
     <div
       id="progress-bar-container"
-      className="fixed top-8 left-1/2 z-[50] flex -translate-x-1/2 flex-col items-center"
+      className="fixed top-4 left-1/2 z-[50] flex -translate-x-1/2 flex-col items-center"
     >
       {/* Label */}
       <span
@@ -210,7 +210,7 @@ export default function ProgressBar() {
           <div className="h-[4px] w-[4px] bg-transparent" />
         </div>
       </div>
-      {/* <ContributionList /> */}
+      <ContributionList />
     </div>
   );
 }

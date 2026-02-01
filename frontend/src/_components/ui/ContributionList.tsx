@@ -1,8 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { useContributionStore } from "@/stores/useContributionStore";
 
 const MAX_DISPLAY_COUNT = 3;
+
+// 메달 이미지 경로
+const MEDAL_IMAGES = [
+  "/assets/medal/gold.webp",
+  "/assets/medal/silver.webp",
+  "/assets/medal/bronze.webp",
+];
 
 export default function ContributionList() {
   const contributions = useContributionStore((state) => state.contributions);
@@ -15,23 +23,29 @@ export default function ContributionList() {
   if (sorted.length === 0) return null;
 
   return (
-    <div className="flex gap-2">
-      {sorted.map(([name, count], index) => (
-        <div
-          key={name}
-          className={`flex items-center gap-1 border-2 border-gray-700 px-2 py-0.5 text-xs shadow-[1px_1px_0px_0px_rgba(0,0,0,0.2)] ${
-            index === 0
-              ? "bg-yellow-100"
-              : index === 1
-                ? "bg-gray-100"
-                : "bg-orange-50"
-          }`}
-        >
-          <span className="font-bold text-gray-700">
-            {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+    <div className="mt-1 flex items-center justify-center gap-3">
+      {sorted.map(([name], index) => (
+        <div key={name} className="flex items-center gap-1">
+          <Image
+            src={MEDAL_IMAGES[index]}
+            alt={`${index + 1}등 메달`}
+            width={20}
+            height={20}
+            className="h-5 w-5"
+          />
+          <span
+            className="font-neodunggeunmo text-sm font-bold text-white"
+            style={{
+              textShadow: `
+                -1px -1px 0 black,
+                1px -1px 0 black,
+                -1px 1px 0 black,
+                1px 1px 0 black
+              `,
+            }}
+          >
+            {name}
           </span>
-          <span className="font-mono text-gray-800">{name}</span>
-          <span className="font-bold text-green-600">{count}</span>
         </div>
       ))}
     </div>
