@@ -21,11 +21,12 @@ export function getYesterdayKstRange(): DateRange {
   return { start, end };
 }
 
-export function getTodayKstRangeUtc(): { start: Date; end: Date } {
-  const now = new Date();
-
-  // 현재 시각을 KST 기준으로 맞춘 뒤 날짜만 사용
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+export function getTodayKstRangeUtc(base: Date = new Date()): {
+  start: Date;
+  end: Date;
+} {
+  // 기준 시각을 KST 기준으로 맞춘 뒤 날짜만 사용
+  const kst = new Date(base.getTime() + 9 * 60 * 60 * 1000);
 
   const year = kst.getUTCFullYear();
   const month = kst.getUTCMonth();

@@ -13,6 +13,7 @@ import {
   PointType,
 } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
+import { DatabaseModule } from '../database/database.module';
 
 describe('PointService', () => {
   let service: PointService;
@@ -34,6 +35,7 @@ describe('PointService', () => {
           synchronize: true,
         }),
         TypeOrmModule.forFeature([DailyPoint, Player, PointHistory]),
+        DatabaseModule,
       ],
       providers: [PointService, PointHistoryService],
     }).compile();
