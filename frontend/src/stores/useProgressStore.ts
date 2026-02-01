@@ -11,11 +11,8 @@ interface ProgressStore {
   setOnProgressComplete: (callback: () => void) => void;
 }
 
-// TODO: 테스트 완료 후 0으로 변경
-const MOCK_PROGRESS = 65;
-
 export const useProgressStore = create<ProgressStore>((set, get) => ({
-  progress: MOCK_PROGRESS, // 테스트용 mock 데이터
+  progress: 0,
 
   addProgress: (amount: number) => {
     const currentProgress = get().progress;

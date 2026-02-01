@@ -24,8 +24,12 @@ export default function ProgressBar() {
       const easeOut = 1 - Math.pow(1 - t, 3);
       const currentProgress =
         startProgress + (targetProgress - startProgress) * easeOut;
-      setDisplayProgress(currentProgress);
-      if (t < 1) {
+
+      // 애니메이션 완료 시 정확한 값으로 설정
+      if (t >= 1) {
+        setDisplayProgress(targetProgress);
+      } else {
+        setDisplayProgress(currentProgress);
         animationFrameId = requestAnimationFrame(animate);
       }
     };
@@ -34,7 +38,7 @@ export default function ProgressBar() {
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, [progress, displayProgress]);
+  }, [progress]); // displayProgress 의존성 제거 (무한 루프 방지)
 
   // 몇 개의 섹션이 채워져야 하는지 계산
   const filledSections = Math.floor((displayProgress / 100) * SECTION_COUNT);
@@ -58,7 +62,7 @@ export default function ProgressBar() {
           `,
         }}
       >
-        NEXT STAGE LOADING.. (1/5)
+        NEXT STAGE LOADING...
       </span>
 
       {/* Pixel Art Progress Bar with rounded corners */}
@@ -119,9 +123,17 @@ export default function ProgressBar() {
           <div className="flex h-[24px] items-center gap-[3px] bg-white">
             {Array.from({ length: SECTION_COUNT }).map((_, i) => {
               let fillPercent = 0;
-              if (i < filledSections) {
+
+              // 100%일 때 모든 섹션 채움
+              if (displayProgress >= 100) {
                 fillPercent = 100;
-              } else if (i === filledSections && partialFill > 5) {
+              } else if (displayProgress <= 0) {
+                // 0%일 때 모든 섹션 비움
+                fillPercent = 0;
+              } else if (i < filledSections) {
+                fillPercent = 100;
+              } else if (i === filledSections) {
+                // partialFill을 그대로 적용 (threshold 제거)
                 fillPercent = partialFill;
               }
 
