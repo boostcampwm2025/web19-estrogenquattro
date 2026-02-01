@@ -78,20 +78,23 @@ export class PointService {
     description?: string | null,
     activityAt?: Date | null,
   ): Promise<DailyPoint> {
-    const now = new Date();
-    const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
-    const { start, end } = getTodayKstRangeUtc();
     this.logger.log(
       `[TX START] addPoint - playerId: ${playerId}, type: ${activityType}, count: ${count}`,
     );
+    // 요청 도착 시각을 기준으로 일일 범위를 고정 (락 대기 중 자정 넘어가도 요청 시각 기준 적용)
+    const requestTime = new Date();
+    const { start, end } = getTodayKstRangeUtc(requestTime);
+    const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
-    const exec = () =>
-      this.dataSource.transaction(async (manager) => {
+    const exec = () => {
+
+      return this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
         );
         const dailyPointRepo = manager.getRepository(DailyPoint);
         const playerRepo: Repository<Player> = manager.getRepository(Player);
+        // 요청 시각 기준으로 고정된 now/start/end/totalPoint 사용
 
         // 1) 플레이어 포인트 합계 원자 증가 (존재 확인 겸용)
         const increased = await playerRepo.increment(
@@ -140,7 +143,7 @@ export class PointService {
         const newRecord = dailyPointRepo.create({
           player: { id: playerId },
           amount: totalPoint,
-          createdAt: now,
+          createdAt: requestTime,
         });
         const inserted = await dailyPointRepo.save(newRecord);
         this.logger.log(
@@ -148,6 +151,7 @@ export class PointService {
         );
         return inserted;
       });
+    };
 
     return this.writeLock.runExclusive(exec).finally(() => {
       this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
