@@ -20,6 +20,7 @@ const TOTAL_MAP_COUNT = 5;
 export class MapController {
   private readonly logger = new Logger(MapController.name);
   private readonly assetsPath: string;
+  private readonly mapTheme: string;
 
   constructor(
     private readonly progressGateway: ProgressGateway,
@@ -29,6 +30,9 @@ export class MapController {
     this.assetsPath =
       this.configService.get<string>('ASSETS_PATH') ??
       path.join(__dirname, '..', '..', 'assets');
+
+    // 맵 테마: 'desert', 'city', 'underwater_city'
+    this.mapTheme = this.configService.get<string>('MAP_THEME') ?? 'desert';
   }
 
   /**
@@ -56,14 +60,18 @@ export class MapController {
     }
 
     const stageNum = index + 1;
+    const fileName = `${this.mapTheme}_stage${stageNum}.webp`;
+
     const filePath = path.join(
       this.assetsPath,
       'maps',
-      `desert_stage${stageNum}.webp`,
+      this.mapTheme,
+      fileName,
     );
 
     // 파일 존재 확인
     if (!fs.existsSync(filePath)) {
+      this.logger.error(`Map file not found: ${filePath}`);
       throw new NotFoundException('Map file not found');
     }
 

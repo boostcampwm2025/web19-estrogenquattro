@@ -1,7 +1,7 @@
 # [🌱 온라인 모각코 서비스 - 잔디 심고 갈래?](https://jandiplease.duckdns.org/)
 
 <a href="https://jandiplease.duckdns.org/">
-  <img width="1536" height="1024" alt="잔디 심고 갈래? 서비스 메인 화면" src="https://github.com/user-attachments/assets/5766c3d9-2f0e-4d60-80d1-91c1f3ebbad6" />
+  <img width="1264" height="848" alt="잔디 심고 갈래? 서비스 메인 화면" src="https://github.com/user-attachments/assets/ead0cb85-dd2b-46bc-8aa2-0446139f62bd" />
 </a>
 <p align="center"><em>이미지를 클릭하면 서비스로 이동합니다.</em></p>
 

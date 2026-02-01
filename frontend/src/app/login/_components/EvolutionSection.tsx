@@ -128,8 +128,8 @@ export default function EvolutionSection() {
               >
                 <div className="relative h-32 w-32">
                   <img
-                    src="/assets/pets/pet_docker_1.png"
-                    alt="Docker 1단계"
+                    src="/assets/pets/whale/pet_whale_1.webp"
+                    alt="Whale 1단계"
                     className="h-full w-full object-contain"
                   />
                 </div>
@@ -157,8 +157,8 @@ export default function EvolutionSection() {
               >
                 <div className="relative h-32 w-32">
                   <img
-                    src="/assets/pets/pet_docker_2.png"
-                    alt="Docker 2단계"
+                    src="/assets/pets/whale/pet_whale_2.webp"
+                    alt="Whale 2단계"
                     className="h-full w-full object-contain"
                   />
                 </div>
@@ -186,9 +186,9 @@ export default function EvolutionSection() {
               >
                 <div className="relative h-32 w-32">
                   <img
-                    src="/assets/pets/pet_docker_3.png"
-                    alt="???"
-                    className="pointer-events-none h-full w-full object-contain opacity-40 brightness-0 grayscale"
+                    src="/assets/pets/whale/pet_whale_3_silhouette.webp"
+                    alt="Whale 3단계 Secret"
+                    className="pointer-events-none h-full w-full object-contain"
                   />
                 </div>
                 <p className="text-sm font-bold text-gray-500">???</p>
