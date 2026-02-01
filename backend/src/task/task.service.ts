@@ -1,11 +1,17 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Task } from './entites/task.entity';
+import { Player } from '../player/entites/player.entity';
 import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res';
 import { TaskListRes } from './dto/task-list.res';
+import {
+  TaskNotFoundException,
+  TaskNotOwnedException,
+  TaskFocusingException,
+} from './exceptions/task.exceptions';
 
 @Injectable()
 export class TaskService {
@@ -15,6 +21,7 @@ export class TaskService {
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
     private readonly playerService: PlayerService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createTask(dto: CreateTaskReq): Promise<TaskRes> {
@@ -122,13 +129,32 @@ export class TaskService {
   }
 
   async deleteTask(taskId: number, playerId: number): Promise<void> {
-    const task = await this.findOneById(taskId);
+    // 트랜잭션으로 race condition 방지
+    await this.dataSource.transaction(async (manager) => {
+      // 1. Task 존재 확인
+      const task = await manager.findOne(Task, {
+        where: { id: taskId },
+        relations: ['player'],
+      });
+      if (!task) {
+        throw new TaskNotFoundException();
+      }
 
-    if (task.player.id !== playerId) {
-      throw new NotFoundException(`Task does not belong to player ${playerId}`);
-    }
+      // 2. 소유권 확인
+      if (task.player.id !== playerId) {
+        throw new TaskNotOwnedException();
+      }
 
-    await this.taskRepository.remove(task);
-    this.logger.log(`Task deleted (taskId: ${taskId}, playerId: ${playerId})`);
+      // 3. 집중 중인 Task면 삭제 차단
+      const player = await manager.findOne(Player, { where: { id: playerId } });
+      if (player?.focusingTaskId === taskId) {
+        throw new TaskFocusingException();
+      }
+
+      await manager.remove(Task, task);
+      this.logger.log(
+        `Task deleted (taskId: ${taskId}, playerId: ${playerId})`,
+      );
+    });
   }
 }
