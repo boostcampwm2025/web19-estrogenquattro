@@ -7,13 +7,14 @@ import { PlayerService } from './player.service';
 import { GithubModule } from '../github/github.module';
 import { RoomModule } from '../room/room.module';
 import { Player } from './entites/player.entity';
+import { Task } from '../task/entites/task.entity';
 
 import { FocusTimeModule } from '../focustime/focustime.module';
 import { PetModule } from '../userpet/pet.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Player]),
+    TypeOrmModule.forFeature([Player, Task]),
     GithubModule,
     RoomModule,
     forwardRef(() => AuthModule),
