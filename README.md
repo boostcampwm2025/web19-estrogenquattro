@@ -2,7 +2,7 @@
 
 <a href="https://jandiplease.duckdns.org/">
   
-  <img width="1264" height="848" alt="잔디 심고 갈래? 서비스 소개 이미지" src="https://github.com/user-attachments/assets/5d9ecf07-f6a6-44c7-9c83-2d8cd4a50564" />
+  <img width="2071" height="939" alt="잔디 심고 갈래? 서비스 소개 이미지" src="https://github.com/user-attachments/assets/835f9102-6397-4615-85ea-95efe05e4499" />
 </a>
 <p align="center"><em>이미지를 클릭하면 서비스로 이동합니다.</em></p>
 
