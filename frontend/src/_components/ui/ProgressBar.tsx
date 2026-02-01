@@ -2,6 +2,7 @@
 
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useEffect, useState } from "react";
+import ContributionList from "./ContributionList";
 
 export default function ProgressBar() {
   const progress = useProgressStore((state) => state.progress);
@@ -46,18 +47,24 @@ export default function ProgressBar() {
   return (
     <div
       id="progress-bar-container"
-      className="fixed top-12 left-1/2 z-[50] h-6 w-96 -translate-x-1/2"
+      className="fixed top-12 left-1/2 z-[50] flex -translate-x-1/2 flex-col items-center gap-2"
     >
-      {/* Background */}
-      <div className="absolute inset-0 rounded-xl border border-gray-800 bg-gray-200" />
+      {/* Progress Bar */}
+      <div className="relative h-6 w-96">
+        {/* Background */}
+        <div className="absolute inset-0 rounded-xl border border-gray-800 bg-gray-200" />
 
-      {/* Progress Fill */}
-      {fillWidth > 0 && (
-        <div
-          className={`absolute top-[3px] left-[3px] h-[18px] w-[var(--fill-width)] bg-green-400 transition-[width] duration-300 ease-out ${fillWidth >= 18 ? "rounded-[9px]" : "rounded-l-[9px]"}`}
-          style={{ "--fill-width": `${fillWidth}px` } as React.CSSProperties}
-        />
-      )}
+        {/* Progress Fill */}
+        {fillWidth > 0 && (
+          <div
+            className={`absolute top-[3px] left-[3px] h-[18px] w-[var(--fill-width)] bg-green-400 transition-[width] duration-300 ease-out ${fillWidth >= 18 ? "rounded-[9px]" : "rounded-l-[9px]"}`}
+            style={{ "--fill-width": `${fillWidth}px` } as React.CSSProperties}
+          />
+        )}
+      </div>
+
+      {/* Contribution List */}
+      <ContributionList />
     </div>
   );
 }
