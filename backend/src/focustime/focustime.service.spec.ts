@@ -9,6 +9,7 @@ import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
 import { Task } from '../task/entites/task.entity';
 import { getTodayKstRangeUtc } from '../util/date.util';
+import { BadRequestException } from '@nestjs/common';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
@@ -157,6 +158,49 @@ describe('FocusTimeService', () => {
   });
 
   describe('startFocusing (V2)', () => {
+    it('존재하지 않는 playerId로 호출하면 BadRequestException을 던진다', async () => {
+      // When & Then
+      await expect(service.startFocusing(99999)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.startFocusing(99999)).rejects.toThrow(
+        'Player not found',
+      );
+    });
+
+    it('다른 플레이어 소유의 taskId로 호출하면 BadRequestException을 던진다', async () => {
+      // Given: 두 플레이어와 하나의 Task
+      const player1 = await createTestPlayer('Player1');
+      const player2 = await createTestPlayer('Player2');
+      const { start } = getTodayKstRangeUtc();
+      const testTime = new Date(start.getTime() + 60000);
+
+      const task = taskRepository.create({
+        player: player1,
+        description: 'Player1의 태스크',
+        createdAt: testTime,
+      });
+      await taskRepository.save(task);
+
+      // When & Then: player2가 player1의 task로 집중 시도
+      await expect(service.startFocusing(player2.id, task.id)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.startFocusing(player2.id, task.id)).rejects.toThrow(
+        'Task not found or not owned by player',
+      );
+    });
+
+    it('존재하지 않는 taskId로 호출하면 BadRequestException을 던진다', async () => {
+      // Given
+      const player = await createTestPlayer('TestPlayer');
+
+      // When & Then
+      await expect(service.startFocusing(player.id, 99999)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
     it('taskId를 전달하면 player.focusingTaskId가 저장된다', async () => {
       // Given: 플레이어와 Task 생성
       const player = await createTestPlayer('TestPlayer6');
@@ -192,6 +236,16 @@ describe('FocusTimeService', () => {
   });
 
   describe('startResting (V2)', () => {
+    it('존재하지 않는 playerId로 호출하면 BadRequestException을 던진다', async () => {
+      // When & Then
+      await expect(service.startResting(99999)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.startResting(99999)).rejects.toThrow(
+        'Player not found',
+      );
+    });
+
     it('집중 중이면 시간을 정산하고 player 상태를 초기화한다', async () => {
       // Given: 집중 시작
       const player = await createTestPlayer('TestPlayer8');
@@ -258,6 +312,131 @@ describe('FocusTimeService', () => {
         where: { id: task.id },
       });
       expect(updatedTask!.totalFocusSeconds).toBeGreaterThanOrEqual(110);
+    });
+  });
+
+  describe('settleStaleSession', () => {
+    it('집중 중인 세션이 있으면 정산하고 상태를 초기화한다', async () => {
+      // Given: 집중 중인 플레이어
+      const player = await createTestPlayer('TestPlayer11');
+      await service.startFocusing(player.id);
+
+      // lastFocusStartTime을 과거로 설정 (10초 전)
+      await playerRepository.update(
+        { id: player.id },
+        { lastFocusStartTime: new Date(Date.now() - 10000) },
+      );
+
+      // When: settleStaleSession 호출
+      await service.settleStaleSession(player.id);
+
+      // Then: player 상태가 초기화됨
+      const updatedPlayer = await playerRepository.findOne({
+        where: { id: player.id },
+      });
+      expect(updatedPlayer?.focusingTaskId).toBeNull();
+      expect(updatedPlayer?.lastFocusStartTime).toBeNull();
+
+      // daily_focus_time에 시간이 누적됨
+      const { start, end } = getTodayKstRangeUtc();
+      const focusTime = await focusTimeRepository
+        .createQueryBuilder('ft')
+        .where('ft.player.id = :playerId', { playerId: player.id })
+        .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
+      expect(focusTime?.totalFocusSeconds).toBeGreaterThanOrEqual(10);
+    });
+
+    it('집중 중이 아니면 아무 작업도 하지 않는다', async () => {
+      // Given: 집중 중이 아닌 플레이어
+      const player = await createTestPlayer('TestPlayer12');
+
+      // When: settleStaleSession 호출
+      await service.settleStaleSession(player.id);
+
+      // Then: 아무 변화 없음
+      const updatedPlayer = await playerRepository.findOne({
+        where: { id: player.id },
+      });
+      expect(updatedPlayer?.focusingTaskId).toBeNull();
+      expect(updatedPlayer?.lastFocusStartTime).toBeNull();
+    });
+
+    it('존재하지 않는 playerId면 아무 작업도 하지 않는다', async () => {
+      // When & Then: 예외 없이 완료
+      await expect(service.settleStaleSession(99999)).resolves.not.toThrow();
+    });
+  });
+
+  describe('findAllStatuses', () => {
+    it('여러 플레이어의 집중 상태를 조회한다', async () => {
+      // Given: 여러 플레이어 (하나는 집중 중, 하나는 휴식 중)
+      const player1 = await createTestPlayer('TestPlayer13');
+      const player2 = await createTestPlayer('TestPlayer14');
+
+      await service.startFocusing(player1.id);
+      // player2는 집중 시작하지 않음
+
+      // When
+      const statuses = await service.findAllStatuses([player1.id, player2.id]);
+
+      // Then
+      expect(statuses).toHaveLength(2);
+
+      const status1 = statuses.find((s) => s.playerId === player1.id);
+      expect(status1?.isFocusing).toBe(true);
+      expect(status1?.lastFocusStartTime).toBeDefined();
+
+      const status2 = statuses.find((s) => s.playerId === player2.id);
+      expect(status2?.isFocusing).toBe(false);
+      expect(status2?.lastFocusStartTime).toBeNull();
+    });
+
+    it('빈 배열을 전달하면 빈 배열을 반환한다', async () => {
+      // When
+      const statuses = await service.findAllStatuses([]);
+
+      // Then
+      expect(statuses).toEqual([]);
+    });
+  });
+
+  describe('getPlayerFocusStatus', () => {
+    it('존재하지 않는 playerId로 호출하면 BadRequestException을 던진다', async () => {
+      // When & Then
+      await expect(service.getPlayerFocusStatus(99999)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.getPlayerFocusStatus(99999)).rejects.toThrow(
+        'Player not found',
+      );
+    });
+
+    it('집중 중인 플레이어의 상태를 조회한다', async () => {
+      // Given: 집중 중인 플레이어
+      const player = await createTestPlayer('TestPlayer15');
+      await service.startFocusing(player.id);
+
+      // When
+      const status = await service.getPlayerFocusStatus(player.id);
+
+      // Then
+      expect(status.isFocusing).toBe(true);
+      expect(status.lastFocusStartTime).toBeDefined();
+      expect(status.currentSessionSeconds).toBeGreaterThanOrEqual(0);
+    });
+
+    it('휴식 중인 플레이어의 상태를 조회한다', async () => {
+      // Given: 휴식 중인 플레이어
+      const player = await createTestPlayer('TestPlayer16');
+
+      // When
+      const status = await service.getPlayerFocusStatus(player.id);
+
+      // Then
+      expect(status.isFocusing).toBe(false);
+      expect(status.lastFocusStartTime).toBeNull();
+      expect(status.currentSessionSeconds).toBe(0);
     });
   });
 });
