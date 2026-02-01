@@ -87,7 +87,6 @@ export class PointService {
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
     const exec = () => {
-
       return this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
