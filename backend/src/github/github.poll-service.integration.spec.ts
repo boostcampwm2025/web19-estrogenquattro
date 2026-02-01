@@ -14,7 +14,8 @@ import {
   isPrResponse,
 } from './github.poll-service';
 
-const maybeDescribe = process.env.ENABLE_GITHUB_INTEGRATION === 'true' ? describe : describe.skip;
+const maybeDescribe =
+  process.env.ENABLE_GITHUB_INTEGRATION === 'true' ? describe : describe.skip;
 
 maybeDescribe('GitHub API 타입 변환 통합 테스트', () => {
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
