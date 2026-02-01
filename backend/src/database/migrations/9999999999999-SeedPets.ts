@@ -21,7 +21,7 @@ export class SeedPets9999999999999 implements MigrationInterface {
     // 3. Java
     await queryRunner.query(
       `INSERT INTO "pets" ("species", "name", "description", "evolution_stage", "evolution_required_exp", "actual_img_url", "silhouette_img_url") VALUES
-      ('java', '자바콩', '따뜻한 커피 향이 나는 콩입니다. 어디서든 잘 자랍니다.', 1, 30, '/assets/pets/java/pet_java_1.webp', '/assets/pets/java/pet_java_1_silhouette.webp'),
+      ('java', '듀크', '따뜻한 커피 향이 나는 콩입니다. 어디서든 잘 자랍니다.', 1, 30, '/assets/pets/java/pet_java_1.webp', '/assets/pets/java/pet_java_1_silhouette.webp'),
       ('java', '스프링', '강력한 프레임워크를 입었습니다. 객체 주입을 받는 것을 좋아합니다.', 2, 100, '/assets/pets/java/pet_java_2.webp', '/assets/pets/java/pet_java_2_silhouette.webp'),
       ('java', 'JVM', '가상 머신의 제왕입니다. 메모리 영역을 통제하며 군림합니다.', 3, 0, '/assets/pets/java/pet_java_3.webp', '/assets/pets/java/pet_java_3_silhouette.webp')`,
     );
