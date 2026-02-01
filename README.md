@@ -303,3 +303,11 @@ flowchart TB
 | [소켓 이벤트](./docs/api/SOCKET_EVENTS.md) | Socket.io 이벤트 명세 |
 | [GitHub 폴링](./docs/api/GITHUB_POLLING.md) | GitHub GraphQL 폴링 |
 | [개발 가이드](./docs/guides/DEVELOPMENT.md) | 개발 환경 설정 |
+
+---
+
+## 라이센스
+
+본 프로젝트는 오픈소스 마스코트(Go, Java, Android, KDE, Linux, Rust, Jenkins)를 기반으로 AI 생성된 펫 이미지를 사용합니다.
+
+자세한 라이센스 정보는 [LICENSES.md](./LICENSES.md)를 참고하세요.
