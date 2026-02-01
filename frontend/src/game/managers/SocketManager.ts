@@ -220,8 +220,9 @@ export default class SocketManager {
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
       console.log("[SocketManager] game_state received:", data);
-      useProgressStore.getState().setProgress(data.progress);
-      useContributionStore.getState().setContributions(data.contributions);
+      // TODO: UI 테스트 후 주석 해제
+      // useProgressStore.getState().setProgress(data.progress);
+      // useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
       if (!this.isInitialized) {
@@ -249,8 +250,9 @@ export default class SocketManager {
     // 실시간 progress 업데이트 (절대값 동기화)
     socket.on("progress_update", (data: ProgressUpdateData) => {
       console.log("[SocketManager] progress_update received:", data);
-      useProgressStore.getState().setProgress(data.targetProgress);
-      useContributionStore.getState().setContributions(data.contributions);
+      // TODO: UI 테스트 후 주석 해제
+      // useProgressStore.getState().setProgress(data.targetProgress);
+      // useContributionStore.getState().setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
