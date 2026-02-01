@@ -6,6 +6,7 @@ import { PointType } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 import { getTodayKstRangeUtc } from '../util/date.util';
 import { Player } from '../player/entites/player.entity';
+import { WriteLockService } from '../database/write-lock.service';
 
 export interface PlayerRank {
   playerId: number;
@@ -32,6 +33,7 @@ export class PointService {
     private readonly dailyPointRepository: Repository<DailyPoint>,
     private readonly pointHistoryService: PointHistoryService,
     private readonly dataSource: DataSource,
+    private readonly writeLock: WriteLockService,
   ) {}
 
   async getPoints(
@@ -81,8 +83,8 @@ export class PointService {
     this.logger.log(
       `[TX START] addPoint - playerId: ${playerId}, type: ${activityType}, count: ${count}`,
     );
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
         );
@@ -129,6 +131,7 @@ export class PointService {
         );
         return result;
       })
+    )
       .finally(() => {
         this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
       });

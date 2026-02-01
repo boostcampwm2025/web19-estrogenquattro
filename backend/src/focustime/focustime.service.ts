@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
+import { WriteLockService } from '../database/write-lock.service';
 import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
@@ -13,6 +14,7 @@ export class FocusTimeService {
     @InjectRepository(DailyFocusTime)
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
     private readonly dataSource: DataSource,
+    private readonly writeLock: WriteLockService,
   ) {}
 
   async findOrCreate(player: Player, startAt: Date): Promise<DailyFocusTime> {
@@ -51,8 +53,8 @@ export class FocusTimeService {
     const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
 
     this.logger.log(`[TX START] startFocusing - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(`[TX ACTIVE] startFocusing - playerId: ${playerId}`);
         const focusTimeRepo = manager.getRepository(DailyFocusTime);
         const taskRepo = manager.getRepository(Task);
@@ -126,6 +128,7 @@ export class FocusTimeService {
         this.logger.log(`[TX END] startFocusing - playerId: ${playerId}`);
         return result;
       })
+    )
       .finally(() => {
         this.logger.log(`[TX COMPLETE] startFocusing - playerId: ${playerId}`);
       });
@@ -138,8 +141,8 @@ export class FocusTimeService {
     const now = new Date();
 
     this.logger.log(`[TX START] startResting - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(`[TX ACTIVE] startResting - playerId: ${playerId}`);
         const focusTimeRepo = manager.getRepository(DailyFocusTime);
 
@@ -204,6 +207,7 @@ export class FocusTimeService {
         this.logger.log(`[TX END] startResting - playerId: ${playerId}`);
         return result;
       })
+    )
       .finally(() => {
         this.logger.log(`[TX COMPLETE] startResting - playerId: ${playerId}`);
       });

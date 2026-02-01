@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { WriteLockService } from '../database/write-lock.service';
 import { Pet } from './entities/pet.entity';
 import { UserPet } from './entities/user-pet.entity';
 import { Player } from '../player/entites/player.entity';
@@ -26,6 +27,7 @@ export class PetService {
     @InjectRepository(UserPetCodex)
     private readonly userPetCodexRepository: Repository<UserPetCodex>,
     private readonly dataSource: DataSource,
+    private readonly writeLock: WriteLockService,
   ) {}
 
   async gacha(
@@ -33,8 +35,8 @@ export class PetService {
   ): Promise<{ userPet: UserPet; isDuplicate: boolean }> {
     const GACHA_COST = 100;
     this.logger.log(`[TX START] gacha - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(`[TX ACTIVE] gacha - playerId: ${playerId}`);
         // 1. 플레이어 포인트 확인 및 즉시 차감
         const player = await manager.findOne(Player, {
@@ -53,7 +55,7 @@ export class PetService {
         await manager.save(player);
 
         // 2. 랜덤 펫 선택 (Stage 1 펫 중에서)
-        const stage1Pets = await this.petRepository.find({
+        const stage1Pets = await manager.getRepository(Pet).find({
           where: { evolutionStage: 1 },
         });
         if (stage1Pets.length === 0) {
@@ -64,7 +66,7 @@ export class PetService {
         const selectedPet = stage1Pets[randomIndex];
 
         // 3. 도감(Codex)에서 확인 (이미 수집한 이력이 있는지)
-        const existingCodex = await this.userPetCodexRepository.findOne({
+        const existingCodex = await manager.getRepository(UserPetCodex).findOne({
           where: { playerId: player.id, petId: selectedPet.id },
         });
 
@@ -79,14 +81,14 @@ export class PetService {
         }
 
         // 4. UserPet 생성 (미보유 시)
-        const userPet = this.userPetRepository.create({
+        const userPet = manager.getRepository(UserPet).create({
           player,
           pet: selectedPet,
           exp: 0,
         });
 
         // 5. 도감(Codex)에 등록
-        const codex = this.userPetCodexRepository.create({
+        const codex = manager.getRepository(UserPetCodex).create({
           player,
           pet: selectedPet,
         });
@@ -96,6 +98,7 @@ export class PetService {
         this.logger.log(`[TX END] gacha - playerId: ${playerId}`);
         return { userPet: savedUserPet, isDuplicate: false };
       })
+    )
       .finally(() => {
         this.logger.log(`[TX COMPLETE] gacha - playerId: ${playerId}`);
       });
@@ -107,8 +110,8 @@ export class PetService {
     const GACHA_COST = 100;
     const refundAmount = Math.floor(GACHA_COST / 2);
     this.logger.log(`[TX START] refundGachaCost - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(`[TX ACTIVE] refundGachaCost - playerId: ${playerId}`);
         const player = await manager.findOne(Player, {
           where: { id: playerId },
@@ -123,6 +126,7 @@ export class PetService {
         this.logger.log(`[TX END] refundGachaCost - playerId: ${playerId}`);
         return { refundAmount, totalPoint: player.totalPoint };
       })
+    )
       .finally(() => {
         this.logger.log(
           `[TX COMPLETE] refundGachaCost - playerId: ${playerId}`,
@@ -136,8 +140,8 @@ export class PetService {
     this.logger.log(
       `[TX START] feed - userPetId: ${userPetId}, playerId: ${playerId}`,
     );
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] feed - userPetId: ${userPetId}, playerId: ${playerId}`,
         );
@@ -176,6 +180,7 @@ export class PetService {
         );
         return result;
       })
+    )
       .finally(() => {
         this.logger.log(
           `[TX COMPLETE] feed - userPetId: ${userPetId}, playerId: ${playerId}`,
@@ -187,8 +192,8 @@ export class PetService {
     this.logger.log(
       `[TX START] evolve - userPetId: ${userPetId}, playerId: ${playerId}`,
     );
-    return this.dataSource
-      .transaction(async (manager) => {
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] evolve - userPetId: ${userPetId}, playerId: ${playerId}`,
         );
@@ -213,7 +218,7 @@ export class PetService {
         }
 
         // 다음 단계 펫 찾기 (같은 종족, 다음 스테이지)
-        const nextStagePet = await this.petRepository.findOne({
+        const nextStagePet = await manager.getRepository(Pet).findOne({
           where: {
             species: currentPet.species,
             evolutionStage: currentPet.evolutionStage + 1,
@@ -234,7 +239,7 @@ export class PetService {
         });
 
         if (!existingCodex) {
-          const codex = this.userPetCodexRepository.create({
+          const codex = manager.getRepository(UserPetCodex).create({
             player,
             pet: nextStagePet,
           });
@@ -247,6 +252,7 @@ export class PetService {
         );
         return result;
       })
+    )
       .finally(() => {
         this.logger.log(
           `[TX COMPLETE] evolve - userPetId: ${userPetId}, playerId: ${playerId}`,
