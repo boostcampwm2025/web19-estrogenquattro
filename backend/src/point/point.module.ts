@@ -5,10 +5,11 @@ import { PointHistoryModule } from '../pointhistory/point-history.module';
 
 import { PointService } from './point.service';
 import { PointController } from './point.controller';
+import { PointDebugController } from './point.debug.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([DailyPoint]), PointHistoryModule],
-  controllers: [PointController],
+  controllers: [PointController, PointDebugController],
   providers: [PointService],
   exports: [PointService],
 })

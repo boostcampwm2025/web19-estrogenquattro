@@ -77,13 +77,15 @@ export class PointService {
     repository?: string | null,
     description?: string | null,
     activityAt?: Date | null,
+    options?: { noLock?: boolean },
   ): Promise<DailyPoint> {
     const now = new Date();
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
+    const { start, end } = getTodayKstRangeUtc();
     this.logger.log(
       `[TX START] addPoint - playerId: ${playerId}, type: ${activityType}, count: ${count}`,
     );
-    return this.writeLock.runExclusive(() =>
+    const exec = () =>
       this.dataSource.transaction(async (manager) => {
         this.logger.log(
           `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
@@ -91,6 +93,17 @@ export class PointService {
         const dailyPointRepo = manager.getRepository(DailyPoint);
         const playerRepo: Repository<Player> = manager.getRepository(Player);
 
+        // 1) 플레이어 포인트 합계 원자 증가 (존재 확인 겸용)
+        const inc = await playerRepo.increment(
+          { id: playerId },
+          'totalPoint',
+          totalPoint,
+        );
+        if (!inc.affected) {
+          throw new NotFoundException('Player not found');
+        }
+
+        // 2) 히스토리 기록 (트랜잭션 내)
         await this.pointHistoryService.addHistoryWithManager(
           manager,
           playerId,
@@ -100,41 +113,48 @@ export class PointService {
           description,
           activityAt,
         );
-        const { start, end } = getTodayKstRangeUtc();
 
-        const existingRecord = await dailyPointRepo
-          .createQueryBuilder('dp')
-          .where('dp.player.id = :playerId', { playerId })
-          .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
-          .getOne();
+        // 3) 일일 합산: 증가 시도 → 없으면 신규 생성
+        const updateRes = await manager
+          .createQueryBuilder()
+          .update(DailyPoint)
+          .set({ amount: () => 'amount + :delta' })
+          .where('player_id = :playerId', { playerId })
+          .andWhere('created_at BETWEEN :start AND :end', { start, end })
+          .setParameters({ delta: totalPoint })
+          .execute();
 
-        const player = await playerRepo.findOne({ where: { id: playerId } });
-        if (!player) {
-          throw new NotFoundException('Player not found');
-        }
-        player.totalPoint += totalPoint;
-        await playerRepo.save(player);
-
-        if (existingRecord) {
-          existingRecord.amount += totalPoint;
-          return dailyPointRepo.save(existingRecord);
+        if (updateRes.affected && updateRes.affected > 0) {
+          // 갱신된 레코드 반환을 위해 한 번만 조회
+          const updated = await dailyPointRepo
+            .createQueryBuilder('dp')
+            .where('dp.player.id = :playerId', { playerId })
+            .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
+            .getOne();
+          this.logger.log(
+            `[TX END] addPoint - playerId: ${playerId}, type: ${activityType}`,
+          );
+          return updated!;
         }
 
         const newRecord = dailyPointRepo.create({
-          player: { id: playerId },
+          player: { id: playerId } as any,
           amount: totalPoint,
           createdAt: now,
         });
-        const result = await dailyPointRepo.save(newRecord);
+        const inserted = await dailyPointRepo.save(newRecord);
         this.logger.log(
           `[TX END] addPoint - playerId: ${playerId}, type: ${activityType}`,
         );
-        return result;
-      })
-    )
-      .finally(() => {
-        this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
+        return inserted;
       });
+
+    const promise = options?.noLock
+      ? exec()
+      : this.writeLock.runExclusive(exec);
+    return promise.finally(() => {
+      this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
+    });
   }
 
   async getWeeklyRanks(weekendStartAt: Date): Promise<PlayerRank[]> {

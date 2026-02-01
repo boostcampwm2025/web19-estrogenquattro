@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build)",
+      "Bash(sqlite3:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm run migration:run:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(git reset:*)",
+      "Bash(pnpm run lint)",
+      "Bash(pnpm run test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test)",
+      "Bash(npm test:*)"
+    ]
+  }
+}
