@@ -138,7 +138,7 @@ export class PointService {
         }
 
         const newRecord = dailyPointRepo.create({
-          player: { id: playerId } as any,
+          player: { id: playerId },
           amount: totalPoint,
           createdAt: now,
         });
