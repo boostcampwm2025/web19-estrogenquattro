@@ -2,7 +2,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Task } from './entites/task.entity';
-import { Player } from '../player/entites/player.entity';
 import { CreateTaskReq } from './dto/create-task.req';
 import { PlayerService } from '../player/player.service';
 import { TaskRes } from './dto/task.res';
@@ -145,9 +144,8 @@ export class TaskService {
         throw new TaskNotOwnedException();
       }
 
-      // 3. 집중 중인 Task면 삭제 차단
-      const player = await manager.findOne(Player, { where: { id: playerId } });
-      if (player?.focusingTaskId === taskId) {
+      // 3. 집중 중인 Task면 삭제 차단 (relations로 로드된 player 사용)
+      if (task.player.focusingTaskId === taskId) {
         throw new TaskFocusingException();
       }
 

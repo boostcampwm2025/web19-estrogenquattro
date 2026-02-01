@@ -203,12 +203,14 @@ describe('FocusTime E2E (Socket)', () => {
       const today = new Date().toISOString().slice(0, 10);
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
+      // V2: Player.lastFocusStartTime으로 집중 상태 판단
+      testPlayer.lastFocusStartTime = fiveMinutesAgo;
+      await playerRepository.save(testPlayer);
+
       await focusTimeRepository.save({
         player: testPlayer,
         totalFocusSeconds: 10,
-        status: 'FOCUSING',
         createdDate: today as unknown as Date,
-        lastFocusStartTime: fiveMinutesAgo,
       });
 
       // Given: 소켓 연결

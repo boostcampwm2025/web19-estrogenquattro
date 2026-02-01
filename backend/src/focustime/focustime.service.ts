@@ -38,7 +38,8 @@ export class FocusTimeService {
     const existing = await manager
       .getRepository(DailyFocusTime)
       .createQueryBuilder('ft')
-      .where('ft.player.id = :playerId', { playerId: player.id })
+      .leftJoin('ft.player', 'player')
+      .where('player.id = :playerId', { playerId: player.id })
       .andWhere('ft.createdAt BETWEEN :start AND :end', {
         start: todayStart,
         end: todayEnd,
@@ -314,7 +315,8 @@ export class FocusTimeService {
   ): Promise<{ totalFocusSeconds: number }> {
     const focusTime = await this.focusTimeRepository
       .createQueryBuilder('ft')
-      .where('ft.player.id = :playerId', { playerId })
+      .leftJoin('ft.player', 'player')
+      .where('player.id = :playerId', { playerId })
       .andWhere('ft.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
       .getOne();
 
@@ -344,14 +346,20 @@ export class FocusTimeService {
     const { start, end } = getTodayKstRangeUtc();
     const todayRecord = await this.focusTimeRepository
       .createQueryBuilder('ft')
-      .where('ft.player.id = :playerId', { playerId })
+      .leftJoin('ft.player', 'player')
+      .where('player.id = :playerId', { playerId })
       .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
       .getOne();
 
-    const currentSessionSeconds =
+    // 음수/24시간 초과 방지 (settleCurrentSession과 동일)
+    const rawSessionSeconds =
       player.lastFocusStartTime != null
         ? Math.floor((Date.now() - player.lastFocusStartTime.getTime()) / 1000)
         : 0;
+    const currentSessionSeconds = Math.max(
+      0,
+      Math.min(rawSessionSeconds, MAX_SESSION_SECONDS),
+    );
 
     return {
       isFocusing: player.lastFocusStartTime != null,
