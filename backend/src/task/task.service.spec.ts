@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TaskService } from './task.service';
+import {
+  TaskNotFoundException,
+  TaskNotOwnedException,
+} from './exceptions/task.exceptions';
 import { Task } from './entites/task.entity';
 import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
@@ -360,13 +364,13 @@ describe('TaskService', () => {
       expect(deleted).toBeNull();
     });
 
-    it('다른 플레이어의 할 일 삭제 시 NotFoundException을 던진다', async () => {
+    it('다른 플레이어의 할 일 삭제 시 TaskNotOwnedException을 던진다', async () => {
       // Given
       const task = await createTestTask(testPlayer, '내 할 일');
 
       // When & Then
       await expect(service.deleteTask(task.id, otherPlayer.id)).rejects.toThrow(
-        NotFoundException,
+        TaskNotOwnedException,
       );
 
       // 삭제되지 않았는지 확인
@@ -376,10 +380,10 @@ describe('TaskService', () => {
       expect(stillExists).toBeDefined();
     });
 
-    it('존재하지 않는 할 일 삭제 시 NotFoundException을 던진다', async () => {
+    it('존재하지 않는 할 일 삭제 시 TaskNotFoundException을 던진다', async () => {
       // When & Then
       await expect(service.deleteTask(99999, testPlayer.id)).rejects.toThrow(
-        NotFoundException,
+        TaskNotFoundException,
       );
     });
   });

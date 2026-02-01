@@ -13,10 +13,7 @@ import { FocusTimeModule } from '../src/focustime/focustime.module';
 import { RoomModule } from '../src/room/room.module';
 import { GithubModule } from '../src/github/github.module';
 import { Player } from '../src/player/entites/player.entity';
-import {
-  DailyFocusTime,
-  FocusStatus,
-} from '../src/focustime/entites/daily-focus-time.entity';
+import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity';
 import { UserStore } from '../src/auth/user.store';
 import { WsJwtGuard } from '../src/auth/ws-jwt.guard';
 import { GithubPollService } from '../src/github/github.poll-service';
@@ -196,7 +193,7 @@ describe('FocusTime E2E (Socket)', () => {
       expect(joinedResponse.focusTime).toHaveProperty('currentSessionSeconds');
 
       // 초기 상태 확인
-      expect(joinedResponse.focusTime.status).toBe(FocusStatus.RESTING);
+      expect(joinedResponse.focusTime.status).toBe('RESTING');
       expect(joinedResponse.focusTime.totalFocusSeconds).toBe(0);
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
     });
@@ -209,7 +206,7 @@ describe('FocusTime E2E (Socket)', () => {
       await focusTimeRepository.save({
         player: testPlayer,
         totalFocusSeconds: 10,
-        status: FocusStatus.FOCUSING,
+        status: 'FOCUSING',
         createdDate: today as unknown as Date,
         lastFocusStartTime: fiveMinutesAgo,
       });
@@ -232,7 +229,7 @@ describe('FocusTime E2E (Socket)', () => {
       });
 
       // Then: 기존 상태가 복원되어야 함
-      expect(joinedResponse.focusTime.status).toBe(FocusStatus.FOCUSING);
+      expect(joinedResponse.focusTime.status).toBe('FOCUSING');
       expect(joinedResponse.focusTime.totalFocusSeconds).toBe(10);
 
       // currentSessionSeconds는 5분(300초) 정도 (오차 허용)
@@ -252,7 +249,7 @@ describe('FocusTime E2E (Socket)', () => {
       await focusTimeRepository.save({
         player: testPlayer,
         totalFocusSeconds: 25,
-        status: FocusStatus.RESTING,
+        status: 'RESTING',
         createdDate: today as unknown as Date,
         lastFocusStartTime: tenMinutesAgo, // 이전 집중 시작 시간 (참고용)
       });
@@ -275,7 +272,7 @@ describe('FocusTime E2E (Socket)', () => {
       });
 
       // Then: 휴식 상태에서는 currentSessionSeconds가 0
-      expect(joinedResponse.focusTime.status).toBe(FocusStatus.RESTING);
+      expect(joinedResponse.focusTime.status).toBe('RESTING');
       expect(joinedResponse.focusTime.totalFocusSeconds).toBe(25);
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
     });
@@ -298,14 +295,13 @@ describe('FocusTime E2E (Socket)', () => {
       // 잠시 대기 (DB 업데이트 시간)
       await new Promise((r) => setTimeout(r, 200));
 
-      // Then: DB에 FOCUSING 상태가 저장되어야 함
-      const focusTime = await focusTimeRepository.findOne({
-        where: { player: { id: testPlayer.id } },
+      // Then: DB에 FOCUSING 상태가 저장되어야 함 (V2: Player 테이블에서 확인)
+      const player = await playerRepository.findOne({
+        where: { id: testPlayer.id },
       });
 
-      expect(focusTime).toBeDefined();
-      expect(focusTime!.status).toBe(FocusStatus.FOCUSING);
-      expect(focusTime!.lastFocusStartTime).toBeDefined();
+      expect(player).toBeDefined();
+      expect(player!.lastFocusStartTime).toBeDefined();
     });
 
     it('disconnect 시 RESTING 상태로 변경된다', async () => {
@@ -325,13 +321,13 @@ describe('FocusTime E2E (Socket)', () => {
       clientSocket.disconnect();
       await new Promise((r) => setTimeout(r, 200));
 
-      // Then: DB에 RESTING 상태로 변경되어야 함
-      const focusTime = await focusTimeRepository.findOne({
-        where: { player: { id: testPlayer.id } },
+      // Then: DB에 RESTING 상태로 변경되어야 함 (V2: Player 테이블에서 확인)
+      const player = await playerRepository.findOne({
+        where: { id: testPlayer.id },
       });
 
-      expect(focusTime).toBeDefined();
-      expect(focusTime!.status).toBe(FocusStatus.RESTING);
+      expect(player).toBeDefined();
+      expect(player!.lastFocusStartTime).toBeNull();
     });
   });
 });

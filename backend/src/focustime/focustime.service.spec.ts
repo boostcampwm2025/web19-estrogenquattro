@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FocusTimeService } from './focustime.service';
-import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
+import { DailyFocusTime } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
@@ -15,6 +15,7 @@ describe('FocusTimeService', () => {
   let focusTimeRepository: Repository<DailyFocusTime>;
   let playerRepository: Repository<Player>;
   let taskRepository: Repository<Task>;
+  let dataSource: DataSource;
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -39,6 +40,7 @@ describe('FocusTimeService', () => {
       getRepositoryToken(Player),
     );
     taskRepository = module.get<Repository<Task>>(getRepositoryToken(Task));
+    dataSource = module.get<DataSource>(DataSource);
   });
 
   afterAll(async () => {
@@ -72,7 +74,6 @@ describe('FocusTimeService', () => {
       const focusTime = focusTimeRepository.create({
         player,
         totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
         createdAt: testTime,
       });
       await focusTimeRepository.save(focusTime);
@@ -98,7 +99,6 @@ describe('FocusTimeService', () => {
       const focusTime = focusTimeRepository.create({
         player,
         totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
         createdAt: testTime,
       });
       await focusTimeRepository.save(focusTime);
@@ -117,23 +117,23 @@ describe('FocusTimeService', () => {
     });
   });
 
-  describe('findOrCreate', () => {
+  describe('findOrCreate (V2)', () => {
     it('기존 레코드가 있으면 해당 레코드를 반환한다', async () => {
       // Given: 플레이어와 기존 FocusTime 레코드
       const player = await createTestPlayer('TestPlayer4');
 
       const { start } = getTodayKstRangeUtc();
-      const testTime = new Date(start.getTime() + 60000); // start 이후 1분
       const existing = focusTimeRepository.create({
         player,
         totalFocusSeconds: 30,
-        status: FocusStatus.FOCUSING,
-        createdAt: testTime,
+        createdAt: start,
       });
       await focusTimeRepository.save(existing);
 
-      // When: findOrCreate 호출
-      const result = await service.findOrCreate(player, start);
+      // When: findOrCreate 호출 (트랜잭션 내)
+      const result = await dataSource.transaction(async (manager) => {
+        return service.findOrCreate(manager, player, start);
+      });
 
       // Then: 기존 레코드 반환
       expect(result.id).toBe(existing.id);
@@ -144,32 +144,24 @@ describe('FocusTimeService', () => {
       // Given: 플레이어만 존재 (FocusTime 없음)
       const player = await createTestPlayer('TestPlayer5');
 
-      // When: findOrCreate 호출
+      // When: findOrCreate 호출 (트랜잭션 내)
       const { start } = getTodayKstRangeUtc();
-      const result = await service.findOrCreate(player, start);
+      const result = await dataSource.transaction(async (manager) => {
+        return service.findOrCreate(manager, player, start);
+      });
 
       // Then: 새 레코드 생성됨
       expect(result).toBeDefined();
       expect(result.totalFocusSeconds).toBe(0);
-      expect(result.status).toBe(FocusStatus.RESTING);
     });
   });
 
-  describe('startFocusing', () => {
-    it('taskId를 전달하면 currentTaskId가 저장된다', async () => {
-      // Given: 플레이어와 FocusTime 레코드, Task 생성
+  describe('startFocusing (V2)', () => {
+    it('taskId를 전달하면 player.focusingTaskId가 저장된다', async () => {
+      // Given: 플레이어와 Task 생성
       const player = await createTestPlayer('TestPlayer6');
       const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
-
-      // FocusTime 레코드를 getTodayRange() 범위 내에 생성
-      const focusTime = focusTimeRepository.create({
-        player,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdAt: testTime,
-      });
-      await focusTimeRepository.save(focusTime);
 
       const task = taskRepository.create({
         player,
@@ -179,52 +171,67 @@ describe('FocusTimeService', () => {
       await taskRepository.save(task);
 
       // When: startFocusing에 taskId 전달
-      const result = await service.startFocusing(player.id, start, task.id);
+      const result = await service.startFocusing(player.id, task.id);
 
-      // Then: currentTask가 저장됨
-      expect(result.currentTask?.id).toBe(task.id);
-      expect(result.status).toBe(FocusStatus.FOCUSING);
+      // Then: player.focusingTaskId가 저장됨
+      expect(result.focusingTaskId).toBe(task.id);
+      expect(result.lastFocusStartTime).toBeDefined();
     });
 
-    it('taskId 없이 호출하면 currentTaskId가 null이다', async () => {
-      // Given: 플레이어와 FocusTime 레코드
+    it('taskId 없이 호출하면 focusingTaskId가 null이다', async () => {
+      // Given: 플레이어만 존재
       const player = await createTestPlayer('TestPlayer7');
-      const { start } = getTodayKstRangeUtc();
-      const testTime = new Date(start.getTime() + 60000);
-
-      // FocusTime 레코드를 getTodayRange() 범위 내에 생성
-      const focusTime = focusTimeRepository.create({
-        player,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdAt: testTime,
-      });
-      await focusTimeRepository.save(focusTime);
 
       // When: startFocusing에 taskId 없이 호출
-      const result = await service.startFocusing(player.id, start);
+      const result = await service.startFocusing(player.id);
 
-      // Then: currentTask가 null
-      expect(result.currentTask).toBeNull();
-      expect(result.status).toBe(FocusStatus.FOCUSING);
+      // Then: focusingTaskId가 null (글로벌 타이머)
+      expect(result.focusingTaskId).toBeNull();
+      expect(result.lastFocusStartTime).toBeDefined();
     });
   });
 
-  describe('startResting with Task', () => {
-    it('currentTaskId가 있고 집중 시간이 있으면 Task의 totalFocusSeconds가 업데이트된다', async () => {
-      // Given: 플레이어, FocusTime, Task 생성
+  describe('startResting (V2)', () => {
+    it('집중 중이면 시간을 정산하고 player 상태를 초기화한다', async () => {
+      // Given: 집중 시작
       const player = await createTestPlayer('TestPlayer8');
+      await service.startFocusing(player.id);
+
+      // lastFocusStartTime을 과거로 직접 설정 (10초 전)
+      await playerRepository.update(
+        { id: player.id },
+        { lastFocusStartTime: new Date(Date.now() - 10000) },
+      );
+
+      // When: startResting 호출
+      const result = await service.startResting(player.id);
+
+      // Then: 시간이 정산되고 player 상태가 초기화됨
+      expect(result.totalFocusSeconds).toBeGreaterThanOrEqual(10);
+
+      const updatedPlayer = await playerRepository.findOne({
+        where: { id: player.id },
+      });
+      expect(updatedPlayer?.focusingTaskId).toBeNull();
+      expect(updatedPlayer?.lastFocusStartTime).toBeNull();
+    });
+
+    it('집중 중이 아니면 아무 작업도 하지 않는다', async () => {
+      // Given: 플레이어만 존재 (집중 시작 안 함)
+      const player = await createTestPlayer('TestPlayer9');
+
+      // When: startResting 호출
+      const result = await service.startResting(player.id);
+
+      // Then: 아무 변화 없음
+      expect(result.totalFocusSeconds).toBe(0);
+    });
+
+    it('Task에 집중 시간이 누적된다', async () => {
+      // Given: 플레이어와 Task 생성, 집중 시작
+      const player = await createTestPlayer('TestPlayer10');
       const { start } = getTodayKstRangeUtc();
       const testTime = new Date(start.getTime() + 60000);
-
-      // FocusTime 레코드를 getTodayRange() 범위 내에 생성
-      const focusTime = focusTimeRepository.create({
-        player,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdAt: testTime,
-      });
-      await focusTimeRepository.save(focusTime);
 
       const task = taskRepository.create({
         player,
@@ -234,49 +241,23 @@ describe('FocusTimeService', () => {
       });
       await taskRepository.save(task);
 
-      // 집중 시작 (currentTaskId 설정)
-      await service.startFocusing(player.id, start, task.id);
+      // 집중 시작 (taskId 포함)
+      await service.startFocusing(player.id, task.id);
 
       // lastFocusStartTime을 과거로 직접 설정 (10초 전)
-      await focusTimeRepository.update(
-        { player: { id: player.id } },
+      await playerRepository.update(
+        { id: player.id },
         { lastFocusStartTime: new Date(Date.now() - 10000) },
       );
 
       // When: startResting 호출
-      await service.startResting(player.id, start);
+      await service.startResting(player.id);
 
       // Then: Task의 totalFocusSeconds가 증가함
       const updatedTask = await taskRepository.findOne({
         where: { id: task.id },
       });
       expect(updatedTask!.totalFocusSeconds).toBeGreaterThanOrEqual(110);
-    });
-
-    it('currentTaskId가 없으면 Task 업데이트가 발생하지 않는다', async () => {
-      // Given: 플레이어와 FocusTime 생성 (taskId 없이 집중)
-      const player = await createTestPlayer('TestPlayer9');
-      const { start } = getTodayKstRangeUtc();
-      const testTime = new Date(start.getTime() + 60000);
-
-      // FocusTime 레코드를 getTodayRange() 범위 내에 생성
-      const focusTime = focusTimeRepository.create({
-        player,
-        totalFocusSeconds: 0,
-        status: FocusStatus.RESTING,
-        createdAt: testTime,
-      });
-      await focusTimeRepository.save(focusTime);
-
-      // taskId 없이 집중 시작
-      await service.startFocusing(player.id, start);
-
-      // When: startResting 호출
-      const result = await service.startResting(player.id, start);
-
-      // Then: 정상적으로 RESTING 상태가 됨
-      expect(result.status).toBe(FocusStatus.RESTING);
-      expect(result.currentTask).toBeNull();
     });
   });
 });
