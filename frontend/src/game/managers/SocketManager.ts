@@ -221,6 +221,7 @@ export default class SocketManager {
     socket.on("game_state", (data: GameStateData) => {
       console.log("[SocketManager] game_state received:", data);
       useProgressStore.getState().setProgress(data.progress);
+      useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
@@ -250,6 +251,7 @@ export default class SocketManager {
     socket.on("progress_update", (data: ProgressUpdateData) => {
       console.log("[SocketManager] progress_update received:", data);
       useProgressStore.getState().setProgress(data.targetProgress);
+      useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구

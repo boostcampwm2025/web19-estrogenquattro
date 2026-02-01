@@ -5,10 +5,15 @@ import { useEffect, useState } from "react";
 import ContributionList from "./ContributionList";
 
 const SECTION_COUNT = 24;
+const TOTAL_STAGES = 5;
 
 export default function ProgressBar() {
   const progress = useProgressStore((state) => state.progress);
+  const mapIndex = useProgressStore((state) => state.mapIndex);
   const [displayProgress, setDisplayProgress] = useState(0);
+
+  // 현재 스테이지 (1-indexed)
+  const currentStage = mapIndex + 1;
 
   // Animate progress changes
   useEffect(() => {
@@ -62,7 +67,7 @@ export default function ProgressBar() {
           `,
         }}
       >
-        NEXT STAGE LOADING...
+        NEXT STAGE LOADING... ({currentStage}/{TOTAL_STAGES})
       </span>
 
       {/* Pixel Art Progress Bar with rounded corners */}

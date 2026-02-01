@@ -1,11 +1,15 @@
 import { create } from "zustand";
 
+const TOTAL_STAGES = 5;
+
 interface ProgressStore {
   progress: number;
+  mapIndex: number; // 현재 맵 인덱스 (0-4)
   onProgressComplete?: () => void;
 
   addProgress: (amount: number) => void;
   setProgress: (value: number) => void;
+  setMapIndex: (index: number) => void;
   reset: () => void;
   getProgress: () => number;
   setOnProgressComplete: (callback: () => void) => void;
@@ -13,6 +17,7 @@ interface ProgressStore {
 
 export const useProgressStore = create<ProgressStore>((set, get) => ({
   progress: 0,
+  mapIndex: 0,
 
   addProgress: (amount: number) => {
     const currentProgress = get().progress;
@@ -31,6 +36,10 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
 
   setProgress: (value: number) => {
     set({ progress: Math.max(0, Math.min(100, value)) });
+  },
+
+  setMapIndex: (index: number) => {
+    set({ mapIndex: Math.max(0, Math.min(index, TOTAL_STAGES - 1)) });
   },
 
   reset: () => {
