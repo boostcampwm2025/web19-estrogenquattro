@@ -11,15 +11,20 @@ export class WriteLockService {
       this.locked = true;
       return Promise.resolve();
     }
-    return new Promise((resolve) => this.queue.push(resolve));
+    return new Promise((resolve) => {
+      this.queue.push(resolve);
+      this.logger.log(`[LOCK] queueLen=${this.queue.length}`);
+    });
   }
 
   private release(): void {
     const next = this.queue.shift();
     if (next) {
       next();
+      this.logger.log(`[LOCK] queueLen=${this.queue.length}`);
     } else {
       this.locked = false;
+      this.logger.log('[LOCK] queueLen=0');
     }
   }
 
@@ -32,4 +37,3 @@ export class WriteLockService {
     }
   }
 }
-
