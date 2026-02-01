@@ -10,7 +10,8 @@
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "generate-silhouettes": "tsx scripts/generate-silhouettes.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
