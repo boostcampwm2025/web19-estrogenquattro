@@ -9,6 +9,7 @@ import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
 import { Task } from '../task/entites/task.entity';
 import { getTodayKstRangeUtc } from '../util/date.util';
+import { DatabaseModule } from '../database/database.module';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
@@ -27,6 +28,7 @@ describe('FocusTimeService', () => {
           synchronize: true,
         }),
         TypeOrmModule.forFeature([DailyFocusTime, Player, Task]),
+        DatabaseModule,
       ],
       providers: [FocusTimeService],
     }).compile();
