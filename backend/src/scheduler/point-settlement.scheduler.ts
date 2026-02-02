@@ -28,9 +28,11 @@ export class PointSettlementScheduler {
     this.logger.log('KST 24:00:00 Point Settlement Scheduling Start');
 
     const { start, end } = getYesterdayKstRange();
-    this.logger.log(
-      `Settlement range: ${start.toISOString()} ~ ${end.toISOString()}`,
-    );
+    this.logger.log('Settlement range', {
+      method: 'handlePointSettlement',
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
 
     await this.settleFocusTimePoints(start, end);
     await this.settleTaskCompletedPoints(start, end);
@@ -44,7 +46,10 @@ export class PointSettlementScheduler {
       relations: ['player'],
     });
 
-    this.logger.log(`Found ${focusTimes.length} focus time records for range`);
+    this.logger.log('Found focus time records', {
+      method: 'settleFocusTimePoints',
+      count: focusTimes.length,
+    });
 
     for (const focusTime of focusTimes) {
       const pointCount = Math.floor(focusTime.totalFocusSeconds / 1800); // 30분(1800초)당 1포인트
@@ -62,15 +67,19 @@ export class PointSettlementScheduler {
             ProgressSource.FOCUSTIME,
             pointCount,
           );
-          this.logger.log(
-            `Awarded ${pointCount} FOCUSED points to player ${focusTime.player.id}`,
-          );
+          this.logger.log('Awarded FOCUSED points', {
+            method: 'settleFocusTimePoints',
+            playerId: focusTime.player.id,
+            pointCount,
+          });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : String(error);
-          this.logger.error(
-            `Failed to award FOCUSED points to player ${focusTime.player.id}: ${message}`,
-          );
+          this.logger.error('Failed to award FOCUSED points', {
+            method: 'settleFocusTimePoints',
+            playerId: focusTime.player.id,
+            error: message,
+          });
         }
       }
     }
@@ -85,7 +94,10 @@ export class PointSettlementScheduler {
       relations: ['player'],
     });
 
-    this.logger.log(`Found ${completedTasks.length} completed tasks for range`);
+    this.logger.log('Found completed tasks', {
+      method: 'settleTaskCompletedPoints',
+      count: completedTasks.length,
+    });
 
     // 플레이어별 task 개수 집계 - O(n)
     const playerTaskData = new Map<
@@ -114,14 +126,18 @@ export class PointSettlementScheduler {
           count,
         );
         this.progressGateway.addProgress(nickname, ProgressSource.TASK, count);
-        this.logger.log(
-          `Awarded ${count} TASK_COMPLETED points to player ${playerId}`,
-        );
+        this.logger.log('Awarded TASK_COMPLETED points', {
+          method: 'settleTaskCompletedPoints',
+          playerId,
+          count,
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        this.logger.error(
-          `Failed to award TASK_COMPLETED points to player ${playerId}: ${message}`,
-        );
+        this.logger.error('Failed to award TASK_COMPLETED points', {
+          method: 'settleTaskCompletedPoints',
+          playerId,
+          error: message,
+        });
       }
     }
   }

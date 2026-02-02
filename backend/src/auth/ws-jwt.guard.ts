@@ -56,7 +56,7 @@ export class WsJwtGuard implements CanActivate {
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`verifyClient failed: ${message}`);
+      this.logger.warn('verifyClient failed', { method: 'verifyClient', error: message });
       return false;
     }
   }
@@ -85,7 +85,7 @@ export class WsJwtGuard implements CanActivate {
    */
   verifyAndDisconnect(client: Socket, logger?: Logger): boolean {
     if (!this.verifyToken(client)) {
-      logger?.log(`JWT expired for socket: ${client.id}`);
+      logger?.log('JWT expired for socket', { socketId: client.id });
       client.emit('auth_expired');
       client.disconnect();
       return false;

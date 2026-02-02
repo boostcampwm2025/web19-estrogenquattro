@@ -161,9 +161,10 @@ export class GithubPollService {
     // 이미 해당 username에 대한 폴링이 있으면 clientId만 추가
     if (existingSchedule) {
       existingSchedule.clientIds.add(clientId);
-      this.logger.debug(
-        `Client ${clientId} joined existing poll for ${username}`,
-      );
+      this.logger.debug('Client joined existing poll', {
+        clientId,
+        username,
+      });
       return;
     }
 
@@ -183,7 +184,7 @@ export class GithubPollService {
       lastEventId: null,
     });
 
-    this.logger.debug(`GitHub polling started for ${username}`);
+    this.logger.log('GitHub polling started', { username });
   }
 
   unsubscribeGithubEvent(clientId: string) {
@@ -196,11 +197,13 @@ export class GithubPollService {
         if (schedule.clientIds.size === 0) {
           clearTimeout(schedule.timeout);
           this.pollingSchedules.delete(username);
-          this.logger.debug(`GitHub polling stopped for ${username}`);
+          this.logger.log('GitHub polling stopped', { username });
         } else {
-          this.logger.debug(
-            `Client ${clientId} left poll for ${username} (${schedule.clientIds.size} remaining)`,
-          );
+          this.logger.log('Client left poll', {
+            username,
+            clientId,
+            remaining: schedule.clientIds.size,
+          });
         }
         return;
       }
@@ -212,7 +215,7 @@ export class GithubPollService {
     if (schedule) {
       clearTimeout(schedule.timeout);
       this.pollingSchedules.delete(username);
-      this.logger.debug(`GitHub polling stopped for ${username}`);
+      this.logger.log('GitHub polling stopped', { username });
     }
   }
 
@@ -254,9 +257,10 @@ export class GithubPollService {
           break;
         case 'rate_limited':
           nextInterval = POLL_INTERVAL_BACKOFF;
-          this.logger.warn(
-            `Rate limited for user: ${schedule.username}, retry after ${nextInterval / 1000}s`,
-          );
+          this.logger.warn('Rate limited, backing off', {
+            username: schedule.username,
+            retryAfter: nextInterval / 1000,
+          });
           break;
         case 'error':
         default:
@@ -264,14 +268,17 @@ export class GithubPollService {
           break;
       }
 
-      this.logger.debug(
-        `Next poll for ${username} in ${nextInterval / 1000}s (status: ${result.status})`,
-      );
+      this.logger.debug('Next poll scheduled', {
+        username,
+        delaySeconds: nextInterval / 1000,
+        status: result.status,
+      });
       this.scheduleNextPoll(username, nextInterval);
     } catch (error) {
-      this.logger.error(
-        `[${username}] Unexpected error in handlePoll: ${error instanceof Error ? error.message : error}`,
-      );
+      this.logger.error('Unexpected error in handlePoll', {
+        username,
+        error: error instanceof Error ? error.message : error,
+      });
       // 이미 중지된 경우(401 등) 재스케줄링하지 않음
       if (this.pollingSchedules.has(username)) {
         this.scheduleNextPoll(username, POLL_INTERVAL);
@@ -318,37 +325,44 @@ export class GithubPollService {
     try {
       res = await fetch(url, { headers });
     } catch (error) {
-      this.logger.error(
-        `[${username}] GitHub API network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      this.logger.error('GitHub API network error', {
+        username,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return { status: 'error' };
     }
 
-    this.logger.debug(
-      `[${username}] HTTP ${res.status}, remaining: ${res.headers.get('X-RateLimit-Remaining')}`,
-    );
+    this.logger.debug('GitHub API Response', {
+      username,
+      status: res.status,
+      remaining: res.headers.get('X-RateLimit-Remaining'),
+    });
 
     // 401: 토큰 만료 또는 무효 → 폴링 중지
     if (res.status === 401) {
-      this.logger.error(`[${username}] Token expired or invalid`);
+      this.logger.error('Token expired or invalid', { username });
       this.stopPolling(username);
       return { status: 'stopped' };
     }
 
     // 403/429: Rate Limit → 10분 대기
     if (res.status === 403 || res.status === 429) {
-      this.logger.warn(`[${username}] Rate limit, waiting 10 minutes`);
+      this.logger.warn('Rate limit hit', { username, status: res.status });
       return { status: 'rate_limited' };
     }
 
     // 304: 변화 없음 (Rate Limit 소모 안 함)
     if (res.status === 304) {
-      this.logger.debug(`[${username}] No changes (304)`);
+      this.logger.debug('No changes (304)', { username });
       return { status: 'no_changes' };
     }
 
     if (!res.ok) {
-      this.logger.error(`GitHub API error: ${res.status} ${res.statusText}`);
+      this.logger.error('GitHub API error', {
+        username,
+        status: res.status,
+        statusText: res.statusText,
+      });
       return { status: 'error' };
     }
 
@@ -362,14 +376,17 @@ export class GithubPollService {
     try {
       eventsData = await res.json();
     } catch (error) {
-      this.logger.error(
-        `[${username}] Failed to parse JSON response (status: ${res.status}, content-type: ${res.headers.get('content-type')}): ${error}`,
-      );
+      this.logger.error('Failed to parse JSON response', {
+        username,
+        status: res.status,
+        contentType: res.headers.get('content-type'),
+        error,
+      });
       return { status: 'error' };
     }
 
     if (!isGithubEventArray(eventsData)) {
-      this.logger.error(`[${username}] Invalid events response format`);
+      this.logger.error('Invalid events response format', { username });
       return { status: 'error' };
     }
 
@@ -378,7 +395,7 @@ export class GithubPollService {
     // 첫 폴링: lastEventId 설정, 브로드캐스트 안 함
     if (!schedule.lastEventId) {
       schedule.lastEventId = events[0]?.id ?? NO_EVENTS_SENTINEL;
-      this.logger.debug(`[${username}] First poll - baseline set`);
+      this.logger.debug('First poll - baseline set', { username });
       return { status: 'first_poll' };
     }
 
@@ -404,16 +421,22 @@ export class GithubPollService {
     }
 
     if (newEvents.length === 0) {
-      this.logger.debug(`[${username}] No new events`);
+      this.logger.debug('No new events', { username });
       return { status: 'no_changes' };
     }
 
     // [DEBUG] 이벤트 분석용 raw JSON 로깅
-    this.logger.log(`[${username}] New events (${newEvents.length}):`);
+    this.logger.log('New events found', {
+      username,
+      count: newEvents.length,
+    });
+
     for (const event of newEvents) {
-      this.logger.log(
-        `[${username}] RAW EVENT: ${JSON.stringify(event, null, 2)}`,
-      );
+      this.logger.debug('RAW EVENT', {
+        username,
+        eventType: event.type,
+        eventId: event.id,
+      });
     }
 
     // 이벤트 처리
@@ -452,7 +475,10 @@ export class GithubPollService {
           );
         }
       } catch (error) {
-        this.logger.error(`[${username}] Failed to save commit data: ${error}`);
+        this.logger.error('Failed to save commit data', {
+          username,
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
@@ -475,9 +501,10 @@ export class GithubPollService {
           );
         }
       } catch (error) {
-        this.logger.error(
-          `[${username}] Failed to save PR open data: ${error}`,
-        );
+        this.logger.error('Failed to save PR open data', {
+          username,
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
@@ -500,9 +527,10 @@ export class GithubPollService {
           );
         }
       } catch (error) {
-        this.logger.error(
-          `[${username}] Failed to save PR merge data: ${error}`,
-        );
+        this.logger.error('Failed to save PR merge data', {
+          username,
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
@@ -525,7 +553,10 @@ export class GithubPollService {
           );
         }
       } catch (error) {
-        this.logger.error(`[${username}] Failed to save issue data: ${error}`);
+        this.logger.error('Failed to save issue data', {
+          username,
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
@@ -548,14 +579,22 @@ export class GithubPollService {
           );
         }
       } catch (error) {
-        this.logger.error(`[${username}] Failed to save review data: ${error}`);
+        this.logger.error('Failed to save review data', {
+          username,
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
-    this.logger.log(
-      `[${username}] Commits: +${details.commits.length}, PRs: +${details.prOpens.length}, ` +
-        `Merged: +${details.prMerges.length}, Issues: +${details.issues.length}, Reviews: +${details.reviews.length}`,
-    );
+    this.logger.log('Events processed summary', {
+      username,
+      totalEvents,
+      commits: details.commits.length,
+      prOpens: details.prOpens.length,
+      prMerges: details.prMerges.length,
+      issues: details.issues.length,
+      reviews: details.reviews.length,
+    });
 
     return {
       status: 'new_events',
@@ -625,9 +664,11 @@ export class GithubPollService {
 
             for (const msg of commitDetails.messages) {
               commits.push({ repository: repoName, message: msg, activityAt });
-              this.logger.debug(
-                `[${schedule.username}] COMMIT: "${msg}" (${repoName})`,
-              );
+              this.logger.debug('Commit processed', {
+                username: schedule.username,
+                message: msg,
+                repository: repoName,
+              });
             }
             break;
           }
@@ -647,9 +688,12 @@ export class GithubPollService {
                 title: prTitle,
                 activityAt,
               });
-              this.logger.debug(
-                `[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`,
-              );
+              this.logger.debug('PR Opened processed', {
+                username: schedule.username,
+                title: prTitle,
+                number: prNumber,
+                repository: repoName,
+              });
             } else if (
               prPayload.action === 'merged' ||
               (prPayload.action === 'closed' &&
@@ -665,9 +709,12 @@ export class GithubPollService {
                 title: prTitle,
                 activityAt,
               });
-              this.logger.debug(
-                `[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`,
-              );
+              this.logger.debug('PR Merged processed', {
+                username: schedule.username,
+                title: prTitle,
+                number: prNumber,
+                repository: repoName,
+              });
             }
             break;
           }
@@ -680,9 +727,11 @@ export class GithubPollService {
                 title: issuePayload.issue.title,
                 activityAt,
               });
-              this.logger.debug(
-                `[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`,
-              );
+              this.logger.debug('Issue Opened processed', {
+                username: schedule.username,
+                title: issuePayload.issue.title,
+                repository: repoName,
+              });
             }
             break;
           }
@@ -697,17 +746,21 @@ export class GithubPollService {
                 schedule.accessToken,
               );
               reviews.push({ repository: repoName, prTitle, activityAt });
-              this.logger.debug(
-                `[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`,
-              );
+              this.logger.debug('PR Review processed', {
+                username: schedule.username,
+                title: prTitle,
+                repository: repoName,
+              });
             }
             break;
           }
         }
       } catch (error) {
-        this.logger.error(
-          `[${schedule.username}] Failed to process event ${event?.id ?? 'unknown'}: ${error}`,
-        );
+        this.logger.error('Failed to process event', {
+          username: schedule.username,
+          eventId: event?.id,
+          error: error instanceof Error ? error.message : error,
+        });
         continue;
       }
     }

@@ -66,7 +66,7 @@ export class PlayerGateway
     this.jwtCheckInterval = setInterval(() => {
       this.server.sockets.sockets.forEach((socket) => {
         if (!this.wsJwtGuard.verifyToken(socket)) {
-          this.logger.log(`JWT expired for socket: ${socket.id}`);
+          this.logger.log('JWT expired for socket', { socketId: socket.id });
           socket.emit('auth_expired');
           socket.disconnect();
         }
@@ -84,14 +84,19 @@ export class PlayerGateway
     const isValid = this.wsJwtGuard.verifyClient(client);
 
     if (!isValid) {
-      this.logger.warn(`Connection rejected (unauthorized): ${client.id}`);
+      this.logger.warn('Connection rejected (unauthorized)', {
+        clientId: client.id,
+      });
       client.disconnect();
       return;
     }
 
     const data = client.data as { user: User };
     const user = data.user;
-    this.logger.log(`Client connected: ${client.id} (user: ${user.username})`);
+    this.logger.log('Client connected', {
+      clientId: client.id,
+      username: user.username,
+    });
 
     // 연결 직후 전역 게임 상태 전송 (joining 전에 맵 로드 가능하도록)
     const globalState = this.progressGateway.getGlobalState();
@@ -112,7 +117,10 @@ export class PlayerGateway
         this.userSockets.delete(player.username);
       }
     }
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.log('Client disconnected', {
+      clientId: client.id,
+      hadPlayerState: !!player,
+    });
   }
 
   @SubscribeMessage('joining')
@@ -135,9 +143,11 @@ export class PlayerGateway
     if (existingSocketId && existingSocketId !== client.id) {
       const existingSocket = this.server.sockets.sockets.get(existingSocketId);
       if (existingSocket) {
-        this.logger.log(
-          `Disconnecting previous session for ${username}: ${existingSocketId}`,
-        );
+        this.logger.log('Disconnecting previous session', {
+          username,
+          oldSocketId: existingSocketId,
+          newSocketId: client.id,
+        });
         existingSocket.emit('session_replaced', {
           message: '다른 탭에서 접속하여 현재 세션이 종료됩니다.',
         });
@@ -152,7 +162,7 @@ export class PlayerGateway
 
     const player = await this.playerService.findOneById(playerId);
     if (!player) {
-      this.logger.warn(`Player not found: ${playerId}`);
+      this.logger.warn('Player not found', { playerId });
       client.disconnect();
       return;
     }
@@ -338,7 +348,7 @@ export class PlayerGateway
 
     // petId 타입 검사
     if (data.petId !== null && typeof data.petId !== 'number') {
-      this.logger.warn(`Invalid petId type from ${client.id}`);
+      this.logger.warn('Invalid petId type', { clientId: client.id });
       return;
     }
 
@@ -347,15 +357,19 @@ export class PlayerGateway
       playerState.playerId,
     );
     if (!playerFromDb) {
-      this.logger.warn(`Player not found in DB: ${playerState.playerId}`);
+      this.logger.warn('Player not found in DB', {
+        playerId: playerState.playerId,
+      });
       return;
     }
 
     // 클라이언트가 보낸 petId와 DB의 equippedPetId가 일치하는지 검증
     if (playerFromDb.equippedPetId !== data.petId) {
-      this.logger.warn(
-        `Pet mismatch: client sent ${data.petId}, DB has ${playerFromDb.equippedPetId}`,
-      );
+      this.logger.warn('Pet mismatch', {
+        clientId: client.id,
+        clientPetId: data.petId,
+        dbPetId: playerFromDb.equippedPetId,
+      });
       return;
     }
 

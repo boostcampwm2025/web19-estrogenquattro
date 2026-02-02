@@ -78,9 +78,12 @@ export class PointService {
     description?: string | null,
     activityAt?: Date | null,
   ): Promise<DailyPoint> {
-    this.logger.log(
-      `[TX START] addPoint - playerId: ${playerId}, type: ${activityType}, count: ${count}`,
-    );
+    this.logger.log('TX START addPoint', {
+      method: 'addPoint',
+      playerId,
+      type: activityType,
+      count
+    });
     // 요청 도착 시각을 기준으로 일일 범위를 고정 (락 대기 중 자정 넘어가도 요청 시각 기준 적용)
     const requestTime = new Date();
     const { start, end } = getTodayKstRangeUtc(requestTime);
@@ -88,9 +91,11 @@ export class PointService {
 
     const exec = () => {
       return this.dataSource.transaction(async (manager) => {
-        this.logger.log(
-          `[TX ACTIVE] addPoint - playerId: ${playerId}, type: ${activityType}`,
-        );
+        this.logger.log('TX ACTIVE addPoint', {
+          method: 'addPoint',
+          playerId,
+          type: activityType
+        });
         const dailyPointRepo = manager.getRepository(DailyPoint);
         const playerRepo: Repository<Player> = manager.getRepository(Player);
         // 요청 시각 기준으로 고정된 now/start/end/totalPoint 사용
@@ -133,9 +138,11 @@ export class PointService {
             .where('dp.player.id = :playerId', { playerId })
             .andWhere('dp.createdAt BETWEEN :start AND :end', { start, end })
             .getOne();
-          this.logger.log(
-            `[TX END] addPoint - playerId: ${playerId}, type: ${activityType}`,
-          );
+          this.logger.log('TX END addPoint', {
+            method: 'addPoint',
+            playerId,
+            type: activityType
+          });
           return updated!;
         }
 
@@ -145,15 +152,20 @@ export class PointService {
           createdAt: requestTime,
         });
         const inserted = await dailyPointRepo.save(newRecord);
-        this.logger.log(
-          `[TX END] addPoint - playerId: ${playerId}, type: ${activityType}`,
-        );
+        this.logger.log('TX END addPoint', {
+          method: 'addPoint',
+          playerId,
+          type: activityType
+        });
         return inserted;
       });
     };
 
     return this.writeLock.runExclusive(exec).finally(() => {
-      this.logger.log(`[TX COMPLETE] addPoint - playerId: ${playerId}`);
+      this.logger.log('TX COMPLETE addPoint', {
+        method: 'addPoint',
+        playerId
+      });
     });
   }
 
