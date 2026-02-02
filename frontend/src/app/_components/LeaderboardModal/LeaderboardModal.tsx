@@ -56,13 +56,19 @@ export default function LeaderboardModal() {
     isOpen,
   );
 
-  // 백엔드 응답을 프론트엔드 타입으로 변환
-  const leaderboardData = useMemo<LeaderboardResponse | null>(() => {
-    if (!isOpen || isLoading) return null;
+  // 캐시된 리더보드 데이터 (탭 전환 시 깜박임 방지)
+  const [cachedData, setCachedData] = useState<LeaderboardResponse | null>(
+    null,
+  );
+
+  // 백엔드 응답을 프론트엔드 타입으로 변환 (데이터 도착 시에만 업데이트)
+  useEffect(() => {
+    if (!isOpen) return;
+    if (isLoading) return;
+    if (!ranks) return; // undefined/null만 체크 (빈 배열은 유효 데이터)
 
     const isAll = selectedTab === POINT_TYPES.ALL;
-
-    return {
+    const newData: LeaderboardResponse = {
       seasonEndTime: getNextMonday(),
       players: isAll
         ? (ranks as TotalRankRes[]).map(toLeaderboardPlayerFromTotal)
@@ -79,29 +85,37 @@ export default function LeaderboardModal() {
             user?.username,
           ),
     };
+    setCachedData(newData);
   }, [isOpen, isLoading, ranks, user, selectedTab]);
+
+  // 모달 닫을 때 캐시 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setCachedData(null);
+    }
+  }, [isOpen]);
 
   // 시즌 타이머 계산 (tick 변경 시 재계산)
   const seasonTime = useMemo(() => {
-    if (!leaderboardData) {
+    if (!cachedData) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     }
-    return calculateSeasonRemaining(leaderboardData.seasonEndTime);
+    return calculateSeasonRemaining(cachedData.seasonEndTime);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leaderboardData, tick]);
+  }, [cachedData, tick]);
 
   // 시즌 타이머 업데이트 (백엔드에서 시즌 종료일을 알려주면, 프론트엔드에서 역산할 듯)
   useEffect(() => {
-    if (!isOpen || !leaderboardData) return;
+    if (!isOpen || !cachedData) return;
 
     const interval = setInterval(() => {
       setTick((t) => t + 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isOpen, leaderboardData]);
+  }, [isOpen, cachedData]);
 
-  if (!isOpen || !leaderboardData) return null;
+  if (!isOpen || !cachedData) return null;
 
   return (
     <div
@@ -206,12 +220,12 @@ export default function LeaderboardModal() {
 
           {/* 순위 목록 (스크롤 가능) */}
           <div className="retro-scrollbar max-h-60 space-y-2 overflow-y-auto">
-            {leaderboardData.players.length === 0 ? (
+            {cachedData.players.length === 0 ? (
               <div className="py-8 text-center text-sm text-amber-700">
                 아직 이번 주 랭킹 데이터가 없습니다.
               </div>
             ) : (
-              leaderboardData.players.map((player) => (
+              cachedData.players.map((player) => (
                 <PlayerRow
                   key={player.playerId}
                   player={player}
@@ -224,7 +238,7 @@ export default function LeaderboardModal() {
           {/* 내 순위 */}
           <div className="border-t-2 border-amber-900/30 pt-3">
             <PlayerRow
-              player={leaderboardData.myRank}
+              player={cachedData.myRank}
               isMyRank
               selectedTab={selectedTab}
             />
