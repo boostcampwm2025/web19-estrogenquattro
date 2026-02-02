@@ -117,11 +117,17 @@ private otherPlayers: Map<userId, RemotePlayer>;
 | `moved` | RemotePlayer 위치/방향 업데이트 |
 | `chatted` | 말풍선 표시 |
 | `github_event` | 프로그레스/기여도 업데이트 |
+| `map_switch` | 맵 전환 요청 처리 (1초 디바운스) |
 | `focused` | RemotePlayer 집중 상태 설정 |
 | `rested` | RemotePlayer 휴식 상태 설정 |
 | `focus_task_updated` | 말풍선 Task 이름 업데이트 |
 | `pet_equipped` | RemotePlayer 펫 이미지 변경 |
 | `session_replaced` | 세션 종료 오버레이 표시 |
+
+### map_switch 디바운스
+
+`map_switch` 이벤트가 짧은 시간에 연속으로 도착하는 경우 마지막 이벤트만 처리하도록 1초 디바운스를 적용합니다.
+세션 교체 또는 씬 종료 시 디바운스 타이머를 정리합니다.
 
 ### 연결 흐름
 

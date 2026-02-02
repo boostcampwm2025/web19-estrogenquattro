@@ -300,7 +300,7 @@ erDiagram
 |------|------|----------|------|
 | id | int | PK, AUTO_INCREMENT | 고유 ID (항상 1) |
 | progress | int | DEFAULT 0 | 프로그레스 (0-99) |
-| contributions | text | DEFAULT '{}' | 기여도 JSON (username → count) |
+| contributions | text | DEFAULT '{}' | 기여도 JSON (username → points) |
 | map_index | int | DEFAULT 0 | 현재 맵 인덱스 (0-4) |
 | updated_at | datetime | AUTO | 마지막 업데이트 시각 |
 

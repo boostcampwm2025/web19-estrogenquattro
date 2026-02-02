@@ -400,7 +400,7 @@ socket.on('progress_update', (data: {
 ```typescript
 socket.on('game_state', (state: {
   progress: number,                         // 현재 progress (0-99)
-  contributions: Record<string, number>,    // username -> count
+  contributions: Record<string, number>,    // username -> points
   mapIndex: number                          // 현재 맵 인덱스 (0-4)
 }) => {
   // 프로그레스바 초기값 설정

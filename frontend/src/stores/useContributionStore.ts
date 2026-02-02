@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 interface ContributionStore {
-  contributions: Record<string, number>; // { username: count }
+  contributions: Record<string, number>; // { username: points }
   setContributions: (data: Record<string, number>) => void;
   reset: () => void;
 }
