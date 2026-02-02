@@ -24,10 +24,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    setupFiles: ["./test/setup.ts"],
+    setupFiles: ["./test/setup.ts", "./src/test/setup.ts"],
     include: ["test/**/*.spec.ts", "src/**/*.test.{ts,tsx}"],
     environmentMatchGlobs: [
-      // React 컴포넌트 테스트는 jsdom 환경 + React setup 사용
+      // React 컴포넌트 테스트는 jsdom 환경 사용
       ["src/**/*.test.{ts,tsx}", "jsdom"],
     ],
   },
