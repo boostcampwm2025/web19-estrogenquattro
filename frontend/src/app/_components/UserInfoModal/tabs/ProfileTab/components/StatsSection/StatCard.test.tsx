@@ -88,10 +88,7 @@ describe("StatCard", () => {
     );
     const card = container.firstChild as HTMLElement;
 
-    expect(card).toHaveClass(
-      "hover:border-amber-600",
-      "hover:bg-amber-100",
-    );
+    expect(card).toHaveClass("hover:border-amber-600", "hover:bg-amber-100");
   });
 
   it("여러 상태가 동시에 적용된다", () => {

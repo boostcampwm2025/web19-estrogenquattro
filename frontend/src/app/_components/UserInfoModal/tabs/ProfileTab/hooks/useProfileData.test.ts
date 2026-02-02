@@ -223,8 +223,16 @@ describe("useProfileData", () => {
   it("같은 날짜의 포인트는 마지막 값으로 덮어쓴다", () => {
     // 로컬 타임존 기준 같은 날짜
     const mockPoints: DailyPointRes[] = [
-      { id: 1, amount: 10, createdAt: new Date(2026, 0, 29, 10, 0, 0).toISOString() },
-      { id: 2, amount: 20, createdAt: new Date(2026, 0, 29, 15, 0, 0).toISOString() },
+      {
+        id: 1,
+        amount: 10,
+        createdAt: new Date(2026, 0, 29, 10, 0, 0).toISOString(),
+      },
+      {
+        id: 2,
+        amount: 20,
+        createdAt: new Date(2026, 0, 29, 15, 0, 0).toISOString(),
+      },
     ];
 
     vi.mocked(apiHooks.usePoint).mockReturnValue({

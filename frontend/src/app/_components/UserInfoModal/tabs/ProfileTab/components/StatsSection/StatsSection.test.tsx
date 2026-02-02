@@ -159,12 +159,7 @@ describe("StatsSection", () => {
     expect(screen.getByTestId("grass-card")).toBeInTheDocument();
 
     const newDate = new Date(2026, 1, 3);
-    rerender(
-      <StatsSection
-        {...defaultProps}
-        selectedDate={newDate}
-      />,
-    );
+    rerender(<StatsSection {...defaultProps} selectedDate={newDate} />);
     expect(screen.getByTestId("grass-card")).toBeInTheDocument();
   });
 
