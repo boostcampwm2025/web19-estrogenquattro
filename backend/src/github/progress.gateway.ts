@@ -27,7 +27,7 @@ export enum ProgressSource {
 // 서버 내부 상태
 export interface GlobalGameState {
   progress: number;
-  contributions: Record<string, number>;
+  contributions: Record<string, number>; // { username: points }
   mapIndex: number;
 }
 
@@ -219,8 +219,9 @@ export class ProgressGateway implements OnModuleInit {
     if (progressIncrement === 0) return;
 
     this.globalState.progress += progressIncrement;
+    // contributions에 포인트(progressIncrement)를 누적
     this.globalState.contributions[username] =
-      (this.globalState.contributions[username] || 0) + count;
+      (this.globalState.contributions[username] || 0) + progressIncrement;
 
     // 100% 도달 시 맵 전환
     if (this.globalState.progress >= 100) {
@@ -251,26 +252,21 @@ export class ProgressGateway implements OnModuleInit {
     rawData: GithubEventData,
   ) {
     let progressIncrement = 0;
-    let contributionCount = 0;
 
     if (source === ProgressSource.GITHUB) {
+      // GitHub: 타입별 포인트 합산
       progressIncrement =
         rawData.commitCount * ACTIVITY_POINT_MAP[PointType.COMMITTED] +
         rawData.prCount * ACTIVITY_POINT_MAP[PointType.PR_OPEN] +
         rawData.mergeCount * ACTIVITY_POINT_MAP[PointType.PR_MERGED] +
         rawData.issueCount * ACTIVITY_POINT_MAP[PointType.ISSUE_OPEN] +
         rawData.reviewCount * ACTIVITY_POINT_MAP[PointType.PR_REVIEWED];
-      contributionCount =
-        rawData.commitCount +
-        rawData.prCount +
-        rawData.mergeCount +
-        rawData.issueCount +
-        rawData.reviewCount;
     }
 
     this.globalState.progress += progressIncrement;
+    // contributions에 포인트(progressIncrement)를 누적
     this.globalState.contributions[username] =
-      (this.globalState.contributions[username] || 0) + contributionCount;
+      (this.globalState.contributions[username] || 0) + progressIncrement;
 
     // 100% 도달 시 맵 전환
     if (this.globalState.progress >= 100) {
