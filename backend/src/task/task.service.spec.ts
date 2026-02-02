@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TaskService } from './task.service';
+import {
+  TaskNotFoundException,
+  TaskNotOwnedException,
+  TaskFocusingException,
+} from './exceptions/task.exceptions';
 import { Task } from './entites/task.entity';
 import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
@@ -360,13 +365,13 @@ describe('TaskService', () => {
       expect(deleted).toBeNull();
     });
 
-    it('다른 플레이어의 할 일 삭제 시 NotFoundException을 던진다', async () => {
+    it('다른 플레이어의 할 일 삭제 시 TaskNotOwnedException을 던진다', async () => {
       // Given
       const task = await createTestTask(testPlayer, '내 할 일');
 
       // When & Then
       await expect(service.deleteTask(task.id, otherPlayer.id)).rejects.toThrow(
-        NotFoundException,
+        TaskNotOwnedException,
       );
 
       // 삭제되지 않았는지 확인
@@ -376,11 +381,56 @@ describe('TaskService', () => {
       expect(stillExists).toBeDefined();
     });
 
-    it('존재하지 않는 할 일 삭제 시 NotFoundException을 던진다', async () => {
+    it('존재하지 않는 할 일 삭제 시 TaskNotFoundException을 던진다', async () => {
       // When & Then
       await expect(service.deleteTask(99999, testPlayer.id)).rejects.toThrow(
-        NotFoundException,
+        TaskNotFoundException,
       );
+    });
+
+    it('집중 중인 할 일 삭제 시 TaskFocusingException을 던진다', async () => {
+      // Given: Task 생성 후 플레이어가 해당 Task에 집중 중인 상태 설정
+      const task = await createTestTask(testPlayer, '집중 중인 할 일');
+      await playerRepository.update(
+        { id: testPlayer.id },
+        { focusingTaskId: task.id },
+      );
+
+      // When & Then
+      await expect(service.deleteTask(task.id, testPlayer.id)).rejects.toThrow(
+        TaskFocusingException,
+      );
+
+      // 삭제되지 않았는지 확인
+      const stillExists = await taskRepository.findOne({
+        where: { id: task.id },
+      });
+      expect(stillExists).toBeDefined();
+    });
+
+    it('다른 Task에 집중 중이면 삭제가 가능하다', async () => {
+      // Given: 두 개의 Task 생성, 하나에만 집중 중
+      const focusingTask = await createTestTask(testPlayer, '집중 중인 할 일');
+      const otherTask = await createTestTask(testPlayer, '다른 할 일');
+      await playerRepository.update(
+        { id: testPlayer.id },
+        { focusingTaskId: focusingTask.id },
+      );
+
+      // When: 집중 중이 아닌 Task 삭제
+      await service.deleteTask(otherTask.id, testPlayer.id);
+
+      // Then: 삭제됨
+      const deleted = await taskRepository.findOne({
+        where: { id: otherTask.id },
+      });
+      expect(deleted).toBeNull();
+
+      // 집중 중인 Task는 그대로
+      const stillFocusing = await taskRepository.findOne({
+        where: { id: focusingTask.id },
+      });
+      expect(stillFocusing).toBeDefined();
     });
   });
 });
