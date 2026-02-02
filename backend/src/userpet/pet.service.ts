@@ -98,7 +98,11 @@ export class PetService {
           await manager.save(UserPetCodex, codex);
 
           const savedUserPet = await manager.save(UserPet, userPet);
-          this.logger.log('TX END gacha', { method: 'gacha', playerId, petId: savedUserPet.pet.id });
+          this.logger.log('TX END gacha', {
+            method: 'gacha',
+            playerId,
+            petId: savedUserPet.pet.id,
+          });
           return { userPet: savedUserPet, isDuplicate: false };
         }),
       )
@@ -112,11 +116,17 @@ export class PetService {
   ): Promise<{ refundAmount: number; totalPoint: number }> {
     const GACHA_COST = 100;
     const refundAmount = Math.floor(GACHA_COST / 2);
-    this.logger.log('TX START refundGachaCost', { method: 'refundGachaCost', playerId });
+    this.logger.log('TX START refundGachaCost', {
+      method: 'refundGachaCost',
+      playerId,
+    });
     return this.writeLock
       .runExclusive(() =>
         this.dataSource.transaction(async (manager) => {
-          this.logger.log('TX ACTIVE refundGachaCost', { method: 'refundGachaCost', playerId });
+          this.logger.log('TX ACTIVE refundGachaCost', {
+            method: 'refundGachaCost',
+            playerId,
+          });
           const player = await manager.findOne(Player, {
             where: { id: playerId },
           });
@@ -127,12 +137,19 @@ export class PetService {
 
           player.totalPoint += refundAmount;
           await manager.save(player);
-          this.logger.log('TX END refundGachaCost', { method: 'refundGachaCost', playerId, refundAmount });
+          this.logger.log('TX END refundGachaCost', {
+            method: 'refundGachaCost',
+            playerId,
+            refundAmount,
+          });
           return { refundAmount, totalPoint: player.totalPoint };
         }),
       )
       .finally(() => {
-        this.logger.log('TX COMPLETE refundGachaCost', { method: 'refundGachaCost', playerId });
+        this.logger.log('TX COMPLETE refundGachaCost', {
+          method: 'refundGachaCost',
+          playerId,
+        });
       });
   }
 
@@ -143,7 +160,11 @@ export class PetService {
     return this.writeLock
       .runExclusive(() =>
         this.dataSource.transaction(async (manager) => {
-          this.logger.log('TX ACTIVE feed', { method: 'feed', userPetId, playerId });
+          this.logger.log('TX ACTIVE feed', {
+            method: 'feed',
+            userPetId,
+            playerId,
+          });
           const userPet = await manager.findOne(UserPet, {
             where: { id: userPetId },
             relations: ['pet', 'player'],
@@ -174,21 +195,37 @@ export class PetService {
             pet.evolutionRequiredExp,
           );
           const result = await manager.save(UserPet, userPet);
-          this.logger.log('TX END feed', { method: 'feed', userPetId, playerId });
+          this.logger.log('TX END feed', {
+            method: 'feed',
+            userPetId,
+            playerId,
+          });
           return result;
         }),
       )
       .finally(() => {
-        this.logger.log('TX COMPLETE feed', { method: 'feed', userPetId, playerId });
+        this.logger.log('TX COMPLETE feed', {
+          method: 'feed',
+          userPetId,
+          playerId,
+        });
       });
   }
 
   async evolve(userPetId: number, playerId: number): Promise<UserPet> {
-    this.logger.log('TX START evolve', { method: 'evolve', userPetId, playerId });
+    this.logger.log('TX START evolve', {
+      method: 'evolve',
+      userPetId,
+      playerId,
+    });
     return this.writeLock
       .runExclusive(() =>
         this.dataSource.transaction(async (manager) => {
-          this.logger.log('TX ACTIVE evolve', { method: 'evolve', userPetId, playerId });
+          this.logger.log('TX ACTIVE evolve', {
+            method: 'evolve',
+            userPetId,
+            playerId,
+          });
           const userPet = await manager.findOne(UserPet, {
             where: { id: userPetId },
             relations: ['pet', 'player'],
@@ -239,12 +276,21 @@ export class PetService {
           }
 
           const result = await manager.save(UserPet, userPet);
-          this.logger.log('TX END evolve', { method: 'evolve', userPetId, playerId, petId: userPet.pet.id });
+          this.logger.log('TX END evolve', {
+            method: 'evolve',
+            userPetId,
+            playerId,
+            petId: userPet.pet.id,
+          });
           return result;
         }),
       )
       .finally(() => {
-        this.logger.log('TX COMPLETE evolve', { method: 'evolve', userPetId, playerId });
+        this.logger.log('TX COMPLETE evolve', {
+          method: 'evolve',
+          userPetId,
+          playerId,
+        });
       });
   }
 

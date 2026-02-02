@@ -82,7 +82,7 @@ export class PointService {
       method: 'addPoint',
       playerId,
       type: activityType,
-      count
+      count,
     });
     // 요청 도착 시각을 기준으로 일일 범위를 고정 (락 대기 중 자정 넘어가도 요청 시각 기준 적용)
     const requestTime = new Date();
@@ -94,7 +94,7 @@ export class PointService {
         this.logger.log('TX ACTIVE addPoint', {
           method: 'addPoint',
           playerId,
-          type: activityType
+          type: activityType,
         });
         const dailyPointRepo = manager.getRepository(DailyPoint);
         const playerRepo: Repository<Player> = manager.getRepository(Player);
@@ -141,7 +141,7 @@ export class PointService {
           this.logger.log('TX END addPoint', {
             method: 'addPoint',
             playerId,
-            type: activityType
+            type: activityType,
           });
           return updated!;
         }
@@ -155,7 +155,7 @@ export class PointService {
         this.logger.log('TX END addPoint', {
           method: 'addPoint',
           playerId,
-          type: activityType
+          type: activityType,
         });
         return inserted;
       });
@@ -164,7 +164,7 @@ export class PointService {
     return this.writeLock.runExclusive(exec).finally(() => {
       this.logger.log('TX COMPLETE addPoint', {
         method: 'addPoint',
-        playerId
+        playerId,
       });
     });
   }

@@ -56,7 +56,10 @@ export class WsJwtGuard implements CanActivate {
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn('verifyClient failed', { method: 'verifyClient', error: message });
+      this.logger.warn('verifyClient failed', {
+        method: 'verifyClient',
+        error: message,
+      });
       return false;
     }
   }

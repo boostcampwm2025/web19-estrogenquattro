@@ -94,10 +94,16 @@ export class FocusTimeService {
   async startFocusing(playerId: number, taskId?: number): Promise<Player> {
     const now = new Date();
 
-    this.logger.log('TX START startFocusing', { method: 'startFocusing', playerId });
+    this.logger.log('TX START startFocusing', {
+      method: 'startFocusing',
+      playerId,
+    });
     return this.writeLock.runExclusive(() =>
       this.dataSource.transaction(async (manager) => {
-        this.logger.log('TX ACTIVE startFocusing', { method: 'startFocusing', playerId });
+        this.logger.log('TX ACTIVE startFocusing', {
+          method: 'startFocusing',
+          playerId,
+        });
 
         const player = await manager.findOne(Player, {
           where: { id: playerId },
@@ -145,7 +151,10 @@ export class FocusTimeService {
           });
         }
 
-        this.logger.log('TX END startFocusing', { method: 'startFocusing', playerId });
+        this.logger.log('TX END startFocusing', {
+          method: 'startFocusing',
+          playerId,
+        });
         return player;
       }),
     );
@@ -162,10 +171,16 @@ export class FocusTimeService {
   }> {
     const now = new Date();
 
-    this.logger.log('TX START startResting', { method: 'startResting', playerId });
+    this.logger.log('TX START startResting', {
+      method: 'startResting',
+      playerId,
+    });
     return this.writeLock.runExclusive(() =>
       this.dataSource.transaction(async (manager) => {
-        this.logger.log('TX ACTIVE startResting', { method: 'startResting', playerId });
+        this.logger.log('TX ACTIVE startResting', {
+          method: 'startResting',
+          playerId,
+        });
 
         const player = await manager.findOne(Player, {
           where: { id: playerId },
@@ -176,7 +191,10 @@ export class FocusTimeService {
 
         // 집중 중이 아니면 무시
         if (!player.lastFocusStartTime) {
-          this.logger.log('Resting ignored - not focusing', { method: 'startResting', playerId });
+          this.logger.log('Resting ignored - not focusing', {
+            method: 'startResting',
+            playerId,
+          });
           const todayRecord = await this.findOrCreate(
             manager,
             player,
@@ -206,7 +224,11 @@ export class FocusTimeService {
           getTodayKstRangeUtc().start,
         );
 
-        this.logger.log('TX END startResting', { method: 'startResting', playerId, sessionSeconds });
+        this.logger.log('TX END startResting', {
+          method: 'startResting',
+          playerId,
+          sessionSeconds,
+        });
         return {
           totalFocusSeconds: todayRecord.totalFocusSeconds,
           sessionSeconds,
