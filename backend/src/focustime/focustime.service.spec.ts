@@ -3,13 +3,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FocusTimeService } from './focustime.service';
-import { DailyFocusTime } from './entites/daily-focus-time.entity';
+import {
+  DailyFocusTime,
+  FocusStatus,
+} from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
 import { Task } from '../task/entites/task.entity';
 import { getTodayKstRangeUtc } from '../util/date.util';
 import { BadRequestException } from '@nestjs/common';
+import { DatabaseModule } from '../database/database.module';
 
 describe('FocusTimeService', () => {
   let service: FocusTimeService;
@@ -29,6 +33,7 @@ describe('FocusTimeService', () => {
           synchronize: true,
         }),
         TypeOrmModule.forFeature([DailyFocusTime, Player, Task]),
+        DatabaseModule,
       ],
       providers: [FocusTimeService],
     }).compile();
@@ -437,6 +442,127 @@ describe('FocusTimeService', () => {
       expect(status.isFocusing).toBe(false);
       expect(status.lastFocusStartTime).toBeNull();
       expect(status.currentSessionSeconds).toBe(0);
+    });
+  });
+
+  describe('getFocusRanks', () => {
+    const createFocusTime = async (
+      player: Player,
+      createdAt: Date,
+      totalFocusSeconds: number,
+    ): Promise<DailyFocusTime> => {
+      const focusTime = focusTimeRepository.create({
+        player,
+        totalFocusSeconds,
+        status: FocusStatus.RESTING,
+        createdAt,
+      });
+      return focusTimeRepository.save(focusTime);
+    };
+
+    it('주간 범위 내 여러 일자의 집중 시간이 합산된다', async () => {
+      // Given: playerA가 월요일 1시간, 화요일 30분 집중
+      const playerA = await createTestPlayer('PlayerA');
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+      const monday = new Date('2026-01-26T12:00:00Z');
+      const tuesday = new Date('2026-01-27T12:00:00Z');
+
+      await createFocusTime(playerA, monday, 3600); // 1시간
+      await createFocusTime(playerA, tuesday, 1800); // 30분
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then: 총 5400초 (1시간 30분)
+      expect(ranks).toHaveLength(1);
+      expect(ranks[0].count).toBe(5400);
+    });
+
+    it('세밀한 시간 차이가 순위에 반영된다', async () => {
+      // Given: A=5490초, B=5400초 (90초 차이)
+      const playerA = await createTestPlayer('PlayerA');
+      const playerB = await createTestPlayer('PlayerB');
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+      const monday = new Date('2026-01-26T12:00:00Z');
+
+      await createFocusTime(playerA, monday, 5490);
+      await createFocusTime(playerB, monday, 5400);
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then: A가 1등, B가 2등 (이전에는 동점 처리됨)
+      expect(ranks[0].playerId).toBe(playerA.id);
+      expect(ranks[0].rank).toBe(1);
+      expect(ranks[1].playerId).toBe(playerB.id);
+      expect(ranks[1].rank).toBe(2);
+    });
+
+    it('집중 시간이 0인 플레이어는 제외된다', async () => {
+      // Given: A=3600초, B=0초
+      const playerA = await createTestPlayer('PlayerA');
+      const playerB = await createTestPlayer('PlayerB');
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+      const monday = new Date('2026-01-26T12:00:00Z');
+
+      await createFocusTime(playerA, monday, 3600);
+      await createFocusTime(playerB, monday, 0);
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then: B는 결과에 없어야 함
+      expect(ranks.map((r) => r.playerId)).not.toContain(playerB.id);
+      expect(ranks).toHaveLength(1);
+    });
+
+    it('동점자는 같은 순위를 부여한다 (Standard Competition Ranking)', async () => {
+      // Given: A=3600초, B=3600초, C=1800초
+      const playerA = await createTestPlayer('PlayerA');
+      const playerB = await createTestPlayer('PlayerB');
+      const playerC = await createTestPlayer('PlayerC');
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+      const monday = new Date('2026-01-26T12:00:00Z');
+
+      await createFocusTime(playerA, monday, 3600);
+      await createFocusTime(playerB, monday, 3600);
+      await createFocusTime(playerC, monday, 1800);
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then: A,B=1등, C=3등 (2등 없음)
+      expect(ranks.filter((r) => r.rank === 1)).toHaveLength(2);
+      expect(ranks.find((r) => r.playerId === playerC.id)?.rank).toBe(3);
+    });
+
+    it('범위 밖의 데이터는 조회되지 않는다', async () => {
+      // Given
+      const playerA = await createTestPlayer('PlayerA');
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+      const inRangeDate = new Date('2026-01-27T12:00:00Z');
+      const outOfRangeDate = new Date('2026-01-20T12:00:00Z'); // 범위 밖
+
+      await createFocusTime(playerA, inRangeDate, 3600);
+      await createFocusTime(playerA, outOfRangeDate, 7200);
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then: 범위 내 데이터만 조회 (3600초)
+      expect(ranks).toHaveLength(1);
+      expect(ranks[0].count).toBe(3600);
+    });
+
+    it('레코드가 없으면 빈 배열을 반환한다', async () => {
+      // Given: 데이터 없음
+      const mondayStart = new Date('2026-01-26T00:00:00Z');
+
+      // When
+      const ranks = await service.getFocusRanks(mondayStart);
+
+      // Then
+      expect(ranks).toHaveLength(0);
     });
   });
 });
