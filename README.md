@@ -38,7 +38,7 @@
 | 기존 서비스 | 한계점 | **잔디 심고 갈래?** |
 | --- | --- | --- |
 | 온라인 모각코 | 진입장벽 (규칙, 화면/캠 공유) | **규칙 없이 즉시 참여** ✅ |
-| 메타버스 ****(ZEP, 게더타운) | 개발자 특화 기능 부재 | **GitHub 연동 개발자 특화** ✅ |
+| 메타버스(ZEP, 게더타운) | 개발자 특화 기능 부재 | **GitHub 연동 개발자 특화** ✅ |
 | 디스코드/슬랙 | 공간감·시각적 성취 부족 | **유대감·시각적 성취** ✅ |
 | 오프라인 모각코 | 지리적 한계,<br/>내향적 성향 부담 | **온라인으로 가볍게 접속** ✅ |
 
@@ -47,15 +47,12 @@
 ## ✨ 주요 기능
 
 ### 1️⃣ 함께 성장하는 가상 세계
-모두의 활동이 모여 맵이 변화. 7일 시즌제로 주기적 리셋이 이루어지고, 테마가 변경됨.
-
-### 1️⃣ 함께 성장하는 가상 세계
 
 모두의 활동이 모여 맵이 변화. **7일 시즌제**로 주기적 리셋이 이루어지고, 테마가 변경됨.
 
 <img width="1416" height="740" alt="Image" src="https://github.com/user-attachments/assets/12025cad-008f-4a3d-b31c-b6b81683c44b" />
 
-**테마**
+#### 테마
 
 <img width="1777" height="1016" alt="Image" src="https://github.com/user-attachments/assets/a99091b2-efa7-4529-8efd-6b29f01b2d6c" />
 
@@ -75,7 +72,7 @@
 
 **OAuth 간편 로그인**, **30초 간격** 자동 감지. 활동 시 포인트가 쌓이고, 포인트에 따라 맵 변화 **게이지 상승**.
 
-**리더보드**
+#### 리더보드
 <img width="506" height="710" alt="Image" src="https://github.com/user-attachments/assets/ea418737-3dbe-4b90-8f1a-c782e6fa10a0" />
 
 ### 4️⃣ 개인 성취 시각화
@@ -88,7 +85,7 @@
 
 <img width="800" height="576" alt="Image" src="https://github.com/user-attachments/assets/d8918eb9-3d0c-49bf-8fd1-893a7ae039fb" />
 
-**세부 활동**
+#### 세부 활동
 
 해당 날짜에 진행한 깃허브 활동 상세 내역이나 자신의 Task(To-do)를 확인 가능
 
@@ -98,22 +95,23 @@
 
 포인트로 **가챠·육성·진화**(3단계). **대표 펫**이 캐릭터 동행.
 
-**펫과 캐릭터 이동**
+#### 펫과 캐릭터 이동
 
 <img width="800" height="557" alt="Image" src="https://github.com/user-attachments/assets/05247864-9cd2-4d5b-bca4-ef60e2d1c6eb" />
 
-**펫 뽑기**
+#### 펫 뽑기
+
 펫을 뽑아 새로운 펫들을 수집 가능
 
 <img width="846" height="378" alt="Image" src="https://github.com/user-attachments/assets/75e405b2-cbf2-45c1-ba74-e4b0bf8cf53f" />
 
-**펫 도감**
+#### 펫 도감
 
 펫 도감을 통해 수집한 펫들을 관리하고, 대표 펫으로 설정하여 함께 이동 가능
 
 <img width="664" height="392" alt="Image" src="https://github.com/user-attachments/assets/e838531d-e909-4635-a12a-27de816d75c6" />
 
-**펫 밥주기**
+#### 펫 밥주기
 
 펫에게 밥을 주어 다음 단계로 성장시켜, 도감 수집 가능
 
