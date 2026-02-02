@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import PetTab from "./PetTab";
 import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
