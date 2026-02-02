@@ -1,91 +1,122 @@
 # [🌱 온라인 모각코 서비스 - 잔디 심고 갈래?](https://jandiplease.duckdns.org/)
 
 <a href="https://jandiplease.duckdns.org/">
-  <img width="1536" height="1024" alt="잔디 심고 갈래? 서비스 메인 화면" src="https://github.com/user-attachments/assets/5766c3d9-2f0e-4d60-80d1-91c1f3ebbad6" />
+  
+  <img width="2071" height="939" alt="잔디 심고 갈래? 서비스 소개 이미지" src="https://github.com/user-attachments/assets/835f9102-6397-4615-85ea-95efe05e4499" />
 </a>
 <p align="center"><em>이미지를 클릭하면 서비스로 이동합니다.</em></p>
 
-## 프로젝트 소개
+# 🌱 잔디 심고 갈래?
+혼자 코딩하지만 함께 몰입하고 있다는 감각을 전달하는 GitHub 기반 온라인 모각코 서비스
 
-**🌱 잔디 심고 갈래?** 는 혼자 코딩하지만 **함께 몰입하고 있다는 감각**을 전달하는 GitHub 기반 온라인 모각코 서비스입니다.
+## 💡 이런 서비스입니다
 
-- 🌍 **공동의 성장**: 개발자들의 GitHub 활동이 모여 황무지를 숲으로 변화시킵니다
+`늦은 밤, 혼자 코딩할 때 슬랙에서 동료의 파란 불을 보며 힘을 얻은 적 있으신가요?`
+
+**잔디 심고 갈래?** 는 바로 그 느낌을 온라인 공간으로 옮겨왔습니다. **캠·마이크 없이** 같은 공간에서 함께 코딩하는 경험을 제공합니다.
+
+
+
+### 핵심 가치
+- 🌍 **공동의 성장**: 개발자들의 GitHub 활동이 모여 맵을 변화(예: 황무지를 숲으로 변화)시킵니다
 - ⏱️ **집중의 시각화**: 커밋, PR, 집중 시간이 실시간으로 반영됩니다
 - 🐾 **펫과 함께**: 활동으로 얻은 포인트로 펫을 뽑고 성장시킵니다
 - 🤝 **느슨한 연대**: 캠/마이크 없이, 같은 공간에서 함께 코딩하는 경험을 제공합니다
 
 ---
 
-## 기획 배경
 
-> 혼자보다 함께할 때 힘을 얻은 적이 있나요?
 
-저희 팀원들은 늦은 밤까지 작업할 때 슬랙 파란 불을 보며 힘을 얻었던 경험에 공감했습니다.
+## 🎯 이런 분들을 위한 서비스입니다
 
-실제로는 곁에 없지만, **함께 코딩하고 있고 혼자가 아니라는 그 느낌**에 주목했습니다.
-
-### 타겟 유저
-
-- 늦은 시간 홀로 작업하면서 동기부여를 원하는 개발자
-- 주변 지역에 동료가 없는 개발자
-- 성장하고 싶지만 내향적인 성격을 가진 개발자
+**홀로 작업하며 동기부여**를 원하거나, **오프라인 모각코는 부담**스럽지만 **함께하는 느낌**을 원하는 개발자
 
 ---
 
-## 기존 서비스와의 차별점
+## 🆚 기존 서비스와의 차별점
 
-| 기존 서비스 | 문제점과 한계 | 우리 서비스 |
-|-------------|---------------|-------------|
-| 온라인 모각코 | 진입장벽 존재 (접속 규칙, 화면/캠 공유) | 규칙 없이 즉시 참여 가능 |
-| 메타버스 (ZEP, 게더타운) | 개발자 특화 기능 부재 | GitHub 연동으로 개발자 특화 기능 제공 |
-| 디스코드/슬랙 | 공간감, 시각적 성취 부족 | 함께한다는 유대감, 시각적 성취 제공 |
-| 오프라인 모각코 | 지리적 한계, 내향적인 성향 | 지리적 제한 없이 온라인으로 가볍게 접속 |
+| 기존 서비스 | 한계점 | **잔디 심고 갈래?** |
+| --- | --- | --- |
+| 온라인 모각코 | 진입장벽 (규칙, 화면/캠 공유) | **규칙 없이 즉시 참여** ✅ |
+| 메타버스(ZEP, 게더타운) | 개발자 특화 기능 부재 | **GitHub 연동 개발자 특화** ✅ |
+| 디스코드/슬랙 | 공간감·시각적 성취 부족 | **유대감·시각적 성취** ✅ |
+| 오프라인 모각코 | 지리적 한계,<br/>내향적 성향 부담 | **온라인으로 가볍게 접속** ✅ |
 
 ---
 
-## 주요 기능
+## ✨ 주요 기능
 
-### 🗺️ 변화하는 가상 공간
+### 1️⃣ 함께 성장하는 가상 세계
 
-사용자들의 개발 활동에 따라 **황무지에서 숲으로** 점진적으로 변화하는 공동의 세계
+모두의 활동이 모여 맵이 변화. **7일 시즌제**로 주기적 리셋이 이루어지고, 테마가 변경됨.
 
-- 커밋, PR, 집중 시간 등 다양한 요소가 글로벌 진행 게이지에 반영
-- 목표 달성 시 맵이 성장하며 모든 접속자에게 동시 반영
-- **7일 시즌제**로 주기적인 리셋과 새로운 목표 제공
+<img width="1416" height="740" alt="Image" src="https://github.com/user-attachments/assets/12025cad-008f-4a3d-b31c-b6b81683c44b" />
 
-### 👤 실시간 캐릭터 시스템
+#### 테마
 
-- GitHub 프로필 사진 또는 마스코트로 캐릭터 표현
-- 캐릭터 위에 닉네임, 현재 집중 시간, 작업 중인 태스크 표시
-- 실시간 이동 및 다른 사용자와의 상호작용
+<img width="1777" height="1016" alt="Image" src="https://github.com/user-attachments/assets/a99091b2-efa7-4529-8efd-6b29f01b2d6c" />
 
-### 🐙 GitHub 활동 연동
+<img width="1777" height="1016" alt="Image" src="https://github.com/user-attachments/assets/efdafe79-2cd6-47c3-8903-c4f09acb4a3a" />
 
-- GitHub OAuth 로그인으로 간편 접속
-- 커밋, PR 등 개발 활동을 **30초 간격으로 감지**
-- 활동 감지 시 캐릭터 이펙트 발생 + 글로벌 게이지 상승
+<img width="1777" height="1016" alt="Image" src="https://github.com/user-attachments/assets/b7a6e17a-4c73-4d8a-bd57-e64e5120b9d9" />
 
-### 📊 개인 성취 시각화
 
-- 잔디/캘린더로 일별 활동 기록 확인
-- 집중 시간, 완료한 태스크, GitHub 활동 카운트 표시
-- 포인트 시스템으로 활동에 대한 보상 제공
 
-### 🐾 펫 시스템
+### 2️⃣ 실시간 캐릭터 시스템
 
-개발 활동으로 포인트를 모아 나만의 펫을 키워보세요!
+**GitHub 프로필·마스코트** 캐릭터로 표현. **닉네임·집중시간·태스크** 표시, **실시간 상호작용**.
 
-#### 포인트 획득 방법
+<img width="1779" height="917" alt="Image" src="https://github.com/user-attachments/assets/6c4aee7d-dcd7-4ecd-9c1d-558298d66aac" />
 
-| 활동 | 포인트 | 비고 |
-|------|--------|------|
-| 커밋 (Push) | 3 | 실시간 적립 |
-| PR 생성 | 2 | 실시간 적립 |
-| PR 머지 | 4 | 실시간 적립 |
-| PR 리뷰 | 4 | 실시간 적립 |
-| 이슈 생성 | 1 | 실시간 적립 |
-| 집중 30분 | 1 | 자정 정산 |
-| 태스크 완료 | 1 | 즉시 적립 |
+### 3️⃣ GitHub 활동 자동 연동 및 리더보드
+
+**OAuth 간편 로그인**, **30초 간격** 자동 감지. 활동 시 포인트가 쌓이고, 포인트에 따라 맵 변화 **게이지 상승**.
+
+#### 리더보드
+<img width="506" height="710" alt="Image" src="https://github.com/user-attachments/assets/ea418737-3dbe-4b90-8f1a-c782e6fa10a0" />
+
+### 4️⃣ 개인 성취 시각화
+
+**잔디·캘린더**를 통한 날짜별 **집중시간·태스크·활동** 내역 확인
+
+**히팅맵 및 개인잔디**
+
+포인트 획득에 따라 달라지는 개인 잔디에서 수집한 펫과 활동들을 확인 가능
+
+<img width="800" height="576" alt="Image" src="https://github.com/user-attachments/assets/d8918eb9-3d0c-49bf-8fd1-893a7ae039fb" />
+
+#### 세부 활동
+
+해당 날짜에 진행한 깃허브 활동 상세 내역이나 자신의 Task(To-do)를 확인 가능
+
+<img width="800" height="573" alt="Image" src="https://github.com/user-attachments/assets/377fb4d4-96d7-4563-90d7-44fc0e247ad7" />
+
+### 5️⃣ 펫 시스템 🐾
+
+포인트로 **가챠·육성·진화**(3단계). **대표 펫**이 캐릭터 동행.
+
+#### 펫과 캐릭터 이동
+
+<img width="800" height="557" alt="Image" src="https://github.com/user-attachments/assets/05247864-9cd2-4d5b-bca4-ef60e2d1c6eb" />
+
+#### 펫 뽑기
+
+펫을 뽑아 새로운 펫들을 수집 가능
+
+<img width="846" height="378" alt="Image" src="https://github.com/user-attachments/assets/75e405b2-cbf2-45c1-ba74-e4b0bf8cf53f" />
+
+#### 펫 도감
+
+펫 도감을 통해 수집한 펫들을 관리하고, 대표 펫으로 설정하여 함께 이동 가능
+
+<img width="664" height="392" alt="Image" src="https://github.com/user-attachments/assets/e838531d-e909-4635-a12a-27de816d75c6" />
+
+#### 펫 밥주기
+
+펫에게 밥을 주어 다음 단계로 성장시켜, 도감 수집 가능
+
+
+<img width="844" height="186" alt="Image" src="https://github.com/user-attachments/assets/ae723617-976e-40cb-8305-4c012d37ade7" />
 
 #### 펫 획득 & 성장
 
@@ -291,15 +322,28 @@ flowchart TB
 
 ---
 
-## 문서
 
-자세한 내용은 [docs/](./docs/README.md)를 참고하세요.
 
-| 문서 | 설명 |
-|------|------|
-| [아키텍처 개요](./docs/architecture/OVERVIEW.md) | 프로젝트 전체 구조 |
-| [게임 엔진 구조](./docs/architecture/GAME_ENGINE.md) | Phaser 게임 엔진 |
-| [REST API 명세](./docs/api/REST_ENDPOINTS.md) | REST API 엔드포인트 |
-| [소켓 이벤트](./docs/api/SOCKET_EVENTS.md) | Socket.io 이벤트 명세 |
-| [GitHub 폴링](./docs/api/GITHUB_POLLING.md) | GitHub GraphQL 폴링 |
-| [개발 가이드](./docs/guides/DEVELOPMENT.md) | 개발 환경 설정 |
+## 📚 더 알아보기
+
+- 🔗 [서비스 접속](https://jandiplease.duckdns.org/)
+- 📖 [GitHub Repository](https://github.com/boostcampwm2025/web19-estrogenquattro/wiki)
+
+### 주요 문서
+
+- 🏗️ [아키텍처 개요](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/architecture/OVERVIEW.md)
+- 🎮 [게임 엔진 구조](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/architecture/GAME_ENGINE.md)
+- 📡 [REST API 명세](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/api/REST_ENDPOINTS.md)
+- 🔌 [소켓 이벤트](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/api/SOCKET_EVENTS.md)
+- 🐙 [GitHub 폴링](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/api/GITHUB_POLLING.md)
+- 💻 [개발 가이드](https://github.com/boostcampwm2025/web19-estrogenquattro/blob/main/docs/guides/DEVELOPMENT.md)
+
+---
+
+*함께 코딩하고 있다는 느낌, 지금 바로 경험해보세요!* 🌱
+
+## 라이선스
+
+본 프로젝트는 오픈소스 마스코트(Go, Java, Android, KDE, Linux, Rust, Jenkins)를 기반으로 AI 생성된 펫 이미지를 사용합니다.
+
+자세한 라이선스 정보는 [LICENSES.md](./LICENSES.md)를 참고하세요.

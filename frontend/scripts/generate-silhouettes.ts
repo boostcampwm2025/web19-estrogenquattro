@@ -6,54 +6,72 @@ const PET_ASSETS_DIR = path.join(process.cwd(), "public/assets/pets");
 
 async function generateSilhouettes() {
   try {
-    const files = await fs.readdir(PET_ASSETS_DIR);
-    const pngFiles = files.filter(
-      (file) =>
-        file.endsWith(".png") &&
-        !file.endsWith("_silhouette.png") &&
-        file !== "spritePetEgg.png",
-    );
+    const entries = await fs.readdir(PET_ASSETS_DIR, { withFileTypes: true });
 
-    console.log(`Found ${pngFiles.length} pet images to process.`);
+    // 폴더만 필터링 (spritePetEgg.png 같은 최상위 파일 제외)
+    const petFolders = entries.filter((entry) => entry.isDirectory());
 
-    for (const file of pngFiles) {
-      const inputPath = path.join(PET_ASSETS_DIR, file);
-      const outputFile = file.replace(".png", "_silhouette.png");
-      const outputPath = path.join(PET_ASSETS_DIR, outputFile);
+    console.log(`Found ${petFolders.length} pet folders to process.`);
 
-      try {
-        await fs.access(outputPath);
-        console.log(`Skipping: ${outputFile} (already exists)`);
-        continue;
-      } catch {
-        // File doesn't exist, proceed with generation
-      }
+    for (const folder of petFolders) {
+      const folderPath = path.join(PET_ASSETS_DIR, folder.name);
+      const files = await fs.readdir(folderPath);
 
-      console.log(`Generating silhouette for ${file}...`);
+      const imageFiles = files.filter(
+        (file) =>
+          (file.endsWith(".png") || file.endsWith(".webp")) &&
+          !file.includes("_silhouette"),
+      );
 
-      const metadata = await sharp(inputPath).metadata();
+      console.log(`\nProcessing folder: ${folder.name} (${imageFiles.length} images)`);
 
-      await sharp({
-        create: {
-          width: metadata.width || 128,
-          height: metadata.height || 128,
-          channels: 4,
-          background: { r: 64, g: 64, b: 64, alpha: 0.4 },
-        },
-      })
-        .composite([
+      for (const file of imageFiles) {
+        const inputPath = path.join(folderPath, file);
+
+        // 원본 확장자 추출
+        const ext = path.extname(file); // .png 또는 .webp
+        const baseName = file.replace(ext, "");
+        const outputFile = `${baseName}_silhouette${ext}`;
+        const outputPath = path.join(folderPath, outputFile);
+
+        try {
+          await fs.access(outputPath);
+          console.log(`  Skipping: ${outputFile} (already exists)`);
+          continue;
+        } catch {
+          // File doesn't exist, proceed with generation
+        }
+
+        console.log(`  Generating silhouette for ${file}...`);
+
+        const metadata = await sharp(inputPath).metadata();
+
+        const sharpInstance = sharp({
+          create: {
+            width: metadata.width || 128,
+            height: metadata.height || 128,
+            channels: 4,
+            background: { r: 64, g: 64, b: 64, alpha: 0.4 },
+          },
+        }).composite([
           {
             input: inputPath,
             blend: "dest-in",
           },
-        ])
-        .png()
-        .toFile(outputPath);
+        ]);
 
-      console.log(`Saved: ${outputFile}`);
+        // 원본 확장자에 맞춰서 변환
+        if (ext === ".webp") {
+          await sharpInstance.webp().toFile(outputPath);
+        } else {
+          await sharpInstance.png().toFile(outputPath);
+        }
+
+        console.log(`  Saved: ${outputFile}`);
+      }
     }
 
-    console.log("Successfully generated all silhouettes.");
+    console.log("\nSuccessfully generated all silhouettes.");
   } catch (error) {
     console.error("Error generating silhouettes:", error);
     process.exit(1);
