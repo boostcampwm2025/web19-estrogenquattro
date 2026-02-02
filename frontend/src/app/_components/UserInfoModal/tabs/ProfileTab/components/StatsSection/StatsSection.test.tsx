@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { userEvent } from "@testing-library/user-event";
+import userEvent from "@testing-library/user-event";
 import StatsSection from "./StatsSection";
 import { Task } from "@/app/_components/TasksMenu/types";
 import { GithubEventsRes } from "@/lib/api";
