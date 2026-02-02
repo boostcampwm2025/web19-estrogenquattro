@@ -14,6 +14,10 @@ import { HeatmapInfo } from "./HeatmapInfo";
 import { HeatmapCell } from "./HeatmapCell";
 import { HeatmapLegend } from "./HeatmapLegend";
 
+// 요일 레이블 (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
+// Mon, Wed, Fri만 표시
+const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""] as const;
+
 interface CalendarHeatmapProps {
   dailyPoints: DailyPoints;
   onSelectDate: (date: Date) => void;
@@ -91,10 +95,6 @@ export const CalendarHeatmap = memo(function CalendarHeatmap({
     }
   });
 
-  // 요일 레이블 (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
-  // Mon, Wed, Fri만 표시
-  const weekdayLabels = ["", "Mon", "", "Wed", "", "Fri", ""];
-
   return (
     <div className="mb-6 rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       {/* 포인트 획득 정책 정보 */}
@@ -113,7 +113,7 @@ export const CalendarHeatmap = memo(function CalendarHeatmap({
         <div className="flex flex-1 gap-1 overflow-hidden">
           {/* 요일 레이블 */}
           <div className="flex shrink-0 flex-col pt-[21px]">
-            {weekdayLabels.map((label, index) => (
+            {WEEKDAY_LABELS.map((label, index) => (
               <div
                 key={index}
                 className={`flex h-3 items-center text-xs leading-3 font-bold text-amber-800 ${index < 6 ? "mb-0.75" : ""}`}
