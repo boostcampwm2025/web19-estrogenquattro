@@ -55,6 +55,7 @@ export default class SocketManager {
   private isSessionReplaced: boolean = false;
   private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
+  private mapSwitchTimeout: ReturnType<typeof setTimeout> | null = null;
   private getPlayer: () =>
     | {
         id: string;
@@ -79,6 +80,13 @@ export default class SocketManager {
     this.scene = scene;
     this.username = username;
     this.getPlayer = getPlayer;
+  }
+
+  private clearMapSwitchTimeout(): void {
+    if (this.mapSwitchTimeout) {
+      clearTimeout(this.mapSwitchTimeout);
+      this.mapSwitchTimeout = null;
+    }
   }
 
   setWalls(walls: Phaser.Physics.Arcade.StaticGroup) {
@@ -178,6 +186,7 @@ export default class SocketManager {
 
     socket.on("session_replaced", () => {
       this.isSessionReplaced = true;
+      this.clearMapSwitchTimeout();
       socket.disconnect();
       callbacks.showSessionEndedOverlay();
     });
@@ -268,11 +277,20 @@ export default class SocketManager {
     });
 
     // 정상 맵 전환 (progress 100% 도달)
+    // 1초 디바운스로 빠른 연속 이벤트 중 마지막만 처리
     socket.on("map_switch", (data: { mapIndex: number }) => {
       console.log("[SocketManager] map_switch received:", data);
-      if (data.mapIndex === this.currentMapIndex) return;
-      this.currentMapIndex = data.mapIndex;
-      callbacks.onMapSwitch(data.mapIndex);
+
+      if (this.mapSwitchTimeout) {
+        clearTimeout(this.mapSwitchTimeout);
+      }
+
+      this.mapSwitchTimeout = setTimeout(() => {
+        console.log("[SocketManager] map_switch debounced, processing:", data);
+        if (data.mapIndex === this.currentMapIndex) return;
+        this.currentMapIndex = data.mapIndex;
+        callbacks.onMapSwitch(data.mapIndex);
+      }, 1000);
     });
 
     // 시즌 리셋 (매주 월요일 00:00 KST)
@@ -452,6 +470,7 @@ export default class SocketManager {
   }
 
   destroy(): void {
+    this.clearMapSwitchTimeout();
     this.otherPlayers.forEach((player) => player.destroy());
     this.otherPlayers.clear();
   }
