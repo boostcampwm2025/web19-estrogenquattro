@@ -127,6 +127,7 @@ private otherPlayers: Map<userId, RemotePlayer>;
 ### map_switch 디바운스
 
 `map_switch` 이벤트가 짧은 시간에 연속으로 도착하는 경우 마지막 이벤트만 처리하도록 1초 디바운스를 적용합니다.
+세션 교체 또는 씬 종료 시 디바운스 타이머를 정리합니다.
 
 ### 연결 흐름
 

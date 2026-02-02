@@ -82,6 +82,13 @@ export default class SocketManager {
     this.getPlayer = getPlayer;
   }
 
+  private clearMapSwitchTimeout(): void {
+    if (this.mapSwitchTimeout) {
+      clearTimeout(this.mapSwitchTimeout);
+      this.mapSwitchTimeout = null;
+    }
+  }
+
   setWalls(walls: Phaser.Physics.Arcade.StaticGroup) {
     this.walls = walls;
   }
@@ -179,6 +186,7 @@ export default class SocketManager {
 
     socket.on("session_replaced", () => {
       this.isSessionReplaced = true;
+      this.clearMapSwitchTimeout();
       socket.disconnect();
       callbacks.showSessionEndedOverlay();
     });
@@ -462,6 +470,7 @@ export default class SocketManager {
   }
 
   destroy(): void {
+    this.clearMapSwitchTimeout();
     this.otherPlayers.forEach((player) => player.destroy());
     this.otherPlayers.clear();
   }
