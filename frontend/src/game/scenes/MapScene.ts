@@ -13,6 +13,12 @@ import { API_URL } from "@/lib/api/client";
 export class MapScene extends Phaser.Scene {
   private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasdKeys?: {
+    W: Phaser.Input.Keyboard.Key;
+    A: Phaser.Input.Keyboard.Key;
+    S: Phaser.Input.Keyboard.Key;
+    D: Phaser.Input.Keyboard.Key;
+  };
   private username: string = "";
   private playerId: number = 0;
 
@@ -251,6 +257,12 @@ export class MapScene extends Phaser.Scene {
   private setupControls() {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
+      this.wasdKeys = {
+        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+      };
     }
   }
 
@@ -320,8 +332,8 @@ export class MapScene extends Phaser.Scene {
     // 작업 상태 말풍선 업데이트
     this.updateTaskBubble();
 
-    // Player Update
-    this.player.update(this.cursors);
+    // Player Update (방향키 + WASD 모두 전달)
+    this.player.update(this.cursors, this.wasdKeys);
 
     // Remote Players Update
     this.socketManager.updateRemotePlayers();

@@ -34,10 +34,19 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "move",
     message:
-      "이곳은 여러분만의 공간이에요!<br>방향키(↑,↓,←,→)로 캐릭터를 자유롭게 움직여 보세요!",
+      "이곳은 여러분만의 공간이에요!<br>방향키(↑,↓,←,→) 또는 WASD 키로 캐릭터를 자유롭게 움직여 보세요!",
     highlight: null,
     triggerType: "keypress",
-    triggerTarget: ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"],
+    triggerTarget: [
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "KeyW",
+      "KeyA",
+      "KeyS",
+      "KeyD",
+    ],
   },
   {
     id: "chat",

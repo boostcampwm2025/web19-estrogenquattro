@@ -32,7 +32,15 @@ export default class Player extends BasePlayer {
     this.roomId = roomId;
   }
 
-  update(cursors?: Phaser.Types.Input.Keyboard.CursorKeys) {
+  update(
+    cursors?: Phaser.Types.Input.Keyboard.CursorKeys,
+    wasdKeys?: {
+      W: Phaser.Input.Keyboard.Key;
+      A: Phaser.Input.Keyboard.Key;
+      S: Phaser.Input.Keyboard.Key;
+      D: Phaser.Input.Keyboard.Key;
+    },
+  ) {
     // 부모 update 호출 (마스크 동기화)
     super.update();
 
@@ -46,18 +54,19 @@ export default class Player extends BasePlayer {
     let hDir = "";
     let vDir = "";
 
-    if (cursors.left.isDown) {
+    // 방향키 또는 WASD 키 모두 지원
+    if (cursors.left.isDown || wasdKeys?.A.isDown) {
       velocityX = -this.speed;
       hDir = "left";
-    } else if (cursors.right.isDown) {
+    } else if (cursors.right.isDown || wasdKeys?.D.isDown) {
       velocityX = this.speed;
       hDir = "right";
     }
 
-    if (cursors.up.isDown) {
+    if (cursors.up.isDown || wasdKeys?.W.isDown) {
       velocityY = -this.speed;
       vDir = "up";
-    } else if (cursors.down.isDown) {
+    } else if (cursors.down.isDown || wasdKeys?.S.isDown) {
       velocityY = this.speed;
       vDir = "down";
     }

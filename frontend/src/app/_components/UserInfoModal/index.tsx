@@ -6,8 +6,6 @@ import { useModalClose } from "@/hooks/useModalClose";
 import { usePetSystem } from "./tabs/PetTab/hooks/usePetSystem";
 import { useShallow } from "zustand/react/shallow";
 import { useCallback, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { pointApi } from "@/lib/api/point";
 import ProfileTab from "./tabs/ProfileTab/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -34,24 +32,9 @@ export default function UserInfoModal() {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const { user: currentUser } = useAuthStore();
   const { player } = usePetSystem(userInfoPayload?.playerId ?? 0);
-  const queryClient = useQueryClient();
 
   const isOwner = currentUser?.playerId === userInfoPayload?.playerId;
   const points = player?.totalPoint ?? 0;
-
-  /** 테스트용 포인트 10P 적립 */
-  /* const handleAddDebugPoint = async () => {
-    try {
-      await pointApi.addDebugPoint();
-      // Refresh player info to show updated points
-      await queryClient.invalidateQueries({
-        queryKey: ["player", "info", userInfoPayload?.playerId],
-      });
-    } catch (error) {
-      console.error("Failed to add debug points:", error);
-      alert("포인트 추가 실패");
-    }
-  }; */
 
   const onClose = useCallback(() => {
     closeModal();
@@ -87,13 +70,6 @@ export default function UserInfoModal() {
                 <div className="flex items-center gap-2 rounded border-2 border-amber-900/20 bg-amber-100 px-3 py-1 font-bold text-amber-800">
                   <span>{points.toLocaleString()} P</span>
                 </div>
-                {/* 테스트용 포인트 10P 적립버튼 */}
-                {/* <button
-                  onClick={handleAddDebugPoint}
-                  className="rounded border-2 border-green-600 bg-green-500 px-3 py-1 text-sm font-bold text-white hover:bg-green-600 active:translate-y-[1px]"
-                >
-                  +10P
-                </button> */}
               </>
             )}
             <button
@@ -110,11 +86,6 @@ export default function UserInfoModal() {
             label="프로필"
             isActive={activeTab === "profile"}
             onClick={() => setActiveTab("profile")}
-          />
-          <TabButton
-            label="활동"
-            isActive={activeTab === "activity"}
-            onClick={() => setActiveTab("activity")}
           />
           <TabButton
             id="pet-tab-button"
