@@ -45,7 +45,8 @@ describe('ProgressGateway', () => {
     }).compile();
 
     gateway = module.get<ProgressGateway>(ProgressGateway);
-    (gateway as unknown as { server: Server }).server = mockServer as unknown as Server;
+    (gateway as unknown as { server: Server }).server =
+      mockServer as unknown as Server;
     await gateway.onModuleInit();
   });
 
@@ -236,7 +237,7 @@ describe('ProgressGateway', () => {
   });
 
   describe('영속성/복원', () => {
-    it('저장된 contributions 포인트가 복원 후에도 유지된다', async () => {
+    it('저장된 contributions 포인트가 복원 후에도 유지된다', () => {
       // Given: contributions에 포인트 누적
       gateway.addProgress('testuser', ProgressSource.TASK, 2);
       jest.advanceTimersByTime(1000);
@@ -286,7 +287,8 @@ describe('ProgressGateway', () => {
       gateway.addProgress('testuser', ProgressSource.TASK, 5);
       jest.advanceTimersByTime(1000);
 
-      (gateway as unknown as { server: Server }).server = mockServer as unknown as Server;
+      (gateway as unknown as { server: Server }).server =
+        mockServer as unknown as Server;
 
       // When: 시즌 리셋
       await gateway.resetSeason();
