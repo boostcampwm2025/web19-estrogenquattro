@@ -13,7 +13,6 @@ import { API_URL } from "@/lib/api/client";
 export class MapScene extends Phaser.Scene {
   private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
   private playerId: number = 0;
 
@@ -260,7 +259,6 @@ export class MapScene extends Phaser.Scene {
   private setupControls() {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     }
   }
 
@@ -406,15 +404,6 @@ export class MapScene extends Phaser.Scene {
 
   update() {
     if (!this.player || !this.cursors) return;
-
-    // 테스트: X 키로 게이지 100% 채우기
-    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      const currentProgress = useProgressStore.getState().getProgress();
-      const remaining = 100 - currentProgress;
-      if (remaining > 0) {
-        useProgressStore.getState().addProgress(remaining);
-      }
-    }
 
     // 집중 시간 업데이트 (타임스탬프 기반 계산)
     const focusTime = useFocusTimeStore.getState().getFocusTime();
