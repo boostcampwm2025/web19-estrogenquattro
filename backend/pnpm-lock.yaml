@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@axiomhq/winston':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@nestjs/common':
         specifier: ^11.0.2
         version: 11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -198,6 +201,14 @@ packages:
   '@angular-devkit/schematics@19.2.19':
     resolution: {integrity: sha512-J4Jarr0SohdrHcb40gTL4wGPCQ952IMWF1G/MSAQfBAPvA9ZKApYhpxcY7PmehVePve+ujpus1dGsJ7dPxz8Kg==}
     engines: {node: ^18.19.1 || ^20.11.1 || >=22.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
+
+  '@axiomhq/js@1.4.0':
+    resolution: {integrity: sha512-wC5x1ud/QJMstrjpicATkyY8+ZVWEl4WlXMtA5EZf7hkj0+b191yv4yynLxLEfr/MveXora9m6CWdJq4DsbcAg==}
+    engines: {node: '>=20'}
+
+  '@axiomhq/winston@1.4.0':
+    resolution: {integrity: sha512-fVHwkWROOOyCuzVSXanMMkw5EVYwwKMal7zk87l6R9Zn69RBvIWVIFC8iSYM9Ea3Cg7t1sJHaDdeKvO9O4NXUw==}
+    engines: {node: '>=20'}
 
   '@babel/code-frame@7.28.6':
     resolution: {integrity: sha512-JYgintcMjRiCvS8mMECzaEn+m3PfoQiyqukOMCCVQtoJGYJw8j/8LBJEiqkHLkfwCcs74E3pbAUFNg7d9VNJ+Q==}
@@ -2071,6 +2082,9 @@ packages:
   fecha@4.2.3:
     resolution: {integrity: sha512-OP2IUU6HeYKJi3i0z4A19kHMQoLVs4Hc+DPqqxI2h/DPZHTm/vjsfC6P0b4jCMy14XizLBqvndQ+UilD7707Jw==}
 
+  fetch-retry@6.0.0:
+    resolution: {integrity: sha512-BUFj1aMubgib37I3v4q78fYo63Po7t4HUPTpQ6/QE6yK6cIQrP+W43FYToeTEyg5m2Y7eFUtijUuAv/PDlWuag==}
+
   file-entry-cache@8.0.0:
     resolution: {integrity: sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==}
     engines: {node: '>=16.0.0'}
@@ -3926,6 +3940,15 @@ snapshots:
       rxjs: 7.8.1
     transitivePeerDependencies:
       - chokidar
+
+  '@axiomhq/js@1.4.0':
+    dependencies:
+      fetch-retry: 6.0.0
+
+  '@axiomhq/winston@1.4.0':
+    dependencies:
+      '@axiomhq/js': 1.4.0
+      winston-transport: 4.9.0
 
   '@babel/code-frame@7.28.6':
     dependencies:
@@ -6037,6 +6060,8 @@ snapshots:
       picomatch: 4.0.3
 
   fecha@4.2.3: {}
+
+  fetch-retry@6.0.0: {}
 
   file-entry-cache@8.0.0:
     dependencies:
