@@ -3,6 +3,7 @@ import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
 import PetCodex from "./components/PetCodex";
+import { LicenseInfo } from "./components/LicenseInfo";
 import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
 import { UserPet } from "@/lib/api/pet";
@@ -153,6 +154,11 @@ export default function PetTab() {
 
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
+      {/* 라이선스 정보 링크 */}
+      <div className="flex justify-end">
+        <LicenseInfo />
+      </div>
+
       {/* 펫이 선택되었을 때만 카드 표시 (신규 유저는 안 보임 -> 자연스럽게 가챠 유도) */}
       {petCardData ? (
         <PetCard

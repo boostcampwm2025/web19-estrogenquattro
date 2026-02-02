@@ -1,9 +1,9 @@
 import * as Phaser from "phaser";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
-import type { ContributionController } from "../scenes/MapScene";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useConnectionStore } from "../../stores/useConnectionStore";
+import { useContributionStore } from "../../stores/useContributionStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -52,8 +52,6 @@ export default class SocketManager {
   private roomId: string = "";
   private username: string;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
-  private contributionController?: ContributionController;
-  private pendingContributions?: Record<string, number>;
   private isSessionReplaced: boolean = false;
   private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
@@ -85,15 +83,6 @@ export default class SocketManager {
 
   setWalls(walls: Phaser.Physics.Arcade.StaticGroup) {
     this.walls = walls;
-  }
-
-  setContributionController(controller: ContributionController) {
-    this.contributionController = controller;
-    // 맵 전환 중 대기 중인 contributions가 있으면 적용
-    if (this.pendingContributions) {
-      controller.setContributions(this.pendingContributions);
-      this.pendingContributions = undefined;
-    }
   }
 
   getRoomId(): string {
@@ -231,18 +220,19 @@ export default class SocketManager {
     socket.on("game_state", (data: GameStateData) => {
       console.log("[SocketManager] game_state received:", data);
       useProgressStore.getState().setProgress(data.progress);
+      useProgressStore.getState().setMapIndex(data.mapIndex);
+      useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
       if (!this.isInitialized) {
         console.log("[SocketManager] Initial map load:", data.mapIndex);
         this.isInitialized = true;
         this.currentMapIndex = data.mapIndex;
-        this.pendingContributions = data.contributions;
         callbacks.onInitialMapLoad(data.mapIndex);
         return;
       }
 
-      // 재접속: 맵 동기화만
+      // 재접속: 맵 동기화
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
       if (needsMapSync) {
         console.log(
@@ -251,11 +241,8 @@ export default class SocketManager {
           "→",
           data.mapIndex,
         );
-        this.pendingContributions = data.contributions;
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
-      } else {
-        this.contributionController?.setContributions(data.contributions);
       }
     });
 
@@ -263,6 +250,8 @@ export default class SocketManager {
     socket.on("progress_update", (data: ProgressUpdateData) => {
       console.log("[SocketManager] progress_update received:", data);
       useProgressStore.getState().setProgress(data.targetProgress);
+      useProgressStore.getState().setMapIndex(data.mapIndex);
+      useContributionStore.getState().setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
@@ -273,16 +262,8 @@ export default class SocketManager {
           "→",
           data.mapIndex,
         );
-        // 맵 전환 시 contributionController가 새로 생성되므로 pending으로 저장
-        this.pendingContributions = data.contributions;
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
-      } else if (this.contributionController) {
-        // 맵 전환 불필요 시 바로 적용
-        this.contributionController.setContributions(data.contributions);
-      } else {
-        // 초기 로딩 중이면 pending에 누적
-        this.pendingContributions = data.contributions;
       }
     });
 
@@ -298,8 +279,7 @@ export default class SocketManager {
     socket.on("season_reset", (data: { mapIndex: number }) => {
       console.log("[SocketManager] season_reset received:", data);
       useProgressStore.getState().setProgress(0);
-      this.pendingContributions = undefined;
-      this.contributionController?.setContributions({});
+      useContributionStore.getState().reset();
       this.currentMapIndex = data.mapIndex;
       callbacks.onMapSyncRequired(data.mapIndex);
     });

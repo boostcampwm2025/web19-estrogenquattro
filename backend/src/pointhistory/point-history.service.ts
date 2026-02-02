@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, EntityManager, Repository } from 'typeorm';
 import { PointHistory, PointType } from './entities/point-history.entity';
 import { Player } from '../player/entites/player.entity';
+import { FocusTimeService } from '../focustime/focustime.service';
 
 export interface HistoryRank {
   playerId: number;
@@ -18,6 +19,7 @@ export class PointHistoryService {
     private readonly pointHistoryRepository: Repository<PointHistory>,
     @InjectRepository(Player)
     private readonly playerRepository: Repository<Player>,
+    private readonly focusTimeService: FocusTimeService,
   ) {}
 
   async addHistoryWithManager(
@@ -70,6 +72,11 @@ export class PointHistoryService {
     type: PointType,
     weekendStartAt: Date,
   ): Promise<HistoryRank[]> {
+    // FOCUSED 타입은 FocusTimeService에서 조회
+    if (type === PointType.FOCUSED) {
+      return this.focusTimeService.getFocusRanks(weekendStartAt);
+    }
+
     const weekendEndAt = new Date(weekendStartAt);
     weekendEndAt.setDate(weekendEndAt.getDate() + 7);
 
