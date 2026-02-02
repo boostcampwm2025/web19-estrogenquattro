@@ -12,6 +12,7 @@ interface PetGachaProps {
   onGacha: () => Promise<{ pet: UserPet["pet"]; isDuplicate: boolean }>;
   onGachaRefund?: () => Promise<{ refundAmount: number; totalPoint: number }>;
   points: number;
+  hasCollectedAllStage1?: boolean;
 }
 
 export default function PetGacha({
@@ -19,6 +20,7 @@ export default function PetGacha({
   onGacha,
   onGachaRefund,
   points,
+  hasCollectedAllStage1 = false,
 }: PetGachaProps) {
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
   const [resultPet, setResultPet] = useState<Pet | null>(null);
@@ -79,20 +81,37 @@ export default function PetGacha({
       <div className="flex h-60 flex-col items-center justify-center gap-4">
         {status === "idle" && (
           <>
-            <div className="gacha-egg" />
-            <p className="text-center text-sm text-amber-700">
-              어떤 펫이 나올까요?
-              <br />
-              (1회: 100 P)
-            </p>
-            <button
-              id="pet-gacha-button"
-              onClick={handleSummon}
-              disabled={points < 100}
-              className={PIXEL_BTN}
-            >
-              펫 뽑기
-            </button>
+            <div
+              className={`gacha-egg ${hasCollectedAllStage1 ? "opacity-50 grayscale" : ""}`}
+            />
+            {hasCollectedAllStage1 ? (
+              <>
+                <p className="text-center text-xs text-amber-600">
+                  더 이상 뽑을 새로운 펫이 없습니다.
+                  <br />
+                  기존 펫을 성장시켜 진화해 보세요!
+                </p>
+                <button id="pet-gacha-button" disabled className={PIXEL_BTN}>
+                  펫 뽑기
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-center text-sm text-amber-700">
+                  어떤 펫이 나올까요?
+                  <br />
+                  (1회: 100 P)
+                </p>
+                <button
+                  id="pet-gacha-button"
+                  onClick={handleSummon}
+                  disabled={points < 100}
+                  className={PIXEL_BTN}
+                >
+                  펫 뽑기
+                </button>
+              </>
+            )}
           </>
         )}
 
