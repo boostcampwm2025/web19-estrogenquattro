@@ -218,14 +218,12 @@ export default class SocketManager {
 
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
-      console.log("[SocketManager] game_state received:", data);
       useProgressStore.getState().setProgress(data.progress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
       if (!this.isInitialized) {
-        console.log("[SocketManager] Initial map load:", data.mapIndex);
         this.isInitialized = true;
         this.currentMapIndex = data.mapIndex;
         callbacks.onInitialMapLoad(data.mapIndex);
@@ -235,12 +233,6 @@ export default class SocketManager {
       // 재접속: 맵 동기화
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
       if (needsMapSync) {
-        console.log(
-          "[SocketManager] Map sync required:",
-          this.currentMapIndex,
-          "→",
-          data.mapIndex,
-        );
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
       }
@@ -248,7 +240,6 @@ export default class SocketManager {
 
     // 실시간 progress 업데이트 (절대값 동기화)
     socket.on("progress_update", (data: ProgressUpdateData) => {
-      console.log("[SocketManager] progress_update received:", data);
       useProgressStore.getState().setProgress(data.targetProgress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
@@ -256,12 +247,6 @@ export default class SocketManager {
       // mapIndex 동기화: map_switch 유실 시 복구
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
       if (needsMapSync) {
-        console.log(
-          "[SocketManager] Map sync from progress_update:",
-          this.currentMapIndex,
-          "→",
-          data.mapIndex,
-        );
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
       }
@@ -269,7 +254,6 @@ export default class SocketManager {
 
     // 정상 맵 전환 (progress 100% 도달)
     socket.on("map_switch", (data: { mapIndex: number }) => {
-      console.log("[SocketManager] map_switch received:", data);
       if (data.mapIndex === this.currentMapIndex) return;
       this.currentMapIndex = data.mapIndex;
       callbacks.onMapSwitch(data.mapIndex);
@@ -277,7 +261,6 @@ export default class SocketManager {
 
     // 시즌 리셋 (매주 월요일 00:00 KST)
     socket.on("season_reset", (data: { mapIndex: number }) => {
-      console.log("[SocketManager] season_reset received:", data);
       useProgressStore.getState().setProgress(0);
       useContributionStore.getState().reset();
       this.currentMapIndex = data.mapIndex;
