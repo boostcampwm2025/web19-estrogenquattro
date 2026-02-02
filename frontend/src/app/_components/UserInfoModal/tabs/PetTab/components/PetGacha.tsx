@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import Image from "next/image";
 import { Pet, UserPet } from "@/lib/api/pet";
 import { motion, AnimatePresence } from "motion/react";
@@ -15,7 +15,7 @@ interface PetGachaProps {
   hasCollectedAllStage1?: boolean;
 }
 
-export default function PetGacha({
+const PetGacha = memo(function PetGacha({
   onPetCollected,
   onGacha,
   onGachaRefund,
@@ -190,4 +190,6 @@ export default function PetGacha({
       </div>
     </div>
   );
-}
+});
+
+export default PetGacha;
