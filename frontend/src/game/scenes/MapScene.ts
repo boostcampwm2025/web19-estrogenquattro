@@ -4,22 +4,15 @@ import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 import { useProgressStore } from "@/stores/useProgressStore";
-import {
-  createContributionList,
-  ContributionController,
-} from "@/game/ui/createContributionList";
 import MapManager, { MapConfig } from "../managers/MapManager";
 import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
 import { API_URL } from "@/lib/api/client";
 
-export type { ContributionController };
-
 export class MapScene extends Phaser.Scene {
   private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
   private playerId: number = 0;
 
@@ -28,15 +21,6 @@ export class MapScene extends Phaser.Scene {
   private socketManager!: SocketManager;
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
-
-  // UI Controllers
-  private contributionController?: ContributionController;
-
-  // Connection Lost Overlay
-  private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
-  private connectionLostText?: Phaser.GameObjects.Text;
-  private connectionLostButton?: Phaser.GameObjects.Text;
-  private connectionLostButtonBorder?: Phaser.GameObjects.Graphics;
 
   // Map Configuration
   // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
@@ -149,8 +133,6 @@ export class MapScene extends Phaser.Scene {
     );
     this.socketManager.connect({
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
-      showConnectionLostOverlay: () => this.showConnectionLostOverlay(),
-      hideConnectionLostOverlay: () => this.hideConnectionLostOverlay(),
       onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
       onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
       onInitialMapLoad: (mapIndex) => this.initializeWithMap(mapIndex),
@@ -187,19 +169,13 @@ export class MapScene extends Phaser.Scene {
       // Collisions Setup
       this.setupCollisions();
 
-      // UI Setup
-      this.setupUI();
-
       // Camera Setup
       this.cameraController = new CameraController(this);
       const { width, height } = this.mapManager.getMapSize();
       this.cameraController.setup(width, height, this.player?.getContainer());
 
-      // SocketManager에 walls, contributionController 설정
+      // SocketManager에 walls 설정
       this.socketManager.setWalls(this.mapManager.getWalls()!);
-      this.socketManager.setContributionController(
-        this.contributionController!,
-      );
     });
   }
 
@@ -275,21 +251,7 @@ export class MapScene extends Phaser.Scene {
   private setupControls() {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     }
-  }
-
-  private setupUI() {
-    const { width: mapWidth } = this.mapManager.getMapSize();
-
-    if (this.contributionController) {
-      this.contributionController.destroy();
-    }
-
-    // 프로그레스바는 React ProgressBar.tsx 컴포넌트로 이동
-    // 맵 전환은 서버 map_switch 이벤트 → performMapSwitch()로 처리
-
-    this.contributionController = createContributionList(this, mapWidth, 50);
   }
 
   /**
@@ -298,14 +260,10 @@ export class MapScene extends Phaser.Scene {
   private performMapSwitch(mapIndex: number) {
     this.mapManager.switchToMap(mapIndex, () => {
       this.setupCollisions();
-      this.setupUI();
       const { width, height } = this.mapManager.getMapSize();
       this.cameraController.updateBounds(width, height);
       this.socketManager.setWalls(this.mapManager.getWalls()!);
       this.socketManager.setupCollisions();
-      this.socketManager.setContributionController(
-        this.contributionController!,
-      );
 
       // 플레이어 리스폰 (wall 피해 랜덤 위치) + 위치 동기화
       if (this.player) {
@@ -352,101 +310,8 @@ export class MapScene extends Phaser.Scene {
     text.setDepth(1001);
   }
 
-  private showConnectionLostOverlay() {
-    // 이미 표시 중이면 무시
-    if (this.connectionLostOverlay) return;
-
-    this.connectionLostOverlay = this.add.rectangle(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      this.cameras.main.width,
-      this.cameras.main.height,
-      0x000000,
-      0.7,
-    );
-    this.connectionLostOverlay.setScrollFactor(0);
-    this.connectionLostOverlay.setDepth(1000);
-
-    const screenHeight = this.cameras.main.height;
-    const messageFontSize = Math.round(screenHeight * 0.04); // 4%
-    const buttonFontSize = Math.round(screenHeight * 0.03); // 3%
-
-    this.connectionLostText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY - screenHeight * 0.05,
-      "서버와의 연결이 끊어졌습니다.",
-      {
-        fontSize: `${messageFontSize}px`,
-        color: "#ffffff",
-        align: "center",
-      },
-    );
-    this.connectionLostText.setOrigin(0.5);
-    this.connectionLostText.setScrollFactor(0);
-    this.connectionLostText.setDepth(1001);
-
-    this.connectionLostButton = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY + screenHeight * 0.05,
-      "새로고침",
-      {
-        fontSize: `${buttonFontSize}px`,
-        color: "#4ade80",
-        align: "center",
-      },
-    );
-    this.connectionLostButton.setOrigin(0.5);
-    this.connectionLostButton.setScrollFactor(0);
-    this.connectionLostButton.setDepth(1001);
-    this.connectionLostButton.setInteractive({ useHandCursor: true });
-    this.connectionLostButton.on("pointerup", () => window.location.reload());
-
-    // 버튼 테두리 박스
-    const btnBounds = this.connectionLostButton.getBounds();
-    const padding = 16;
-    this.connectionLostButtonBorder = this.add.graphics();
-    this.connectionLostButtonBorder.lineStyle(2, 0x4ade80, 1);
-    this.connectionLostButtonBorder.strokeRoundedRect(
-      btnBounds.x - padding,
-      btnBounds.y - padding / 2,
-      btnBounds.width + padding * 2,
-      btnBounds.height + padding,
-      8,
-    );
-    this.connectionLostButtonBorder.setScrollFactor(0);
-    this.connectionLostButtonBorder.setDepth(1001);
-  }
-
-  private hideConnectionLostOverlay() {
-    if (this.connectionLostOverlay) {
-      this.connectionLostOverlay.destroy();
-      this.connectionLostOverlay = undefined;
-    }
-    if (this.connectionLostText) {
-      this.connectionLostText.destroy();
-      this.connectionLostText = undefined;
-    }
-    if (this.connectionLostButton) {
-      this.connectionLostButton.destroy();
-      this.connectionLostButton = undefined;
-    }
-    if (this.connectionLostButtonBorder) {
-      this.connectionLostButtonBorder.destroy();
-      this.connectionLostButtonBorder = undefined;
-    }
-  }
-
   update() {
     if (!this.player || !this.cursors) return;
-
-    // 테스트: X 키로 게이지 100% 채우기
-    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      const currentProgress = useProgressStore.getState().getProgress();
-      const remaining = 100 - currentProgress;
-      if (remaining > 0) {
-        useProgressStore.getState().addProgress(remaining);
-      }
-    }
 
     // 집중 시간 업데이트 (타임스탬프 기반 계산)
     const focusTime = useFocusTimeStore.getState().getFocusTime();

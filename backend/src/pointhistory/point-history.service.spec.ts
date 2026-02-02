@@ -7,11 +7,19 @@ import { PointHistory, PointType } from './entities/point-history.entity';
 import { Player } from '../player/entites/player.entity';
 import { Pet } from '../userpet/entities/pet.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
+import { FocusTimeService } from '../focustime/focustime.service';
+import {
+  DailyFocusTime,
+  FocusStatus,
+} from '../focustime/entites/daily-focus-time.entity';
+import { Task } from '../task/entites/task.entity';
+import { DatabaseModule } from '../database/database.module';
 
 describe('PointHistoryService', () => {
   let service: PointHistoryService;
   let pointHistoryRepository: Repository<PointHistory>;
   let playerRepository: Repository<Player>;
+  let focusTimeRepository: Repository<DailyFocusTime>;
   let module: TestingModule;
 
   let player1: Player;
@@ -24,12 +32,13 @@ describe('PointHistoryService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [PointHistory, Player, Pet, UserPet],
+          entities: [PointHistory, Player, Pet, UserPet, DailyFocusTime, Task],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([PointHistory, Player]),
+        TypeOrmModule.forFeature([PointHistory, Player, DailyFocusTime, Task]),
+        DatabaseModule,
       ],
-      providers: [PointHistoryService],
+      providers: [PointHistoryService, FocusTimeService],
     }).compile();
 
     service = module.get<PointHistoryService>(PointHistoryService);
@@ -38,6 +47,9 @@ describe('PointHistoryService', () => {
     );
     playerRepository = module.get<Repository<Player>>(
       getRepositoryToken(Player),
+    );
+    focusTimeRepository = module.get<Repository<DailyFocusTime>>(
+      getRepositoryToken(DailyFocusTime),
     );
   }, 30000);
 
@@ -49,6 +61,7 @@ describe('PointHistoryService', () => {
 
   beforeEach(async () => {
     await pointHistoryRepository.clear();
+    await focusTimeRepository.clear();
     await playerRepository.clear();
 
     // 테스트용 플레이어 생성
@@ -225,6 +238,89 @@ describe('PointHistoryService', () => {
 
       // Then
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('getHistoryRanks - FOCUSED 타입 분기', () => {
+    const createFocusTime = async (
+      player: Player,
+      createdAt: Date,
+      totalFocusSeconds: number,
+    ): Promise<DailyFocusTime> => {
+      const focusTime = focusTimeRepository.create({
+        player,
+        totalFocusSeconds,
+        status: FocusStatus.RESTING,
+        createdAt,
+      });
+      return focusTimeRepository.save(focusTime);
+    };
+
+    it('type=FOCUSED일 때 FocusTimeService로 분기한다', async () => {
+      // Given: FocusTime 데이터 준비
+      const weekendStartAt = new Date('2026-01-27T00:00:00Z');
+      const inRangeDate = new Date('2026-01-28T12:00:00Z');
+
+      await createFocusTime(player1, inRangeDate, 3600); // 1시간
+      await createFocusTime(player2, inRangeDate, 1800); // 30분
+
+      // When
+      const result = await service.getHistoryRanks(
+        PointType.FOCUSED,
+        weekendStartAt,
+      );
+
+      // Then: FocusTime 기반 결과 (초 단위)
+      expect(result).toHaveLength(2);
+      expect(result[0].count).toBe(3600);
+      expect(result[0].rank).toBe(1);
+      expect(result[1].count).toBe(1800);
+      expect(result[1].rank).toBe(2);
+    });
+
+    it('type=COMMITTED일 때 기존 로직을 사용한다', async () => {
+      // Given: PointHistory 데이터와 FocusTime 데이터 모두 존재
+      const weekendStartAt = new Date('2026-01-27T00:00:00Z');
+      const inRangeDate = new Date('2026-01-28T12:00:00Z');
+
+      // FocusTime 데이터
+      await createFocusTime(player1, inRangeDate, 3600);
+
+      // PointHistory 데이터
+      await createHistory(player2, PointType.COMMITTED, inRangeDate);
+      await createHistory(player2, PointType.COMMITTED, inRangeDate);
+
+      // When: COMMITTED 타입 조회
+      const result = await service.getHistoryRanks(
+        PointType.COMMITTED,
+        weekendStartAt,
+      );
+
+      // Then: PointHistory 기반 결과 (player2만, count=2)
+      expect(result).toHaveLength(1);
+      expect(result[0].playerId).toBe(player2.id);
+      expect(result[0].count).toBe(2);
+    });
+
+    it('FOCUSED 타입에서 세밀한 시간 차이가 순위에 반영된다', async () => {
+      // Given: player1=5490초, player2=5400초 (90초 차이)
+      const weekendStartAt = new Date('2026-01-27T00:00:00Z');
+      const inRangeDate = new Date('2026-01-28T12:00:00Z');
+
+      await createFocusTime(player1, inRangeDate, 5490);
+      await createFocusTime(player2, inRangeDate, 5400);
+
+      // When
+      const result = await service.getHistoryRanks(
+        PointType.FOCUSED,
+        weekendStartAt,
+      );
+
+      // Then: player1이 1등, player2가 2등 (90초 차이 반영)
+      expect(result[0].playerId).toBe(player1.id);
+      expect(result[0].rank).toBe(1);
+      expect(result[1].playerId).toBe(player2.id);
+      expect(result[1].rank).toBe(2);
     });
   });
 });

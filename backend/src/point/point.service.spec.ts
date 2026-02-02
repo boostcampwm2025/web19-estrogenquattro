@@ -14,6 +14,9 @@ import {
 } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
 import { DatabaseModule } from '../database/database.module';
+import { FocusTimeService } from '../focustime/focustime.service';
+import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
+import { Task } from '../task/entites/task.entity';
 
 describe('PointService', () => {
   let service: PointService;
@@ -31,13 +34,27 @@ describe('PointService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [DailyPoint, Player, UserPet, Pet, PointHistory],
+          entities: [
+            DailyPoint,
+            Player,
+            UserPet,
+            Pet,
+            PointHistory,
+            DailyFocusTime,
+            Task,
+          ],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([DailyPoint, Player, PointHistory]),
+        TypeOrmModule.forFeature([
+          DailyPoint,
+          Player,
+          PointHistory,
+          DailyFocusTime,
+          Task,
+        ]),
         DatabaseModule,
       ],
-      providers: [PointService, PointHistoryService],
+      providers: [PointService, PointHistoryService, FocusTimeService],
     }).compile();
 
     service = module.get<PointService>(PointService);

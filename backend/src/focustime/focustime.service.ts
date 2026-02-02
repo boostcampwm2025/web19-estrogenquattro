@@ -6,6 +6,13 @@ import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
 
+export interface FocusRank {
+  playerId: number;
+  nickname: string;
+  count: number;
+  rank: number;
+}
+
 @Injectable()
 export class FocusTimeService {
   private readonly logger = new Logger(FocusTimeService.name);
@@ -286,5 +293,52 @@ export class FocusTimeService {
     }
 
     return focusTime;
+  }
+
+  /**
+   * 주간 집중 시간 순위 조회
+   * @param weekendStartAt 주간 시작일 (월요일 00:00:00)
+   * @returns 집중 시간 순위 (count = SUM(total_focus_seconds), 초 단위)
+   */
+  async getFocusRanks(weekendStartAt: Date): Promise<FocusRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const results = await this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .select('ft.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('SUM(ft.total_focus_seconds)', 'count')
+      .innerJoin('ft.player', 'player')
+      .where('ft.createdAt >= :startAt AND ft.createdAt < :endAt', {
+        startAt: weekendStartAt,
+        endAt: weekendEndAt,
+      })
+      .groupBy('ft.player_id')
+      .having('SUM(ft.total_focus_seconds) > 0')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    // 동점자 처리: Standard Competition Ranking (1, 1, 3 방식)
+    let currentRank = 1;
+    let previousCount: number | null = null;
+
+    return results.map(
+      (row: { playerId: number; nickname: string; count: string }, index) => {
+        const count = Number(row.count);
+
+        if (previousCount !== null && count < previousCount) {
+          currentRank = index + 1;
+        }
+        previousCount = count;
+
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          count,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }
