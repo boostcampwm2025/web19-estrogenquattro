@@ -274,10 +274,10 @@ export class GithubPollService {
         status: result.status,
       });
       this.scheduleNextPoll(username, nextInterval);
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Unexpected error in handlePoll', {
         username,
-        error: error instanceof Error ? error.message : error,
+        error: error instanceof Error ? error.message : String(error),
       });
       // 이미 중지된 경우(401 등) 재스케줄링하지 않음
       if (this.pollingSchedules.has(username)) {
@@ -324,7 +324,7 @@ export class GithubPollService {
     let res: Response;
     try {
       res = await fetch(url, { headers });
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('GitHub API network error', {
         username,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -375,12 +375,12 @@ export class GithubPollService {
     let eventsData: unknown;
     try {
       eventsData = await res.json();
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Failed to parse JSON response', {
         username,
         status: res.status,
         contentType: res.headers.get('content-type'),
-        error,
+        error: error instanceof Error ? error.message : String(error),
       });
       return { status: 'error' };
     }
@@ -474,10 +474,10 @@ export class GithubPollService {
             commit.activityAt,
           );
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to save commit data', {
           username,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -500,10 +500,10 @@ export class GithubPollService {
             pr.activityAt,
           );
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to save PR open data', {
           username,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -526,10 +526,10 @@ export class GithubPollService {
             pr.activityAt,
           );
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to save PR merge data', {
           username,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -552,10 +552,10 @@ export class GithubPollService {
             issue.activityAt,
           );
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to save issue data', {
           username,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -578,10 +578,10 @@ export class GithubPollService {
             review.activityAt,
           );
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to save review data', {
           username,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -756,11 +756,11 @@ export class GithubPollService {
             break;
           }
         }
-      } catch (error) {
+      } catch (error: unknown) {
         this.logger.error('Failed to process event', {
           username: schedule.username,
           eventId: event?.id,
-          error: error instanceof Error ? error.message : error,
+          error: error instanceof Error ? error.message : String(error),
         });
         continue;
       }
