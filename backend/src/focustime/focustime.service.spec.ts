@@ -3,10 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FocusTimeService } from './focustime.service';
-import {
-  DailyFocusTime,
-  FocusStatus,
-} from './entites/daily-focus-time.entity';
+import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
