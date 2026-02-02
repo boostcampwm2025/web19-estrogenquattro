@@ -266,7 +266,7 @@ GitHub 폴링 및 이벤트 관리
 ```typescript
 roomStates: Map<roomId, {
   progress: number;                      // 0-99
-  contributions: Record<string, number>; // username -> count
+  contributions: Record<string, number>; // username -> points
 }>;
 ```
 

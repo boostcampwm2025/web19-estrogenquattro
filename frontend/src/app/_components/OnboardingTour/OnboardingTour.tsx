@@ -120,12 +120,13 @@ export default function OnboardingTour() {
     (e: KeyboardEvent) => {
       if (!isActive || !step) return;
 
-      // 방향키 트리거 스텝
+      // 방향키/WASD 트리거 스텝
       if (
         step.triggerType === "keypress" &&
         Array.isArray(step.triggerTarget)
       ) {
-        if (step.triggerTarget.includes(e.key)) {
+        // e.code를 사용하여 물리적 키 위치로 비교 (한글 키보드에서도 동작)
+        if (step.triggerTarget.includes(e.code)) {
           setShowingAction(true);
 
           if (actionTimeoutRef.current) {
@@ -136,7 +137,7 @@ export default function OnboardingTour() {
           }, 1000);
           return;
         }
-        // 방향키 스텝에서 다른 키는 차단
+        // triggerTarget에 없는 키만 차단 (방향키/WASD 외 다른 키)
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -359,7 +360,7 @@ export default function OnboardingTour() {
 
     switch (step.triggerType) {
       case "keypress":
-        return "방향키를 눌러보세요!";
+        return "방향키 또는 WASD를 눌러보세요!";
       case "chat":
         return isChatOpen
           ? "메시지를 입력하고 엔터를 눌러 채팅창을 닫아보세요!"
