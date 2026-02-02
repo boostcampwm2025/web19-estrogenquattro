@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
@@ -152,6 +152,17 @@ export default function PetTab() {
 
   const points = player?.totalPoint ?? 0;
 
+  // Check if user has collected all stage1 pets
+  const hasCollectedAllStage1 = useMemo(() => {
+    const stage1PetIds = allPets
+      .filter((p) => p.evolutionStage === 1)
+      .map((p) => p.id);
+
+    if (stage1PetIds.length === 0) return false;
+
+    return stage1PetIds.every((id) => collectedPetIds.includes(id));
+  }, [allPets, collectedPetIds]);
+
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
       {/* 라이선스 정보 링크 */}
@@ -184,6 +195,7 @@ export default function PetTab() {
           onGachaRefund={gachaRefund}
           onPetCollected={handlePetCollected}
           points={points}
+          hasCollectedAllStage1={hasCollectedAllStage1}
         />
       )}
       <PetCodex
