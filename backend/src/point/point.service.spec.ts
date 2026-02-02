@@ -13,6 +13,7 @@ import {
   PointType,
 } from '../pointhistory/entities/point-history.entity';
 import { PointHistoryService } from '../pointhistory/point-history.service';
+import { DatabaseModule } from '../database/database.module';
 import { FocusTimeService } from '../focustime/focustime.service';
 import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
@@ -51,6 +52,7 @@ describe('PointService', () => {
           DailyFocusTime,
           Task,
         ]),
+        DatabaseModule,
       ],
       providers: [PointService, PointHistoryService, FocusTimeService],
     }).compile();

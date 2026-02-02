@@ -14,7 +14,10 @@ import {
   isPrResponse,
 } from './github.poll-service';
 
-describe('GitHub API 타입 변환 통합 테스트', () => {
+const maybeDescribe =
+  process.env.ENABLE_GITHUB_INTEGRATION === 'true' ? describe : describe.skip;
+
+maybeDescribe('GitHub API 타입 변환 통합 테스트', () => {
   const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
   const TEST_USERNAME = 'octocat'; // GitHub 공식 테스트 계정
 

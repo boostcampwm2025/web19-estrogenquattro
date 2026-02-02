@@ -13,6 +13,7 @@ import {
   FocusStatus,
 } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
+import { DatabaseModule } from '../database/database.module';
 
 describe('PointHistoryService', () => {
   let service: PointHistoryService;
@@ -35,6 +36,7 @@ describe('PointHistoryService', () => {
           synchronize: true,
         }),
         TypeOrmModule.forFeature([PointHistory, Player, DailyFocusTime, Task]),
+        DatabaseModule,
       ],
       providers: [PointHistoryService, FocusTimeService],
     }).compile();
