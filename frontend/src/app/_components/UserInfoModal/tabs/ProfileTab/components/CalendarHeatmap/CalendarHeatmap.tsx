@@ -1,5 +1,12 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef, useEffect, useCallback, memo } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+  startTransition,
+} from "react";
 import { Button } from "@/_components/ui/button";
 import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
@@ -44,8 +51,10 @@ export const CalendarHeatmap = memo(function CalendarHeatmap({
 
   const handleMouseMove = useCallback((e: React.MouseEvent, day: DayData) => {
     if (day.value === -1) return;
-    setHoveredDay(day);
-    setMousePosition({ x: e.clientX, y: e.clientY });
+    startTransition(() => {
+      setHoveredDay(day);
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    });
   }, []);
 
   const handleMouseLeave = useCallback(() => {
