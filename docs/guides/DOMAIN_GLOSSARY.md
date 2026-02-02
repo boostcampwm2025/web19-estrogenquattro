@@ -103,14 +103,14 @@ interface UserBaseline {
 
 ### Contributions (기여도)
 
-방에서 각 플레이어의 누적 GitHub 활동 수
+방에서 각 플레이어의 누적 포인트
 
 ```typescript
-contributions: Record<username, count>
+contributions: Record<username, points>
 ```
 
 - 프로그레스바 아래 기여도 목록에 표시
-- 상위 5명만 표시
+- 상위 3명만 표시
 
 ---
 
@@ -134,7 +134,7 @@ contributions: Record<username, count>
 ```typescript
 interface RoomState {
   progress: number;                      // 0-99
-  contributions: Record<string, number>; // username -> count
+  contributions: Record<string, number>; // username -> points
 }
 ```
 
