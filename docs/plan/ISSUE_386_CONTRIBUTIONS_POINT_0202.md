@@ -319,17 +319,17 @@ refactor/#386-contributions-point
 
 - [x] 현재 contributions 데이터 흐름 분석
 - [x] 이슈 수정
-- [ ] `ProgressGateway.updateGlobalState()` 수정
-- [ ] `ProgressGateway.addProgress()` 수정
-- [ ] 코드 내 주석 업데이트
-  - [ ] `backend/src/github/progress.gateway.ts` - "count" → "points"
-  - [ ] `frontend/src/stores/useContributionStore.ts` - "count" → "points"
-- [ ] 테스트 작성
-  - [ ] castProgressUpdate: GitHub 활동 시 contributions 포인트 누적
-  - [ ] addProgress: Task/Focus 시 contributions 포인트 누적
-  - [ ] 영속성/복원: 저장-복원 정합성
-  - [ ] 시즌 리셋 후 포인트 누적
-  - [ ] 이벤트 페이로드: progress_update, game_state에 포인트 기준 contributions 포함
+- [x] `ProgressGateway.updateGlobalState()` 수정
+- [x] `ProgressGateway.addProgress()` 수정
+- [x] 코드 내 주석 업데이트
+  - [x] `backend/src/github/progress.gateway.ts` - "count" → "points"
+  - [x] `frontend/src/stores/useContributionStore.ts` - "count" → "points"
+- [x] 테스트 작성
+  - [x] castProgressUpdate: GitHub 활동 시 contributions 포인트 누적
+  - [x] addProgress: Task/Focus 시 contributions 포인트 누적
+  - [x] 영속성/복원: 저장-복원 정합성
+  - [x] 시즌 리셋 후 포인트 누적
+  - [x] 이벤트 페이로드: progress_update, game_state에 포인트 기준 contributions 포함
 - [ ] 문서 업데이트
   - [ ] `docs/api/SOCKET_EVENTS.md`
   - [ ] `docs/architecture/GAME_ENGINE.md` (오래된 참조 정리 포함)
