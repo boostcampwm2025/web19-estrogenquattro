@@ -4,9 +4,9 @@ import { toPetRes, toUserPetRes, toPlayerRes } from "../../shared/pet";
 
 // In-memory stores for test state
 let petStore: PetEntity[] = [];
-let userPetStore: Map<number, UserPetEntity[]> = new Map(); // playerId -> UserPet[]
-let codexStore: Map<number, number[]> = new Map(); // playerId -> collectedPetIds[]
-let playerStore: Map<number, PlayerEntity> = new Map(); // playerId -> Player
+const userPetStore: Map<number, UserPetEntity[]> = new Map(); // playerId -> UserPet[]
+const codexStore: Map<number, number[]> = new Map(); // playerId -> collectedPetIds[]
+const playerStore: Map<number, PlayerEntity> = new Map(); // playerId -> Player
 let nextUserPetId = 1;
 
 // Store management functions

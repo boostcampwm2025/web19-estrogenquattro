@@ -154,12 +154,6 @@ export default function PetTab() {
     [isOwner, equip],
   );
 
-  // playerId가 유효하지 않거나 필수 데이터(allPets)가 없으면 로딩
-  if (!playerId || (allPets.length === 0 && isLoading))
-    return <div>Loading...</div>;
-
-  const points = player?.totalPoint ?? 0;
-
   // Check if user has collected all stage1 pets
   const hasCollectedAllStage1 = useMemo(() => {
     const stage1PetIds = allPets
@@ -170,6 +164,12 @@ export default function PetTab() {
 
     return stage1PetIds.every((id) => collectedPetIds.includes(id));
   }, [allPets, collectedPetIds]);
+
+  // playerId가 유효하지 않거나 필수 데이터(allPets)가 없으면 로딩
+  if (!playerId || (allPets.length === 0 && isLoading))
+    return <div>Loading...</div>;
+
+  const points = player?.totalPoint ?? 0;
 
   return (
     <div className="flex h-auto flex-col gap-4 text-amber-900">
