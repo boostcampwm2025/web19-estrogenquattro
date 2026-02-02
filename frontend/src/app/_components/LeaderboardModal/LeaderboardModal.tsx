@@ -210,10 +210,11 @@ export default function LeaderboardModal() {
             <span className="text-center">프로필</span>
             <span className="text-center">깃허브 네임</span>
             <span className="text-center">
-              {selectedTab === POINT_TYPES.ALL ||
-              selectedTab === POINT_TYPES.FOCUSED
+              {selectedTab === POINT_TYPES.ALL
                 ? "포인트"
-                : "횟수"}
+                : selectedTab === POINT_TYPES.FOCUSED
+                  ? "시간"
+                  : "횟수"}
             </span>
           </div>
 
@@ -225,14 +226,22 @@ export default function LeaderboardModal() {
               </div>
             ) : (
               cachedData.players.map((player) => (
-                <PlayerRow key={player.playerId} player={player} />
+                <PlayerRow
+                  key={player.playerId}
+                  player={player}
+                  selectedTab={selectedTab}
+                />
               ))
             )}
           </div>
 
           {/* 내 순위 */}
           <div className="border-t-2 border-amber-900/30 pt-3">
-            <PlayerRow player={cachedData.myRank} isMyRank />
+            <PlayerRow
+              player={cachedData.myRank}
+              isMyRank
+              selectedTab={selectedTab}
+            />
           </div>
         </div>
       </div>

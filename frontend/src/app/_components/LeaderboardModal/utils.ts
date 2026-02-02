@@ -33,6 +33,20 @@ export function formatTime(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+// 초를 "Xh Ym Zs" 형식으로 변환 (UI 공간 절약을 위해 약어 사용)
+export function formatSecondsToHMS(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+
+  return parts.join(" ");
+}
+
 // 백엔드 TotalRankRes를 프론트엔드 LeaderboardPlayer로 변환
 export function toLeaderboardPlayerFromTotal(
   rank: TotalRankRes,

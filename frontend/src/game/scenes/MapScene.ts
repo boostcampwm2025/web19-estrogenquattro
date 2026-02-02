@@ -4,22 +4,15 @@ import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 import { useProgressStore } from "@/stores/useProgressStore";
-import {
-  createContributionList,
-  ContributionController,
-} from "@/game/ui/createContributionList";
 import MapManager, { MapConfig } from "../managers/MapManager";
 import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
 import { API_URL } from "@/lib/api/client";
 
-export type { ContributionController };
-
 export class MapScene extends Phaser.Scene {
   private player?: Player;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  private xKey?: Phaser.Input.Keyboard.Key;
   private username: string = "";
   private playerId: number = 0;
 
@@ -28,9 +21,6 @@ export class MapScene extends Phaser.Scene {
   private socketManager!: SocketManager;
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
-
-  // UI Controllers
-  private contributionController?: ContributionController;
 
   // Connection Lost Overlay
   private connectionLostOverlay?: Phaser.GameObjects.Rectangle;
@@ -187,19 +177,13 @@ export class MapScene extends Phaser.Scene {
       // Collisions Setup
       this.setupCollisions();
 
-      // UI Setup
-      this.setupUI();
-
       // Camera Setup
       this.cameraController = new CameraController(this);
       const { width, height } = this.mapManager.getMapSize();
       this.cameraController.setup(width, height, this.player?.getContainer());
 
-      // SocketManager에 walls, contributionController 설정
+      // SocketManager에 walls 설정
       this.socketManager.setWalls(this.mapManager.getWalls()!);
-      this.socketManager.setContributionController(
-        this.contributionController!,
-      );
     });
   }
 
@@ -275,21 +259,7 @@ export class MapScene extends Phaser.Scene {
   private setupControls() {
     if (this.input.keyboard) {
       this.cursors = this.input.keyboard.createCursorKeys();
-      this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     }
-  }
-
-  private setupUI() {
-    const { width: mapWidth } = this.mapManager.getMapSize();
-
-    if (this.contributionController) {
-      this.contributionController.destroy();
-    }
-
-    // 프로그레스바는 React ProgressBar.tsx 컴포넌트로 이동
-    // 맵 전환은 서버 map_switch 이벤트 → performMapSwitch()로 처리
-
-    this.contributionController = createContributionList(this, mapWidth, 50);
   }
 
   /**
@@ -298,14 +268,10 @@ export class MapScene extends Phaser.Scene {
   private performMapSwitch(mapIndex: number) {
     this.mapManager.switchToMap(mapIndex, () => {
       this.setupCollisions();
-      this.setupUI();
       const { width, height } = this.mapManager.getMapSize();
       this.cameraController.updateBounds(width, height);
       this.socketManager.setWalls(this.mapManager.getWalls()!);
       this.socketManager.setupCollisions();
-      this.socketManager.setContributionController(
-        this.contributionController!,
-      );
 
       // 플레이어 리스폰 (wall 피해 랜덤 위치) + 위치 동기화
       if (this.player) {
@@ -438,15 +404,6 @@ export class MapScene extends Phaser.Scene {
 
   update() {
     if (!this.player || !this.cursors) return;
-
-    // 테스트: X 키로 게이지 100% 채우기
-    if (this.xKey && Phaser.Input.Keyboard.JustDown(this.xKey)) {
-      const currentProgress = useProgressStore.getState().getProgress();
-      const remaining = 100 - currentProgress;
-      if (remaining > 0) {
-        useProgressStore.getState().addProgress(remaining);
-      }
-    }
 
     // 집중 시간 업데이트 (타임스탬프 기반 계산)
     const focusTime = useFocusTimeStore.getState().getFocusTime();
