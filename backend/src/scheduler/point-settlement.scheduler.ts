@@ -22,10 +22,10 @@ export class PointSettlementScheduler {
     private readonly progressGateway: ProgressGateway,
   ) {}
 
-  // KST 24시 동작
+  // KST 자정 동작 (전날 데이터 정산)
   @Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
   async handlePointSettlement(): Promise<void> {
-    this.logger.log('KST 24:00:00 Point Settlement Scheduling Start');
+    this.logger.log('Point Settlement Scheduling Start');
 
     const { start, end } = getYesterdayKstRange();
     this.logger.log(
@@ -35,7 +35,7 @@ export class PointSettlementScheduler {
     await this.settleFocusTimePoints(start, end);
     await this.settleTaskCompletedPoints(start, end);
 
-    this.logger.log('KST 24:00:00 Point Settlement Scheduling Completed');
+    this.logger.log('Point Settlement Scheduling Completed');
   }
 
   private async settleFocusTimePoints(start: Date, end: Date): Promise<void> {
