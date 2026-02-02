@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { Button } from "@/_components/ui/button";
 import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
@@ -13,7 +13,7 @@ interface CalendarHeatmapProps {
   selectedDate?: Date;
 }
 
-export function CalendarHeatmap({
+export const CalendarHeatmap = memo(function CalendarHeatmap({
   dailyPoints,
   onSelectDate,
   selectedDate,
@@ -42,15 +42,15 @@ export function CalendarHeatmap({
     container.scrollTo({ left: newPosition, behavior: "smooth" });
   };
 
-  const handleMouseMove = (e: React.MouseEvent, day: DayData) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent, day: DayData) => {
     if (day.value === -1) return;
     setHoveredDay(day);
     setMousePosition({ x: e.clientX, y: e.clientY });
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setHoveredDay(null);
-  };
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -169,4 +169,4 @@ export function CalendarHeatmap({
       )}
     </div>
   );
-}
+});
