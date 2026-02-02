@@ -587,6 +587,7 @@ export class GithubPollService {
     }
 
     this.logger.log('Events processed summary', {
+      method: 'pollGithubEvents',
       username,
       totalEvents,
       commits: details.commits.length,
