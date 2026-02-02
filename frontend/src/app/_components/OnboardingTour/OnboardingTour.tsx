@@ -187,6 +187,11 @@ export default function OnboardingTour() {
         return; // 대화창 내부 클릭은 허용
       }
 
+      // 연결 끊김 오버레이 클릭은 항상 허용 (서버 문제는 온보딩보다 우선)
+      if (target.closest('[class*="z-[110]"]')) {
+        return;
+      }
+
       // 트리거 대상 확인용 헬퍼 함수
       const isClickOnTrigger = (selector: string | undefined) => {
         if (!selector) return false;

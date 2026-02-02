@@ -19,6 +19,9 @@ import { RoomService } from '../room/room.service';
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
 import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Task } from '../task/entites/task.entity';
 
 @WebSocketGateway()
 export class PlayerGateway
@@ -34,6 +37,8 @@ export class PlayerGateway
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
     private readonly focusTimeService: FocusTimeService,
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
   ) {}
   @WebSocketServer()
   server: Server;
@@ -113,7 +118,7 @@ export class PlayerGateway
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string; startAt: string },
+    data: { x: number; y: number; username: string },
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = this.roomService.randomJoin(client.id);
@@ -153,6 +158,9 @@ export class PlayerGateway
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
 
+    // stale 세션 정리 (장기 미접속 후 재접속 시)
+    await this.focusTimeService.settleStaleSession(playerId);
+
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
@@ -165,28 +173,42 @@ export class PlayerGateway
       petImage: petImage,
     });
 
-    // 2. 방에 있는 플레이어들의 Focus 상태 감지
+    // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
     const roomPlayerIds = this.roomService.getPlayerIds(roomId);
-    const focusStatuses = await this.focusTimeService.findAllStatuses(
-      roomPlayerIds,
-      new Date(data.startAt),
-    );
+    const focusStatuses =
+      await this.focusTimeService.findAllStatuses(roomPlayerIds);
+
+    // focusingTaskId가 있는 플레이어들의 Task 정보 조회
+    const focusingTaskIds = focusStatuses
+      .filter((fs) => fs.focusingTaskId != null)
+      .map((fs) => fs.focusingTaskId as number);
+
+    const tasks =
+      focusingTaskIds.length > 0
+        ? await this.taskRepository
+            .createQueryBuilder('task')
+            .where('task.id IN (:...ids)', { ids: focusingTaskIds })
+            .getMany()
+        : [];
+    const taskMap = new Map(tasks.map((t) => [t.id, t]));
+
     // Map playerId -> status info
     const statusMap = new Map<
       number,
       {
-        status: string;
+        isFocusing: boolean;
         lastFocusStartTime: Date | null;
-        totalFocusSeconds: number;
-        currentTask: { description: string } | null;
+        focusingTaskId: number | null;
+        taskName: string | null;
       }
     >();
     focusStatuses.forEach((fs) => {
-      statusMap.set(fs.player.id, {
-        status: fs.status,
+      const task = fs.focusingTaskId ? taskMap.get(fs.focusingTaskId) : null;
+      statusMap.set(fs.playerId, {
+        isFocusing: fs.isFocusing,
         lastFocusStartTime: fs.lastFocusStartTime,
-        totalFocusSeconds: fs.totalFocusSeconds,
-        currentTask: fs.currentTask,
+        focusingTaskId: fs.focusingTaskId,
+        taskName: task?.description ?? null,
       });
     });
 
@@ -198,7 +220,7 @@ export class PlayerGateway
 
         // 서버에서 현재 세션 경과 시간 계산
         const currentSessionSeconds =
-          status?.status === FocusStatus.FOCUSING && status?.lastFocusStartTime
+          status?.isFocusing && status?.lastFocusStartTime
             ? Math.floor(
                 (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
               )
@@ -206,35 +228,32 @@ export class PlayerGateway
 
         return {
           ...p,
-          status: status?.status ?? 'RESTING',
+          status: status?.isFocusing
+            ? FocusStatus.FOCUSING
+            : FocusStatus.RESTING,
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusSeconds: status?.totalFocusSeconds ?? 0,
+          totalFocusSeconds: 0, // V2에서는 daily_focus_time 조회 생략 (필요시 추가)
           currentSessionSeconds,
-          // FOCUSING 상태일 때만 taskName 반환 (RESTING 시 stale 값 방지)
-          taskName:
-            status?.status === FocusStatus.FOCUSING
-              ? (status?.currentTask?.description ?? null)
-              : null,
+          // FOCUSING 상태일 때만 taskName 반환
+          taskName: status?.isFocusing ? status?.taskName : null,
         };
       });
 
     // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
 
-    // 4. Update FocusTime (이미 조회한 player 객체 재사용 가능하지만 findOrCreate 로직 유지)
-    const myFocusTime = await this.focusTimeService.findOrCreate(
-      player,
-      new Date(data.startAt),
-    );
+    // 4. 내 FocusTime 상태 조회 (player 기반)
+    const myFocusStatus =
+      await this.focusTimeService.getPlayerFocusStatus(playerId);
 
-    // 서버에서 현재 세션 경과 시간 계산
-    const myCurrentSessionSeconds =
-      myFocusTime.status === FocusStatus.FOCUSING &&
-      myFocusTime.lastFocusStartTime
-        ? Math.floor(
-            (Date.now() - myFocusTime.lastFocusStartTime.getTime()) / 1000,
-          )
-        : 0;
+    // 내가 집중 중인 Task 정보 조회
+    let myTaskName: string | null = null;
+    if (myFocusStatus.focusingTaskId) {
+      const myTask = await this.taskRepository.findOne({
+        where: { id: myFocusStatus.focusingTaskId },
+      });
+      myTaskName = myTask?.description ?? null;
+    }
 
     // 5. 남들이 볼 내 캐릭터 그리기 (focusTime 정보 포함)
     client.to(roomId).emit('player_joined', {
@@ -242,16 +261,15 @@ export class PlayerGateway
       username: username,
       x: data.x,
       y: data.y,
-      status: myFocusTime.status,
-      totalFocusSeconds: myFocusTime.totalFocusSeconds,
-      currentSessionSeconds: myCurrentSessionSeconds,
+      status: myFocusStatus.isFocusing
+        ? FocusStatus.FOCUSING
+        : FocusStatus.RESTING,
+      totalFocusSeconds: myFocusStatus.totalFocusSeconds,
+      currentSessionSeconds: myFocusStatus.currentSessionSeconds,
       playerId: playerId,
-      petImage: petImage, // DB에서 가져온 펫 정보 전송
-      // FOCUSING 상태일 때만 taskName 반환 (RESTING 시 stale 값 방지)
-      taskName:
-        myFocusTime.status === FocusStatus.FOCUSING
-          ? (myFocusTime.currentTask?.description ?? null)
-          : null,
+      petImage: petImage,
+      // FOCUSING 상태일 때만 taskName 반환
+      taskName: myFocusStatus.isFocusing ? myTaskName : null,
     });
 
     const connectedAt = new Date();
@@ -273,9 +291,11 @@ export class PlayerGateway
     client.emit('joined', {
       roomId,
       focusTime: {
-        status: myFocusTime.status,
-        totalFocusSeconds: myFocusTime.totalFocusSeconds,
-        currentSessionSeconds: myCurrentSessionSeconds,
+        status: myFocusStatus.isFocusing
+          ? FocusStatus.FOCUSING
+          : FocusStatus.RESTING,
+        totalFocusSeconds: myFocusStatus.totalFocusSeconds,
+        currentSessionSeconds: myFocusStatus.currentSessionSeconds,
       },
     });
   }

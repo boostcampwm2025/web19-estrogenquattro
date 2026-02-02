@@ -184,7 +184,7 @@ availableRooms: roomId[];  // O(1) 랜덤 선택용
   player: Player;
   total_focus_seconds: number;
   status: 'FOCUSING' | 'RESTING';
-  created_date: Date;              // YYYY-MM-DD
+  created_at: Date;                // datetime
   last_focus_start_time: Date;     // nullable
   current_task_id: number;         // nullable
 }
@@ -244,8 +244,8 @@ Task CRUD 및 완료 처리
   player: Player;
   description: string;           // 100자 제한
   total_focus_seconds: number;
-  completed_date: Date | null;   // 완료 시 날짜
-  created_date: Date;            // YYYY-MM-DD
+  completed_at: Date | null;     // 완료 시각
+  created_at: Date;              // datetime
 }
 ```
 
@@ -272,8 +272,8 @@ roomStates: Map<roomId, {
 
 **폴링 시스템:**
 ```typescript
-POLL_INTERVAL = 30_000;         // 30초
-POLL_INTERVAL_BACKOFF = 120_000; // 429 응답 시
+POLL_INTERVAL = 120_000;        // 120초 (REST Events API 갱신 지연 고려)
+POLL_INTERVAL_BACKOFF = 600_000; // 10분 (rate limit 시)
 
 pollingSchedules: Map<username, {
   timeout: NodeJS.Timeout;
@@ -344,7 +344,8 @@ sequenceDiagram
 |--------|------|------|
 | GET | `/api/points` | 포인트 조회 |
 
-> **Note:** 포인트 획득 로직은 미구현 상태
+**관련 모듈:**
+- `PointHistoryModule` - 포인트 히스토리 조회/저장
 
 ---
 
@@ -361,6 +362,41 @@ sequenceDiagram
 |--------|------|------|
 | `chatting` | C→S | 채팅 메시지 전송 |
 | `chatted` | S→C | 채팅 메시지 브로드캐스트 |
+
+---
+
+### SchedulerModule
+
+정산 및 시즌 리셋 스케줄러
+
+| 파일 | 역할 |
+|------|------|
+| `point-settlement.scheduler.ts` | 포인트/집중시간/Task 정산 |
+
+**주요 스케줄:**
+
+| 크론 표현식 | 설명 |
+|------------|------|
+| `0 0 15 * * *` | KST 자정 (UTC 15:00) Task/집중시간 정산 |
+| `0 0 15 * * 1` | 매주 월요일 KST 자정 시즌 리셋 |
+
+**정산 로직:**
+```typescript
+// KST 자정에 실행
+@Cron('0 0 15 * * *')
+async settleDaily() {
+  // 완료된 Task의 집중 시간으로 포인트 적립
+  // 전일 집중 시간 정산
+}
+
+// 매주 월요일 KST 자정에 실행
+@Cron('0 0 15 * * 1')
+async resetSeason() {
+  // progress, contributions 초기화
+  // map_index를 0으로 리셋
+  // season_reset 이벤트 브로드캐스트
+}
+```
 
 ---
 

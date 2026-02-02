@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
-import { taskApi } from "@/lib/api";
+import { taskApi, ApiError } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
 import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
 import { getSocket } from "@/lib/socket";
@@ -10,6 +10,7 @@ import {
   parseLocalDate,
   toDateString,
 } from "@/utils/timeFormat";
+import { getErrorMessage } from "@/lib/errors/messages";
 
 const MAX_TASK_TEXT_LENGTH = 100;
 
@@ -156,18 +157,26 @@ export const useTasksStore = create<TasksStore>((set, get) => {
       const taskToDelete = taskIndex >= 0 ? tasks[taskIndex] : undefined;
       if (!taskToDelete) return;
 
-      set({ error: null });
-      addPending(id);
+      // 집중 중인 Task는 삭제 차단 (서버 요청 없이 즉시 에러)
+      if (taskToDelete.isRunning) {
+        set({ error: getErrorMessage("TASK_FOCUSING") });
+        return;
+      }
 
       // 낙관적 업데이트
-      set((state) => ({
-        tasks: state.tasks.filter((t) => t.id !== id),
-      }));
+      set({ error: null });
+      addPending(id);
+      set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
 
       try {
         await taskApi.deleteTask(id);
       } catch (error) {
         devLogger.error("Failed to delete task", { id, error });
+        const errorCode = error instanceof ApiError ? error.code : undefined;
+        const errorMessage = getErrorMessage(
+          errorCode,
+          "Task 삭제에 실패했습니다.",
+        );
         // 롤백
         set((state) => ({
           tasks: [
@@ -175,7 +184,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
             taskToDelete,
             ...state.tasks.slice(taskIndex),
           ],
-          error: "Task 삭제에 실패했습니다.",
+          error: errorMessage,
         }));
       } finally {
         removePending(id);

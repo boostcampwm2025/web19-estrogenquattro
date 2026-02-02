@@ -8,6 +8,20 @@ import {
 import { Socket } from 'socket.io';
 import { RoomService } from '../room/room.service';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
+import { CHAT_MAX_LENGTH } from './chat.constants';
+
+interface ChatMessage {
+  message: string;
+}
+
+function isChatMessage(data: unknown): data is ChatMessage {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'message' in data &&
+    typeof (data as ChatMessage).message === 'string'
+  );
+}
 
 @WebSocketGateway()
 export class ChatGateway {
@@ -20,14 +34,25 @@ export class ChatGateway {
 
   @SubscribeMessage('chatting')
   handleMessage(
-    @MessageBody()
-    data: {
-      message: string;
-    },
-    @ConnectedSocket()
-    client: Socket,
+    @MessageBody() data: unknown,
+    @ConnectedSocket() client: Socket,
   ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    // 1. 타입 검증
+    if (!isChatMessage(data)) {
+      this.logger.warn(`Invalid message payload: ${typeof data}`);
+      return;
+    }
+
+    // 2. 내용 검증: 공백만 있거나 길이 초과 (길이는 원문 기준)
+    if (
+      data.message.trim().length === 0 ||
+      data.message.length > CHAT_MAX_LENGTH
+    ) {
+      this.logger.warn(`Invalid message: length=${data.message.length}`);
+      return;
+    }
 
     const roomId = this.roomService.getRoomIdBySocketId(client.id);
     if (!roomId) return;

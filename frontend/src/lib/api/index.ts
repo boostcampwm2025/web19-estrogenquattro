@@ -1,4 +1,4 @@
-export { fetchApi, API_URL } from "./client";
+export { fetchApi, API_URL, ApiError } from "./client";
 export { taskApi, type TaskRes, type TaskListRes } from "./task";
 export {
   pointApi,

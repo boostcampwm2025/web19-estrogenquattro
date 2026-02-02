@@ -226,47 +226,57 @@ export class GithubPollService {
   }
 
   private async handlePoll(username: string) {
-    const schedule = this.pollingSchedules.get(username);
-    if (!schedule) return;
+    try {
+      const schedule = this.pollingSchedules.get(username);
+      if (!schedule) return;
 
-    const result = await this.pollGithubEvents(username);
+      const result = await this.pollGithubEvents(username);
 
-    // 폴링 중지된 경우 (401 토큰 만료)
-    if (result.status === 'stopped') {
-      return;
+      // 폴링 중지된 경우 (401 토큰 만료)
+      if (result.status === 'stopped') {
+        return;
+      }
+
+      // 다음 폴링 간격 결정
+      let nextInterval: number;
+      switch (result.status) {
+        case 'new_events':
+          nextInterval = POLL_INTERVAL;
+          this.progressGateway.castProgressUpdate(
+            result.data!.username,
+            ProgressSource.GITHUB,
+            result.data!,
+          );
+          break;
+        case 'first_poll':
+        case 'no_changes':
+          nextInterval = POLL_INTERVAL;
+          break;
+        case 'rate_limited':
+          nextInterval = POLL_INTERVAL_BACKOFF;
+          this.logger.warn(
+            `Rate limited for user: ${schedule.username}, retry after ${nextInterval / 1000}s`,
+          );
+          break;
+        case 'error':
+        default:
+          nextInterval = POLL_INTERVAL;
+          break;
+      }
+
+      this.logger.debug(
+        `Next poll for ${username} in ${nextInterval / 1000}s (status: ${result.status})`,
+      );
+      this.scheduleNextPoll(username, nextInterval);
+    } catch (error) {
+      this.logger.error(
+        `[${username}] Unexpected error in handlePoll: ${error instanceof Error ? error.message : error}`,
+      );
+      // 이미 중지된 경우(401 등) 재스케줄링하지 않음
+      if (this.pollingSchedules.has(username)) {
+        this.scheduleNextPoll(username, POLL_INTERVAL);
+      }
     }
-
-    // 다음 폴링 간격 결정
-    let nextInterval: number;
-    switch (result.status) {
-      case 'new_events':
-        nextInterval = POLL_INTERVAL;
-        this.progressGateway.castProgressUpdate(
-          result.data!.username,
-          ProgressSource.GITHUB,
-          result.data!,
-        );
-        break;
-      case 'first_poll':
-      case 'no_changes':
-        nextInterval = POLL_INTERVAL;
-        break;
-      case 'rate_limited':
-        nextInterval = POLL_INTERVAL_BACKOFF;
-        this.logger.warn(
-          `Rate limited for user: ${schedule.username}, retry after ${nextInterval / 1000}s`,
-        );
-        break;
-      case 'error':
-      default:
-        nextInterval = POLL_INTERVAL;
-        break;
-    }
-
-    this.logger.debug(
-      `Next poll for ${username} in ${nextInterval / 1000}s (status: ${result.status})`,
-    );
-    this.scheduleNextPoll(username, nextInterval);
   }
 
   private async pollGithubEvents(username: string): Promise<{
@@ -348,7 +358,15 @@ export class GithubPollService {
       schedule.etag = newEtag;
     }
 
-    const eventsData: unknown = await res.json();
+    let eventsData: unknown;
+    try {
+      eventsData = await res.json();
+    } catch (error) {
+      this.logger.error(
+        `[${username}] Failed to parse JSON response (status: ${res.status}, content-type: ${res.headers.get('content-type')}): ${error}`,
+      );
+      return { status: 'error' };
+    }
 
     if (!isGithubEventArray(eventsData)) {
       this.logger.error(`[${username}] Invalid events response format`);
@@ -417,96 +435,120 @@ export class GithubPollService {
 
     // 커밋
     if (details.commits.length > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.COMMITTED,
-        details.commits.length,
-      );
-      for (const commit of details.commits) {
-        await this.pointService.addPoint(
+      try {
+        await this.githubService.incrementActivity(
           playerId,
-          PointType.COMMITTED,
-          1,
-          commit.repository,
-          commit.message,
-          commit.activityAt,
+          GithubActivityType.COMMITTED,
+          details.commits.length,
         );
+        for (const commit of details.commits) {
+          await this.pointService.addPoint(
+            playerId,
+            PointType.COMMITTED,
+            1,
+            commit.repository,
+            commit.message,
+            commit.activityAt,
+          );
+        }
+      } catch (error) {
+        this.logger.error(`[${username}] Failed to save commit data: ${error}`);
       }
     }
 
     // PR 생성
     if (details.prOpens.length > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.PR_OPEN,
-        details.prOpens.length,
-      );
-      for (const pr of details.prOpens) {
-        await this.pointService.addPoint(
+      try {
+        await this.githubService.incrementActivity(
           playerId,
-          PointType.PR_OPEN,
-          1,
-          pr.repository,
-          pr.title,
-          pr.activityAt,
+          GithubActivityType.PR_OPEN,
+          details.prOpens.length,
+        );
+        for (const pr of details.prOpens) {
+          await this.pointService.addPoint(
+            playerId,
+            PointType.PR_OPEN,
+            1,
+            pr.repository,
+            pr.title,
+            pr.activityAt,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `[${username}] Failed to save PR open data: ${error}`,
         );
       }
     }
 
     // PR 머지
     if (details.prMerges.length > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.PR_MERGED,
-        details.prMerges.length,
-      );
-      for (const pr of details.prMerges) {
-        await this.pointService.addPoint(
+      try {
+        await this.githubService.incrementActivity(
           playerId,
-          PointType.PR_MERGED,
-          1,
-          pr.repository,
-          pr.title,
-          pr.activityAt,
+          GithubActivityType.PR_MERGED,
+          details.prMerges.length,
+        );
+        for (const pr of details.prMerges) {
+          await this.pointService.addPoint(
+            playerId,
+            PointType.PR_MERGED,
+            1,
+            pr.repository,
+            pr.title,
+            pr.activityAt,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `[${username}] Failed to save PR merge data: ${error}`,
         );
       }
     }
 
     // 이슈 생성
     if (details.issues.length > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.ISSUE_OPEN,
-        details.issues.length,
-      );
-      for (const issue of details.issues) {
-        await this.pointService.addPoint(
+      try {
+        await this.githubService.incrementActivity(
           playerId,
-          PointType.ISSUE_OPEN,
-          1,
-          issue.repository,
-          issue.title,
-          issue.activityAt,
+          GithubActivityType.ISSUE_OPEN,
+          details.issues.length,
         );
+        for (const issue of details.issues) {
+          await this.pointService.addPoint(
+            playerId,
+            PointType.ISSUE_OPEN,
+            1,
+            issue.repository,
+            issue.title,
+            issue.activityAt,
+          );
+        }
+      } catch (error) {
+        this.logger.error(`[${username}] Failed to save issue data: ${error}`);
       }
     }
 
     // PR 리뷰
     if (details.reviews.length > 0) {
-      await this.githubService.incrementActivity(
-        playerId,
-        GithubActivityType.PR_REVIEWED,
-        details.reviews.length,
-      );
-      for (const review of details.reviews) {
-        await this.pointService.addPoint(
+      try {
+        await this.githubService.incrementActivity(
           playerId,
-          PointType.PR_REVIEWED,
-          1,
-          review.repository,
-          review.prTitle,
-          review.activityAt,
+          GithubActivityType.PR_REVIEWED,
+          details.reviews.length,
         );
+        for (const review of details.reviews) {
+          await this.pointService.addPoint(
+            playerId,
+            PointType.PR_REVIEWED,
+            1,
+            review.repository,
+            review.prTitle,
+            review.activityAt,
+          );
+        }
+      } catch (error) {
+        this.logger.error(`[${username}] Failed to save review data: ${error}`);
       }
     }
 
@@ -565,92 +607,108 @@ export class GithubPollService {
     }> = [];
 
     for (const event of events) {
-      const repoName = event.repo.name;
-      const activityAt = new Date(event.created_at);
+      try {
+        const repoName = event.repo.name;
+        const activityAt = new Date(event.created_at);
 
-      switch (event.type) {
-        case 'PushEvent': {
-          const pushPayload = event.payload as PushEventPayload;
+        switch (event.type) {
+          case 'PushEvent': {
+            const pushPayload = event.payload as PushEventPayload;
 
-          // Compare API로 실제 커밋 정보 조회
-          const commitDetails = await this.getCommitDetails(
-            repoName,
-            pushPayload.before,
-            pushPayload.head,
-            schedule.accessToken,
-          );
-
-          for (const msg of commitDetails.messages) {
-            commits.push({ repository: repoName, message: msg, activityAt });
-            this.logger.debug(
-              `[${schedule.username}] COMMIT: "${msg}" (${repoName})`,
-            );
-          }
-          break;
-        }
-
-        case 'PullRequestEvent': {
-          const prPayload = event.payload as PullRequestEventPayload;
-          const prNumber = prPayload.number;
-
-          if (prPayload.action === 'opened') {
-            const prTitle = await this.getPrTitle(
+            // Compare API로 실제 커밋 정보 조회
+            const commitDetails = await this.getCommitDetails(
               repoName,
-              prNumber,
+              pushPayload.before,
+              pushPayload.head,
               schedule.accessToken,
             );
-            prOpens.push({ repository: repoName, title: prTitle, activityAt });
-            this.logger.debug(
-              `[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`,
-            );
-          } else if (
-            prPayload.action === 'merged' ||
-            (prPayload.action === 'closed' &&
-              prPayload.pull_request?.merged === true)
-          ) {
-            const prTitle = await this.getPrTitle(
-              repoName,
-              prNumber,
-              schedule.accessToken,
-            );
-            prMerges.push({ repository: repoName, title: prTitle, activityAt });
-            this.logger.debug(
-              `[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`,
-            );
-          }
-          break;
-        }
 
-        case 'IssuesEvent': {
-          const issuePayload = event.payload as IssuesEventPayload;
-          if (issuePayload.action === 'opened') {
-            issues.push({
-              repository: repoName,
-              title: issuePayload.issue.title,
-              activityAt,
-            });
-            this.logger.debug(
-              `[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`,
-            );
+            for (const msg of commitDetails.messages) {
+              commits.push({ repository: repoName, message: msg, activityAt });
+              this.logger.debug(
+                `[${schedule.username}] COMMIT: "${msg}" (${repoName})`,
+              );
+            }
+            break;
           }
-          break;
-        }
 
-        case 'PullRequestReviewEvent': {
-          const reviewPayload = event.payload as PullRequestReviewEventPayload;
-          if (reviewPayload.action === 'created') {
-            const prTitle = await this.getPrTitle(
-              repoName,
-              reviewPayload.pull_request.number,
-              schedule.accessToken,
-            );
-            reviews.push({ repository: repoName, prTitle, activityAt });
-            this.logger.debug(
-              `[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`,
-            );
+          case 'PullRequestEvent': {
+            const prPayload = event.payload as PullRequestEventPayload;
+            const prNumber = prPayload.number;
+
+            if (prPayload.action === 'opened') {
+              const prTitle = await this.getPrTitle(
+                repoName,
+                prNumber,
+                schedule.accessToken,
+              );
+              prOpens.push({
+                repository: repoName,
+                title: prTitle,
+                activityAt,
+              });
+              this.logger.debug(
+                `[${schedule.username}] PR OPENED: "${prTitle}" #${prNumber} (${repoName})`,
+              );
+            } else if (
+              prPayload.action === 'merged' ||
+              (prPayload.action === 'closed' &&
+                prPayload.pull_request?.merged === true)
+            ) {
+              const prTitle = await this.getPrTitle(
+                repoName,
+                prNumber,
+                schedule.accessToken,
+              );
+              prMerges.push({
+                repository: repoName,
+                title: prTitle,
+                activityAt,
+              });
+              this.logger.debug(
+                `[${schedule.username}] PR MERGED: "${prTitle}" #${prNumber} (${repoName})`,
+              );
+            }
+            break;
           }
-          break;
+
+          case 'IssuesEvent': {
+            const issuePayload = event.payload as IssuesEventPayload;
+            if (issuePayload.action === 'opened') {
+              issues.push({
+                repository: repoName,
+                title: issuePayload.issue.title,
+                activityAt,
+              });
+              this.logger.debug(
+                `[${schedule.username}] ISSUE OPENED: "${issuePayload.issue.title}" (${repoName})`,
+              );
+            }
+            break;
+          }
+
+          case 'PullRequestReviewEvent': {
+            const reviewPayload =
+              event.payload as PullRequestReviewEventPayload;
+            if (reviewPayload.action === 'created') {
+              const prTitle = await this.getPrTitle(
+                repoName,
+                reviewPayload.pull_request.number,
+                schedule.accessToken,
+              );
+              reviews.push({ repository: repoName, prTitle, activityAt });
+              this.logger.debug(
+                `[${schedule.username}] PR REVIEW: "${prTitle}" (${repoName})`,
+              );
+            }
+            break;
+          }
         }
+      } catch (error) {
+        this.logger.error(
+          `[${schedule.username}] Failed to process event ${event?.id ?? 'unknown'}: ${error}`,
+        );
+        continue;
       }
     }
 

@@ -5,6 +5,18 @@ export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "");
 
+// 에러 코드를 포함하는 API 에러 클래스
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 // 공통 fetch wrapper
 export async function fetchApi<T>(
   endpoint: string,
@@ -29,17 +41,30 @@ export async function fetchApi<T>(
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
-        throw new Error("Unauthorized");
+        throw new ApiError("Unauthorized", undefined, 401);
       }
 
       let errorMessage = `API Error: ${response.status}`;
+      let errorCode: string | undefined;
+
       if (text) {
         try {
           const data = JSON.parse(text) as {
             message?: unknown;
             error?: unknown;
             detail?: unknown;
+            code?: string;
           };
+
+          // 에러 코드 추출
+          if (
+            data &&
+            typeof data === "object" &&
+            typeof data.code === "string"
+          ) {
+            errorCode = data.code;
+          }
+
           const detailedMessage =
             (data && typeof data === "string" && data) ||
             (data &&
@@ -59,7 +84,7 @@ export async function fetchApi<T>(
           errorMessage += ` - ${snippet}`;
         }
       }
-      throw new Error(errorMessage);
+      throw new ApiError(errorMessage, errorCode, response.status);
     }
 
     return text ? JSON.parse(text) : ({} as T);

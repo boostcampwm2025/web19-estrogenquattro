@@ -121,6 +121,10 @@ socket.emit('moving', {
 - 플레이어 위치 최신화
 - 같은 방에 `moved` 브로드캐스트
 
+**용도:**
+- 일반 이동: 키보드 입력에 따른 실시간 이동
+- 리스폰 위치 동기화: 맵 전환 후 새 스폰 위치를 다른 클라이언트에 전달 (`isMoving: false`, `direction: 'down'`)
+
 ---
 
 ### chatting
@@ -129,12 +133,22 @@ socket.emit('moving', {
 
 ```typescript
 socket.emit('chatting', {
-  message: string  // 채팅 메시지
+  message: string  // 채팅 메시지 (최대 30자)
 });
 ```
 
+**메시지 제한:**
+- 최대 길이: 30자 (원문 기준, trim 전)
+- 공백만 있는 메시지 불가
+
 **서버 동작:**
-- 같은 방에 `chatted` 브로드캐스트
+1. 타입 검증 (`message`가 문자열인지)
+2. 내용 검증 (공백만 있거나 30자 초과 시 무시)
+3. 같은 방에 `chatted` 브로드캐스트
+
+**비정상 메시지 처리:**
+- 검증 실패 시 조용히 무시 (클라이언트에 피드백 없음)
+- 정상 사용자는 클라이언트 검증(HTML maxLength)으로 차단됨
 
 ---
 

@@ -1,9 +1,20 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
-import { DailyFocusTime, FocusStatus } from './entites/daily-focus-time.entity';
+import { WriteLockService } from '../database/write-lock.service';
+import { DailyFocusTime } from './entites/daily-focus-time.entity';
 import { Player } from '../player/entites/player.entity';
 import { Task } from '../task/entites/task.entity';
+import { getTodayKstRangeUtc } from '../util/date.util';
+
+const MAX_SESSION_SECONDS = 24 * 60 * 60; // 24시간
+
+export interface FocusRank {
+  playerId: number;
+  nickname: string;
+  count: number;
+  rank: number;
+}
 
 @Injectable()
 export class FocusTimeService {
@@ -12,271 +23,420 @@ export class FocusTimeService {
   constructor(
     @InjectRepository(DailyFocusTime)
     private readonly focusTimeRepository: Repository<DailyFocusTime>,
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
     private readonly dataSource: DataSource,
+    private readonly writeLock: WriteLockService,
   ) {}
 
-  async findOrCreate(player: Player, startAt: Date): Promise<DailyFocusTime> {
-    const start = startAt;
-    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
+  /**
+   * 오늘의 DailyFocusTime 레코드를 찾거나 생성
+   * 트랜잭션 내에서 호출되어야 함
+   */
+  async findOrCreate(
+    manager: EntityManager,
+    player: Player,
+    todayStart: Date,
+  ): Promise<DailyFocusTime> {
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-    const existing = await this.focusTimeRepository
+    this.logger.log(
+      `[findOrCreate] playerId=${player.id}, todayStart=${todayStart.toISOString()}, todayEnd=${todayEnd.toISOString()}`,
+    );
+
+    const existing = await manager
+      .getRepository(DailyFocusTime)
       .createQueryBuilder('ft')
-      .leftJoinAndSelect('ft.player', 'player')
-      .leftJoinAndSelect('ft.currentTask', 'currentTask')
+      .leftJoin('ft.player', 'player')
       .where('player.id = :playerId', { playerId: player.id })
-      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+      .andWhere('ft.createdAt BETWEEN :start AND :end', {
+        start: todayStart,
+        end: todayEnd,
+      })
       .getOne();
+
+    this.logger.log(
+      `[findOrCreate] existing=${existing ? `id=${existing.id}, createdAt=${existing.createdAt?.toISOString()}` : 'null'}`,
+    );
 
     if (existing) {
       return existing;
     }
 
-    const newFocusTime = this.focusTimeRepository.create({
+    const newFocusTime = manager.create(DailyFocusTime, {
       player,
       totalFocusSeconds: 0,
-      status: FocusStatus.RESTING,
-      createdAt: new Date(),
+      createdAt: todayStart, // KST day start 명시
     });
 
-    return this.focusTimeRepository.save(newFocusTime);
-  }
+    const saved = await manager.save(DailyFocusTime, newFocusTime);
+    this.logger.log(
+      `[findOrCreate] created new record id=${saved.id}, createdAt=${saved.createdAt?.toISOString()}`,
+    );
 
-  async startFocusing(
-    playerId: number,
-    startAt: Date,
-    taskId?: number,
-  ): Promise<DailyFocusTime> {
-    const now = new Date();
-    const start = startAt;
-    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
-
-    this.logger.log(`[TX START] startFocusing - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
-        this.logger.log(`[TX ACTIVE] startFocusing - playerId: ${playerId}`);
-        const focusTimeRepo = manager.getRepository(DailyFocusTime);
-        const taskRepo = manager.getRepository(Task);
-
-        const focusTime = await focusTimeRepo
-          .createQueryBuilder('ft')
-          .leftJoinAndSelect('ft.player', 'player')
-          .leftJoinAndSelect('ft.currentTask', 'currentTask')
-          .where('player.id = :playerId', { playerId })
-          .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
-          .getOne();
-
-        if (!focusTime) {
-          throw new NotFoundException(
-            'FocusTime record not found. Please join the room first.',
-          );
-        }
-
-        // taskId 소유권 검증
-        let verifiedTask: Task | null = null;
-        if (taskId) {
-          const task = await taskRepo.findOne({
-            where: { id: taskId, player: { id: playerId } },
-          });
-          if (task) {
-            verifiedTask = task;
-          } else {
-            this.logger.warn(
-              `Task ${taskId} not found or not owned by player ${playerId}, ignoring taskId`,
-            );
-          }
-        }
-
-        // 이미 집중 중이었다면 이전 집중 시간을 먼저 누적 (태스크 전환 시 시간 누락 방지)
-        const previousTaskId = focusTime.currentTask?.id ?? null;
-        if (
-          focusTime.status === FocusStatus.FOCUSING &&
-          focusTime.lastFocusStartTime
-        ) {
-          const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
-          const diffSeconds = Math.floor(diffMs / 1000);
-          focusTime.totalFocusSeconds += diffSeconds;
-
-          // 이전 Task의 집중 시간 업데이트
-          if (previousTaskId && diffSeconds > 0) {
-            await this.addFocusTimeToTask(
-              manager,
-              playerId,
-              previousTaskId,
-              diffSeconds,
-            );
-            this.logger.log(
-              `Task switch: saved ${diffSeconds}s for previous task ${previousTaskId}`,
-            );
-          }
-        }
-
-        focusTime.status = FocusStatus.FOCUSING;
-        focusTime.lastFocusStartTime = now;
-        // Fallback: @Column과 @ManyToOne 충돌 방지를 위해 둘 다 설정
-        focusTime.currentTaskId = verifiedTask?.id ?? null;
-        focusTime.currentTask = verifiedTask;
-
-        if (verifiedTask) {
-          this.logger.log(
-            `Player ${playerId} started focusing on task ${verifiedTask.id}`,
-          );
-        }
-
-        const result = await focusTimeRepo.save(focusTime);
-        this.logger.log(`[TX END] startFocusing - playerId: ${playerId}`);
-        return result;
-      })
-      .finally(() => {
-        this.logger.log(`[TX COMPLETE] startFocusing - playerId: ${playerId}`);
-      });
-  }
-
-  async startResting(
-    playerId: number,
-    startAt?: Date,
-  ): Promise<DailyFocusTime> {
-    const now = new Date();
-
-    this.logger.log(`[TX START] startResting - playerId: ${playerId}`);
-    return this.dataSource
-      .transaction(async (manager) => {
-        this.logger.log(`[TX ACTIVE] startResting - playerId: ${playerId}`);
-        const focusTimeRepo = manager.getRepository(DailyFocusTime);
-
-        let focusTime: DailyFocusTime | null;
-
-        if (startAt) {
-          // startAt이 있을 때: 해당 날짜 범위로 조회
-          const start = startAt;
-          const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
-
-          focusTime = await focusTimeRepo
-            .createQueryBuilder('ft')
-            .leftJoinAndSelect('ft.player', 'player')
-            .leftJoinAndSelect('ft.currentTask', 'currentTask')
-            .where('player.id = :playerId', { playerId })
-            .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
-            .getOne();
-        } else {
-          // startAt이 없을 때 (disconnect): 가장 최근 focusTime 조회
-          focusTime = await focusTimeRepo
-            .createQueryBuilder('ft')
-            .leftJoinAndSelect('ft.player', 'player')
-            .leftJoinAndSelect('ft.currentTask', 'currentTask')
-            .where('player.id = :playerId', { playerId })
-            .orderBy('ft.createdAt', 'DESC')
-            .getOne();
-        }
-
-        if (!focusTime) {
-          throw new NotFoundException(
-            'FocusTime record not found. Please join the room first.',
-          );
-        }
-
-        let diffSeconds = 0;
-        const currentTaskId = focusTime.currentTask?.id ?? null;
-
-        if (
-          focusTime.status === FocusStatus.FOCUSING &&
-          focusTime.lastFocusStartTime
-        ) {
-          const diffMs = now.getTime() - focusTime.lastFocusStartTime.getTime();
-          diffSeconds = Math.floor(diffMs / 1000);
-          focusTime.totalFocusSeconds += diffSeconds;
-
-          // 집중 중이던 Task가 있으면 해당 Task의 집중 시간도 업데이트
-          if (currentTaskId && diffSeconds > 0) {
-            await this.addFocusTimeToTask(
-              manager,
-              playerId,
-              currentTaskId,
-              diffSeconds,
-            );
-          }
-        }
-
-        focusTime.status = FocusStatus.RESTING;
-        focusTime.currentTaskId = null;
-        focusTime.currentTask = null;
-
-        const result = await focusTimeRepo.save(focusTime);
-        this.logger.log(`[TX END] startResting - playerId: ${playerId}`);
-        return result;
-      })
-      .finally(() => {
-        this.logger.log(`[TX COMPLETE] startResting - playerId: ${playerId}`);
-      });
+    return saved;
   }
 
   /**
-   * Task의 집중 시간을 추가 (소유권 검증 + 원자적 업데이트)
-   * 트랜잭션 내에서 실행되어야 함
+   * 집중 시작
+   * - player.lastFocusStartTime != null 이면 집중 상태
+   * - 이미 집중 중이면 이전 세션 정산 후 새 세션 시작
    */
-  private async addFocusTimeToTask(
-    manager: EntityManager,
-    playerId: number,
-    taskId: number,
-    seconds: number,
-  ): Promise<void> {
-    const result = await manager
-      .createQueryBuilder()
-      .update(Task)
-      .set({ totalFocusSeconds: () => `total_focus_seconds + ${seconds}` })
-      .where('id = :taskId', { taskId })
-      .andWhere('player_id = :playerId', { playerId })
-      .execute();
+  async startFocusing(playerId: number, taskId?: number): Promise<Player> {
+    const now = new Date();
 
-    if (!result.affected) {
-      this.logger.warn(
-        `Task ${taskId} not found or not owned by player ${playerId}, skipping focus time update`,
-      );
-      return;
+    this.logger.log(`[TX START] startFocusing - playerId: ${playerId}`);
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
+        this.logger.log(`[TX ACTIVE] startFocusing - playerId: ${playerId}`);
+
+        const player = await manager.findOne(Player, {
+          where: { id: playerId },
+        });
+        if (!player) {
+          throw new BadRequestException('Player not found');
+        }
+
+        // 1. taskId 정규화 (0, NaN, 음수 → null)
+        const normalizedTaskId = taskId != null && taskId > 0 ? taskId : null;
+
+        // 2. normalizedTaskId가 있으면 소유권 검증
+        if (normalizedTaskId) {
+          const task = await manager.findOne(Task, {
+            where: { id: normalizedTaskId, player: { id: playerId } },
+          });
+          if (!task) {
+            throw new BadRequestException(
+              'Task not found or not owned by player',
+            );
+          }
+        }
+
+        // 3. 이미 집중 중이면 이전 집중 정산
+        if (player.lastFocusStartTime) {
+          await this.settleCurrentSession(manager, player, now);
+        }
+
+        // 4. 새 집중 시작
+        player.focusingTaskId = normalizedTaskId;
+        player.lastFocusStartTime = now;
+        await manager.save(Player, player);
+
+        if (normalizedTaskId) {
+          this.logger.log(
+            `Player ${playerId} started focusing on task ${normalizedTaskId}`,
+          );
+        } else {
+          this.logger.log(`Player ${playerId} started global focusing`);
+        }
+
+        this.logger.log(`[TX END] startFocusing - playerId: ${playerId}`);
+        return player;
+      }),
+    );
+  }
+
+  /**
+   * 휴식 시작 (집중 종료)
+   * - player.lastFocusStartTime이 null이면 무시
+   * - 집중 시간 계산 후 daily_focus_time에 누적
+   */
+  async startResting(playerId: number): Promise<{
+    totalFocusSeconds: number;
+    sessionSeconds: number;
+  }> {
+    const now = new Date();
+
+    this.logger.log(`[TX START] startResting - playerId: ${playerId}`);
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
+        this.logger.log(`[TX ACTIVE] startResting - playerId: ${playerId}`);
+
+        const player = await manager.findOne(Player, {
+          where: { id: playerId },
+        });
+        if (!player) {
+          throw new BadRequestException('Player not found');
+        }
+
+        // 집중 중이 아니면 무시
+        if (!player.lastFocusStartTime) {
+          this.logger.log(
+            `Player ${playerId} is not focusing, ignoring resting`,
+          );
+          const todayRecord = await this.findOrCreate(
+            manager,
+            player,
+            getTodayKstRangeUtc().start,
+          );
+          return {
+            totalFocusSeconds: todayRecord.totalFocusSeconds,
+            sessionSeconds: 0,
+          };
+        }
+
+        // 세션 정산
+        const sessionSeconds = await this.settleCurrentSession(
+          manager,
+          player,
+          now,
+        );
+
+        // player 초기화
+        player.focusingTaskId = null;
+        player.lastFocusStartTime = null;
+        await manager.save(Player, player);
+
+        const todayRecord = await this.findOrCreate(
+          manager,
+          player,
+          getTodayKstRangeUtc().start,
+        );
+
+        this.logger.log(`[TX END] startResting - playerId: ${playerId}`);
+        return {
+          totalFocusSeconds: todayRecord.totalFocusSeconds,
+          sessionSeconds,
+        };
+      }),
+    );
+  }
+
+  /**
+   * 현재 세션 정산 (내부 헬퍼)
+   * - 집중 시간 계산 (24시간 클램프)
+   * - daily_focus_time에 누적
+   * - Task에 누적 (focusingTaskId가 있고, 본인 소유 Task일 때만)
+   * - player 상태는 변경하지 않음 (호출자가 처리)
+   */
+  private async settleCurrentSession(
+    manager: EntityManager,
+    player: Player,
+    now: Date,
+  ): Promise<number> {
+    if (!player.lastFocusStartTime) {
+      return 0;
     }
 
-    this.logger.log(`Added ${seconds}s to task ${taskId}`);
+    // 시간 계산
+    const diffMs = now.getTime() - player.lastFocusStartTime.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+
+    // 유효 범위 클램프 (음수 방지 + 24시간 초과 방지)
+    const validSeconds = Math.max(
+      0,
+      Math.min(diffSeconds, MAX_SESSION_SECONDS),
+    );
+
+    if (validSeconds > 0) {
+      // 오늘 daily_focus_time에 누적
+      const todayRecord = await this.findOrCreate(
+        manager,
+        player,
+        getTodayKstRangeUtc().start,
+      );
+      todayRecord.totalFocusSeconds += validSeconds;
+      await manager.save(DailyFocusTime, todayRecord);
+
+      this.logger.log(
+        `Settled ${validSeconds}s for player ${player.id} (daily total: ${todayRecord.totalFocusSeconds}s)`,
+      );
+
+      // Task에 누적 (focusingTaskId가 있고, 본인 소유 Task일 때만)
+      if (player.focusingTaskId) {
+        const result = await manager
+          .createQueryBuilder()
+          .update(Task)
+          .set({
+            totalFocusSeconds: () => `total_focus_seconds + ${validSeconds}`,
+          })
+          .where('id = :taskId', { taskId: player.focusingTaskId })
+          .andWhere('player_id = :playerId', { playerId: player.id })
+          .execute();
+
+        if (result.affected) {
+          this.logger.log(
+            `Added ${validSeconds}s to task ${player.focusingTaskId}`,
+          );
+        } else {
+          this.logger.warn(
+            `Task ${player.focusingTaskId} not found or not owned by player ${player.id}, skipping task update`,
+          );
+        }
+      }
+    }
+
+    return validSeconds;
   }
 
-  async findAllStatuses(
-    playerIds: number[],
-    startAt: Date,
-  ): Promise<DailyFocusTime[]> {
+  /**
+   * 접속 시 stale 세션 정리
+   * - player.lastFocusStartTime이 있으면 정산 후 초기화
+   */
+  async settleStaleSession(playerId: number): Promise<void> {
+    const now = new Date();
+
+    return this.writeLock.runExclusive(() =>
+      this.dataSource.transaction(async (manager) => {
+        const player = await manager.findOne(Player, {
+          where: { id: playerId },
+        });
+        if (!player) {
+          return;
+        }
+
+        if (player.lastFocusStartTime) {
+          this.logger.log(
+            `Settling stale session for player ${playerId} (started at ${player.lastFocusStartTime.toISOString()})`,
+          );
+
+          await this.settleCurrentSession(manager, player, now);
+
+          // player 초기화
+          player.focusingTaskId = null;
+          player.lastFocusStartTime = null;
+          await manager.save(Player, player);
+        }
+      }),
+    );
+  }
+
+  /**
+   * 여러 플레이어의 집중 상태 조회
+   * V2에서는 player 테이블에서 직접 조회
+   */
+  async findAllStatuses(playerIds: number[]): Promise<
+    Array<{
+      playerId: number;
+      isFocusing: boolean;
+      lastFocusStartTime: Date | null;
+      focusingTaskId: number | null;
+    }>
+  > {
     if (playerIds.length === 0) return [];
 
-    const start = startAt;
-    const end = new Date(startAt.getTime() + 24 * 60 * 60 * 1000 - 1);
-    return this.focusTimeRepository
-      .createQueryBuilder('ft')
-      .leftJoinAndSelect('ft.player', 'player')
-      .leftJoinAndSelect('ft.currentTask', 'currentTask')
+    const players = await this.playerRepository
+      .createQueryBuilder('player')
       .where('player.id IN (:...playerIds)', { playerIds })
-      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
       .getMany();
+
+    return players.map((p) => ({
+      playerId: p.id,
+      isFocusing: p.lastFocusStartTime != null,
+      lastFocusStartTime: p.lastFocusStartTime,
+      focusingTaskId: p.focusingTaskId,
+    }));
   }
 
+  /**
+   * 특정 날짜의 집중 시간 조회
+   */
   async getFocusTime(
     playerId: number,
     startAt: Date,
     endAt: Date,
-  ): Promise<DailyFocusTime> {
+  ): Promise<{ totalFocusSeconds: number }> {
     const focusTime = await this.focusTimeRepository
       .createQueryBuilder('ft')
-      .where('ft.player.id = :playerId', { playerId })
+      .leftJoin('ft.player', 'player')
+      .where('player.id = :playerId', { playerId })
       .andWhere('ft.createdAt BETWEEN :startAt AND :endAt', { startAt, endAt })
       .getOne();
 
-    if (!focusTime) {
-      const defaultFocusTime = new DailyFocusTime();
-      defaultFocusTime.id = null as unknown as number;
-      defaultFocusTime.totalFocusSeconds = 0;
-      defaultFocusTime.status = FocusStatus.RESTING;
-      defaultFocusTime.createdAt = startAt;
-      defaultFocusTime.lastFocusStartTime = null as unknown as Date;
-      defaultFocusTime.currentTaskId = null;
-      defaultFocusTime.currentTask = null;
-      return defaultFocusTime;
+    return {
+      totalFocusSeconds: focusTime?.totalFocusSeconds ?? 0,
+    };
+  }
+
+  /**
+   * 플레이어의 현재 집중 상태 조회
+   */
+  async getPlayerFocusStatus(playerId: number): Promise<{
+    isFocusing: boolean;
+    lastFocusStartTime: Date | null;
+    focusingTaskId: number | null;
+    totalFocusSeconds: number;
+    currentSessionSeconds: number;
+  }> {
+    const player = await this.playerRepository.findOne({
+      where: { id: playerId },
+    });
+
+    if (!player) {
+      throw new BadRequestException('Player not found');
     }
 
-    return focusTime;
+    const { start, end } = getTodayKstRangeUtc();
+    const todayRecord = await this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .leftJoin('ft.player', 'player')
+      .where('player.id = :playerId', { playerId })
+      .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+      .getOne();
+
+    // 음수/24시간 초과 방지 (settleCurrentSession과 동일)
+    const rawSessionSeconds =
+      player.lastFocusStartTime != null
+        ? Math.floor((Date.now() - player.lastFocusStartTime.getTime()) / 1000)
+        : 0;
+    const currentSessionSeconds = Math.max(
+      0,
+      Math.min(rawSessionSeconds, MAX_SESSION_SECONDS),
+    );
+
+    return {
+      isFocusing: player.lastFocusStartTime != null,
+      lastFocusStartTime: player.lastFocusStartTime,
+      focusingTaskId: player.focusingTaskId,
+      totalFocusSeconds: todayRecord?.totalFocusSeconds ?? 0,
+      currentSessionSeconds,
+    };
+  }
+
+  /**
+   * 주간 집중 시간 순위 조회
+   * @param weekendStartAt 주간 시작일 (월요일 00:00:00)
+   * @returns 집중 시간 순위 (count = SUM(total_focus_seconds), 초 단위)
+   */
+  async getFocusRanks(weekendStartAt: Date): Promise<FocusRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const results = await this.focusTimeRepository
+      .createQueryBuilder('ft')
+      .select('ft.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('SUM(ft.total_focus_seconds)', 'count')
+      .innerJoin('ft.player', 'player')
+      .where('ft.createdAt >= :startAt AND ft.createdAt < :endAt', {
+        startAt: weekendStartAt,
+        endAt: weekendEndAt,
+      })
+      .groupBy('ft.player_id')
+      .having('SUM(ft.total_focus_seconds) > 0')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    // 동점자 처리: Standard Competition Ranking (1, 1, 3 방식)
+    let currentRank = 1;
+    let previousCount: number | null = null;
+
+    return results.map(
+      (row: { playerId: number; nickname: string; count: string }, index) => {
+        const count = Number(row.count);
+
+        if (previousCount !== null && count < previousCount) {
+          currentRank = index + 1;
+        }
+        previousCount = count;
+
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          count,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }

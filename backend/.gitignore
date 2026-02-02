@@ -61,3 +61,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Database migrations
 src/database/migrations/
+!src/database/migrations/9999999999999-SeedPets.ts
+
+# Database files
+data/*.sqlite

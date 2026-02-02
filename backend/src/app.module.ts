@@ -20,6 +20,7 @@ import { FocusTimeModule } from './focustime/focustime.module';
 import { PetModule } from './userpet/pet.module';
 import { PointModule } from './point/point.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
         ...AppDataSource.options,
       }),
     }),
+    DatabaseModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
       exclude: [

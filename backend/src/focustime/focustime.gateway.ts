@@ -10,6 +10,7 @@ import { Socket } from 'socket.io';
 import { FocusTimeService } from './focustime.service';
 import { User } from '../auth/user.interface';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
+import { FocusStatus } from './entites/daily-focus-time.entity';
 
 interface AuthenticatedSocket extends Socket {
   data: { user: User };
@@ -28,7 +29,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
-    data: { taskName?: string; taskId?: number; startAt: string },
+    data: { taskName?: string; taskId?: number },
   ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
 
@@ -38,9 +39,8 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     );
 
     try {
-      const focusTime = await this.focusTimeService.startFocusing(
+      const player = await this.focusTimeService.startFocusing(
         user.playerId,
-        new Date(data.startAt),
         data?.taskId,
       );
 
@@ -48,18 +48,21 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
       const roomId = rooms.find((room) => room !== client.id);
 
       // 서버에서 현재 세션 경과 시간 계산
-      const currentSessionSeconds = focusTime.lastFocusStartTime
-        ? Math.floor(
-            (Date.now() - focusTime.lastFocusStartTime.getTime()) / 1000,
-          )
+      const currentSessionSeconds = player.lastFocusStartTime
+        ? Math.floor((Date.now() - player.lastFocusStartTime.getTime()) / 1000)
         : 0;
+
+      // 오늘 누적 시간 조회
+      const focusStatus = await this.focusTimeService.getPlayerFocusStatus(
+        user.playerId,
+      );
 
       const responseData = {
         userId: client.id,
-        username: focusTime.player.nickname,
-        status: focusTime.status,
-        lastFocusStartTime: focusTime.lastFocusStartTime?.toISOString() ?? null,
-        totalFocusSeconds: focusTime.totalFocusSeconds,
+        username: player.nickname,
+        status: FocusStatus.FOCUSING,
+        lastFocusStartTime: player.lastFocusStartTime?.toISOString() ?? null,
+        totalFocusSeconds: focusStatus.totalFocusSeconds,
         currentSessionSeconds,
         taskName: data?.taskName,
       };
@@ -89,29 +92,22 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   }
 
   @SubscribeMessage('resting')
-  async handleResting(
-    @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody()
-    data: { startAt: string },
-  ) {
+  async handleResting(@ConnectedSocket() client: AuthenticatedSocket) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
 
     const user = client.data.user;
 
     try {
-      const focusTime = await this.focusTimeService.startResting(
-        user.playerId,
-        new Date(data.startAt),
-      );
+      const result = await this.focusTimeService.startResting(user.playerId);
 
       const rooms = Array.from(client.rooms);
       const roomId = rooms.find((room) => room !== client.id);
 
       const responseData = {
         userId: client.id,
-        username: focusTime.player.nickname,
-        status: focusTime.status,
-        totalFocusSeconds: focusTime.totalFocusSeconds,
+        username: user.username,
+        status: FocusStatus.RESTING,
+        totalFocusSeconds: result.totalFocusSeconds,
       };
 
       if (roomId) {
@@ -181,6 +177,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     }
 
     try {
+      // player 기반 정산 (집중 중이 아니면 무시됨)
       await this.focusTimeService.startResting(user.playerId);
       this.logger.log(
         `User ${user.username} disconnected. Setting status to RESTING.`,

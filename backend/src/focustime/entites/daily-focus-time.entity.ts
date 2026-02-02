@@ -25,6 +25,10 @@ export class DailyFocusTime {
   @Column({ name: 'total_focus_seconds', type: 'int', default: 0 })
   totalFocusSeconds: number;
 
+  /**
+   * @deprecated V2에서 player.lastFocusStartTime으로 이동.
+   * 집중 상태 판단은 player.lastFocusStartTime != null 로 대체.
+   */
   @Column({
     type: 'simple-enum',
     enum: FocusStatus,
@@ -35,14 +39,21 @@ export class DailyFocusTime {
   @Column({ name: 'created_at', type: 'datetime', nullable: false })
   createdAt: Date;
 
+  /**
+   * @deprecated V2에서 player.lastFocusStartTime으로 이동.
+   */
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
   lastFocusStartTime: Date;
 
-  // currentTaskId 컬럼 (Fallback: @Column과 @ManyToOne 둘 다 설정)
+  /**
+   * @deprecated V2에서 player.focusingTaskId로 이동.
+   */
   @Column({ name: 'current_task_id', type: 'int', nullable: true })
   currentTaskId: number | null;
 
-  // currentTask relation
+  /**
+   * @deprecated V2에서 player.focusingTaskId로 이동.
+   */
   @ManyToOne(() => Task, { nullable: true })
   @JoinColumn({ name: 'current_task_id' })
   currentTask: Task | null;

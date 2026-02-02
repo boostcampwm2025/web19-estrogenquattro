@@ -8,15 +8,10 @@ import {
 } from '@nestjs/common';
 import { FocusTimeService } from './focustime.service';
 import { JwtGuard } from '../auth/jwt.guard';
-import { FocusStatus } from './entites/daily-focus-time.entity';
 import { ParseDatePipe } from '../common/parse-date.pipe';
 
 interface FocusTimeResponse {
-  id: number | null;
   totalFocusSeconds: number;
-  status: FocusStatus;
-  createdAt: string;
-  lastFocusStartTime: string | null;
 }
 
 @Controller('api/focustime')
@@ -37,13 +32,7 @@ export class FocustimeController {
     );
 
     return {
-      id: focusTime.id,
       totalFocusSeconds: focusTime.totalFocusSeconds,
-      status: focusTime.status,
-      createdAt: focusTime.createdAt.toISOString(),
-      lastFocusStartTime: focusTime.lastFocusStartTime
-        ? focusTime.lastFocusStartTime.toISOString()
-        : null,
     };
   }
 }
