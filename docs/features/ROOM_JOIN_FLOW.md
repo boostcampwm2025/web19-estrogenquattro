@@ -229,7 +229,7 @@ socket.on('player_joined', (data: {
 ```typescript
 socket.on('github_state', (state: {
   progress: number,                      // 0-99
-  contributions: Record<string, number>  // username -> count
+  contributions: Record<string, number>  // username -> points
 }) => {
   // 프로그레스바 초기값 설정
   // 기여도 목록 초기값 설정

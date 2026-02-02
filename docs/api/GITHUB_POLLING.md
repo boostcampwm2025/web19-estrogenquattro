@@ -194,7 +194,7 @@ interface GithubEventData {
 ```typescript
 interface RoomGithubState {
   progress: number;                      // 0-99
-  contributions: Record<string, number>; // username -> 총 기여 수
+  contributions: Record<string, number>; // username -> 포인트
 }
 ```
 

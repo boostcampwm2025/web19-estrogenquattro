@@ -344,9 +344,9 @@ sequenceDiagram
 // frontend/src/stores/useProgressStore.ts
 interface ProgressState {
   progress: number;
-  contributions: Record<string, number>;
+  mapIndex: number;
   setProgress: (progress: number) => void;
-  setContributions: (contributions: Record<string, number>) => void;
+  setMapIndex: (index: number) => void;
   reset: () => void;
 }
 ```
@@ -359,15 +359,17 @@ interface ProgressState {
 ### 기여도 목록
 
 ```typescript
-// frontend/src/game/ui/createContributionList.ts
-export interface ContributionListController {
-  updateContributions(contributions: Record<string, number>): void;
-  destroy(): void;
+// frontend/src/_components/ui/ContributionList.tsx
+// frontend/src/stores/useContributionStore.ts
+interface ContributionStore {
+  contributions: Record<string, number>; // { username: points }
+  setContributions: (data: Record<string, number>) => void;
+  reset: () => void;
 }
 ```
 
-- 상위 5명 기여도 순 정렬 표시
-- username: count 형식
+- 상위 3명 포인트 순 정렬 표시 (MAX_DISPLAY_COUNT = 3)
+- 메달 이미지(금/은/동)와 username 표시
 
 ---
 
