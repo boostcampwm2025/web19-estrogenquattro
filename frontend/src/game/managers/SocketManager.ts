@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import RemotePlayer from "../players/RemotePlayer";
 import { connectSocket, getSocket } from "../../lib/socket";
 import { useProgressStore } from "../../stores/useProgressStore";
+import { useConnectionStore } from "../../stores/useConnectionStore";
 import { useContributionStore } from "../../stores/useContributionStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
@@ -108,8 +109,6 @@ export default class SocketManager {
 
   connect(callbacks: {
     showSessionEndedOverlay: () => void;
-    showConnectionLostOverlay: () => void;
-    hideConnectionLostOverlay: () => void;
     onMapSwitch: (mapIndex: number) => void;
     onMapSyncRequired: (mapIndex: number) => void;
     onInitialMapLoad: (mapIndex: number) => void;
@@ -119,7 +118,7 @@ export default class SocketManager {
 
     socket.on("connect", () => {
       // 재연결 시 오버레이 숨김 및 플래그 리셋
-      callbacks.hideConnectionLostOverlay();
+      useConnectionStore.getState().setDisconnected(false);
       this.isSessionReplaced = false;
 
       const player = this.getPlayer();
@@ -159,7 +158,7 @@ export default class SocketManager {
       }
 
       // 서버 문제 → 연결 끊김 UI
-      callbacks.showConnectionLostOverlay();
+      useConnectionStore.getState().setDisconnected(true);
     });
 
     socket.on(

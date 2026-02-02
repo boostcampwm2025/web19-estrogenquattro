@@ -16,6 +16,7 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
 | **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
 | **useOnboardingStore** | `useOnboardingStore.ts` | 온보딩 투어 상태 관리 |
+| **useConnectionStore** | `useConnectionStore.ts` | 서버 연결 상태 관리 |
 
 ---
 
@@ -250,6 +251,25 @@ interface OnboardingActions {
 - `localStorage`에 완료 여부 저장 (`onboarding_completed`)
 - 신규 사용자 첫 접속 시 1.5초 후 자동 시작
 - 모달 내 서브 스텝 지원 (펫 뽑기 등)
+
+---
+
+### useConnectionStore
+
+서버 연결 상태 관리 (연결 끊김 감지 및 UI 표시)
+
+```typescript
+interface ConnectionState {
+  isDisconnected: boolean;
+  setDisconnected: (value: boolean) => void;
+}
+```
+
+**특징:**
+- Socket.io `disconnect` 이벤트 발생 시 `setDisconnected(true)`
+- 재연결 시 `setDisconnected(false)`
+- React 컴포넌트(`ConnectionLostOverlay`)에서 오버레이 표시
+- Phaser 내부가 아닌 React DOM에서 렌더링하여 z-index 충돌 방지
 
 ---
 
