@@ -14,12 +14,15 @@ import {
 } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
 import { DatabaseModule } from '../database/database.module';
+import { TaskService } from '../task/task.service';
+import { PlayerService } from '../player/player.service';
 
 describe('PointHistoryService', () => {
   let service: PointHistoryService;
   let pointHistoryRepository: Repository<PointHistory>;
   let playerRepository: Repository<Player>;
   let focusTimeRepository: Repository<DailyFocusTime>;
+  let taskRepository: Repository<Task>;
   let module: TestingModule;
 
   let player1: Player;
@@ -38,7 +41,12 @@ describe('PointHistoryService', () => {
         TypeOrmModule.forFeature([PointHistory, Player, DailyFocusTime, Task]),
         DatabaseModule,
       ],
-      providers: [PointHistoryService, FocusTimeService],
+      providers: [
+        PointHistoryService,
+        FocusTimeService,
+        TaskService,
+        PlayerService,
+      ],
     }).compile();
 
     service = module.get<PointHistoryService>(PointHistoryService);
@@ -51,6 +59,7 @@ describe('PointHistoryService', () => {
     focusTimeRepository = module.get<Repository<DailyFocusTime>>(
       getRepositoryToken(DailyFocusTime),
     );
+    taskRepository = module.get<Repository<Task>>(getRepositoryToken(Task));
   }, 30000);
 
   afterAll(async () => {
@@ -62,6 +71,7 @@ describe('PointHistoryService', () => {
   beforeEach(async () => {
     await pointHistoryRepository.clear();
     await focusTimeRepository.clear();
+    await taskRepository.clear();
     await playerRepository.clear();
 
     // 테스트용 플레이어 생성
@@ -275,6 +285,52 @@ describe('PointHistoryService', () => {
       expect(result[0].count).toBe(3600);
       expect(result[0].rank).toBe(1);
       expect(result[1].count).toBe(1800);
+      expect(result[1].rank).toBe(2);
+    });
+
+    it('type=TASK_COMPLETED일 때 TaskService로 분기하여 랭킹을 조회한다', async () => {
+      // Given
+      const weekendStartAt = new Date('2026-01-27T00:00:00Z');
+      const inRangeDate = new Date('2026-01-28T12:00:00Z');
+
+      // Player1: 2 tasks completed
+      const task1 = taskRepository.create({
+        player: player1,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 1',
+      });
+      const task2 = taskRepository.create({
+        player: player1,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 2',
+      });
+      await taskRepository.save([task1, task2]);
+
+      // Player2: 1 task completed
+      const task3 = taskRepository.create({
+        player: player2,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 3',
+      });
+      await taskRepository.save(task3);
+
+      // When
+      const result = await service.getHistoryRanks(
+        PointType.TASK_COMPLETED,
+        weekendStartAt,
+      );
+
+      // Then
+      expect(result).toHaveLength(2);
+      expect(result[0].playerId).toBe(player1.id);
+      expect(result[0].count).toBe(2);
+      expect(result[0].rank).toBe(1);
+
+      expect(result[1].playerId).toBe(player2.id);
+      expect(result[1].count).toBe(1);
       expect(result[1].rank).toBe(2);
     });
 
