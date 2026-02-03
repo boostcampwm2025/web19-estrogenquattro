@@ -14,8 +14,5 @@
     "stop": "pm2 stop ecosystem.config.js",
     "restart": "pm2 reload ecosystem.config.js",
     "logs": "pm2 logs"
-  },
-  "dependencies": {
-    "@axiomhq/winston": "^1.4.0"
   }
 }
