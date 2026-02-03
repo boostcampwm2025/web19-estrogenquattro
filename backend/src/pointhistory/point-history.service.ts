@@ -4,6 +4,7 @@ import { Between, EntityManager, Repository } from 'typeorm';
 import { PointHistory, PointType } from './entities/point-history.entity';
 import { Player } from '../player/entites/player.entity';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { TaskService } from '../task/task.service';
 
 export interface HistoryRank {
   playerId: number;
@@ -20,6 +21,7 @@ export class PointHistoryService {
     @InjectRepository(Player)
     private readonly playerRepository: Repository<Player>,
     private readonly focusTimeService: FocusTimeService,
+    private readonly taskService: TaskService,
   ) {}
 
   async addHistoryWithManager(
@@ -75,6 +77,10 @@ export class PointHistoryService {
     // FOCUSED 타입은 FocusTimeService에서 조회
     if (type === PointType.FOCUSED) {
       return this.focusTimeService.getFocusRanks(weekendStartAt);
+    }
+
+    if (type === PointType.TASK_COMPLETED) {
+      return this.taskService.getTaskRanks(weekendStartAt);
     }
 
     const weekendEndAt = new Date(weekendStartAt);
