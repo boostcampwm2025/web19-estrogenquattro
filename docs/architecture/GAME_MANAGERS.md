@@ -129,6 +129,15 @@ private otherPlayers: Map<userId, RemotePlayer>;
 `map_switch` 이벤트가 짧은 시간에 연속으로 도착하는 경우 마지막 이벤트만 처리하도록 1초 디바운스를 적용합니다.
 세션 교체 또는 씬 종료 시 디바운스 타이머를 정리합니다.
 
+### 아바타 로더 리스너 관리
+
+비동기 이미지 로드 중 플레이어가 퇴장할 경우 발생할 수 있는 race condition을 방지합니다:
+
+- `avatarLoaderListeners`: userId별 로더 리스너 추적
+- `avatarLoadingKeys`: 중복 로드 방지용 Set
+- `player_left` 시 해당 플레이어의 모든 리스너 정리
+- `destroy()` 시 모든 리스너 일괄 정리
+
 ### 연결 흐름
 
 ```mermaid
