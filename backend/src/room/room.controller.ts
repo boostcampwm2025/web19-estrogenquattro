@@ -10,7 +10,7 @@ export class RoomController {
 
   @Get()
   getRooms() {
-    return this.roomService.getAllRoomPlayers();
+    return this.roomService.getAllRooms();
   }
 
   @Patch(':roomId')

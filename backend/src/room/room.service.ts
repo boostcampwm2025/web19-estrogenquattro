@@ -4,7 +4,7 @@ import {
   RoomNotFoundException,
 } from './exceptions/room.exception';
 
-type RoomInfo = {
+export type RoomInfo = {
   id: string;
   capacity: number;
   size: number;
@@ -36,10 +36,8 @@ export class RoomService {
     }
   }
 
-  // PATCH /api/rooms - Reserve a spot
   reserveRoom(playerId: number, roomId: string) {
-    // If already reserved, clear old one
-    this.clearReservation(playerId);
+    this.cancelReservation(playerId);
 
     const room = this.roomInfos.get(roomId);
     if (!room) throw new RoomNotFoundException();
@@ -48,63 +46,46 @@ export class RoomService {
       throw new RoomFullException();
     }
 
-    // Apply reservation
     room.size += 1;
     this.reservedRooms.set(playerId, roomId);
 
-    // Auto-cancel after 30 seconds
     const timeout = setTimeout(() => {
-      this.cancelReservation(playerId, roomId);
+      this.cancelReservation(playerId);
     }, 30000);
     this.reservations.set(playerId, timeout);
   }
 
-  private clearReservation(playerId: number) {
+  private disposeReservation(playerId: number): string | undefined {
     const timeout = this.reservations.get(playerId);
     if (timeout) {
       clearTimeout(timeout);
       this.reservations.delete(playerId);
     }
-    const oldRoomId = this.reservedRooms.get(playerId);
-    if (oldRoomId) {
-      this.cancelReservationLogic(oldRoomId);
+    const reservedRoomId = this.reservedRooms.get(playerId);
+    if (reservedRoomId) {
       this.reservedRooms.delete(playerId);
+      return reservedRoomId;
+    }
+    return undefined;
+  }
+
+  private cancelReservation(playerId: number) {
+    const reservedRoomId = this.disposeReservation(playerId);
+    if (reservedRoomId) {
+      this.decreaseRoomSize(reservedRoomId);
     }
   }
 
-  private cancelReservation(playerId: number, roomId: string) {
-    const currentReserved = this.reservedRooms.get(playerId);
-    if (currentReserved === roomId) {
-      this.cancelReservationLogic(roomId);
-      this.reservedRooms.delete(playerId);
-      this.reservations.delete(playerId);
-    }
-  }
-
-  private cancelReservationLogic(roomId: string) {
+  private decreaseRoomSize(roomId: string) {
     const room = this.roomInfos.get(roomId);
     if (room) {
       room.size = Math.max(0, room.size - 1);
     }
   }
 
-  // Validates reservation and finalizes join
   private consumeReservation(playerId: number | undefined): string | null {
     if (!playerId) return null;
-    
-    // Check if user has a reservation
-    const reservedRoomId = this.reservedRooms.get(playerId);
-    if (reservedRoomId) {
-      // Clear timeout but KEEP size increment (it transfers to active player)
-      const timeout = this.reservations.get(playerId);
-      if (timeout) clearTimeout(timeout);
-      
-      this.reservations.delete(playerId);
-      this.reservedRooms.delete(playerId);
-      
-      return reservedRoomId;
-    }
-    return null;
+    return this.disposeReservation(playerId) ?? null;
   }
 
   randomJoin(socketId: string, playerId?: number): string {
@@ -112,10 +93,8 @@ export class RoomService {
     if (existing) return existing;
 
     // Check reservation first
-    const reservedRoomId = this.consumeReservation(playerId);
-    if (reservedRoomId) {
-       this.socketIdToRoomId.set(socketId, reservedRoomId);
-       return reservedRoomId;
+    if (playerId) {
+      this.cancelReservation(playerId);
     }
 
     const startIndex = Math.floor(Math.random() * this.totalRooms) + 1;
@@ -127,7 +106,6 @@ export class RoomService {
         const roomId = `room-${roomNum}`;
         const room = this.roomInfos.get(roomId);
 
-        // Check capacity (size includes active users + reservations)
         if (room && room.size < room.capacity) {
             targetRoomId = roomId;
             break;
@@ -155,7 +133,7 @@ export class RoomService {
           this.socketIdToRoomId.set(socketId, roomId);
           return roomId;
        } 
-       this.cancelReservationLogic(reservedRoomId);
+       this.decreaseRoomSize(reservedRoomId);
     }
 
     const room = this.roomInfos.get(roomId);
@@ -209,11 +187,7 @@ export class RoomService {
     return players ? Array.from(players) : [];
   }
 
-  getAllRoomPlayers(): Record<string, number[]> {
-    const result: Record<string, number[]> = {};
-    for (const [roomId, players] of this.roomIdToPlayerIds) {
-      result[roomId] = Array.from(players);
-    }
-    return result;
+  getAllRooms(): Record<string, RoomInfo> {
+    return Object.fromEntries(this.roomInfos);
   }
 }
