@@ -9,8 +9,6 @@ export interface GithubEventsRes {
   issueOpened: number;
 }
 
-
-
 export interface GithubUserDetail {
   login: string;
   id: number;
@@ -30,8 +28,6 @@ export interface FollowActionRes {
   success: boolean;
 }
 
-
-
 export const githubApi = {
   /** 일별 GitHub 이벤트 조회 */
   getEvents: (playerId: number, startAt: string, endAt: string) =>
@@ -42,7 +38,6 @@ export const githubApi = {
   /** GitHub 유저 정보 조회 */
   getUser: (username: string) =>
     fetchApi<GithubUserDetail>(`/api/github/users/${username}`),
-
 
   /** 팔로우 상태 확인 */
   getFollowStatus: (username: string) =>
@@ -59,6 +54,4 @@ export const githubApi = {
     fetchApi<FollowActionRes>(`/api/github/users/${username}/follow`, {
       method: "DELETE",
     }),
-
-
 };

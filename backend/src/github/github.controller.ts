@@ -52,7 +52,6 @@ export class GithubController {
     return this.githubService.getUser(user.accessToken, username);
   }
 
-
   @Get('users/:username/follow-status')
   async getFollowStatus(
     @Param('username') username: string,
@@ -73,6 +72,4 @@ export class GithubController {
     const user = req.user as User;
     return this.githubService.unfollowUser(user.accessToken, username);
   }
-
-
 }

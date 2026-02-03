@@ -40,10 +40,6 @@ export function useGithubUser(username: string) {
   };
 }
 
-
-
-
-
 export function useFollowStatus(username: string) {
   const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.github.followStatus(username),
@@ -58,5 +54,3 @@ export function useFollowStatus(username: string) {
     error,
   };
 }
-
-

@@ -110,7 +110,9 @@ describe("MusicPlayerContent", () => {
 
     render(<MusicPlayerContent isExpanded={true} />);
 
-    const repeatButton = screen.getByLabelText(`Repeat Mode: ${LOOP_MODES.ALL}`);
+    const repeatButton = screen.getByLabelText(
+      `Repeat Mode: ${LOOP_MODES.ALL}`,
+    );
     await user.click(repeatButton);
 
     expect(mockUseMusicPlayer.toggleLoopMode).toHaveBeenCalled();
@@ -126,7 +128,6 @@ describe("MusicPlayerContent", () => {
 
     expect(mockUseMusicPlayer.setIsMuted).toHaveBeenCalledWith(true);
   });
-
 
   it("트랙 리스트가 렌더링된다", () => {
     render(<MusicPlayerContent isExpanded={true} />);

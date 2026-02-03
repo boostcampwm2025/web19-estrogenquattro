@@ -116,7 +116,6 @@ export class GithubService {
     };
   }
 
-
   async checkFollowStatus(accessToken: string, username: string) {
     const octokit = new Octokit({ auth: accessToken });
     try {
@@ -148,6 +147,4 @@ export class GithubService {
     await octokit.rest.users.unfollow({ username });
     return { success: true };
   }
-
-
 }
