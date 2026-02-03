@@ -33,16 +33,11 @@ export class RoomService {
     const existing = this.socketIdToRoomId.get(socketId);
     if (existing) return existing;
 
-    // 1. Pick a random starting point
-    const startIndex = Math.floor(Math.random() * this.totalRooms) + 1; // 1 to 5
+    const startIndex = Math.floor(Math.random() * this.totalRooms) + 1;
     
-    // 2. Linear search ensuring we check all rooms starting from the random index
     let targetRoomId: string | null = null;
 
     for (let i = 0; i < this.totalRooms; i++) {
-        // Calculate room index with wrap-around logic
-        // (startIndex - 1 + i) % totalRooms gives 0-4 index based on offset i
-        // + 1 converts it back to 1-5 range
         const roomNum = ((startIndex - 1 + i) % this.totalRooms) + 1;
         const roomId = `room-${roomNum}`;
         const room = this.roomInfos.get(roomId);
