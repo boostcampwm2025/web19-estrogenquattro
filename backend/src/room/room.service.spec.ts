@@ -325,7 +325,13 @@ describe('RoomService', () => {
   });
 
   describe('reserveRoom', () => {
-    jest.useFakeTimers();
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
 
     it('방을 예약하면 size가 증가하고 reservedRooms에 추가된다', async () => {
       const service = await createFreshService();
