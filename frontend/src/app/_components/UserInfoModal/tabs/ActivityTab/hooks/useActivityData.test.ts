@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { useProfileData } from "./useProfileData";
+import { useActivityData } from "./useActivityData";
 import * as apiHooks from "@/lib/api/hooks";
 import { DailyPointRes } from "@/lib/api/point";
 import { TaskRes } from "@/lib/api";
+import { FocusStatus } from "@/stores/useFocusTimeStore";
 
 // API 훅들을 모킹
 vi.mock("@/lib/api/hooks");
 
-describe("useProfileData", () => {
+describe("useActivityData", () => {
   const mockPlayerId = 123;
   const mockSelectedDate = new Date(2026, 0, 29);
 
@@ -18,30 +19,53 @@ describe("useProfileData", () => {
 
   it("포인트 데이터를 DailyPoints Map으로 변환한다", () => {
     const mockPoints: DailyPointRes[] = [
-      { id: 1, amount: 10, createdAt: "2026-01-27T10:00:00.000Z" },
-      { id: 2, amount: 20, createdAt: "2026-01-28T10:00:00.000Z" },
-      { id: 3, amount: 15, createdAt: "2026-01-29T10:00:00.000Z" },
+      {
+        id: 1,
+        amount: 10,
+        createdAt: "2026-01-27T10:00:00.000Z",
+        activityAt: "2026-01-27T09:00:00.000Z",
+      },
+      {
+        id: 2,
+        amount: 20,
+        createdAt: "2026-01-28T10:00:00.000Z",
+        activityAt: "2026-01-28T09:00:00.000Z",
+      },
+      {
+        id: 3,
+        amount: 15,
+        createdAt: "2026-01-29T10:00:00.000Z",
+        activityAt: "2026-01-29T09:00:00.000Z",
+      },
     ];
 
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: mockPoints,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.dailyPoints.size).toBe(3);
@@ -71,22 +95,30 @@ describe("useProfileData", () => {
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: mockTasksData,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.tasks).toHaveLength(2);
@@ -112,22 +144,30 @@ describe("useProfileData", () => {
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: [],
       isLoading: true,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -137,22 +177,30 @@ describe("useProfileData", () => {
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: true,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: true,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: true,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.isDateDataLoading).toBe(true);
@@ -162,22 +210,30 @@ describe("useProfileData", () => {
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.isDateDataLoading).toBe(false);
@@ -185,10 +241,15 @@ describe("useProfileData", () => {
 
   it("focusTimeData와 githubEvents를 그대로 반환한다", () => {
     const mockFocusTime = {
+      id: 1,
       totalFocusSeconds: 3600,
-      date: "2026-01-29",
+      status: "stopped" as FocusStatus,
+      createdAt: "2026-01-29T00:00:00.000Z",
+      lastFocusStartTime: null,
     };
     const mockGithubEvents = {
+      startAt: "2026-01-29T00:00:00.000Z",
+      endAt: "2026-01-29T23:59:59.999Z",
       committed: 5,
       issueOpened: 2,
       prCreated: 1,
@@ -198,22 +259,30 @@ describe("useProfileData", () => {
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: mockFocusTime,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: mockGithubEvents,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     expect(result.current.focusTimeData).toEqual(mockFocusTime);
@@ -227,33 +296,43 @@ describe("useProfileData", () => {
         id: 1,
         amount: 10,
         createdAt: new Date(2026, 0, 29, 10, 0, 0).toISOString(),
+        activityAt: new Date(2026, 0, 29, 9, 0, 0).toISOString(),
       },
       {
         id: 2,
         amount: 20,
         createdAt: new Date(2026, 0, 29, 15, 0, 0).toISOString(),
+        activityAt: new Date(2026, 0, 29, 14, 0, 0).toISOString(),
       },
     ];
 
     vi.mocked(apiHooks.usePoint).mockReturnValue({
       points: mockPoints,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useFocustime).mockReturnValue({
       focustime: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useGithubEvents).mockReturnValue({
       events: undefined,
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
     vi.mocked(apiHooks.useTasks).mockReturnValue({
       tasks: [],
       isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     const { result } = renderHook(() =>
-      useProfileData(mockPlayerId, mockSelectedDate),
+      useActivityData(mockPlayerId, mockSelectedDate),
     );
 
     // Map.set()은 마지막 값으로 덮어씀

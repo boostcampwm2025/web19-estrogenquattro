@@ -15,17 +15,23 @@ describe("grassLevel", () => {
       expect(calculateGrassLevel(dailyPoints, "2026-01-29")).toBe(0);
     });
 
-    it("1 포인트는 레벨 1을 반환한다", () => {
-      const dailyPoints: DailyPoints = new Map([["2026-01-29", 1]]);
+    it("1~10 포인트는 레벨 1을 반환한다", () => {
+      const dailyPoints: DailyPoints = new Map([
+        ["2026-01-27", 1],
+        ["2026-01-28", 5],
+        ["2026-01-29", 10],
+      ]);
 
+      expect(calculateGrassLevel(dailyPoints, "2026-01-27")).toBe(1);
+      expect(calculateGrassLevel(dailyPoints, "2026-01-28")).toBe(1);
       expect(calculateGrassLevel(dailyPoints, "2026-01-29")).toBe(1);
     });
 
-    it("2-9 포인트는 레벨 2를 반환한다", () => {
+    it("11~30 포인트는 레벨 2를 반환한다", () => {
       const dailyPoints: DailyPoints = new Map([
-        ["2026-01-27", 2],
-        ["2026-01-28", 5],
-        ["2026-01-29", 9],
+        ["2026-01-27", 11],
+        ["2026-01-28", 20],
+        ["2026-01-29", 30],
       ]);
 
       expect(calculateGrassLevel(dailyPoints, "2026-01-27")).toBe(2);
@@ -33,10 +39,10 @@ describe("grassLevel", () => {
       expect(calculateGrassLevel(dailyPoints, "2026-01-29")).toBe(2);
     });
 
-    it("10+ 포인트는 레벨 3을 반환한다", () => {
+    it("31+ 포인트는 레벨 3을 반환한다", () => {
       const dailyPoints: DailyPoints = new Map([
-        ["2026-01-28", 10],
-        ["2026-01-29", 50],
+        ["2026-01-28", 31],
+        ["2026-01-29", 100],
       ]);
 
       expect(calculateGrassLevel(dailyPoints, "2026-01-28")).toBe(3);
@@ -72,9 +78,9 @@ describe("grassLevel", () => {
     it("포인트 데이터로부터 직접 이미지 경로를 계산한다", () => {
       const dailyPoints: DailyPoints = new Map([
         ["2026-01-26", 0],
-        ["2026-01-27", 1],
-        ["2026-01-28", 5],
-        ["2026-01-29", 15],
+        ["2026-01-27", 5],
+        ["2026-01-28", 15],
+        ["2026-01-29", 35],
       ]);
 
       expect(getGrassImageFromData(dailyPoints, "2026-01-26")).toBe(
@@ -101,19 +107,21 @@ describe("grassLevel", () => {
       expect(getHeatmapColorClass(0)).toBe("bg-heatmap-empty");
     });
 
-    it("1 포인트는 level-1 클래스를 반환한다", () => {
+    it("1~10 포인트는 level-1 클래스를 반환한다", () => {
       expect(getHeatmapColorClass(1)).toBe("bg-heatmap-level-1");
+      expect(getHeatmapColorClass(5)).toBe("bg-heatmap-level-1");
+      expect(getHeatmapColorClass(10)).toBe("bg-heatmap-level-1");
     });
 
-    it("2-9 포인트는 level-2 클래스를 반환한다", () => {
-      expect(getHeatmapColorClass(2)).toBe("bg-heatmap-level-2");
-      expect(getHeatmapColorClass(5)).toBe("bg-heatmap-level-2");
-      expect(getHeatmapColorClass(9)).toBe("bg-heatmap-level-2");
+    it("11~30 포인트는 level-2 클래스를 반환한다", () => {
+      expect(getHeatmapColorClass(11)).toBe("bg-heatmap-level-2");
+      expect(getHeatmapColorClass(20)).toBe("bg-heatmap-level-2");
+      expect(getHeatmapColorClass(30)).toBe("bg-heatmap-level-2");
     });
 
-    it("10+ 포인트는 level-3 클래스를 반환한다", () => {
-      expect(getHeatmapColorClass(10)).toBe("bg-heatmap-level-3");
-      expect(getHeatmapColorClass(50)).toBe("bg-heatmap-level-3");
+    it("31+ 포인트는 level-3 클래스를 반환한다", () => {
+      expect(getHeatmapColorClass(31)).toBe("bg-heatmap-level-3");
+      expect(getHeatmapColorClass(100)).toBe("bg-heatmap-level-3");
     });
   });
 });

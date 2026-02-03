@@ -15,6 +15,10 @@ export const queryKeys = {
     all: ["github"] as const,
     events: (playerId: number, date: string) =>
       [...queryKeys.github.all, "events", playerId, date] as const,
+    user: (username: string) =>
+      [...queryKeys.github.all, "user", username] as const,
+    followStatus: (username: string) =>
+      [...queryKeys.github.all, "followStatus", username] as const,
   },
   tasks: {
     all: ["tasks"] as const,
