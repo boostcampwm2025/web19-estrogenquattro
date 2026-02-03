@@ -213,18 +213,18 @@ export class PlayerGateway
     });
 
     // 3. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
-    const existingPlayers = Array.from(this.players.values())
-      .filter((p) => p.socketId !== client.id && p.roomId === roomId)
-      .map((p) => {
+    const existingPlayersRaw = Array.from(this.players.values()).filter(
+      (p) => p.socketId !== client.id && p.roomId === roomId,
+    );
+
+    const existingPlayers = await Promise.all(
+      existingPlayersRaw.map(async (p) => {
         const status = statusMap.get(p.playerId);
 
-        // 서버에서 현재 세션 경과 시간 계산
-        const currentSessionSeconds =
-          status?.isFocusing && status?.lastFocusStartTime
-            ? Math.floor(
-                (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
-              )
-            : 0;
+        // FocusTimeService를 통해 조회 (getPlayerFocusStatus 재사용)
+        const focusStatus = await this.focusTimeService.getPlayerFocusStatus(
+          p.playerId,
+        );
 
         return {
           ...p,
@@ -232,12 +232,13 @@ export class PlayerGateway
             ? FocusStatus.FOCUSING
             : FocusStatus.RESTING,
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusSeconds: 0, // V2에서는 daily_focus_time 조회 생략 (필요시 추가)
-          currentSessionSeconds,
+          totalFocusSeconds: focusStatus.totalFocusSeconds, // 실제 값
+          currentSessionSeconds: focusStatus.currentSessionSeconds, // 클램프 적용됨
           // FOCUSING 상태일 때만 taskName 반환
           taskName: status?.isFocusing ? status?.taskName : null,
         };
-      });
+      }),
+    );
 
     // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
