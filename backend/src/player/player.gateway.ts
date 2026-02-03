@@ -121,11 +121,16 @@ export class PlayerGateway
     data: { x: number; y: number; username: string, roomId?: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const roomId = data.roomId ?? this.roomService.randomJoin(client.id);
-
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
     const { username, accessToken, playerId } = userData.user;
+
+    let roomId: string;
+    if (data.roomId) {
+      roomId = this.roomService.joinRoom(client.id, data.roomId, playerId);
+    } else {
+      roomId = this.roomService.randomJoin(client.id, playerId);
+    }
 
     // RoomService에 플레이어 등록
     this.roomService.addPlayer(roomId, playerId);

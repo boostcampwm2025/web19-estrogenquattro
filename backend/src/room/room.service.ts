@@ -1,4 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  RoomFullException,
+  RoomNotFoundException,
+} from './exceptions/room.exception';
 
 type RoomInfo = {
   id: string;
@@ -17,6 +21,9 @@ export class RoomService {
   private socketIdToRoomId = new Map<string, string>();
   private roomIdToPlayerIds = new Map<string, Set<number>>();
 
+  private reservations = new Map<number, NodeJS.Timeout>(); // playerId -> timeout
+  private reservedRooms = new Map<number, string>(); // playerId -> roomId
+
   constructor() {
     this.initializeRooms();
   }
@@ -29,9 +36,87 @@ export class RoomService {
     }
   }
 
-  randomJoin(socketId: string): string {
+  // PATCH /api/rooms - Reserve a spot
+  reserveRoom(playerId: number, roomId: string) {
+    // If already reserved, clear old one
+    this.clearReservation(playerId);
+
+    const room = this.roomInfos.get(roomId);
+    if (!room) throw new RoomNotFoundException();
+
+    if (room.size >= room.capacity) {
+      throw new RoomFullException();
+    }
+
+    // Apply reservation
+    room.size += 1;
+    this.reservedRooms.set(playerId, roomId);
+
+    // Auto-cancel after 30 seconds
+    const timeout = setTimeout(() => {
+      this.cancelReservation(playerId, roomId);
+    }, 30000);
+    this.reservations.set(playerId, timeout);
+  }
+
+  private clearReservation(playerId: number) {
+    const timeout = this.reservations.get(playerId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.reservations.delete(playerId);
+    }
+    const oldRoomId = this.reservedRooms.get(playerId);
+    if (oldRoomId) {
+      this.cancelReservationLogic(oldRoomId);
+      this.reservedRooms.delete(playerId);
+    }
+  }
+
+  private cancelReservation(playerId: number, roomId: string) {
+    const currentReserved = this.reservedRooms.get(playerId);
+    if (currentReserved === roomId) {
+      this.cancelReservationLogic(roomId);
+      this.reservedRooms.delete(playerId);
+      this.reservations.delete(playerId);
+    }
+  }
+
+  private cancelReservationLogic(roomId: string) {
+    const room = this.roomInfos.get(roomId);
+    if (room) {
+      room.size = Math.max(0, room.size - 1);
+    }
+  }
+
+  // Validates reservation and finalizes join
+  private consumeReservation(playerId: number | undefined): string | null {
+    if (!playerId) return null;
+    
+    // Check if user has a reservation
+    const reservedRoomId = this.reservedRooms.get(playerId);
+    if (reservedRoomId) {
+      // Clear timeout but KEEP size increment (it transfers to active player)
+      const timeout = this.reservations.get(playerId);
+      if (timeout) clearTimeout(timeout);
+      
+      this.reservations.delete(playerId);
+      this.reservedRooms.delete(playerId);
+      
+      return reservedRoomId;
+    }
+    return null;
+  }
+
+  randomJoin(socketId: string, playerId?: number): string {
     const existing = this.socketIdToRoomId.get(socketId);
     if (existing) return existing;
+
+    // Check reservation first
+    const reservedRoomId = this.consumeReservation(playerId);
+    if (reservedRoomId) {
+       this.socketIdToRoomId.set(socketId, reservedRoomId);
+       return reservedRoomId;
+    }
 
     const startIndex = Math.floor(Math.random() * this.totalRooms) + 1;
     
@@ -42,6 +127,7 @@ export class RoomService {
         const roomId = `room-${roomNum}`;
         const room = this.roomInfos.get(roomId);
 
+        // Check capacity (size includes active users + reservations)
         if (room && room.size < room.capacity) {
             targetRoomId = roomId;
             break;
@@ -49,7 +135,7 @@ export class RoomService {
     }
 
     if (!targetRoomId) {
-        throw new Error('All rooms are full');
+        throw new RoomFullException();
     }
 
     const room = this.roomInfos.get(targetRoomId)!;
@@ -59,17 +145,31 @@ export class RoomService {
     return targetRoomId;
   }
 
-  joinRoom(socketId: string, roomId: string): string {
+  joinRoom(socketId: string, roomId: string, playerId: number): string {
     const existing = this.socketIdToRoomId.get(socketId);
     if (existing) return existing;
 
+    const reservedRoomId = this.consumeReservation(playerId);
+    if (reservedRoomId) {
+       // Ideally, they should be joining the reserved room.
+       // If they request a different room, we should cancel the old reservation first?
+       // For now, if reservedRoomId matches request, all good.
+       if (reservedRoomId === roomId) {
+          this.socketIdToRoomId.set(socketId, roomId);
+          return roomId;
+       } 
+       // If different, we already consumed (cleared) it above, but we need to decrement the old room size
+       this.cancelReservationLogic(reservedRoomId);
+       // Now proceed to join requested room as normal new entry
+    }
+
     const room = this.roomInfos.get(roomId);
     if (!room) {
-      throw new Error('Room not found');
+      throw new RoomNotFoundException();
     }
 
     if (room.size >= room.capacity) {
-      throw new Error('Room is full');
+      throw new RoomFullException();
     }
 
     room.size += 1;

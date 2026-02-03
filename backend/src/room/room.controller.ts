@@ -1,6 +1,7 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { JwtGuard } from 'src/auth/jwt.guard';
+import { PlayerId } from 'src/auth/player-id.decorator';
 
 @Controller('api/rooms')
 @UseGuards(JwtGuard)
@@ -10,5 +11,10 @@ export class RoomController {
   @Get()
   getRooms() {
     return this.roomService.getAllRoomPlayers();
+  }
+
+  @Patch(':roomId')
+  joinRoom(@Param('roomId') roomId: string, @PlayerId() playerId: number) {
+    this.roomService.reserveRoom(playerId, roomId);
   }
 }
