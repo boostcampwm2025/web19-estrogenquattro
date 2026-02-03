@@ -13,14 +13,18 @@ export class GithubGuard extends AuthGuard('github') {
     if (err || !user) {
       const errorMessage = err?.message || info?.message || 'Unknown error';
 
-      this.logger.error(`GitHub OAuth failed: ${errorMessage}`, err?.stack);
+      this.logger.error('GitHub OAuth failed', {
+        method: 'handleRequest',
+        error: errorMessage,
+      });
 
       // OAuth 에러 상세 정보 로깅
       if (err && 'oauthError' in err) {
         const oauthErr = err as Error & { oauthError?: unknown };
-        this.logger.error(
-          `OAuth error details: ${JSON.stringify(oauthErr.oauthError)}`,
-        );
+        this.logger.error('OAuth error details', {
+          method: 'handleRequest',
+          details: oauthErr.oauthError,
+        });
       }
 
       throw err ?? new UnauthorizedException('GitHub 인증 실패');

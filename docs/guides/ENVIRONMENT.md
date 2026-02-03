@@ -25,6 +25,13 @@
 | `GITHUB_CALLBACK_URL` | `http://localhost:8080/auth/github/callback` | OAuth 콜백 URL |
 | `ASSETS_PATH` | `__dirname` 기반 | 맵 에셋 경로 (미설정 시 `backend/assets/`) |
 
+### Axiom 로깅
+
+- `AXIOM_TOKEN`: Axiom API 토큰 (프로덕션 필수)
+- `AXIOM_DATASET`: Axiom 데이터셋 이름 (프로덕션 필수)
+
+Axiom 로깅은 `isProd && hasAxiom` 조건일 때만 활성화됩니다. 즉, 프로덕션 환경에서 `AXIOM_TOKEN`과 `AXIOM_DATASET`이 모두 설정되어 있어야만 로그가 전송됩니다. 개발 환경에서는 이 변수들을 설정해도 Axiom 기능이 활성화되지 않습니다.
+
 ---
 
 ## 설정 파일 예시
@@ -41,6 +48,10 @@ JWT_SECRET=your_jwt_secret_key_must_be_at_least_32_characters_long
 PORT=8080
 FRONTEND_URL=http://localhost:3000
 GITHUB_CALLBACK_URL=http://localhost:8080/auth/github/callback
+
+# Axiom (프로덕션 전용)
+AXIOM_TOKEN=your_axiom_token
+AXIOM_DATASET=your_dataset_name
 ```
 
 ---

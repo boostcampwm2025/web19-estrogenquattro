@@ -13,7 +13,10 @@ export class WriteLockService {
     }
     return new Promise((resolve) => {
       this.queue.push(resolve);
-      this.logger.log(`[LOCK] queueLen=${this.queue.length}`);
+      this.logger.log('LOCK queue updated', {
+        method: 'acquire',
+        queueLength: this.queue.length,
+      });
     });
   }
 
@@ -21,10 +24,16 @@ export class WriteLockService {
     const next = this.queue.shift();
     if (next) {
       next();
-      this.logger.log(`[LOCK] queueLen=${this.queue.length}`);
+      this.logger.log('LOCK queue updated', {
+        method: 'release',
+        queueLength: this.queue.length,
+      });
     } else {
       this.locked = false;
-      this.logger.log('[LOCK] queueLen=0');
+      this.logger.log('LOCK queue updated', {
+        method: 'release',
+        queueLength: 0,
+      });
     }
   }
 

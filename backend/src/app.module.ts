@@ -9,7 +9,8 @@ import { GithubModule } from './github/github.module';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './config/logger.winston';
+import { createWinstonConfig } from './config/logger.winston';
+import { ConfigService } from '@nestjs/config';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ChatModule } from './chat/chat.module';
 import { RoomModule } from './room/room.module';
@@ -29,7 +30,17 @@ import { DatabaseModule } from './database/database.module';
       envFilePath: ['.env.production', '.env.local', '.env'],
       validationSchema: envValidationSchema,
     }),
-    WinstonModule.forRoot(winstonConfig),
+    WinstonModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        return createWinstonConfig(
+          config.get('NODE_ENV', 'development'),
+          config.get('AXIOM_TOKEN'),
+          config.get('AXIOM_DATASET'),
+          config.get('LOG_LEVEL'),
+        );
+      },
+    }),
     PrometheusModule.register({
       path: '/metrics',
       defaultMetrics: {
