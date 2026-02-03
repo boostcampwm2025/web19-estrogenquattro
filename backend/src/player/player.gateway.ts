@@ -55,6 +55,7 @@ export class PlayerGateway
       y: number;
       playerId: number;
       petImage: string | null; // 펫 이미지 (nullable)
+      isListening?: boolean; // 음악 감상 중 여부
     }
   > = new Map();
 
@@ -66,7 +67,7 @@ export class PlayerGateway
     this.jwtCheckInterval = setInterval(() => {
       this.server.sockets.sockets.forEach((socket) => {
         if (!this.wsJwtGuard.verifyToken(socket)) {
-          this.logger.log(`JWT expired for socket: ${socket.id}`);
+          this.logger.log('JWT expired for socket', { socketId: socket.id });
           socket.emit('auth_expired');
           socket.disconnect();
         }
@@ -84,14 +85,19 @@ export class PlayerGateway
     const isValid = this.wsJwtGuard.verifyClient(client);
 
     if (!isValid) {
-      this.logger.warn(`Connection rejected (unauthorized): ${client.id}`);
+      this.logger.warn('Connection rejected (unauthorized)', {
+        clientId: client.id,
+      });
       client.disconnect();
       return;
     }
 
     const data = client.data as { user: User };
     const user = data.user;
-    this.logger.log(`Client connected: ${client.id} (user: ${user.username})`);
+    this.logger.log('Client connected', {
+      clientId: client.id,
+      username: user.username,
+    });
 
     // 연결 직후 전역 게임 상태 전송 (joining 전에 맵 로드 가능하도록)
     const globalState = this.progressGateway.getGlobalState();
@@ -112,7 +118,10 @@ export class PlayerGateway
         this.userSockets.delete(player.username);
       }
     }
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.logger.log('Client disconnected', {
+      clientId: client.id,
+      hadPlayerState: !!player,
+    });
   }
 
   @SubscribeMessage('joining')
@@ -135,9 +144,11 @@ export class PlayerGateway
     if (existingSocketId && existingSocketId !== client.id) {
       const existingSocket = this.server.sockets.sockets.get(existingSocketId);
       if (existingSocket) {
-        this.logger.log(
-          `Disconnecting previous session for ${username}: ${existingSocketId}`,
-        );
+        this.logger.log('Disconnecting previous session', {
+          username,
+          oldSocketId: existingSocketId,
+          newSocketId: client.id,
+        });
         existingSocket.emit('session_replaced', {
           message: '다른 탭에서 접속하여 현재 세션이 종료됩니다.',
         });
@@ -152,7 +163,7 @@ export class PlayerGateway
 
     const player = await this.playerService.findOneById(playerId);
     if (!player) {
-      this.logger.warn(`Player not found: ${playerId}`);
+      this.logger.warn('Player not found', { playerId });
       client.disconnect();
       return;
     }
@@ -171,6 +182,7 @@ export class PlayerGateway
       y: data.y,
       playerId: playerId,
       petImage: petImage,
+      isListening: false,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
@@ -213,18 +225,18 @@ export class PlayerGateway
     });
 
     // 3. 새로운 플레이어에게 "현재 접속 중인 다른 사람들(같은 방)" 정보 전송
-    const existingPlayers = Array.from(this.players.values())
-      .filter((p) => p.socketId !== client.id && p.roomId === roomId)
-      .map((p) => {
+    const existingPlayersRaw = Array.from(this.players.values()).filter(
+      (p) => p.socketId !== client.id && p.roomId === roomId,
+    );
+
+    const existingPlayers = await Promise.all(
+      existingPlayersRaw.map(async (p) => {
         const status = statusMap.get(p.playerId);
 
-        // 서버에서 현재 세션 경과 시간 계산
-        const currentSessionSeconds =
-          status?.isFocusing && status?.lastFocusStartTime
-            ? Math.floor(
-                (Date.now() - status.lastFocusStartTime.getTime()) / 1000,
-              )
-            : 0;
+        // FocusTimeService를 통해 조회 (getPlayerFocusStatus 재사용)
+        const focusStatus = await this.focusTimeService.getPlayerFocusStatus(
+          p.playerId,
+        );
 
         return {
           ...p,
@@ -232,12 +244,13 @@ export class PlayerGateway
             ? FocusStatus.FOCUSING
             : FocusStatus.RESTING,
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusSeconds: 0, // V2에서는 daily_focus_time 조회 생략 (필요시 추가)
-          currentSessionSeconds,
+          totalFocusSeconds: focusStatus.totalFocusSeconds, // 실제 값
+          currentSessionSeconds: focusStatus.currentSessionSeconds, // 클램프 적용됨
           // FOCUSING 상태일 때만 taskName 반환
           taskName: status?.isFocusing ? status?.taskName : null,
         };
-      });
+      }),
+    );
 
     // 내가 볼 기존 사람들 그리기
     client.emit('players_synced', existingPlayers);
@@ -268,6 +281,7 @@ export class PlayerGateway
       currentSessionSeconds: myFocusStatus.currentSessionSeconds,
       playerId: playerId,
       petImage: petImage,
+      isListening: false,
       // FOCUSING 상태일 때만 taskName 반환
       taskName: myFocusStatus.isFocusing ? myTaskName : null,
     });
@@ -338,7 +352,7 @@ export class PlayerGateway
 
     // petId 타입 검사
     if (data.petId !== null && typeof data.petId !== 'number') {
-      this.logger.warn(`Invalid petId type from ${client.id}`);
+      this.logger.warn('Invalid petId type', { clientId: client.id });
       return;
     }
 
@@ -347,15 +361,19 @@ export class PlayerGateway
       playerState.playerId,
     );
     if (!playerFromDb) {
-      this.logger.warn(`Player not found in DB: ${playerState.playerId}`);
+      this.logger.warn('Player not found in DB', {
+        playerId: playerState.playerId,
+      });
       return;
     }
 
     // 클라이언트가 보낸 petId와 DB의 equippedPetId가 일치하는지 검증
     if (playerFromDb.equippedPetId !== data.petId) {
-      this.logger.warn(
-        `Pet mismatch: client sent ${data.petId}, DB has ${playerFromDb.equippedPetId}`,
-      );
+      this.logger.warn('Pet mismatch', {
+        clientId: client.id,
+        clientPetId: data.petId,
+        dbPetId: playerFromDb.equippedPetId,
+      });
       return;
     }
 
@@ -370,5 +388,20 @@ export class PlayerGateway
       userId: client.id,
       petImage: petImage,
     });
+  }
+
+  @SubscribeMessage('music_status')
+  handleMusicStatus(
+    @MessageBody() data: { isListening: boolean },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const player = this.players.get(client.id);
+    if (player) {
+      player.isListening = data.isListening;
+      client.to(player.roomId).emit('player_music_status', {
+        userId: client.id,
+        isListening: data.isListening,
+      });
+    }
   }
 }

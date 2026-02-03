@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
+import { Task } from "@/app/_components/TasksMenu/types";
 import { taskApi, ApiError } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
 import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
@@ -11,6 +11,7 @@ import {
   toDateString,
 } from "@/utils/timeFormat";
 import { getErrorMessage } from "@/lib/errors/messages";
+import { mapTaskResToTask } from "@/app/_components/TasksMenu/utils/mappers";
 
 const MAX_TASK_TEXT_LENGTH = 100;
 
@@ -32,6 +33,9 @@ interface TasksStore {
   toggleTaskTimer: (id: number) => void;
   stopAllTasks: () => void;
   getTaskDisplayTime: (task: Task) => number;
+
+  // 자정 리셋: 완료된 태스크 제거
+  removeCompletedTasks: () => void;
 }
 
 export const useTasksStore = create<TasksStore>((set, get) => {
@@ -328,6 +332,12 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           }
           return { ...task, isRunning: false };
         }),
+      })),
+
+    // 완료된 태스크 제거 (KST 자정 리셋용)
+    removeCompletedTasks: () =>
+      set((state) => ({
+        tasks: state.tasks.filter((task) => !task.completed),
       })),
   };
 });

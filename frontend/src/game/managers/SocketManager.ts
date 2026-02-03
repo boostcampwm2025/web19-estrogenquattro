@@ -22,6 +22,7 @@ interface PlayerData {
   timestamp?: number;
   playerId?: number;
   petImage?: string | null; // 펫 이미지 URL 추가
+  isListening?: boolean; // 음악 감상 중 여부
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -56,6 +57,18 @@ export default class SocketManager {
   private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
   private mapSwitchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // 아바타 로더 리스너 추적 (비동기 로드 중 destroy 버그 수정)
+  private avatarLoaderListeners: Map<
+    string,
+    Array<{
+      errorListener: (file: Phaser.Loader.File) => void;
+      completeListener: () => void;
+      textureKey: string;
+    }>
+  > = new Map();
+  private avatarLoadingKeys: Set<string> = new Set();
+
   private getPlayer: () =>
     | {
         id: string;
@@ -220,6 +233,7 @@ export default class SocketManager {
     socket.on("player_left", (data: { userId: string }) => {
       const remotePlayer = this.otherPlayers.get(data.userId);
       if (remotePlayer) {
+        this.cleanupAllAvatarListeners(data.userId);
         remotePlayer.destroy();
         this.otherPlayers.delete(data.userId);
       }
@@ -227,14 +241,12 @@ export default class SocketManager {
 
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
-      console.log("[SocketManager] game_state received:", data);
       useProgressStore.getState().setProgress(data.progress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
       if (!this.isInitialized) {
-        console.log("[SocketManager] Initial map load:", data.mapIndex);
         this.isInitialized = true;
         this.currentMapIndex = data.mapIndex;
         callbacks.onInitialMapLoad(data.mapIndex);
@@ -244,12 +256,6 @@ export default class SocketManager {
       // 재접속: 맵 동기화
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
       if (needsMapSync) {
-        console.log(
-          "[SocketManager] Map sync required:",
-          this.currentMapIndex,
-          "→",
-          data.mapIndex,
-        );
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
       }
@@ -257,7 +263,6 @@ export default class SocketManager {
 
     // 실시간 progress 업데이트 (절대값 동기화)
     socket.on("progress_update", (data: ProgressUpdateData) => {
-      console.log("[SocketManager] progress_update received:", data);
       useProgressStore.getState().setProgress(data.targetProgress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
       useContributionStore.getState().setContributions(data.contributions);
@@ -265,12 +270,6 @@ export default class SocketManager {
       // mapIndex 동기화: map_switch 유실 시 복구
       const needsMapSync = data.mapIndex !== this.currentMapIndex;
       if (needsMapSync) {
-        console.log(
-          "[SocketManager] Map sync from progress_update:",
-          this.currentMapIndex,
-          "→",
-          data.mapIndex,
-        );
         callbacks.onMapSyncRequired(data.mapIndex);
         this.currentMapIndex = data.mapIndex;
       }
@@ -279,14 +278,11 @@ export default class SocketManager {
     // 정상 맵 전환 (progress 100% 도달)
     // 1초 디바운스로 빠른 연속 이벤트 중 마지막만 처리
     socket.on("map_switch", (data: { mapIndex: number }) => {
-      console.log("[SocketManager] map_switch received:", data);
-
       if (this.mapSwitchTimeout) {
         clearTimeout(this.mapSwitchTimeout);
       }
 
       this.mapSwitchTimeout = setTimeout(() => {
-        console.log("[SocketManager] map_switch debounced, processing:", data);
         if (data.mapIndex === this.currentMapIndex) return;
         this.currentMapIndex = data.mapIndex;
         callbacks.onMapSwitch(data.mapIndex);
@@ -295,7 +291,6 @@ export default class SocketManager {
 
     // 시즌 리셋 (매주 월요일 00:00 KST)
     socket.on("season_reset", (data: { mapIndex: number }) => {
-      console.log("[SocketManager] season_reset received:", data);
       useProgressStore.getState().setProgress(0);
       useContributionStore.getState().reset();
       this.currentMapIndex = data.mapIndex;
@@ -370,6 +365,17 @@ export default class SocketManager {
         remotePlayer.setPet(data.petImage);
       }
     });
+
+    // 다른 플레이어 음악 상태 변경
+    socket.on(
+      "player_music_status",
+      (data: { userId: string; isListening: boolean }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setMusicStatus(data.isListening);
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -402,19 +408,135 @@ export default class SocketManager {
       remotePlayer.setPet(data.petImage);
     }
 
+    // 음악 상태가 있으면 설정
+    if (data.isListening !== undefined) {
+      remotePlayer.setMusicStatus(data.isListening);
+    }
+
     if (this.walls) {
       this.scene.physics.add.collider(remotePlayer.getContainer(), this.walls);
     }
 
-    if (!this.scene.textures.exists(username)) {
-      const imageUrl = `https://avatars.githubusercontent.com/${username}`;
+    this.loadAvatar(data, remotePlayer);
+  }
 
-      this.scene.load.image(username, imageUrl);
-      this.scene.load.once(`filecomplete-image-${username}`, () => {
-        remotePlayer.updateFaceTexture(username);
-      });
-      this.scene.load.start();
+  private loadAvatar(data: PlayerData, remotePlayer: RemotePlayer): void {
+    const targetUserId = data.userId;
+    const username = data.username || "unknown";
+    const textureKey = `avatar_${targetUserId}`;
+
+    // 이미 텍스처가 있으면 바로 적용
+    if (this.scene.textures.exists(textureKey)) {
+      remotePlayer.updateFaceTexture(textureKey);
+      return;
     }
+
+    const loader = this.scene.load;
+
+    // 이미 로드 중인지 확인 (자체 추적)
+    const isAlreadyLoading = this.avatarLoadingKeys.has(textureKey);
+
+    const cleanup = () => {
+      this.avatarLoadingKeys.delete(textureKey);
+      this.removeAvatarListener(
+        targetUserId,
+        errorListener,
+        completeListener,
+        textureKey,
+      );
+    };
+
+    const errorListener = (file: Phaser.Loader.File) => {
+      if (file.key === textureKey) {
+        console.error(
+          `[SocketManager] Avatar load error for ${textureKey}:`,
+          file,
+        );
+        cleanup();
+      }
+    };
+
+    const completeListener = () => {
+      cleanup();
+      const player = this.otherPlayers.get(targetUserId);
+      if (player) {
+        player.updateFaceTexture(textureKey);
+      }
+    };
+
+    // 리스너 등록 (배열에 추가)
+    this.addAvatarListener(targetUserId, {
+      errorListener,
+      completeListener,
+      textureKey,
+    });
+
+    loader.on("loaderror", errorListener);
+    loader.once(`filecomplete-image-${textureKey}`, completeListener);
+
+    // 이미 로드 중이 아닐 때만 새 로드 시작
+    if (!isAlreadyLoading) {
+      this.avatarLoadingKeys.add(textureKey);
+      const imageUrl = `https://avatars.githubusercontent.com/${username}`;
+      loader.image(textureKey, imageUrl);
+
+      if (!loader.isLoading()) {
+        loader.start();
+      }
+    }
+  }
+
+  private addAvatarListener(
+    userId: string,
+    listener: {
+      errorListener: (file: Phaser.Loader.File) => void;
+      completeListener: () => void;
+      textureKey: string;
+    },
+  ): void {
+    const existing = this.avatarLoaderListeners.get(userId) || [];
+    existing.push(listener);
+    this.avatarLoaderListeners.set(userId, existing);
+  }
+
+  private removeAvatarListener(
+    userId: string,
+    errorListener: (file: Phaser.Loader.File) => void,
+    completeListener: () => void,
+    textureKey: string,
+  ): void {
+    const listeners = this.avatarLoaderListeners.get(userId);
+    if (!listeners) return;
+
+    if (this.scene?.load) {
+      this.scene.load.off("loaderror", errorListener);
+      this.scene.load.off(`filecomplete-image-${textureKey}`, completeListener);
+    }
+
+    const filtered = listeners.filter(
+      (l) =>
+        l.errorListener !== errorListener &&
+        l.completeListener !== completeListener,
+    );
+
+    if (filtered.length > 0) {
+      this.avatarLoaderListeners.set(userId, filtered);
+    } else {
+      this.avatarLoaderListeners.delete(userId);
+    }
+  }
+
+  private cleanupAllAvatarListeners(userId: string): void {
+    const listeners = this.avatarLoaderListeners.get(userId);
+    if (!listeners || !this.scene?.load) return;
+
+    listeners.forEach(({ errorListener, completeListener, textureKey }) => {
+      this.scene.load.off("loaderror", errorListener);
+      this.scene.load.off(`filecomplete-image-${textureKey}`, completeListener);
+      this.avatarLoadingKeys.delete(textureKey);
+    });
+
+    this.avatarLoaderListeners.delete(userId);
   }
 
   setupCollisions(): void {
@@ -471,6 +593,13 @@ export default class SocketManager {
 
   destroy(): void {
     this.clearMapSwitchTimeout();
+
+    // 모든 아바타 로더 리스너 정리
+    this.avatarLoaderListeners.forEach((_, userId) => {
+      this.cleanupAllAvatarListeners(userId);
+    });
+    this.avatarLoadingKeys.clear();
+
     this.otherPlayers.forEach((player) => player.destroy());
     this.otherPlayers.clear();
   }

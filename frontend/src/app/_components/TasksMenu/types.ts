@@ -1,5 +1,3 @@
-import { TaskRes } from "@/lib/api";
-
 // 프론트엔드 내부 타입 (로컬 상태 포함)
 export interface Task {
   id: number;
@@ -10,18 +8,4 @@ export interface Task {
   startTimestamp: number | null; // 타이머 시작 타임스탬프
   isRunning: boolean;
   createdAt: string; // ISO8601 UTC 문자열
-}
-
-// TaskRes -> Task 변환 함수
-export function mapTaskResToTask(res: TaskRes): Task {
-  return {
-    id: res.id,
-    description: res.description,
-    completed: res.isCompleted,
-    time: res.totalFocusSeconds,
-    baseTime: res.totalFocusSeconds,
-    startTimestamp: null,
-    isRunning: false,
-    createdAt: res.createdAt,
-  };
 }

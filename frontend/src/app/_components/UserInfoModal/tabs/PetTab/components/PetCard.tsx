@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useState, memo } from "react";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -20,7 +20,7 @@ interface PetCardProps {
   points: number;
 }
 
-export default function PetCard({
+const PetCard = memo(function PetCard({
   exp,
   maxExp,
   currentStageData,
@@ -142,4 +142,6 @@ export default function PetCard({
       </div>
     </div>
   );
-}
+});
+
+export default PetCard;
