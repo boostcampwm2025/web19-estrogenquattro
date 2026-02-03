@@ -132,25 +132,27 @@ describe("TasksMenuContent", () => {
 
   it("KST 자정(UTC 15:00)에 removeCompletedTasks가 호출된다", () => {
     vi.useFakeTimers();
-    // UTC 14:59:59 (KST 23:59:59)로 설정
-    vi.setSystemTime(new Date("2026-02-03T14:59:59Z"));
+    try {
+      // UTC 14:59:59 (KST 23:59:59)로 설정
+      vi.setSystemTime(new Date("2026-02-03T14:59:59Z"));
 
-    render(
-      <TasksMenuContent
-        isExpanded={true}
-        lastRunTaskId={null}
-        setLastRunTaskId={vi.fn()}
-      />,
-    );
+      render(
+        <TasksMenuContent
+          isExpanded={true}
+          lastRunTaskId={null}
+          setLastRunTaskId={vi.fn()}
+        />,
+      );
 
-    expect(mockTasksStore.removeCompletedTasks).not.toHaveBeenCalled();
+      expect(mockTasksStore.removeCompletedTasks).not.toHaveBeenCalled();
 
-    // 1초 뒤 UTC 15:00 (KST 자정)
-    vi.advanceTimersByTime(1000);
+      // 1초 뒤 UTC 15:00 (KST 자정)
+      vi.advanceTimersByTime(1000);
 
-    expect(mockTasksStore.removeCompletedTasks).toHaveBeenCalledTimes(1);
-
-    vi.useRealTimers();
+      expect(mockTasksStore.removeCompletedTasks).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("에러가 있으면 표시된다", () => {
