@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
+import { Task } from "@/app/_components/TasksMenu/types";
 import { taskApi, ApiError } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
 import { FOCUS_STATUS, useFocusTimeStore } from "./useFocusTimeStore";
@@ -11,6 +11,7 @@ import {
   toDateString,
 } from "@/utils/timeFormat";
 import { getErrorMessage } from "@/lib/errors/messages";
+import { mapTaskResToTask } from "@/app/_components/TasksMenu/utils/mappers";
 
 const MAX_TASK_TEXT_LENGTH = 100;
 

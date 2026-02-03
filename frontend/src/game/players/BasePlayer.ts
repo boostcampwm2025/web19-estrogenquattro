@@ -253,6 +253,7 @@ export default class BasePlayer {
     this.pendingLoaderListeners = [];
     this.petLoadingKeys.clear();
 
+    this.musicParticleEmitter?.destroy();
     this.pet.destroy();
     this.container.destroy();
     this.maskShape.destroy();
@@ -548,4 +549,46 @@ export default class BasePlayer {
       this.container.bringToTop(this.taskBubbleContainer);
     }
   }
+
+  // 음악 파티클 이미터
+  protected musicParticleEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+
+  // 음악 재생 상태 설정
+  setMusicStatus(isListening: boolean) {
+    if (isListening) {
+      if (!this.musicParticleEmitter) {
+        // 이미터 생성 (아틀라스 사용)
+        if (this.scene.textures.exists("music_notes_atlas")) {
+          this.musicParticleEmitter = this.scene.add.particles(
+            0,
+            0,
+            "music_notes_atlas",
+            {
+              frame: [0, 1, 2, 3], // 4가지 음표 중 랜덤 선택
+              speed: { min: 20, max: 50 },
+              angle: { min: 290, max: 340 }, // 오른쪽 위 대각선
+              // 이미지 크기에 따라 스케일 조정 (Base: 32x32)
+              scale: { start: 0.8, end: 0.8 },
+              alpha: { start: 1, end: 0 },
+              lifespan: 1500,
+              frequency: 500,
+              quantity: 1,
+              follow: this.container,
+              followOffset: { x: 20, y: 0 }, // 캐릭터 머리 위
+            },
+          );
+          // 컨테이너보다 위에 그려지도록 depth 설정
+          this.musicParticleEmitter.setDepth(this.container.depth + 1);
+        } else {
+          console.warn("[BasePlayer] music_notes_atlas texture not found");
+        }
+      }
+      this.musicParticleEmitter?.start();
+    } else {
+      this.musicParticleEmitter?.stop();
+    }
+  }
+
+  // 자원 해제 오버라이드 시 emit destroy 호출 필요
+  // BasePlayer destroy에 추가
 }

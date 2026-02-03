@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { getHeatmapColorClass } from "../../lib/grassLevel";
 import { isSameDay } from "../../lib/dateUtils";
 import { DayData } from "./useHeatmapData";
@@ -11,7 +12,7 @@ interface HeatmapCellProps {
   onMouseLeave: () => void;
 }
 
-export function HeatmapCell({
+export const HeatmapCell = memo(function HeatmapCell({
   day,
   selectedDate,
   onSelectDate,
@@ -49,4 +50,4 @@ export function HeatmapCell({
       onMouseLeave={onMouseLeave}
     />
   );
-}
+});

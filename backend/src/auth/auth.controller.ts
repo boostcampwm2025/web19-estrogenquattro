@@ -27,14 +27,20 @@ export class AuthController {
   @UseGuards(GithubGuard)
   githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
-    this.logger.log(`GitHub callback - username: ${user.username}`);
+    this.logger.log('GitHub callback', {
+      method: 'githubCallback',
+      username: user.username,
+    });
 
     const token = this.jwtService.sign({
       sub: user.githubId,
       username: user.username,
       playerId: user.playerId,
     });
-    this.logger.log(`JWT token generated for user: ${user.username}`);
+    this.logger.log('JWT token generated', {
+      method: 'githubCallback',
+      username: user.username,
+    });
 
     const cookieOptions = {
       httpOnly: true,
@@ -43,15 +49,19 @@ export class AuthController {
       maxAge: 24 * 60 * 60 * 1000, // 1일
       path: '/',
     };
-    this.logger.log(
-      `Setting cookie with options: ${JSON.stringify(cookieOptions)}`,
-    );
+    this.logger.log('Setting cookie', {
+      method: 'githubCallback',
+      options: cookieOptions,
+    });
 
     res.cookie('access_token', token, cookieOptions);
 
     const frontendUrls = getFrontendUrls(this.configService);
     const frontendUrl = frontendUrls[0];
-    this.logger.log(`Redirecting to: ${frontendUrl}/auth/callback`);
+    this.logger.log('Redirecting to callback', {
+      method: 'githubCallback',
+      url: `${frontendUrl}/auth/callback`,
+    });
     res.redirect(`${frontendUrl}/auth/callback`);
   }
 
@@ -60,7 +70,10 @@ export class AuthController {
   me(@Req() req: Request) {
     const { githubId, username, avatarUrl, playerId } = req.user as User;
     const userInfo: UserInfo = { githubId, username, avatarUrl, playerId };
-    this.logger.log(`/me called - username: ${userInfo.username}`);
+    this.logger.log('GET /auth/me', {
+      method: 'me',
+      username: userInfo.username,
+    });
     return userInfo;
   }
 

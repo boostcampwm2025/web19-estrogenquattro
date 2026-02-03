@@ -1,5 +1,12 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+  startTransition,
+} from "react";
 import { Button } from "@/_components/ui/button";
 import { useHeatmapData, DayData, DailyPoints } from "./useHeatmapData";
 import { HeatmapTooltip } from "./HeatmapTooltip";
@@ -7,13 +14,17 @@ import { HeatmapInfo } from "./HeatmapInfo";
 import { HeatmapCell } from "./HeatmapCell";
 import { HeatmapLegend } from "./HeatmapLegend";
 
+// 요일 레이블 (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
+// Mon, Wed, Fri만 표시
+const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""] as const;
+
 interface CalendarHeatmapProps {
   dailyPoints: DailyPoints;
   onSelectDate: (date: Date) => void;
   selectedDate?: Date;
 }
 
-export function CalendarHeatmap({
+export const CalendarHeatmap = memo(function CalendarHeatmap({
   dailyPoints,
   onSelectDate,
   selectedDate,
@@ -42,15 +53,17 @@ export function CalendarHeatmap({
     container.scrollTo({ left: newPosition, behavior: "smooth" });
   };
 
-  const handleMouseMove = (e: React.MouseEvent, day: DayData) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent, day: DayData) => {
     if (day.value === -1) return;
-    setHoveredDay(day);
-    setMousePosition({ x: e.clientX, y: e.clientY });
-  };
+    startTransition(() => {
+      setHoveredDay(day);
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    });
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setHoveredDay(null);
-  };
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -82,10 +95,6 @@ export function CalendarHeatmap({
     }
   });
 
-  // 요일 레이블 (Sun, Mon, Tue, Wed, Thu, Fri, Sat)
-  // Mon, Wed, Fri만 표시
-  const weekdayLabels = ["", "Mon", "", "Wed", "", "Fri", ""];
-
   return (
     <div className="mb-6 rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       {/* 포인트 획득 정책 정보 */}
@@ -104,7 +113,7 @@ export function CalendarHeatmap({
         <div className="flex flex-1 gap-1 overflow-hidden">
           {/* 요일 레이블 */}
           <div className="flex shrink-0 flex-col pt-[21px]">
-            {weekdayLabels.map((label, index) => (
+            {WEEKDAY_LABELS.map((label, index) => (
               <div
                 key={index}
                 className={`flex h-3 items-center text-xs leading-3 font-bold text-amber-800 ${index < 6 ? "mb-0.75" : ""}`}
@@ -169,4 +178,4 @@ export function CalendarHeatmap({
       )}
     </div>
   );
-}
+});

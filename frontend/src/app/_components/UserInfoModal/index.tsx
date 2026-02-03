@@ -6,7 +6,7 @@ import { useModalClose } from "@/hooks/useModalClose";
 import { usePetSystem } from "./tabs/PetTab/hooks/usePetSystem";
 import { useShallow } from "zustand/react/shallow";
 import { useCallback, useState } from "react";
-import ProfileTab from "./tabs/ProfileTab/ProfileTab";
+import ProfileTab from "./tabs/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
 
@@ -29,7 +29,7 @@ export default function UserInfoModal() {
   const isOpen = activeModal === MODAL_TYPES.USER_INFO;
   const targetUsername = userInfoPayload?.username;
 
-  const [activeTab, setActiveTab] = useState<TabType>("profile");
+  const [activeTab, setActiveTab] = useState<TabType>("activity");
   const { user: currentUser } = useAuthStore();
   const { player } = usePetSystem(userInfoPayload?.playerId ?? 0);
 
@@ -38,7 +38,7 @@ export default function UserInfoModal() {
 
   const onClose = useCallback(() => {
     closeModal();
-    setActiveTab("profile");
+    setActiveTab("activity");
   }, [closeModal]);
 
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
@@ -83,15 +83,20 @@ export default function UserInfoModal() {
 
         <div className="mb-0 flex gap-1">
           <TabButton
-            label="프로필"
-            isActive={activeTab === "profile"}
-            onClick={() => setActiveTab("profile")}
+            label="활동"
+            isActive={activeTab === "activity"}
+            onClick={() => setActiveTab("activity")}
           />
           <TabButton
             id="pet-tab-button"
             label="펫"
             isActive={activeTab === "pet"}
             onClick={() => setActiveTab("pet")}
+          />
+          <TabButton
+            label="프로필"
+            isActive={activeTab === "profile"}
+            onClick={() => setActiveTab("profile")}
           />
         </div>
 
