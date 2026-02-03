@@ -35,18 +35,31 @@ describe("ActivityTab", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useModalStore).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      <T,>(selector: (state: any) => T) =>
-        selector({ userInfoPayload: { playerId: 1 } }),
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(useAuthStore).mockImplementation(
-      (selector?: (state: any) => any) => {
-        const state = { user: { playerId: 1, username: "testuser" } };
-        return selector ? selector(state) : state;
-      },
-    );
+    vi.mocked(useModalStore).mockImplementation((selector) => {
+      const state = {
+        activeModal: "userInfo" as const,
+        userInfoPayload: { playerId: 1, username: "testuser" },
+        openModal: vi.fn(),
+        closeModal: vi.fn(),
+        toggleModal: vi.fn(),
+      };
+      return selector(state);
+    });
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        user: { playerId: 1, username: "testuser" } as {
+          sub: string;
+          username: string;
+          avatarUrl: string;
+          playerId: number;
+        } | null,
+        isLoading: false,
+        isAuthenticated: true,
+        fetchUser: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector ? selector(state) : state;
+    });
     vi.mocked(useActivityDataModule.useActivityData).mockReturnValue(
       mockActivityData,
     );
@@ -95,10 +108,16 @@ describe("ActivityTab", () => {
   });
 
   it("targetPlayerId가 없으면 현재 유저의 playerId를 사용한다", () => {
-    vi.mocked(useModalStore).mockImplementation(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      <T,>(selector: (state: any) => T) => selector({ userInfoPayload: null }),
-    );
+    vi.mocked(useModalStore).mockImplementation((selector) => {
+      const state = {
+        activeModal: "userInfo" as const,
+        userInfoPayload: null,
+        openModal: vi.fn(),
+        closeModal: vi.fn(),
+        toggleModal: vi.fn(),
+      };
+      return selector(state);
+    });
 
     render(<ActivityTab />);
 
