@@ -376,9 +376,10 @@ socket.on('chatted', (data: {
 socket.on('progress_update', (data: {
   username: string,
   source: 'github' | 'task' | 'focustime',  // 기여 출처
-  targetProgress: number,                    // 현재 progress 절대값 (0-99)
+  targetProgress: number,                    // 현재 progress 절대값
   contributions: Record<string, number>,     // 전체 기여도
-  mapIndex: number                           // 현재 맵 인덱스 (0-4)
+  mapIndex: number,                          // 현재 맵 인덱스 (0-4)
+  progressThreshold: number                  // 현재 맵의 기준값 (200/300/400/500)
 }) => {
   // 프로그레스바 절대값 설정 (클라이언트 계산 없음)
   // 기여도 목록 업데이트
@@ -399,9 +400,10 @@ socket.on('progress_update', (data: {
 
 ```typescript
 socket.on('game_state', (state: {
-  progress: number,                         // 현재 progress (0-99)
+  progress: number,                         // 현재 progress
   contributions: Record<string, number>,    // username -> points
-  mapIndex: number                          // 현재 맵 인덱스 (0-4)
+  mapIndex: number,                         // 현재 맵 인덱스 (0-4)
+  progressThreshold: number                 // 현재 맵의 기준값 (200/300/400/500)
 }) => {
   // 프로그레스바 초기값 설정
   // 기여도 목록 초기값 설정
@@ -413,7 +415,7 @@ socket.on('game_state', (state: {
 
 ### map_switch
 
-맵 전환 알림 (progress 100% 도달 시, 전체 방 브로드캐스트)
+맵 전환 알림 (progress가 기준값 도달 시, 전체 방 브로드캐스트)
 
 ```typescript
 socket.on('map_switch', (data: {
@@ -425,9 +427,19 @@ socket.on('map_switch', (data: {
 ```
 
 **특징:**
-- 서버 주도 맵 전환: 서버가 100% 도달 감지 시 브로드캐스트
+- 서버 주도 맵 전환: 서버가 기준값 도달 감지 시 브로드캐스트
 - 모든 클라이언트 동시 맵 전환
 - progress는 자동으로 0으로 리셋
+- 맵 4(마지막 맵)에서는 전환 없음 (시즌 리셋 시에만 맵 0으로 초기화)
+
+**맵별 기준값:**
+| 맵 전환 | 기준값 |
+|---------|--------|
+| 맵 0 → 맵 1 | 200 |
+| 맵 1 → 맵 2 | 300 |
+| 맵 2 → 맵 3 | 400 |
+| 맵 3 → 맵 4 | 500 |
+| 맵 4 | 500 도달 시 멈춤 (전환 없음) |
 
 ---
 

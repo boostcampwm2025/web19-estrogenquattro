@@ -256,9 +256,19 @@ Tiled 에디터로 충돌 영역을 정의하고 JSON으로 export
 
 ### 맵 전환
 
-서버에서 progress 100% 도달 감지 시 `map_switch` 이벤트로 전체 클라이언트에 맵 전환 지시
+서버에서 progress가 기준값 도달 감지 시 `map_switch` 이벤트로 전체 클라이언트에 맵 전환 지시
 
-#### 맵 순환 상태
+#### 맵별 기준값
+
+| 맵 전환 | 기준값 |
+|---------|--------|
+| 맵 0 → 맵 1 | 200 |
+| 맵 1 → 맵 2 | 300 |
+| 맵 2 → 맵 3 | 400 |
+| 맵 3 → 맵 4 | 500 |
+| 맵 4 | 500 도달 시 멈춤 (전환 없음) |
+
+#### 맵 진행 상태
 
 ```mermaid
 stateDiagram-v2
@@ -266,15 +276,17 @@ stateDiagram-v2
     Stage2: desert_stage2
     Stage3: desert_stage3
     Stage4: desert_stage4
-    Stage5: desert_stage5
+    Stage5: desert_stage5 (마지막)
 
     [*] --> Stage1: 게임 시작
-    Stage1 --> Stage2: map_switch (서버)
-    Stage2 --> Stage3: map_switch (서버)
-    Stage3 --> Stage4: map_switch (서버)
-    Stage4 --> Stage5: map_switch (서버)
-    Stage5 --> Stage1: map_switch (서버)
+    Stage1 --> Stage2: progress >= 200
+    Stage2 --> Stage3: progress >= 300
+    Stage3 --> Stage4: progress >= 400
+    Stage4 --> Stage5: progress >= 500
+    Stage5 --> [*]: 시즌 리셋 시에만 Stage1로 초기화
 ```
+
+> **Note:** 마지막 맵(Stage5)에서는 순환하지 않고, 시즌 리셋(매주 월요일 00:00 KST) 시에만 Stage1으로 초기화됩니다.
 
 #### 맵 전환 시퀀스 (서버 주도)
 
@@ -286,8 +298,8 @@ sequenceDiagram
     participant MM as MapManager
     participant CC as CameraController
 
-    SV->>SV: progress >= 100% 감지
-    SV->>SV: progress = 0, mapIndex = (index + 1) % 5
+    SV->>SV: progress >= threshold 감지
+    SV->>SV: progress = 0, mapIndex += 1
     SV->>SM: map_switch { mapIndex }
 
     SM->>S: onMapSwitch(mapIndex)
