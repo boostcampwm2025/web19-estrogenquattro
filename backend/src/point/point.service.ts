@@ -85,7 +85,8 @@ export class PointService {
       count,
     });
     // 요청 도착 시각을 기준으로 일일 범위를 고정 (락 대기 중 자정 넘어가도 요청 시각 기준 적용)
-    const requestTime = new Date();
+    // activityAt이 있으면 그 시각을 기준으로 함 (어제 날짜 정산 등)
+    const requestTime = activityAt ?? new Date();
     const { start, end } = getTodayKstRangeUtc(requestTime);
     const totalPoint = ACTIVITY_POINT_MAP[activityType] * count;
 
