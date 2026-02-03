@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { getSocket } from "@/lib/socket";
 import { LOOP_MODES, STORAGE_KEYS, TRACKS } from "./constants";
 import { LoopMode, Track } from "./types";
 
@@ -75,6 +76,21 @@ export function useMusicPlayer() {
       }
     }
   }, [isPlaying, currentTrack]);
+
+  // 서버로 음악 재생 상태 전송
+  useEffect(() => {
+    // 1. 소켓 전송
+    const socket = getSocket();
+    if (socket && socket.connected) {
+      socket.emit("music_status", { isListening: isPlaying });
+    }
+
+    // 2. 로컬 이벤트 발생 (내 캐릭터용)
+    const event = new CustomEvent("local_music_update", {
+      detail: { isListening: isPlaying },
+    });
+    window.dispatchEvent(event);
+  }, [isPlaying]);
 
   const handlePlayTrack = (track: Track) => {
     if (currentTrack?.id === track.id) {

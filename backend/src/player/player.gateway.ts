@@ -55,6 +55,7 @@ export class PlayerGateway
       y: number;
       playerId: number;
       petImage: string | null; // 펫 이미지 (nullable)
+      isListening?: boolean; // 음악 감상 중 여부
     }
   > = new Map();
 
@@ -181,6 +182,7 @@ export class PlayerGateway
       y: data.y,
       playerId: playerId,
       petImage: petImage,
+      isListening: false,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
@@ -278,6 +280,7 @@ export class PlayerGateway
       currentSessionSeconds: myFocusStatus.currentSessionSeconds,
       playerId: playerId,
       petImage: petImage,
+      isListening: false,
       // FOCUSING 상태일 때만 taskName 반환
       taskName: myFocusStatus.isFocusing ? myTaskName : null,
     });
@@ -384,5 +387,20 @@ export class PlayerGateway
       userId: client.id,
       petImage: petImage,
     });
+  }
+
+  @SubscribeMessage('music_status')
+  handleMusicStatus(
+    @MessageBody() data: { isListening: boolean },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const player = this.players.get(client.id);
+    if (player) {
+      player.isListening = data.isListening;
+      client.to(player.roomId).emit('player_music_status', {
+        userId: client.id,
+        isListening: data.isListening,
+      });
+    }
   }
 }

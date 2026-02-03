@@ -22,6 +22,7 @@ interface PlayerData {
   timestamp?: number;
   playerId?: number;
   petImage?: string | null; // 펫 이미지 URL 추가
+  isListening?: boolean; // 음악 감상 중 여부
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -351,6 +352,17 @@ export default class SocketManager {
         remotePlayer.setPet(data.petImage);
       }
     });
+
+    // 다른 플레이어 음악 상태 변경
+    socket.on(
+      "player_music_status",
+      (data: { userId: string; isListening: boolean }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setMusicStatus(data.isListening);
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {
@@ -381,6 +393,11 @@ export default class SocketManager {
     // 펫 정보가 있으면 설정
     if (data.petImage) {
       remotePlayer.setPet(data.petImage);
+    }
+
+    // 음악 상태가 있으면 설정
+    if (data.isListening !== undefined) {
+      remotePlayer.setMusicStatus(data.isListening);
     }
 
     if (this.walls) {
