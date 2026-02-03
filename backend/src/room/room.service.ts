@@ -151,16 +151,11 @@ export class RoomService {
 
     const reservedRoomId = this.consumeReservation(playerId);
     if (reservedRoomId) {
-       // Ideally, they should be joining the reserved room.
-       // If they request a different room, we should cancel the old reservation first?
-       // For now, if reservedRoomId matches request, all good.
        if (reservedRoomId === roomId) {
           this.socketIdToRoomId.set(socketId, roomId);
           return roomId;
        } 
-       // If different, we already consumed (cleared) it above, but we need to decrement the old room size
        this.cancelReservationLogic(reservedRoomId);
-       // Now proceed to join requested room as normal new entry
     }
 
     const room = this.roomInfos.get(roomId);
