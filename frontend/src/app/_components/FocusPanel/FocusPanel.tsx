@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Music, ListTodo } from "lucide-react";
+import { ChevronsDown, ChevronsUp, Music, ListTodo } from "lucide-react";
 import MusicPlayerContent from "../MusicPlayer/MusicPlayerContent";
 import TasksMenuContent from "../TasksMenu/TasksMenuContent";
 
@@ -19,13 +19,9 @@ export default function FocusPanel() {
 
   return (
     <div id="focus-panel" className="w-80">
-      <div className="border-3 border-amber-900 bg-[#ffecb3] p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
+      <div className="border-3 border-amber-900 bg-[#ffecb3] shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
         {/* 탭 헤더 */}
-        <div
-          className={`flex items-center select-none ${
-            isExpanded ? "mb-4" : "mb-0"
-          }`}
-        >
+        <div className="flex items-center p-4 pb-0 select-none">
           {/* 탭 버튼들 */}
           <div className="flex flex-1 gap-1">
             <button
@@ -53,8 +49,11 @@ export default function FocusPanel() {
           </div>
         </div>
 
-        {/* 콘텐츠 영역 - 각 컴포넌트가 isExpanded에 따라 자체적으로 full/mini 표시 */}
-        <div>
+        {/* 미니 모드 구분선 */}
+        {!isExpanded && <div className="my-4 border-t border-amber-900/20" />}
+
+        {/* 콘텐츠 영역 */}
+        <div className={`px-4 pb-4 ${isExpanded ? "pt-4" : "pt-0"}`}>
           {/* Music 콘텐츠 - 항상 마운트, activeTab으로 표시/숨김 */}
           <div className={activeTab === TABS.MUSIC ? "block" : "hidden"}>
             <MusicPlayerContent isExpanded={isExpanded} />
@@ -73,12 +72,12 @@ export default function FocusPanel() {
         {/* 접기/펼치기 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-4 flex w-full cursor-pointer items-center justify-center rounded border-2 border-amber-900 bg-transparent py-1 text-amber-900 transition-colors hover:bg-amber-100"
+          className="flex w-full cursor-pointer items-center justify-center border-t-1 border-amber-900/30 bg-transparent py-2 text-amber-900 transition-colors hover:bg-amber-100"
         >
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronsUp className="h-4 w-4" />
           ) : (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronsDown className="h-4 w-4" />
           )}
         </button>
       </div>
