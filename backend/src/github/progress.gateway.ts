@@ -38,6 +38,7 @@ export interface ProgressUpdateData {
   targetProgress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number; // 현재 맵의 기준값
 }
 
 // game_state 이벤트 페이로드 (S→C, 입장 시)
@@ -45,6 +46,7 @@ export interface GameStateData {
   progress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number; // 현재 맵의 기준값
 }
 
 // 타입 가드: contributions가 Record<string, number> 형식인지 검증
@@ -55,6 +57,9 @@ function isContributionsRecord(data: unknown): data is Record<string, number> {
 
 // 상수 정의
 const MAP_COUNT = 5;
+const MAX_MAP_INDEX = 4; // 마지막 맵 인덱스
+// 맵 인덱스별 기준값 배열: 맵 0→1(200), 1→2(300), 2→3(400), 3→4(500), 마지막맵상한(500)
+const MAP_PROGRESS_THRESHOLDS = [200, 300, 400, 500, 500];
 
 @WebSocketGateway()
 export class ProgressGateway implements OnModuleInit {
@@ -187,6 +192,13 @@ export class ProgressGateway implements OnModuleInit {
   }
 
   /**
+   * 현재 맵의 프로그레스 기준값 반환
+   */
+  private getProgressThreshold(): number {
+    return MAP_PROGRESS_THRESHOLDS[this.globalState.mapIndex];
+  }
+
+  /**
    * progress_update 이벤트 전송 (절대값 동기화)
    */
   public castProgressUpdate(
@@ -203,6 +215,7 @@ export class ProgressGateway implements OnModuleInit {
       targetProgress: this.globalState.progress,
       contributions: { ...this.globalState.contributions },
       mapIndex: this.globalState.mapIndex,
+      progressThreshold: this.getProgressThreshold(),
     };
     this.server.emit('progress_update', payload);
   }
@@ -222,22 +235,34 @@ export class ProgressGateway implements OnModuleInit {
 
     if (progressIncrement === 0) return;
 
-    this.globalState.progress += progressIncrement;
+    const threshold = this.getProgressThreshold();
+    const isLastMap = this.globalState.mapIndex >= MAX_MAP_INDEX;
+
     // contributions에 포인트(progressIncrement)를 누적
     this.globalState.contributions[username] =
       (this.globalState.contributions[username] || 0) + progressIncrement;
 
-    // 100% 도달 시 맵 전환
-    if (this.globalState.progress >= 100) {
-      const prevMapIndex = this.globalState.mapIndex;
-      this.globalState.progress = 0; // 초과분 버림
-      this.globalState.mapIndex = (this.globalState.mapIndex + 1) % MAP_COUNT;
-      this.logger.log('Map switch triggered', {
-        method: 'addProgress',
-        from: prevMapIndex,
-        to: this.globalState.mapIndex,
-      });
-      this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
+    if (isLastMap) {
+      // 마지막 맵: 기준값 이상으로 올라가지 않음
+      this.globalState.progress = Math.min(
+        this.globalState.progress + progressIncrement,
+        threshold,
+      );
+    } else {
+      this.globalState.progress += progressIncrement;
+
+      // 기준값 도달 시 맵 전환
+      if (this.globalState.progress >= threshold) {
+        const prevMapIndex = this.globalState.mapIndex;
+        this.globalState.progress = 0;
+        this.globalState.mapIndex += 1; // 순환 없이 증가
+        this.logger.log('Map switch triggered', {
+          method: 'addProgress',
+          from: prevMapIndex,
+          to: this.globalState.mapIndex,
+        });
+        this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
+      }
     }
 
     this.schedulePersist();
@@ -248,6 +273,7 @@ export class ProgressGateway implements OnModuleInit {
       targetProgress: this.globalState.progress,
       contributions: { ...this.globalState.contributions },
       mapIndex: this.globalState.mapIndex,
+      progressThreshold: this.getProgressThreshold(),
     };
     this.server.emit('progress_update', payload);
   }
@@ -269,22 +295,34 @@ export class ProgressGateway implements OnModuleInit {
         rawData.reviewCount * ACTIVITY_POINT_MAP[PointType.PR_REVIEWED];
     }
 
-    this.globalState.progress += progressIncrement;
     // contributions에 포인트(progressIncrement)를 누적
     this.globalState.contributions[username] =
       (this.globalState.contributions[username] || 0) + progressIncrement;
 
-    // 100% 도달 시 맵 전환
-    if (this.globalState.progress >= 100) {
-      const prevMapIndex = this.globalState.mapIndex;
-      this.globalState.progress = 0; // 초과분 버림
-      this.globalState.mapIndex = (this.globalState.mapIndex + 1) % MAP_COUNT;
-      this.logger.log('Map switch triggered', {
-        method: 'updateGlobalState',
-        from: prevMapIndex,
-        to: this.globalState.mapIndex,
-      });
-      this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
+    const threshold = this.getProgressThreshold();
+    const isLastMap = this.globalState.mapIndex >= MAX_MAP_INDEX;
+
+    if (isLastMap) {
+      // 마지막 맵: 기준값 이상으로 올라가지 않음
+      this.globalState.progress = Math.min(
+        this.globalState.progress + progressIncrement,
+        threshold,
+      );
+    } else {
+      this.globalState.progress += progressIncrement;
+
+      // 기준값 도달 시 맵 전환
+      if (this.globalState.progress >= threshold) {
+        const prevMapIndex = this.globalState.mapIndex;
+        this.globalState.progress = 0;
+        this.globalState.mapIndex += 1; // 순환 없이 증가
+        this.logger.log('Map switch triggered', {
+          method: 'updateGlobalState',
+          from: prevMapIndex,
+          to: this.globalState.mapIndex,
+        });
+        this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
+      }
     }
   }
 
@@ -296,6 +334,7 @@ export class ProgressGateway implements OnModuleInit {
       progress: this.globalState.progress,
       contributions: { ...this.globalState.contributions },
       mapIndex: this.globalState.mapIndex,
+      progressThreshold: this.getProgressThreshold(),
     };
   }
 }
