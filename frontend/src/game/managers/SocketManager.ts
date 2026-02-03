@@ -4,6 +4,7 @@ import { connectSocket, getSocket } from "../../lib/socket";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useConnectionStore } from "../../stores/useConnectionStore";
 import { useContributionStore } from "../../stores/useContributionStore";
+import { useTasksStore } from "../../stores/useTasksStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -162,6 +163,9 @@ export default class SocketManager {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("reset_media"));
         }
+
+        // 로컬 Task 상태 정지 (UI 상의 Running 상태 제거)
+        useTasksStore.getState().stopAllTasks();
 
         this.emitJoining();
       }
