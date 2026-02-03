@@ -78,7 +78,7 @@ export default function ChannelSelectModal() {
         >
           {/* Background pattern */}
           <div className="pointer-events-none absolute inset-0 opacity-5" />
-          <div className="retro-scrollbar max-h-80 space-y-3 overflow-y-auto p-1">
+          <div className="space-y-3 p-1">
             {MOCK_CHANNELS.map((channel) => {
               const isFull = channel.count >= channel.max;
               const isCurrent = currentRoomId === channel.name.split(".")[1];
@@ -86,10 +86,10 @@ export default function ChannelSelectModal() {
               return (
                 <div
                   key={channel.id}
-                  className={`flex items-center justify-between ${PIXEL_BORDER} bg-white p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] transition-transform hover:scale-[1.01] ${
+                  className={`flex items-center justify-between p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] transition-transform hover:scale-[1.01] ${
                     isCurrent
-                      ? "bg-amber-50 ring-2 ring-amber-500 ring-inset"
-                      : ""
+                      ? "border-3 border-green-600 bg-green-50"
+                      : `${PIXEL_BORDER} bg-white`
                   }`}
                 >
                   <div className="flex flex-col">
@@ -113,12 +113,12 @@ export default function ChannelSelectModal() {
                       !isFull && !isCurrent && handleChannelSelect(channel.id)
                     }
                     disabled={isFull || isCurrent}
-                    className={`${PIXEL_BORDER} flex w-24 items-center justify-center gap-2 px-4 py-2 text-white transition-all ${
+                    className={`flex w-24 items-center justify-center gap-2 px-4 py-2 text-white transition-all ${
                       isCurrent
-                        ? "cursor-default bg-green-600 shadow-none"
+                        ? "cursor-default bg-green-600 shadow-[inset_-4px_-4px_0px_0px_#15803d,inset_4px_4px_0px_0px_#86efac]"
                         : isFull
-                          ? "cursor-not-allowed bg-gray-400 shadow-none grayscale"
-                          : "cursor-pointer bg-amber-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] hover:bg-amber-700 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                          ? "cursor-not-allowed bg-zinc-500 shadow-[inset_-4px_-4px_0px_0px_#555,inset_4px_4px_0px_0px_#aaa]"
+                          : "cursor-pointer bg-amber-500 shadow-[inset_-4px_-4px_0px_0px_#b45309,inset_4px_4px_0px_0px_#fcd34d] hover:bg-amber-400 active:shadow-[inset_4px_4px_0px_0px_#b45309]"
                     }`}
                   >
                     <span className="font-bold tracking-wider">
