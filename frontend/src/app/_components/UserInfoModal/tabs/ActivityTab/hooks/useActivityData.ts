@@ -10,7 +10,7 @@ import { toDateString } from "@/utils/timeFormat";
 import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
 import { DailyPoints } from "../components/CalendarHeatmap/useHeatmapData";
 
-interface UseProfileDataReturn {
+interface UseActivityDataReturn {
   dailyPoints: DailyPoints;
   focusTimeData: DailyFocusTimeRes | undefined;
   githubEvents: GithubEventsRes | undefined;
@@ -19,10 +19,10 @@ interface UseProfileDataReturn {
   isDateDataLoading: boolean;
 }
 
-export function useProfileData(
+export function useActivityData(
   playerId: number,
   selectedDate: Date,
-): UseProfileDataReturn {
+): UseActivityDataReturn {
   const dateStr = toDateString(selectedDate);
 
   // 히트맵 데이터 (1년치 포인트)

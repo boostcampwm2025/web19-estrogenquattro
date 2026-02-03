@@ -1,12 +1,5 @@
-import { useState } from "react";
-import { CalendarHeatmap } from "./components/CalendarHeatmap/CalendarHeatmap";
-import StatsSection from "./components/StatsSection/StatsSection";
-import DetailSection from "./components/DetailSection/DetailSection";
-import { Loading } from "@/_components/ui/loading";
-import { useProfileData } from "./hooks/useProfileData";
 import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
-import { STAT_CARD_TYPES, StatCardType } from "./constants/constants";
 
 export default function ProfileTab() {
   const targetPlayerId = useModalStore(
@@ -14,46 +7,12 @@ export default function ProfileTab() {
   );
   const { user } = useAuthStore();
   const playerId = targetPlayerId ?? user?.playerId ?? 0;
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedCard, setSelectedCard] = useState<StatCardType>(
-    STAT_CARD_TYPES.TASK,
-  );
-  const { dailyPoints, focusTimeData, githubEvents, tasks, isLoading } =
-    useProfileData(playerId, selectedDate);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loading size="lg" text="프로필 로딩 중..." />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
-      <CalendarHeatmap
-        dailyPoints={dailyPoints}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-      />
-
-      <div className="space-y-4 text-amber-900">
-        <StatsSection
-          tasks={tasks}
-          selectedDate={selectedDate}
-          focusTimeSeconds={focusTimeData?.totalFocusSeconds}
-          githubEvents={githubEvents}
-          dailyPoints={dailyPoints}
-          playerId={playerId}
-          selectedCard={selectedCard}
-          onCardSelect={setSelectedCard}
-        />
-        <DetailSection
-          selectedCard={selectedCard}
-          tasks={tasks}
-          selectedDate={selectedDate}
-          playerId={playerId}
-        />
+      <div className="text-amber-900">
+        <h3 className="mb-2 text-lg font-bold">프로필</h3>
+        <p>Player ID: {playerId}</p>
       </div>
     </div>
   );
