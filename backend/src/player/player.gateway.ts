@@ -142,14 +142,15 @@ export class PlayerGateway
         roomId = this.roomService.randomJoin(client.id, playerId);
       }
     } catch (error) {
+      const err = error as { message: string; code?: string };
       this.logger.warn('Failed to join room', {
         clientId: client.id,
         requestedRoomId: data.roomId,
-        error: error.message,
+        error: err.message,
       });
       client.emit('join_failed', {
-        message: error.message,
-        code: error.code ?? 'ROOM_JOIN_FAILED',
+        message: err.message,
+        code: err.code,
       });
       client.disconnect();
       return;
