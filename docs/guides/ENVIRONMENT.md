@@ -30,7 +30,7 @@
 - `AXIOM_TOKEN`: Axiom API 토큰 (프로덕션 필수)
 - `AXIOM_DATASET`: Axiom 데이터셋 이름 (프로덕션 필수)
 
-개발 환경에서도 두 변수를 설정하면 Axiom으로 로그가 전송됩니다.
+Axiom 로깅은 `isProd && hasAxiom` 조건일 때만 활성화됩니다. 즉, 프로덕션 환경에서 `AXIOM_TOKEN`과 `AXIOM_DATASET`이 모두 설정되어 있어야만 로그가 전송됩니다. 개발 환경에서는 이 변수들을 설정해도 Axiom 기능이 활성화되지 않습니다.
 
 ---
 
@@ -49,7 +49,7 @@ PORT=8080
 FRONTEND_URL=http://localhost:3000
 GITHUB_CALLBACK_URL=http://localhost:8080/auth/github/callback
 
-# Axiom (개발에서도 테스트 가능)
+# Axiom (프로덕션 전용)
 AXIOM_TOKEN=your_axiom_token
 AXIOM_DATASET=your_dataset_name
 ```
