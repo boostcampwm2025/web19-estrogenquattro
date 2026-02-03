@@ -33,6 +33,9 @@ interface TasksStore {
   toggleTaskTimer: (id: number) => void;
   stopAllTasks: () => void;
   getTaskDisplayTime: (task: Task) => number;
+
+  // 자정 리셋: 완료된 태스크 제거
+  removeCompletedTasks: () => void;
 }
 
 export const useTasksStore = create<TasksStore>((set, get) => {
@@ -329,6 +332,12 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           }
           return { ...task, isRunning: false };
         }),
+      })),
+
+    // 완료된 태스크 제거 (KST 자정 리셋용)
+    removeCompletedTasks: () =>
+      set((state) => ({
+        tasks: state.tasks.filter((task) => !task.completed),
       })),
   };
 });
