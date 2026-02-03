@@ -51,8 +51,8 @@ describe("LeaderboardModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useModalStoreModule.useModalStore).mockImplementation((selector) =>
-      selector(mockModalStore as never),
+    vi.mocked(useModalStoreModule.useModalStore).mockImplementation(
+      (selector) => selector(mockModalStore as never),
     );
 
     vi.mocked(authStoreModule.useAuthStore).mockImplementation((selector) =>
@@ -83,8 +83,9 @@ describe("LeaderboardModal", () => {
     });
 
     it("모달이 닫혀있으면 아무것도 렌더링하지 않는다", () => {
-      vi.mocked(useModalStoreModule.useModalStore).mockImplementation((selector) =>
-        selector({ ...mockModalStore, activeModal: null } as never),
+      vi.mocked(useModalStoreModule.useModalStore).mockImplementation(
+        (selector) =>
+          selector({ ...mockModalStore, activeModal: null } as never),
       );
 
       const { container } = render(<LeaderboardModal />);
@@ -117,7 +118,9 @@ describe("LeaderboardModal", () => {
       render(<LeaderboardModal />);
 
       await waitFor(() => {
-        expect(screen.getByText("아직 이번 주 랭킹 데이터가 없습니다.")).toBeInTheDocument();
+        expect(
+          screen.getByText("아직 이번 주 랭킹 데이터가 없습니다."),
+        ).toBeInTheDocument();
       });
     });
   });
@@ -346,8 +349,9 @@ describe("LeaderboardModal", () => {
       });
 
       // 모달 닫기
-      vi.mocked(useModalStoreModule.useModalStore).mockImplementation((selector) =>
-        selector({ ...mockModalStore, activeModal: null } as never),
+      vi.mocked(useModalStoreModule.useModalStore).mockImplementation(
+        (selector) =>
+          selector({ ...mockModalStore, activeModal: null } as never),
       );
 
       rerender(<LeaderboardModal />);
@@ -355,8 +359,8 @@ describe("LeaderboardModal", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
       // 다시 열기
-      vi.mocked(useModalStoreModule.useModalStore).mockImplementation((selector) =>
-        selector(mockModalStore as never),
+      vi.mocked(useModalStoreModule.useModalStore).mockImplementation(
+        (selector) => selector(mockModalStore as never),
       );
 
       // 로딩 상태로 시작

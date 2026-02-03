@@ -37,14 +37,16 @@ describe("ActivityTab", () => {
     vi.clearAllMocks();
     vi.mocked(useModalStore).mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <T,>(selector: (state: any) => T) =>
+      <T,>(selector: (state: any) => T) =>
         selector({ userInfoPayload: { playerId: 1 } }),
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(useAuthStore).mockImplementation((selector?: (state: any) => any) => {
-      const state = { user: { playerId: 1, username: "testuser" } };
-      return selector ? selector(state) : state;
-    });
+    vi.mocked(useAuthStore).mockImplementation(
+      (selector?: (state: any) => any) => {
+        const state = { user: { playerId: 1, username: "testuser" } };
+        return selector ? selector(state) : state;
+      },
+    );
     vi.mocked(useActivityDataModule.useActivityData).mockReturnValue(
       mockActivityData,
     );
@@ -95,8 +97,7 @@ describe("ActivityTab", () => {
   it("targetPlayerId가 없으면 현재 유저의 playerId를 사용한다", () => {
     vi.mocked(useModalStore).mockImplementation(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <T,>(selector: (state: any) => T) =>
-        selector({ userInfoPayload: null }),
+      <T,>(selector: (state: any) => T) => selector({ userInfoPayload: null }),
     );
 
     render(<ActivityTab />);

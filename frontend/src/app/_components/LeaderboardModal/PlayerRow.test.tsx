@@ -39,9 +39,7 @@ describe("PlayerRow", () => {
   });
 
   it("프로필 이미지가 없으면 이니셜을 표시한다", () => {
-    render(
-      <PlayerRow player={{ ...mockPlayer, profileImage: null }} />,
-    );
+    render(<PlayerRow player={{ ...mockPlayer, profileImage: null }} />);
 
     expect(screen.getByText("te")).toBeInTheDocument();
   });
@@ -58,17 +56,13 @@ describe("PlayerRow", () => {
   });
 
   it("전체 탭에서는 포인트 숫자를 표시한다", () => {
-    render(
-      <PlayerRow player={mockPlayer} selectedTab={POINT_TYPES.ALL} />,
-    );
+    render(<PlayerRow player={mockPlayer} selectedTab={POINT_TYPES.ALL} />);
 
     expect(screen.getByText("100")).toBeInTheDocument();
   });
 
   it("내 순위일 때 파란색 테두리 스타일이 적용된다", () => {
-    const { container } = render(
-      <PlayerRow player={mockPlayer} isMyRank />,
-    );
+    const { container } = render(<PlayerRow player={mockPlayer} isMyRank />);
 
     const row = container.firstChild as HTMLElement;
     expect(row.className).toContain("border-blue-400");
