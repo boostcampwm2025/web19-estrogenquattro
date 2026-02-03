@@ -53,9 +53,11 @@ export class MapController {
 
     // 현재 맵만 허용
     if (index !== currentMapIndex) {
-      this.logger.warn(
-        `Map access denied: requested=${index}, current=${currentMapIndex}`,
-      );
+      this.logger.warn('Map access denied', {
+        method: 'getMap',
+        requestedIndex: index,
+        currentMapIndex,
+      });
       throw new ForbiddenException('Map not unlocked yet');
     }
 
@@ -71,7 +73,10 @@ export class MapController {
 
     // 파일 존재 확인
     if (!fs.existsSync(filePath)) {
-      this.logger.error(`Map file not found: ${filePath}`);
+      this.logger.error('Map file not found', {
+        method: 'getMap',
+        filePath,
+      });
       throw new NotFoundException('Map file not found');
     }
 

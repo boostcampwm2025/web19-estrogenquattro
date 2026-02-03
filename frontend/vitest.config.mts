@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
+      "@test": path.resolve(__dirname, "test"),
       "@backend": path.resolve(__dirname, "../backend/src"),
       typeorm: path.resolve(__dirname, "test/mocks/typeorm.ts"),
     },

@@ -33,9 +33,11 @@ export class TaskService {
     });
 
     const savedTask = await this.taskRepository.save(newTask);
-    this.logger.log(
-      `Task created (taskId: ${savedTask.id}, playerId: ${player.id})`,
-    );
+    this.logger.log('Task created', {
+      method: 'createTask',
+      taskId: savedTask.id,
+      playerId: player.id,
+    });
 
     return TaskRes.of(savedTask);
   }
@@ -123,7 +125,11 @@ export class TaskService {
 
     task.description = description;
     const saved = await this.taskRepository.save(task);
-    this.logger.log(`Task updated (taskId: ${taskId}, playerId: ${playerId})`);
+    this.logger.log('Task updated', {
+      method: 'updateTask',
+      taskId,
+      playerId,
+    });
     return TaskRes.of(saved);
   }
 
@@ -150,9 +156,11 @@ export class TaskService {
       }
 
       await manager.remove(Task, task);
-      this.logger.log(
-        `Task deleted (taskId: ${taskId}, playerId: ${playerId})`,
-      );
+      this.logger.log('Task deleted', {
+        method: 'deleteTask',
+        taskId,
+        playerId,
+      });
     });
   }
 }
