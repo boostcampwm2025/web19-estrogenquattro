@@ -10,7 +10,9 @@ const TOTAL_STAGES = 5;
 export default function ProgressBar() {
   const progress = useProgressStore((state) => state.progress);
   const mapIndex = useProgressStore((state) => state.mapIndex);
-  const progressThreshold = useProgressStore((state) => state.progressThreshold);
+  const progressThreshold = useProgressStore(
+    (state) => state.progressThreshold,
+  );
   const [displayProgress, setDisplayProgress] = useState(0);
 
   // 현재 스테이지 (1-indexed)
