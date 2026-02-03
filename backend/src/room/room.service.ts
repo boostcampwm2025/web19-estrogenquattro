@@ -92,7 +92,6 @@ export class RoomService {
     const existing = this.socketIdToRoomId.get(socketId);
     if (existing) return existing;
 
-    // Check reservation first
     if (playerId) {
       this.cancelReservation(playerId);
     }
