@@ -42,10 +42,6 @@ export default function ProfileTab() {
     following: githubUser?.following ?? 0,
   };
 
-  const handleGithubClick = () => {
-    window.open(`https://github.com/${profileData.githubUsername}`, "_blank");
-  };
-
   return (
     <div className="space-y-6 px-4 pt-20 pb-4">
       {/* 프로필 헤더 */}
@@ -59,15 +55,17 @@ export default function ProfileTab() {
         </div>
 
         <div className="flex items-center justify-center">
-          <button
-            onClick={handleGithubClick}
+          <a
+            href={`https://github.com/${profileData.githubUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="relative cursor-pointer text-lg font-bold text-amber-900 transition-colors hover:text-amber-700"
           >
             {profileData.githubUsername}
             <span className="absolute top-1/2 right-0 translate-x-[calc(100%+8px)] -translate-y-1/2">
               <ExternalLink className="h-4 w-4" />
             </span>
-          </button>
+          </a>
         </div>
       </div>
 

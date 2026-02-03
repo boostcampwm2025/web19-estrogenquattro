@@ -72,6 +72,7 @@ export default function FocusPanel() {
         {/* 접기/펼치기 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-label={isExpanded ? "패널 접기" : "패널 펼치기"}
           className="flex w-full cursor-pointer items-center justify-center border-t-1 border-amber-900/30 bg-transparent py-2 text-amber-900 transition-colors hover:bg-amber-100"
         >
           {isExpanded ? (

@@ -26,8 +26,8 @@ type GrassLevel = keyof typeof GRASS_LEVEL_ASSETS;
  * 포인트 수에 따라 잔디 레벨을 계산합니다.
  * - 0 포인트: 레벨 0
  * - 1~10 포인트: 레벨 1
- * - 11-30 포인트: 레벨 2
- * - 30+ 포인트: 레벨 3
+ * - 11~30 포인트: 레벨 2
+ * - 31+ 포인트: 레벨 3
  */
 function getLevel(points: number): GrassLevel {
   if (points === 0) return 0;
