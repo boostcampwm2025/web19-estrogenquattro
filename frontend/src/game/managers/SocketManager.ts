@@ -11,6 +11,7 @@ import {
   type FocusTimeData,
 } from "../../stores/useFocusTimeStore";
 import { getTodayStartTime } from "@/utils/timeFormat";
+import { useRoomStore } from "../../stores/useRoomStore";
 
 interface PlayerData {
   userId: string;
@@ -173,6 +174,7 @@ export default class SocketManager {
       "joined",
       (data: { roomId: string; focusTime?: FocusTimeData }) => {
         this.roomId = data.roomId;
+        useRoomStore.getState().setRoomId(data.roomId);
         const currentPlayer = this.getPlayer();
         if (currentPlayer) {
           currentPlayer.setRoomId(data.roomId);
