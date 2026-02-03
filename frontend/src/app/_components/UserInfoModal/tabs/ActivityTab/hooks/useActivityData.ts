@@ -7,8 +7,9 @@ import {
 } from "@/lib/api/hooks";
 import { DailyFocusTimeRes, GithubEventsRes } from "@/lib/api";
 import { toDateString } from "@/utils/timeFormat";
-import { Task, mapTaskResToTask } from "@/app/_components/TasksMenu/types";
+import { Task } from "@/app/_components/TasksMenu/types";
 import { DailyPoints } from "../components/CalendarHeatmap/useHeatmapData";
+import { mapTaskResToTask } from "@/app/_components/TasksMenu/utils/mappers";
 
 interface UseActivityDataReturn {
   dailyPoints: DailyPoints;
