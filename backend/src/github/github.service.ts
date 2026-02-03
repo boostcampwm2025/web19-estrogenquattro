@@ -99,34 +99,31 @@ export class GithubService {
     return result;
   }
 
-  async getFollowers(username: string, page: number = 1) {
-    const octokit = new Octokit();
-    const { data } = await octokit.rest.users.listFollowersForUser({
+  async getUser(accessToken: string, username: string) {
+    const octokit = new Octokit({ auth: accessToken });
+    const { data } = await octokit.rest.users.getByUsername({
       username,
-      per_page: 30,
-      page,
     });
-    return data;
+    return {
+      login: data.login,
+      id: data.id,
+      avatar_url: data.avatar_url,
+      html_url: data.html_url,
+      followers: data.followers,
+      following: data.following,
+      name: data.name,
+      bio: data.bio,
+    };
   }
 
-  async getFollowing(username: string, page: number = 1) {
-    const octokit = new Octokit();
-    const { data } = await octokit.rest.users.listFollowingForUser({
-      username,
-      per_page: 30,
-      page,
-    });
-    return data;
-  }
 
   async checkFollowStatus(accessToken: string, username: string) {
     const octokit = new Octokit({ auth: accessToken });
     try {
-      await octokit.rest.users.checkFollowingForUser({
-        username: 'me',
-        target_user: username,
+      const response = await octokit.request('GET /user/following/{username}', {
+        username,
       });
-      return { isFollowing: true };
+      return { isFollowing: response.status === 204 };
     } catch (error) {
       if (
         error &&
@@ -151,4 +148,6 @@ export class GithubService {
     await octokit.rest.users.unfollow({ username });
     return { success: true };
   }
+
+
 }

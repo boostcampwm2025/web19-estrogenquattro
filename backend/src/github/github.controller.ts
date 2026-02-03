@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Post,
   Put,
   Query,
   Req,
@@ -44,23 +46,12 @@ export class GithubController {
     );
   }
 
-  @Get('users/:username/followers')
-  async getFollowers(
-    @Param('username') username: string,
-    @Query('page') page?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    return this.githubService.getFollowers(username, pageNum);
+  @Get('users/:username')
+  async getUser(@Param('username') username: string, @Req() req: Request) {
+    const user = req.user as User;
+    return this.githubService.getUser(user.accessToken, username);
   }
 
-  @Get('users/:username/following')
-  async getFollowing(
-    @Param('username') username: string,
-    @Query('page') page?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    return this.githubService.getFollowing(username, pageNum);
-  }
 
   @Get('users/:username/follow-status')
   async getFollowStatus(
@@ -82,4 +73,6 @@ export class GithubController {
     const user = req.user as User;
     return this.githubService.unfollowUser(user.accessToken, username);
   }
+
+
 }
