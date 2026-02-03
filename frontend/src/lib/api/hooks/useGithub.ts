@@ -24,3 +24,39 @@ export function useGithubEvents(playerId: number, date: string) {
     refetch,
   };
 }
+
+export function useGithubUser(username: string) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: queryKeys.github.user(username),
+    queryFn: () => githubApi.getUser(username),
+    enabled: !!username,
+    staleTime: 0,
+  });
+
+  return {
+    user: data,
+    isLoading,
+    error,
+  };
+}
+
+
+
+
+
+export function useFollowStatus(username: string) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: queryKeys.github.followStatus(username),
+    queryFn: () => githubApi.getFollowStatus(username),
+    enabled: !!username,
+    staleTime: 0,
+  });
+
+  return {
+    isFollowing: data?.isFollowing ?? false,
+    isLoading,
+    error,
+  };
+}
+
+
