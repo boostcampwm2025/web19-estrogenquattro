@@ -1,15 +1,21 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
+  Param,
+  Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { GithubService } from './github.service';
 import { PlayerId } from '../auth/player-id.decorator';
 import { GithubEventsResDto } from './dto/get-github-events.res';
 import { JwtGuard } from '../auth/jwt.guard';
 import { ParseDatePipe } from '../common/parse-date.pipe';
+import { User } from '../auth/user.interface';
 
 @Controller('api/github')
 @UseGuards(JwtGuard)
@@ -36,5 +42,44 @@ export class GithubController {
       startAt,
       endAt,
     );
+  }
+
+  @Get('users/:username/followers')
+  async getFollowers(
+    @Param('username') username: string,
+    @Query('page') page?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    return this.githubService.getFollowers(username, pageNum);
+  }
+
+  @Get('users/:username/following')
+  async getFollowing(
+    @Param('username') username: string,
+    @Query('page') page?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    return this.githubService.getFollowing(username, pageNum);
+  }
+
+  @Get('users/:username/follow-status')
+  async getFollowStatus(
+    @Param('username') username: string,
+    @Req() req: Request,
+  ) {
+    const user = req.user as User;
+    return this.githubService.checkFollowStatus(user.accessToken, username);
+  }
+
+  @Put('users/:username/follow')
+  async followUser(@Param('username') username: string, @Req() req: Request) {
+    const user = req.user as User;
+    return this.githubService.followUser(user.accessToken, username);
+  }
+
+  @Delete('users/:username/follow')
+  async unfollowUser(@Param('username') username: string, @Req() req: Request) {
+    const user = req.user as User;
+    return this.githubService.unfollowUser(user.accessToken, username);
   }
 }
