@@ -152,7 +152,6 @@ export class PlayerGateway
         message: err.message,
         code: err.code,
       });
-      client.disconnect();
       return;
     }
 
