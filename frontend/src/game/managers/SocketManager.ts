@@ -38,6 +38,7 @@ interface ProgressUpdateData {
   targetProgress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number;
 }
 
 // game_state 이벤트 페이로드 (S→C, 입장 시)
@@ -45,6 +46,7 @@ interface GameStateData {
   progress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number;
 }
 
 export default class SocketManager {
@@ -230,6 +232,7 @@ export default class SocketManager {
     socket.on("game_state", (data: GameStateData) => {
       useProgressStore.getState().setProgress(data.progress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
+      useProgressStore.getState().setProgressThreshold(data.progressThreshold);
       useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
@@ -252,6 +255,7 @@ export default class SocketManager {
     socket.on("progress_update", (data: ProgressUpdateData) => {
       useProgressStore.getState().setProgress(data.targetProgress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
+      useProgressStore.getState().setProgressThreshold(data.progressThreshold);
       useContributionStore.getState().setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구
