@@ -2,7 +2,7 @@
 
 **상태:** ✅ 버그 재현 성공 + 원인 분석 완료
 **버그 유형:** Race Condition (비동기 로드 중 플레이어 destroy)
-**최종 업데이트:** 2024-02-03
+**최종 업데이트:** 2026-02-03
 
 ---
 
@@ -89,7 +89,7 @@ GET http://localhost:8080/api/maps/test/player-join-leave?count=10&delay=100
 - `count`: 가짜 플레이어 수 (기본값: 10)
 - `delay`: join 후 leave까지 지연 시간 ms (기본값: 100)
 
-### 재현 결과 (2024-02-03)
+### 재현 결과 (2026-02-03)
 
 ```
 curl "http://localhost:8080/api/maps/test/player-join-leave?count=10&delay=100"
@@ -111,7 +111,7 @@ GET http://localhost:8080/api/maps/test/black-screen?players=5&leaveDelay=50
 - `players`: 가상 플레이어 수 (기본값: 5)
 - `leaveDelay`: join 후 leave까지 지연 시간 ms (기본값: 50)
 
-### 재현 결과 (2024-02-03) ✅ 성공
+### 재현 결과 (2026-02-03) ✅ 성공
 
 ```
 curl "http://localhost:8080/api/maps/test/black-screen?players=5&leaveDelay=50"
