@@ -312,7 +312,10 @@ export default class BasePlayer {
     const cleanup = () => {
       this.petLoadingKeys.delete(textureKey);
       this.cleanupListener("loaderror", errorListener);
-      this.cleanupListener(`filecomplete-image-${textureKey}`, completeListener);
+      this.cleanupListener(
+        `filecomplete-image-${textureKey}`,
+        completeListener,
+      );
     };
 
     const errorListener = (file?: Phaser.Loader.File) => {
