@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
@@ -33,8 +33,6 @@ export default function ChannelSelectModal() {
   const currentRoomNum = currentRoomIds.length > 1 ? currentRoomIds[1] : "";
 
   const isOpen = activeModal === MODAL_TYPES.CHANNEL_SELECT;
-  const [channels, setChannels] = useState<Channel[]>([]);
-
   // Room 시스템 훅 사용 (React Query 기반) - 모달이 열려있을 때만 데이터를 가져옴
   const { rooms, joinRoom } = useRoomSystem({ enabled: isOpen });
 
@@ -44,24 +42,22 @@ export default function ChannelSelectModal() {
   });
 
   // 방 목록 데이터가 변경되면 채널 목록 상태 업데이트
-  useEffect(() => {
-    if (isOpen && rooms) {
-      const channelList: Channel[] = Object.values(rooms).map(
-        (room: RoomInfo) => {
-          const num = parseInt(room.id.split("-")[1], 10);
-          return {
-            id: num,
-            roomId: room.id,
-            name: `CH.${num}`,
-            count: room.size,
-            max: room.capacity,
-          };
-        },
-      );
-      // ID 기준 정렬
-      channelList.sort((a, b) => a.id - b.id);
-      setChannels(channelList);
-    }
+  const channels = useMemo<Channel[]>(() => {
+    if (!isOpen || !rooms) return [];
+
+    const channelList = Object.values(rooms).map((room: RoomInfo) => {
+      const num = parseInt(room.id.split("-")[1], 10);
+      return {
+        id: num,
+        roomId: room.id,
+        name: `CH.${num}`,
+        count: room.size,
+        max: room.capacity,
+      };
+    });
+
+    // ID 기준 정렬
+    return channelList.sort((a, b) => a.id - b.id);
   }, [isOpen, rooms]);
 
   if (!isOpen) return null;
@@ -80,10 +76,15 @@ export default function ChannelSelectModal() {
         socket.connect();
       }
       closeModal();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("채널 이동 실패", error);
       // 409 Conflict: 방이 가득 찬 경우 (API 에러 핸들링은 client.ts에서 일부 처리되지만, 추가 처리가 필요할 수 있음)
-      if (error?.status === 409) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        (error as { status: number }).status === 409
+      ) {
         alert("채널이 가득 찼습니다.");
       } else {
         alert("채널 이동에 실패했습니다.");

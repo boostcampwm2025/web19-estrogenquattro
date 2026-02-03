@@ -1,6 +1,5 @@
 "use client";
 
-import { List } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useRoomStore } from "@/stores/useRoomStore";
