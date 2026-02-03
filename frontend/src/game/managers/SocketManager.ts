@@ -159,7 +159,9 @@ export default class SocketManager {
       // 첫 연결 시에는 Player 생성 후 emitJoining() 호출
       if (player) {
         // 미디어(음악) 리셋 이벤트 발생 -> MusicPlayer가 이를 수신하여 정지함
-        window.dispatchEvent(new Event("reset_media"));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("reset_media"));
+        }
 
         this.emitJoining();
       }
