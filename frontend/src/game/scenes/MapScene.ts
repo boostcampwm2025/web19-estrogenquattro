@@ -96,6 +96,11 @@ export class MapScene extends Phaser.Scene {
       width: 512,
       height: 512,
     });
+
+    // Music Note Particles
+    for (let i = 1; i <= 4; i++) {
+      this.load.image(`note${i}`, `/assets/music/note/note${i}.png`);
+    }
   }
 
   init() {
@@ -108,6 +113,45 @@ export class MapScene extends Phaser.Scene {
   private petImage: string | null = null;
 
   create() {
+    // 0. Music Notes Texture Atlas 생성
+    if (!this.textures.exists("music_notes_atlas")) {
+      const atlas = this.textures.createCanvas("music_notes_atlas", 160, 32);
+      if (atlas) {
+        const context = atlas.getContext();
+        for (let i = 1; i <= 4; i++) {
+          const key = `note${i}`;
+          if (this.textures.exists(key)) {
+            const img = this.textures.get(key).getSourceImage();
+            // 각 이미지의 비율을 유지하면서 32x32 영역 안에 중앙 정렬하여 그리기
+            const destX = (i - 1) * 32;
+            const destY = 0;
+            const destSize = 32;
+
+            // 이미지가 로드된 상태인지 확인 (WebGL 텍스처 소스 사용)
+            const imgElement = img as HTMLImageElement;
+            const width = imgElement.width || 32;
+            const height = imgElement.height || 32;
+
+            // 24x24 박스 안에 비율 유지하며 맞추기 (4px padding)
+            const MAX_SIZE = 24;
+            const scale = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+            const drawWidth = width * scale;
+            const drawHeight = height * scale;
+
+            // 중앙 정렬 좌표 계산
+            const drawX = destX + 4 + (MAX_SIZE - drawWidth) / 2;
+            const drawY = destY + 4 + (MAX_SIZE - drawHeight) / 2;
+
+            context.drawImage(imgElement, drawX, drawY, drawWidth, drawHeight);
+
+            // 프레임 추가 (32x32 단위)
+            atlas.add(i - 1, 0, destX, destY, destSize, destSize);
+          }
+        }
+        atlas.refresh();
+      }
+    }
+
     // 1. MapManager 생성 (맵 이미지는 game_state 수신 후 동적 로드)
     this.mapManager = new MapManager(this, this.maps);
 
@@ -120,9 +164,19 @@ export class MapScene extends Phaser.Scene {
     };
     window.addEventListener("local_pet_update", handleLocalPetUpdate);
 
+    // React(Hooks)에서 보낸 음악 재생 상태 처리
+    const handleLocalMusicUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (this.player && customEvent.detail?.isListening !== undefined) {
+        this.player.setMusicStatus(customEvent.detail.isListening);
+      }
+    };
+    window.addEventListener("local_music_update", handleLocalMusicUpdate);
+
     // 씬 종료 시 이벤트 리스너 제거
     this.events.once("destroy", () => {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
+      window.removeEventListener("local_music_update", handleLocalMusicUpdate);
     });
 
     // 2. Animations Setup (맵 독립적)
