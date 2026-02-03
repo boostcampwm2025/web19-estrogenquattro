@@ -1,23 +1,26 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
 import { Users, LogIn } from "lucide-react";
+import { getSocket } from "@/lib/socket";
 
 import { useRoomStore } from "@/stores/useRoomStore";
+import { useRoomSystem } from "@/lib/api/hooks/useRoomSystem";
+import { RoomInfo } from "@/lib/api/room";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
 
-// Mock data for channels
-const MOCK_CHANNELS = [
-  { id: 1, name: "CH.1", count: 12, max: 12 },
-  { id: 2, name: "CH.2", count: 8, max: 12 },
-  { id: 3, name: "CH.3", count: 10, max: 12 },
-  { id: 4, name: "CH.4", count: 5, max: 12 },
-  { id: 5, name: "CH.5", count: 2, max: 12 },
-];
+interface Channel {
+  id: number;
+  roomId: string; // "room-1"
+  name: string; // "CH.1"
+  count: number;
+  max: number;
+}
 
 export default function ChannelSelectModal() {
   const { activeModal, closeModal } = useModalStore(
@@ -26,21 +29,66 @@ export default function ChannelSelectModal() {
       closeModal: state.closeModal,
     })),
   );
-  const currentRoomId = useRoomStore((state) => state.roomId).split("-")[1]; // Get current room ID
+  const currentRoomIds = useRoomStore((state) => state.roomId).split("-");
+  const currentRoomNum = currentRoomIds.length > 1 ? currentRoomIds[1] : "";
+
   const isOpen = activeModal === MODAL_TYPES.CHANNEL_SELECT;
+  const [channels, setChannels] = useState<Channel[]>([]);
+
+  // Room 시스템 훅 사용 (React Query 기반) - 모달이 열려있을 때만 데이터를 가져옴
+  const { rooms, joinRoom } = useRoomSystem({ enabled: isOpen });
 
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
     onClose: closeModal,
   });
 
+  // 방 목록 데이터가 변경되면 채널 목록 상태 업데이트
+  useEffect(() => {
+    if (isOpen && rooms) {
+      const channelList: Channel[] = Object.values(rooms).map(
+        (room: RoomInfo) => {
+          const num = parseInt(room.id.split("-")[1], 10);
+          return {
+            id: num,
+            roomId: room.id,
+            name: `CH.${num}`,
+            count: room.size,
+            max: room.capacity,
+          };
+        },
+      );
+      // ID 기준 정렬
+      channelList.sort((a, b) => a.id - b.id);
+      setChannels(channelList);
+    }
+  }, [isOpen, rooms]);
+
   if (!isOpen) return null;
 
-  const handleChannelSelect = (channelId: number) => {
-    // TODO: Implement channel selection logic
-    console.log(`Channel ${channelId} selected`);
-    // Ideally we would close the modal after selection or update UI
-    // closeModal();
+  const handleChannelSelect = async (channel: Channel) => {
+    try {
+      // 1. 방 예약 (API 호출 via Hook)
+      await joinRoom(channel.roomId);
+
+      // 2. 예약된 방 ID 설정 및 소켓 전환 (재연결)
+      useRoomStore.getState().setPendingRoomId(channel.roomId);
+      const socket = getSocket();
+      if (socket) {
+        socket.disconnect(); // 소켓 연결을 끊으면 SocketManager에서 재연결 로직이 수행됨
+        // 수동 연결 (일부 케이스에서 자동 연결이 안 될 수 있으므로 명시적 호출)
+        socket.connect();
+      }
+      closeModal();
+    } catch (error: any) {
+      console.error("채널 이동 실패", error);
+      // 409 Conflict: 방이 가득 찬 경우 (API 에러 핸들링은 client.ts에서 일부 처리되지만, 추가 처리가 필요할 수 있음)
+      if (error?.status === 409) {
+        alert("채널이 가득 찼습니다.");
+      } else {
+        alert("채널 이동에 실패했습니다.");
+      }
+    }
   };
 
   return (
@@ -55,7 +103,6 @@ export default function ChannelSelectModal() {
         aria-labelledby="channel-select-title"
         className={`relative w-full max-w-lg ${PIXEL_BG} ${PIXEL_BORDER} p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
-        {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2
             id="channel-select-title"
@@ -72,16 +119,14 @@ export default function ChannelSelectModal() {
           </button>
         </div>
 
-        {/* Channel List */}
         <div
           className={`${PIXEL_BORDER} relative overflow-hidden bg-white/50 p-3`}
         >
-          {/* Background pattern */}
           <div className="pointer-events-none absolute inset-0 opacity-5" />
           <div className="space-y-3 p-1">
-            {MOCK_CHANNELS.map((channel) => {
+            {channels.map((channel) => {
               const isFull = channel.count >= channel.max;
-              const isCurrent = currentRoomId === channel.name.split(".")[1];
+              const isCurrent = currentRoomNum === channel.id.toString();
 
               return (
                 <div
@@ -110,7 +155,7 @@ export default function ChannelSelectModal() {
                   </div>
                   <button
                     onClick={() =>
-                      !isFull && !isCurrent && handleChannelSelect(channel.id)
+                      !isFull && !isCurrent && handleChannelSelect(channel)
                     }
                     disabled={isFull || isCurrent}
                     className={`flex w-24 items-center justify-center gap-2 px-4 py-2 text-white transition-all ${
