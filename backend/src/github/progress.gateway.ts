@@ -114,9 +114,11 @@ export class ProgressGateway implements OnModuleInit {
       const isMapIndexValid = saved.mapIndex >= 0 && saved.mapIndex < MAP_COUNT;
 
       if (parsedContributions === null || !isMapIndexValid) {
-        this.logger.warn(
-          `Invalid GlobalState in DB (contributions: ${parsedContributions === null ? 'invalid' : 'valid'}, mapIndex: ${isMapIndexValid ? 'valid' : 'invalid'}), using defaults`,
-        );
+        this.logger.warn('Invalid GlobalState in DB, using defaults', {
+          method: 'onModuleInit',
+          contributionsValid: parsedContributions !== null,
+          mapIndexValid: isMapIndexValid,
+        });
         return; // 기본값 유지
       }
 
@@ -125,9 +127,11 @@ export class ProgressGateway implements OnModuleInit {
         contributions: parsedContributions,
         mapIndex: saved.mapIndex,
       };
-      this.logger.log(
-        `GlobalState restored: progress=${saved.progress}, mapIndex=${saved.mapIndex}`,
-      );
+      this.logger.log('GlobalState restored', {
+        method: 'onModuleInit',
+        progress: saved.progress,
+        mapIndex: saved.mapIndex,
+      });
     } catch (error) {
       this.logger.error('Failed to restore GlobalState', error);
     }
@@ -228,9 +232,11 @@ export class ProgressGateway implements OnModuleInit {
       const prevMapIndex = this.globalState.mapIndex;
       this.globalState.progress = 0; // 초과분 버림
       this.globalState.mapIndex = (this.globalState.mapIndex + 1) % MAP_COUNT;
-      this.logger.log(
-        `Map switch triggered: ${prevMapIndex} → ${this.globalState.mapIndex}`,
-      );
+      this.logger.log('Map switch triggered', {
+        method: 'addProgress',
+        from: prevMapIndex,
+        to: this.globalState.mapIndex,
+      });
       this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
     }
 
@@ -273,9 +279,11 @@ export class ProgressGateway implements OnModuleInit {
       const prevMapIndex = this.globalState.mapIndex;
       this.globalState.progress = 0; // 초과분 버림
       this.globalState.mapIndex = (this.globalState.mapIndex + 1) % MAP_COUNT;
-      this.logger.log(
-        `Map switch triggered: ${prevMapIndex} → ${this.globalState.mapIndex}`,
-      );
+      this.logger.log('Map switch triggered', {
+        method: 'updateGlobalState',
+        from: prevMapIndex,
+        to: this.globalState.mapIndex,
+      });
       this.server.emit('map_switch', { mapIndex: this.globalState.mapIndex });
     }
   }

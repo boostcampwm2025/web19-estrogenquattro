@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePetSystem } from "./hooks/usePetSystem";
 import PetGacha from "./components/PetGacha";
 import PetCard from "./components/PetCard";
@@ -68,21 +68,23 @@ export default function PetTab() {
   // Past Skin이거나 데이터가 없으면 Max Exp(0) 처리하여 성장 불가로 만듦
   const maxExp = isPastSkin || !selectedPetDef ? 0 : requiredExp;
 
-  // UI용 데이터 어댑터
-  const petCardData = selectedPetDef
-    ? {
-        stage: selectedPetDef.evolutionStage,
-        name: selectedPetDef.name,
-        description: selectedPetDef.description,
-        image: selectedPetDef.actualImgUrl,
-        maxExp: requiredExp,
-      }
-    : null;
+  // UI용 데이터 어댑터 (Memoized)
+  const petCardData = useMemo(() => {
+    return selectedPetDef
+      ? {
+          stage: selectedPetDef.evolutionStage,
+          name: selectedPetDef.name,
+          description: selectedPetDef.description,
+          image: selectedPetDef.actualImgUrl,
+          maxExp: requiredExp,
+        }
+      : null;
+  }, [selectedPetDef, requiredExp]);
 
   const isMaxStage = maxExp === 0;
   const isReadyToEvolve = !isMaxStage && currentExp >= maxExp;
 
-  const handleAction = async () => {
+  const handleAction = useCallback(async () => {
     if (!currentUserPet) {
       alert("보유하지 않은 펫입니다!");
       return;
@@ -108,43 +110,60 @@ export default function PetTab() {
     } catch (e) {
       alert("작업 실패: " + e);
     }
-  };
+  }, [currentUserPet, isReadyToEvolve, evolve, equip, feed]);
 
-  const handlePetCollected = async (petId: number) => {
-    // 가챠 성공 콜백 (애니메이션 종료 후)
-    // 인벤토리 및 도감 갱신 (스포일러 방지 해제)
-    refreshPets();
+  const handlePetCollected = useCallback(
+    async (petId: number) => {
+      // 가챠 성공 콜백 (애니메이션 종료 후)
+      // 인벤토리 및 도감 갱신 (스포일러 방지 해제)
+      refreshPets();
 
-    // 인벤토리가 비어있었다면(첫 펫 획득), 자동으로 선택 및 장착
-    if (inventory.length === 0) {
-      setSelectedPetId(petId);
-      try {
-        await equip(petId);
-      } catch (e) {
-        console.error("Auto-equip first pet failed:", e);
+      // 인벤토리가 비어있었다면(첫 펫 획득), 자동으로 선택 및 장착
+      if (inventory.length === 0) {
+        setSelectedPetId(petId);
+        try {
+          await equip(petId);
+        } catch (e) {
+          console.error("Auto-equip first pet failed:", e);
+        }
       }
-    }
-  };
+    },
+    [refreshPets, inventory.length, equip],
+  );
 
-  const handleGachaExecution = async (): Promise<{
+  const handleGachaExecution = useCallback(async (): Promise<{
     pet: UserPet["pet"];
     isDuplicate: boolean;
   }> => {
     const response = await gacha();
     return { pet: response.userPet.pet, isDuplicate: response.isDuplicate };
-  };
+  }, [gacha]);
 
-  const handlePetSelect = async (petId: number) => {
-    setSelectedPetId(petId);
+  const handlePetSelect = useCallback(
+    async (petId: number) => {
+      setSelectedPetId(petId);
 
-    if (!isOwner) return;
+      if (!isOwner) return;
 
-    try {
-      await equip(petId);
-    } catch (e) {
-      console.error("Failed to equip pet:", e);
-    }
-  };
+      try {
+        await equip(petId);
+      } catch (e) {
+        console.error("Failed to equip pet:", e);
+      }
+    },
+    [isOwner, equip],
+  );
+
+  // Check if user has collected all stage1 pets
+  const hasCollectedAllStage1 = useMemo(() => {
+    const stage1PetIds = allPets
+      .filter((p) => p.evolutionStage === 1)
+      .map((p) => p.id);
+
+    if (stage1PetIds.length === 0) return false;
+
+    return stage1PetIds.every((id) => collectedPetIds.includes(id));
+  }, [allPets, collectedPetIds]);
 
   // playerId가 유효하지 않거나 필수 데이터(allPets)가 없으면 로딩
   if (!playerId || (allPets.length === 0 && isLoading))
@@ -184,6 +203,7 @@ export default function PetTab() {
           onGachaRefund={gachaRefund}
           onPetCollected={handlePetCollected}
           points={points}
+          hasCollectedAllStage1={hasCollectedAllStage1}
         />
       )}
       <PetCodex

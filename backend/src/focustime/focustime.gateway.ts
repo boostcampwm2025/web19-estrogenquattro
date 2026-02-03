@@ -71,22 +71,28 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         // 방에 있는 다른 사람들에게 집중 중임을 알림
         client.to(roomId).emit('focused', responseData);
 
-        this.logger.log(
-          `User ${user.username} started focusing in room ${roomId}${data?.taskName ? ` (task: ${data.taskName})` : ''}`,
-        );
+        this.logger.log('Focused broadcast', {
+          method: 'handleFocusing',
+          username: user.username,
+          roomId,
+          taskName: data?.taskName ?? null,
+        });
       } else {
-        this.logger.warn(
-          `User ${user.username} sent focusing but is not in any room`,
-        );
+        this.logger.warn('Focusing but no room', {
+          method: 'handleFocusing',
+          username: user.username,
+        });
       }
 
       // 본인에게 응답
       return { success: true, data: responseData };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Error in handleFocusing for ${user.username}: ${message}`,
-      );
+      this.logger.error('Focusing error', {
+        method: 'handleFocusing',
+        username: user.username,
+        error: message,
+      });
       return { success: false, error: message };
     }
   }
@@ -114,22 +120,27 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         // 방에 있는 다른 사람들에게 휴식 중임을 알림
         client.to(roomId).emit('rested', responseData);
 
-        this.logger.log(
-          `User ${user.username} started resting in room ${roomId}`,
-        );
+        this.logger.log('Rested broadcast', {
+          method: 'handleResting',
+          username: user.username,
+          roomId,
+        });
       } else {
-        this.logger.warn(
-          `User ${user.username} sent resting but is not in any room`,
-        );
+        this.logger.warn('Resting but no room', {
+          method: 'handleResting',
+          username: user.username,
+        });
       }
 
       // 본인에게 응답
       return { success: true, data: responseData };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Error in handleResting for ${user.username}: ${message}`,
-      );
+      this.logger.error('Resting error', {
+        method: 'handleResting',
+        username: user.username,
+        error: message,
+      });
       return { success: false, error: message };
     }
   }
@@ -156,13 +167,16 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
       // 방에 있는 다른 사람들에게 Task 변경 알림
       client.to(roomId).emit('focus_task_updated', responseData);
 
-      this.logger.log(
-        `User ${user.username} updated focus task to: ${data.taskName}`,
-      );
+      this.logger.log('Focus task updated', {
+        method: 'handleFocusTaskUpdating',
+        username: user.username,
+        taskName: data.taskName,
+      });
     } else {
-      this.logger.warn(
-        `User ${user.username} sent focus_task_updating but is not in any room`,
-      );
+      this.logger.warn('focus_task_updating but no room', {
+        method: 'handleFocusTaskUpdating',
+        username: user.username,
+      });
     }
 
     // 본인에게 응답
@@ -179,14 +193,17 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     try {
       // player 기반 정산 (집중 중이 아니면 무시됨)
       await this.focusTimeService.startResting(user.playerId);
-      this.logger.log(
-        `User ${user.username} disconnected. Setting status to RESTING.`,
-      );
+      this.logger.log('Disconnect set resting', {
+        method: 'handleDisconnect',
+        username: user.username,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Error handling disconnect for user ${user.username}: ${message}`,
-      );
+      this.logger.error('Disconnect error', {
+        method: 'handleDisconnect',
+        username: user.username,
+        error: message,
+      });
     }
   }
 }

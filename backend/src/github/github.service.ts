@@ -6,6 +6,7 @@ import {
   GithubActivityType,
 } from './entities/daily-github-activity.entity';
 import { getTodayKstRangeUtc } from '../util/date.util';
+import { Octokit } from 'octokit';
 
 @Injectable()
 export class GithubService {
@@ -96,5 +97,54 @@ export class GithubService {
     }
 
     return result;
+  }
+
+  async getUser(accessToken: string, username: string) {
+    const octokit = new Octokit({ auth: accessToken });
+    const { data } = await octokit.rest.users.getByUsername({
+      username,
+    });
+    return {
+      login: data.login,
+      id: data.id,
+      avatar_url: data.avatar_url,
+      html_url: data.html_url,
+      followers: data.followers,
+      following: data.following,
+      name: data.name,
+      bio: data.bio,
+    };
+  }
+
+  async checkFollowStatus(accessToken: string, username: string) {
+    const octokit = new Octokit({ auth: accessToken });
+    try {
+      const response = await octokit.request('GET /user/following/{username}', {
+        username,
+      });
+      return { isFollowing: response.status === 204 };
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        (error as { status: number }).status === 404
+      ) {
+        return { isFollowing: false };
+      }
+      throw error;
+    }
+  }
+
+  async followUser(accessToken: string, username: string) {
+    const octokit = new Octokit({ auth: accessToken });
+    await octokit.rest.users.follow({ username });
+    return { success: true };
+  }
+
+  async unfollowUser(accessToken: string, username: string) {
+    const octokit = new Octokit({ auth: accessToken });
+    await octokit.rest.users.unfollow({ username });
+    return { success: true };
   }
 }

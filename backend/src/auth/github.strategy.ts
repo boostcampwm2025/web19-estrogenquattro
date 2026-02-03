@@ -18,7 +18,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       clientID: configService.getOrThrow<string>('GITHUB_CLIENT_ID'),
       clientSecret: configService.getOrThrow<string>('GITHUB_CLIENT_SECRET'),
       callbackURL: configService.getOrThrow<string>('GITHUB_CALLBACK_URL'),
-      scope: ['read:user'],
+      scope: ['read:user', 'user:follow'],
     });
   }
 
@@ -27,7 +27,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       (profile.username && profile.username.trim()) ||
       (profile.displayName && profile.displayName.trim()) ||
       `github-${profile.id}`;
-    this.logger.log(`GitHub OAuth validated - username: ${username}`);
+    this.logger.log('GitHub OAuth validated', { method: 'validate', username });
 
     const player = await this.playerService.findOrCreateBySocialId(
       Number(profile.id),
@@ -43,9 +43,11 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     });
 
     const saved = this.userStore.save({ ...user, playerId: player.id });
-    this.logger.log(
-      `User stored/found - username: ${saved.username}, playerId: ${saved.playerId}`,
-    );
+    this.logger.log('User stored/found', {
+      method: 'validate',
+      username: saved.username,
+      playerId: saved.playerId,
+    });
     return saved;
   }
 }
