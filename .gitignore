@@ -9,4 +9,4 @@ AGENTS.md
 .idea/
 
 # Database
-backend/data/
+backend/data/.DS_Store
