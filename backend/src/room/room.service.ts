@@ -97,28 +97,28 @@ export class RoomService {
     }
 
     const startIndex = Math.floor(Math.random() * this.totalRooms) + 1;
-    
+
     let targetRoomId: string | null = null;
 
     for (let i = 0; i < this.totalRooms; i++) {
-        const roomNum = ((startIndex - 1 + i) % this.totalRooms) + 1;
-        const roomId = `room-${roomNum}`;
-        const room = this.roomInfos.get(roomId);
+      const roomNum = ((startIndex - 1 + i) % this.totalRooms) + 1;
+      const roomId = `room-${roomNum}`;
+      const room = this.roomInfos.get(roomId);
 
-        if (room && room.size < room.capacity) {
-            targetRoomId = roomId;
-            break;
-        }
+      if (room && room.size < room.capacity) {
+        targetRoomId = roomId;
+        break;
+      }
     }
 
     if (!targetRoomId) {
-        throw new RoomFullException();
+      throw new RoomFullException();
     }
 
     const room = this.roomInfos.get(targetRoomId)!;
     room.size += 1;
     this.socketIdToRoomId.set(socketId, targetRoomId);
-    
+
     return targetRoomId;
   }
 
@@ -128,11 +128,11 @@ export class RoomService {
 
     const reservedRoomId = this.consumeReservation(playerId);
     if (reservedRoomId) {
-       if (reservedRoomId === roomId) {
-          this.socketIdToRoomId.set(socketId, roomId);
-          return roomId;
-       } 
-       this.decreaseRoomSize(reservedRoomId);
+      if (reservedRoomId === roomId) {
+        this.socketIdToRoomId.set(socketId, roomId);
+        return roomId;
+      }
+      this.decreaseRoomSize(reservedRoomId);
     }
 
     const room = this.roomInfos.get(roomId);

@@ -127,7 +127,7 @@ export class PlayerGateway
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string, roomId?: string },
+    data: { x: number; y: number; username: string; roomId?: string },
     @ConnectedSocket() client: Socket,
   ) {
     // client.data에서 OAuth 인증된 사용자 정보 추출
