@@ -316,7 +316,11 @@ describe('RoomService', () => {
       const service = await createFreshService();
       const rooms = service.getAllRooms();
       expect(Object.keys(rooms)).toHaveLength(5);
-      expect(rooms['room-1']).toMatchObject({ id: 'room-1', capacity: 14, size: 0 });
+      expect(rooms['room-1']).toMatchObject({
+        id: 'room-1',
+        capacity: 14,
+        size: 0,
+      });
     });
   });
 
@@ -349,7 +353,7 @@ describe('RoomService', () => {
     it('이미 예약된 상태에서 다른 방을 예약하면 이전 예약은 취소된다', async () => {
       const service = await createFreshService();
       const playerId = 1;
-      
+
       service.reserveRoom(playerId, 'room-1');
       expect(service.getAllRooms()['room-1'].size).toBe(1);
 
@@ -366,13 +370,13 @@ describe('RoomService', () => {
       const roomId = 'room-1';
 
       service.reserveRoom(playerId, roomId);
-      
+
       // 예약 때문에 size가 1인 상태
       expect(service.getAllRooms()[roomId].size).toBe(1);
 
       const joinedRoomId = service.joinRoom('socket-1', roomId, playerId);
       expect(joinedRoomId).toBe(roomId);
-      
+
       // 입장 후에도 size는 1이어야 함 (예약분 -> 실제 입장분으로 전환)
       expect(service.getAllRooms()[roomId].size).toBe(1);
     });
@@ -387,10 +391,10 @@ describe('RoomService', () => {
       expect(service.getAllRooms()[reservedRoomId].size).toBe(1);
 
       const joinedRoomId = service.joinRoom('socket-1', targetRoomId, playerId);
-      
+
       expect(joinedRoomId).toBe(targetRoomId);
       expect(service.getAllRooms()[reservedRoomId].size).toBe(0); // 예약 취소됨
-      expect(service.getAllRooms()[targetRoomId].size).toBe(1);   // 새 방 입장
+      expect(service.getAllRooms()[targetRoomId].size).toBe(1); // 새 방 입장
     });
   });
 
@@ -406,13 +410,13 @@ describe('RoomService', () => {
       // randomJoin 호출
       const joinedRoomId = service.randomJoin('socket-1', playerId);
 
-      // 예약되었던 방의 인원이 줄어들었거나(취소됨), 
+      // 예약되었던 방의 인원이 줄어들었거나(취소됨),
       // 만약 우연히 같은 방에 배정되었다면 size가 1일 것임.
       // 확실한 검증을 위해 "예약 자체가 사라졌는지"를 간접 확인할 수 있으면 좋으나,
       // 여기서는 size 변화로 유추할 수 있음.
-      
+
       const rooms = service.getAllRooms();
-      
+
       // 만약 다른 방에 배정됐다면 room-1 size는 0이어야 함
       if (joinedRoomId !== reservedRoomId) {
         expect(rooms[reservedRoomId].size).toBe(0);
