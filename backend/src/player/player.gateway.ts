@@ -135,10 +135,24 @@ export class PlayerGateway
     const { username, accessToken, playerId } = userData.user;
 
     let roomId: string;
-    if (data.roomId) {
-      roomId = this.roomService.joinRoom(client.id, data.roomId, playerId);
-    } else {
-      roomId = this.roomService.randomJoin(client.id, playerId);
+    try {
+      if (data.roomId) {
+        roomId = this.roomService.joinRoom(client.id, data.roomId, playerId);
+      } else {
+        roomId = this.roomService.randomJoin(client.id, playerId);
+      }
+    } catch (error) {
+      this.logger.warn('Failed to join room', {
+        clientId: client.id,
+        requestedRoomId: data.roomId,
+        error: error.message,
+      });
+      client.emit('join_failed', {
+        message: error.message,
+        code: error.code ?? 'ROOM_JOIN_FAILED',
+      });
+      client.disconnect();
+      return;
     }
 
     // RoomService에 플레이어 등록
