@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import TasksMenuContent from "./TasksMenuContent";
 import * as useTasksStore from "@/stores/useTasksStore";
 import * as useFocusTimeStore from "@/stores/useFocusTimeStore";
+import { FOCUS_STATUS } from "@/stores/useFocusTimeStore";
+import type { Task } from "./types";
 
 HTMLDivElement.prototype.scrollTo = vi.fn();
 
@@ -12,10 +14,10 @@ vi.mock("@/stores/useFocusTimeStore");
 
 describe("TasksMenuContent", () => {
   const mockTasksStore = {
-    tasks: [],
+    tasks: [] as Task[],
     isLoading: false,
-    error: null,
-    pendingTaskIds: [],
+    error: null as string | null,
+    pendingTaskIds: [] as number[],
     fetchTasks: vi.fn(),
     addTask: vi.fn(),
     toggleTask: vi.fn(),
@@ -24,26 +26,35 @@ describe("TasksMenuContent", () => {
     toggleTaskTimer: vi.fn(),
     stopAllTasks: vi.fn(),
     getTaskDisplayTime: vi.fn(() => 0),
-    clearTaskError: vi.fn(),
+    clearError: vi.fn(),
   };
 
   const mockFocusStore = {
-    getFocusTime: vi.fn(() => 0),
-    baseFocusSeconds: 0,
+    status: FOCUS_STATUS.RESTING as useFocusTimeStore.FocusStatus,
     isFocusTimerRunning: false,
+    error: null as string | null,
+    baseFocusSeconds: 0,
+    serverCurrentSessionSeconds: 0,
+    serverReceivedAt: 0,
+    getFocusTime: vi.fn(() => 0),
+    setFocusTime: vi.fn(),
+    resetFocusTime: vi.fn(),
+    setFocusTimerRunning: vi.fn(),
+    clearError: vi.fn(),
     startFocusing: vi.fn(),
     stopFocusing: vi.fn(),
-    focusError: null,
-    clearFocusError: vi.fn(),
+    syncFromServer: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useTasksStore.useTasksStore).mockImplementation((selector: any) =>
-      selector(mockTasksStore),
+    vi.mocked(useTasksStore.useTasksStore).mockImplementation(
+      <T,>(selector: (state: typeof mockTasksStore) => T) =>
+        selector(mockTasksStore),
     );
     vi.mocked(useFocusTimeStore.useFocusTimeStore).mockImplementation(
-      (selector: any) => selector(mockFocusStore),
+      <T,>(selector: (state: typeof mockFocusStore) => T) =>
+        selector(mockFocusStore),
     );
   });
 
@@ -103,7 +114,7 @@ describe("TasksMenuContent", () => {
 
   it("타이머 실행 중일 때 정지 버튼이 표시된다", () => {
     vi.mocked(useFocusTimeStore.useFocusTimeStore).mockImplementation(
-      (selector: any) =>
+      <T,>(selector: (state: typeof mockFocusStore) => T) =>
         selector({ ...mockFocusStore, isFocusTimerRunning: true }),
     );
 
@@ -119,8 +130,9 @@ describe("TasksMenuContent", () => {
   });
 
   it("에러가 있으면 표시된다", () => {
-    vi.mocked(useTasksStore.useTasksStore).mockImplementation((selector: any) =>
-      selector({ ...mockTasksStore, error: "작업 로딩 실패" }),
+    vi.mocked(useTasksStore.useTasksStore).mockImplementation(
+      <T,>(selector: (state: typeof mockTasksStore) => T) =>
+        selector({ ...mockTasksStore, error: "작업 로딩 실패" }),
     );
 
     render(
