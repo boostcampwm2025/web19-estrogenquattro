@@ -37,6 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/coverage-v8": "2.1.9",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "jsdom": "^27.4.0",
