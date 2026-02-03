@@ -40,9 +40,12 @@ export class FocusTimeService {
   ): Promise<DailyFocusTime> {
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
-    this.logger.log(
-      `[findOrCreate] playerId=${player.id}, todayStart=${todayStart.toISOString()}, todayEnd=${todayEnd.toISOString()}`,
-    );
+    this.logger.log('findOrCreate', {
+      method: 'findOrCreate',
+      playerId: player.id,
+      todayStart: todayStart.toISOString(),
+      todayEnd: todayEnd.toISOString(),
+    });
 
     const existing = await manager
       .getRepository(DailyFocusTime)
@@ -55,9 +58,12 @@ export class FocusTimeService {
       })
       .getOne();
 
-    this.logger.log(
-      `[findOrCreate] existing=${existing ? `id=${existing.id}, createdAt=${existing.createdAt?.toISOString()}` : 'null'}`,
-    );
+    this.logger.log('findOrCreate result', {
+      method: 'findOrCreate',
+      existing: !!existing,
+      id: existing?.id ?? null,
+      createdAt: existing?.createdAt?.toISOString() ?? null,
+    });
 
     if (existing) {
       return existing;
@@ -70,9 +76,12 @@ export class FocusTimeService {
     });
 
     const saved = await manager.save(DailyFocusTime, newFocusTime);
-    this.logger.log(
-      `[findOrCreate] created new record id=${saved.id}, createdAt=${saved.createdAt?.toISOString()}`,
-    );
+    this.logger.log('findOrCreate created', {
+      method: 'findOrCreate',
+      id: saved.id,
+      createdAt: saved.createdAt?.toISOString() ?? null,
+      playerId: player.id,
+    });
 
     return saved;
   }
@@ -85,10 +94,16 @@ export class FocusTimeService {
   async startFocusing(playerId: number, taskId?: number): Promise<Player> {
     const now = new Date();
 
-    this.logger.log(`[TX START] startFocusing - playerId: ${playerId}`);
+    this.logger.log('TX START startFocusing', {
+      method: 'startFocusing',
+      playerId,
+    });
     return this.writeLock.runExclusive(() =>
       this.dataSource.transaction(async (manager) => {
-        this.logger.log(`[TX ACTIVE] startFocusing - playerId: ${playerId}`);
+        this.logger.log('TX ACTIVE startFocusing', {
+          method: 'startFocusing',
+          playerId,
+        });
 
         const player = await manager.findOne(Player, {
           where: { id: playerId },
@@ -123,14 +138,23 @@ export class FocusTimeService {
         await manager.save(Player, player);
 
         if (normalizedTaskId) {
-          this.logger.log(
-            `Player ${playerId} started focusing on task ${normalizedTaskId}`,
-          );
+          this.logger.log('Focus started', {
+            method: 'startFocusing',
+            playerId,
+            taskId: normalizedTaskId,
+          });
         } else {
-          this.logger.log(`Player ${playerId} started global focusing`);
+          this.logger.log('Focus started', {
+            method: 'startFocusing',
+            playerId,
+            taskId: null,
+          });
         }
 
-        this.logger.log(`[TX END] startFocusing - playerId: ${playerId}`);
+        this.logger.log('TX END startFocusing', {
+          method: 'startFocusing',
+          playerId,
+        });
         return player;
       }),
     );
@@ -147,10 +171,16 @@ export class FocusTimeService {
   }> {
     const now = new Date();
 
-    this.logger.log(`[TX START] startResting - playerId: ${playerId}`);
+    this.logger.log('TX START startResting', {
+      method: 'startResting',
+      playerId,
+    });
     return this.writeLock.runExclusive(() =>
       this.dataSource.transaction(async (manager) => {
-        this.logger.log(`[TX ACTIVE] startResting - playerId: ${playerId}`);
+        this.logger.log('TX ACTIVE startResting', {
+          method: 'startResting',
+          playerId,
+        });
 
         const player = await manager.findOne(Player, {
           where: { id: playerId },
@@ -161,9 +191,10 @@ export class FocusTimeService {
 
         // 집중 중이 아니면 무시
         if (!player.lastFocusStartTime) {
-          this.logger.log(
-            `Player ${playerId} is not focusing, ignoring resting`,
-          );
+          this.logger.log('Resting ignored - not focusing', {
+            method: 'startResting',
+            playerId,
+          });
           const todayRecord = await this.findOrCreate(
             manager,
             player,
@@ -193,7 +224,11 @@ export class FocusTimeService {
           getTodayKstRangeUtc().start,
         );
 
-        this.logger.log(`[TX END] startResting - playerId: ${playerId}`);
+        this.logger.log('TX END startResting', {
+          method: 'startResting',
+          playerId,
+          sessionSeconds,
+        });
         return {
           totalFocusSeconds: todayRecord.totalFocusSeconds,
           sessionSeconds,
@@ -238,9 +273,12 @@ export class FocusTimeService {
       todayRecord.totalFocusSeconds += validSeconds;
       await manager.save(DailyFocusTime, todayRecord);
 
-      this.logger.log(
-        `Settled ${validSeconds}s for player ${player.id} (daily total: ${todayRecord.totalFocusSeconds}s)`,
-      );
+      this.logger.log('Session settled', {
+        method: 'settleCurrentSession',
+        playerId: player.id,
+        sessionSeconds: validSeconds,
+        dailyTotalSeconds: todayRecord.totalFocusSeconds,
+      });
 
       // Task에 누적 (focusingTaskId가 있고, 본인 소유 Task일 때만)
       if (player.focusingTaskId) {
@@ -255,13 +293,19 @@ export class FocusTimeService {
           .execute();
 
         if (result.affected) {
-          this.logger.log(
-            `Added ${validSeconds}s to task ${player.focusingTaskId}`,
-          );
+          this.logger.log('Task focus time updated', {
+            method: 'settleCurrentSession',
+            playerId: player.id,
+            taskId: player.focusingTaskId,
+            sessionSeconds: validSeconds,
+          });
         } else {
-          this.logger.warn(
-            `Task ${player.focusingTaskId} not found or not owned by player ${player.id}, skipping task update`,
-          );
+          this.logger.warn('Task focus update skipped', {
+            method: 'settleCurrentSession',
+            playerId: player.id,
+            taskId: player.focusingTaskId,
+            reason: 'not_found_or_not_owned',
+          });
         }
       }
     }
@@ -286,9 +330,11 @@ export class FocusTimeService {
         }
 
         if (player.lastFocusStartTime) {
-          this.logger.log(
-            `Settling stale session for player ${playerId} (started at ${player.lastFocusStartTime.toISOString()})`,
-          );
+          this.logger.log('Settling stale session', {
+            method: 'settleStaleSession',
+            playerId,
+            startedAt: player.lastFocusStartTime.toISOString(),
+          });
 
           await this.settleCurrentSession(manager, player, now);
 

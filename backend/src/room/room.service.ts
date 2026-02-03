@@ -54,7 +54,7 @@ export class RoomService {
     const id = `room-${++this.nextRoomNumber}`;
     this.rooms.set(id, { id, capacity: this.capacity, size: 0 });
     this.addAvailableRoom(id);
-    this.logger.log(`Created new room: ${id}`);
+    this.logger.log('Room created', { method: 'createRoom', roomId: id });
     return id;
   }
 

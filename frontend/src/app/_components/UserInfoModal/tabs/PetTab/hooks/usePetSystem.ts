@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { petApi } from "@/lib/api/pet";
 import { getSocket } from "@/lib/socket";
 import { queryKeys } from "@/lib/api/hooks/queryKeys";
@@ -50,14 +51,14 @@ export const usePetSystem = (playerId: number) => {
     },
   });
 
-  const refreshPets = () => {
+  const refreshPets = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: queryKeys.pets.inventory(playerId),
     });
     queryClient.invalidateQueries({
       queryKey: queryKeys.pets.codex(playerId),
     });
-  };
+  }, [queryClient, playerId]);
 
   // 가챠 환급 (중복 펫 시)
   const gachaRefundMutation = useMutation({

@@ -27,6 +27,7 @@
     "migration:revert": "pnpm run typeorm migration:revert -d src/database/data-source.ts"
   },
   "dependencies": {
+    "@axiomhq/winston": "^1.4.0",
     "@nestjs/common": "^11.0.2",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.2",

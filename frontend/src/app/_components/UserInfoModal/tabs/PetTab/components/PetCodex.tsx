@@ -1,4 +1,5 @@
 import { Pet } from "@/lib/api/pet";
+import { memo, useMemo } from "react";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_CARD =
@@ -12,24 +13,23 @@ interface PetCodexProps {
   isOwner: boolean;
 }
 
-export default function PetCodex({
+const PetCodex = memo(function PetCodex({
   allPets,
   collectedPetIds,
   equippedPetId,
   onPetSelect,
   isOwner,
 }: PetCodexProps) {
-  // 미리 펫들을 종류별로 그룹화
-  const groupedPets = allPets.reduce(
-    (acc, pet) => {
+  // 미리 펫들을 종류별로 그룹화 (Memoized)
+  const groupedPets = useMemo(() => {
+    return allPets.reduce<Record<string, Pet[]>>((acc, pet) => {
       if (!acc[pet.species]) {
         acc[pet.species] = [];
       }
       acc[pet.species].push(pet);
       return acc;
-    },
-    {} as Record<string, Pet[]>,
-  );
+    }, {});
+  }, [allPets]);
 
   return (
     <div className={`flex flex-col gap-4 bg-amber-50 p-6 ${PIXEL_BORDER}`}>
@@ -112,4 +112,6 @@ export default function PetCodex({
       </div>
     </div>
   );
-}
+});
+
+export default PetCodex;

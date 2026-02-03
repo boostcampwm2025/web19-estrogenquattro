@@ -17,4 +17,19 @@ export const envValidationSchema = Joi.object({
 
   // 맵 에셋 경로 (미설정 시 코드에서 __dirname 기반 자동 계산)
   ASSETS_PATH: Joi.string().optional(),
+
+  // 로깅 (선택)
+  LOG_LEVEL: Joi.string()
+    .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
+    .optional(),
+  AXIOM_TOKEN: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  AXIOM_DATASET: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 });
