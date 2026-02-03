@@ -109,12 +109,27 @@ export default class SocketManager {
     const player = this.getPlayer();
     if (!socket || !player) return;
 
-    socket.emit("joining", {
+    const pendingRoomId = useRoomStore.getState().pendingRoomId;
+
+    const payload: {
+      x: number;
+      y: number;
+      username: string;
+      startAt: string;
+      roomId?: string;
+    } = {
       x: player.getContainer().x,
       y: player.getContainer().y,
       username: this.username,
       startAt: getTodayStartTime(),
-    });
+    };
+
+    if (pendingRoomId) {
+      payload.roomId = pendingRoomId;
+      useRoomStore.getState().setPendingRoomId(null);
+    }
+
+    socket.emit("joining", payload);
   }
 
   connect(callbacks: {
@@ -130,6 +145,10 @@ export default class SocketManager {
       // 재연결 시 오버레이 숨김 및 플래그 리셋
       useConnectionStore.getState().setDisconnected(false);
       this.isSessionReplaced = false;
+
+      // 방 이동/재연결 시 기존 플레이어 제거 (Ghosting 방지 및 순서 보장)
+      this.otherPlayers.forEach((player) => player.destroy());
+      this.otherPlayers.clear();
 
       const player = this.getPlayer();
       if (player && socket.id) {
