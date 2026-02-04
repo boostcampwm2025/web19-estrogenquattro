@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  RoomFullException,
+  RoomNotFoundException,
+} from './exceptions/room.exception';
 
-type RoomInfo = {
+export type RoomInfo = {
   id: string;
   capacity: number;
   size: number;
@@ -11,117 +15,178 @@ export class RoomService {
   private readonly logger = new Logger(RoomService.name);
 
   private readonly capacity = 14;
-  private nextRoomNumber = 3;
+  private readonly totalRooms = 5;
 
-  private rooms = new Map<string, RoomInfo>();
-  private socketToRoom = new Map<string, string>();
+  private roomInfos = new Map<string, RoomInfo>();
+  private socketIdToRoomId = new Map<string, string>();
+  private roomIdToPlayerIds = new Map<string, Set<number>>();
 
-  private availableRooms: string[] = [];
-  private availableIndex = new Map<string, number>();
+  private reservations = new Map<number, NodeJS.Timeout>(); // playerId -> timeout
+  private reservedRooms = new Map<number, string>(); // playerId -> roomId
 
   constructor() {
-    this.bootstrapInitialRooms();
+    this.initializeRooms();
   }
 
-  private bootstrapInitialRooms() {
-    for (let i = 1; i <= 3; i++) {
+  private initializeRooms() {
+    for (let i = 1; i <= this.totalRooms; i++) {
       const id = `room-${i}`;
-      this.rooms.set(id, { id, capacity: this.capacity, size: 0 });
-      this.addAvailableRoom(id);
+      this.roomInfos.set(id, { id, capacity: this.capacity, size: 0 });
+      this.roomIdToPlayerIds.set(id, new Set());
     }
   }
 
-  private addAvailableRoom(roomId: string) {
-    if (this.availableIndex.has(roomId)) return;
-    this.availableIndex.set(roomId, this.availableRooms.length);
-    this.availableRooms.push(roomId);
-  }
+  reserveRoom(playerId: number, roomId: string) {
+    this.cancelReservation(playerId);
 
-  private removeAvailableRoom(roomId: string) {
-    const targetIdx = this.availableIndex.get(roomId);
-    if (targetIdx === undefined) return;
-    const lastRoomIdx = this.availableRooms.length - 1;
-    const lastRoomId = this.availableRooms[lastRoomIdx];
+    const room = this.roomInfos.get(roomId);
+    if (!room) throw new RoomNotFoundException();
 
-    this.availableRooms[targetIdx] = lastRoomId;
-    this.availableIndex.set(lastRoomId, targetIdx);
-
-    this.availableRooms.pop();
-    this.availableIndex.delete(roomId);
-  }
-
-  private createRoom(): string {
-    const id = `room-${++this.nextRoomNumber}`;
-    this.rooms.set(id, { id, capacity: this.capacity, size: 0 });
-    this.addAvailableRoom(id);
-    this.logger.log('Room created', { method: 'createRoom', roomId: id });
-    return id;
-  }
-
-  private pickAvailableRoom(): string {
-    if (this.availableRooms.length === 0) {
-      return this.createRoom();
+    if (room.size >= room.capacity) {
+      throw new RoomFullException();
     }
-    const idx = Math.floor(Math.random() * this.availableRooms.length);
-    return this.availableRooms[idx];
+
+    room.size += 1;
+    this.reservedRooms.set(playerId, roomId);
+
+    const timeout = setTimeout(() => {
+      this.cancelReservation(playerId);
+    }, 30000);
+    this.reservations.set(playerId, timeout);
   }
 
-  randomJoin(socketId: string): string {
-    const existing = this.socketToRoom.get(socketId);
+  private disposeReservation(playerId: number): string | undefined {
+    const timeout = this.reservations.get(playerId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.reservations.delete(playerId);
+    }
+    const reservedRoomId = this.reservedRooms.get(playerId);
+    if (reservedRoomId) {
+      this.reservedRooms.delete(playerId);
+      return reservedRoomId;
+    }
+    return undefined;
+  }
+
+  private cancelReservation(playerId: number) {
+    const reservedRoomId = this.disposeReservation(playerId);
+    if (reservedRoomId) {
+      this.decreaseRoomSize(reservedRoomId);
+    }
+  }
+
+  private decreaseRoomSize(roomId: string) {
+    const room = this.roomInfos.get(roomId);
+    if (room) {
+      room.size = Math.max(0, room.size - 1);
+    }
+  }
+
+  private consumeReservation(playerId: number | undefined): string | null {
+    if (!playerId) return null;
+    return this.disposeReservation(playerId) ?? null;
+  }
+
+  randomJoin(socketId: string, playerId?: number): string {
+    const existing = this.socketIdToRoomId.get(socketId);
     if (existing) return existing;
 
-    const roomId = this.pickAvailableRoom();
-    const room = this.rooms.get(roomId)!;
-    room.size += 1;
-    if (room.size >= room.capacity) {
-      this.removeAvailableRoom(roomId);
+    if (playerId) {
+      this.cancelReservation(playerId);
     }
-    this.socketToRoom.set(socketId, roomId);
+
+    const startIndex = Math.floor(Math.random() * this.totalRooms) + 1;
+
+    let targetRoomId: string | null = null;
+
+    for (let i = 0; i < this.totalRooms; i++) {
+      const roomNum = ((startIndex - 1 + i) % this.totalRooms) + 1;
+      const roomId = `room-${roomNum}`;
+      const room = this.roomInfos.get(roomId);
+
+      if (room && room.size < room.capacity) {
+        targetRoomId = roomId;
+        break;
+      }
+    }
+
+    if (!targetRoomId) {
+      throw new RoomFullException();
+    }
+
+    const room = this.roomInfos.get(targetRoomId)!;
+    room.size += 1;
+    this.socketIdToRoomId.set(socketId, targetRoomId);
+
+    return targetRoomId;
+  }
+
+  joinRoom(socketId: string, roomId: string, playerId: number): string {
+    const existing = this.socketIdToRoomId.get(socketId);
+    if (existing) return existing;
+
+    const reservedRoomId = this.consumeReservation(playerId);
+    if (reservedRoomId) {
+      if (reservedRoomId === roomId) {
+        this.socketIdToRoomId.set(socketId, roomId);
+        return roomId;
+      }
+      this.decreaseRoomSize(reservedRoomId);
+    }
+
+    const room = this.roomInfos.get(roomId);
+    if (!room) {
+      throw new RoomNotFoundException();
+    }
+
+    if (room.size >= room.capacity) {
+      throw new RoomFullException();
+    }
+
+    room.size += 1;
+    this.socketIdToRoomId.set(socketId, roomId);
+
     return roomId;
   }
 
   exit(socketId: string): string | undefined {
-    const roomId = this.socketToRoom.get(socketId);
+    const roomId = this.socketIdToRoomId.get(socketId);
     if (!roomId) return undefined;
-    const room = this.rooms.get(roomId);
+
+    const room = this.roomInfos.get(roomId);
     if (room) {
       room.size = Math.max(0, room.size - 1);
-      if (room.size < room.capacity) {
-        this.addAvailableRoom(roomId);
-      }
     }
-    this.socketToRoom.delete(socketId);
+
+    this.socketIdToRoomId.delete(socketId);
     return roomId;
   }
 
   getRoomIdBySocketId(socketId: string): string | undefined {
-    return this.socketToRoom.get(socketId);
+    return this.socketIdToRoomId.get(socketId);
   }
 
-  private roomPlayers = new Map<string, Set<number>>();
-
   addPlayer(roomId: string, playerId: number) {
-    if (!this.roomPlayers.has(roomId)) {
-      this.roomPlayers.set(roomId, new Set());
-    }
-    const players = this.roomPlayers.get(roomId);
+    const players = this.roomIdToPlayerIds.get(roomId);
     if (players) {
       players.add(playerId);
     }
   }
 
   removePlayer(roomId: string, playerId: number) {
-    const players = this.roomPlayers.get(roomId);
+    const players = this.roomIdToPlayerIds.get(roomId);
     if (players) {
       players.delete(playerId);
-      if (players.size === 0) {
-        this.roomPlayers.delete(roomId);
-      }
     }
   }
 
   getPlayerIds(roomId: string): number[] {
-    const players = this.roomPlayers.get(roomId);
+    const players = this.roomIdToPlayerIds.get(roomId);
     return players ? Array.from(players) : [];
+  }
+
+  getAllRooms(): Record<string, RoomInfo> {
+    return Object.fromEntries(this.roomInfos);
   }
 }

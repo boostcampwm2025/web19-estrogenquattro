@@ -4,6 +4,7 @@ import { connectSocket, getSocket } from "../../lib/socket";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useConnectionStore } from "../../stores/useConnectionStore";
 import { useContributionStore } from "../../stores/useContributionStore";
+import { useTasksStore } from "../../stores/useTasksStore";
 import type { Direction } from "../types/direction";
 import { FOCUS_STATUS, FocusStatus } from "@/stores/useFocusTimeStore";
 import {
@@ -11,6 +12,8 @@ import {
   type FocusTimeData,
 } from "../../stores/useFocusTimeStore";
 import { getTodayStartTime } from "@/utils/timeFormat";
+import { useRoomStore } from "../../stores/useRoomStore";
+import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
 
 interface PlayerData {
   userId: string;
@@ -38,6 +41,7 @@ interface ProgressUpdateData {
   targetProgress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number;
 }
 
 // game_state 이벤트 페이로드 (S→C, 입장 시)
@@ -45,6 +49,7 @@ interface GameStateData {
   progress: number;
   contributions: Record<string, number>;
   mapIndex: number;
+  progressThreshold: number;
 }
 
 export default class SocketManager {
@@ -120,12 +125,27 @@ export default class SocketManager {
     const player = this.getPlayer();
     if (!socket || !player) return;
 
-    socket.emit("joining", {
+    const pendingRoomId = useRoomStore.getState().pendingRoomId;
+
+    const payload: {
+      x: number;
+      y: number;
+      username: string;
+      startAt: string;
+      roomId?: string;
+    } = {
       x: player.getContainer().x,
       y: player.getContainer().y,
       username: this.username,
       startAt: getTodayStartTime(),
-    });
+    };
+
+    if (pendingRoomId) {
+      payload.roomId = pendingRoomId;
+      useRoomStore.getState().setPendingRoomId(null);
+    }
+
+    socket.emit("joining", payload);
   }
 
   connect(callbacks: {
@@ -142,6 +162,10 @@ export default class SocketManager {
       useConnectionStore.getState().setDisconnected(false);
       this.isSessionReplaced = false;
 
+      // 방 이동/재연결 시 기존 플레이어 제거 (Ghosting 방지 및 순서 보장)
+      this.otherPlayers.forEach((player) => player.destroy());
+      this.otherPlayers.clear();
+
       const player = this.getPlayer();
       if (player && socket.id) {
         player.id = socket.id;
@@ -150,6 +174,19 @@ export default class SocketManager {
       // 재연결 시에만 joining emit (Player가 이미 존재하는 경우)
       // 첫 연결 시에는 Player 생성 후 emitJoining() 호출
       if (player) {
+        // 미디어(음악) 리셋 이벤트 발생 -> MusicPlayer가 이를 수신하여 정지함
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("reset_media"));
+        }
+
+        // 로컬 Task 상태 정지 (UI 상의 Running 상태 제거)
+        useTasksStore.getState().stopAllTasks();
+
+        // 트랜지션 완료 이벤트 발생 (MapScene에서 Iris Open 수행)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("channel_transition_complete"));
+        }
+
         this.emitJoining();
       }
     });
@@ -186,6 +223,7 @@ export default class SocketManager {
       "joined",
       (data: { roomId: string; focusTime?: FocusTimeData }) => {
         this.roomId = data.roomId;
+        useRoomStore.getState().setRoomId(data.roomId);
         const currentPlayer = this.getPlayer();
         if (currentPlayer) {
           currentPlayer.setRoomId(data.roomId);
@@ -239,10 +277,24 @@ export default class SocketManager {
       }
     });
 
+    // 입장 실패 처리 (방 없음, 방 꽉 짐 등)
+    socket.on("join_failed", (data: { message: string; code: string }) => {
+      console.warn("[SocketManager] join_failed:", data);
+      if (data.code === "ROOM_NOT_FOUND") {
+        alert("유효하지 않은 방입니다. 다시 로그인해주세요.");
+        window.location.href = "/login";
+      } else if (data.code === "ROOM_FULL") {
+        alert("방이 꽉 찼습니다. 다른 채널을 선택해주세요.");
+        // 채널 선택 모달 다시 열기
+        useModalStore.getState().openModal(MODAL_TYPES.CHANNEL_SELECT);
+      }
+    });
+
     // 입장 시 초기 상태 수신
     socket.on("game_state", (data: GameStateData) => {
       useProgressStore.getState().setProgress(data.progress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
+      useProgressStore.getState().setProgressThreshold(data.progressThreshold);
       useContributionStore.getState().setContributions(data.contributions);
 
       // 첫 접속: 맵 로드 후 Player, UI 등 초기화
@@ -265,6 +317,7 @@ export default class SocketManager {
     socket.on("progress_update", (data: ProgressUpdateData) => {
       useProgressStore.getState().setProgress(data.targetProgress);
       useProgressStore.getState().setMapIndex(data.mapIndex);
+      useProgressStore.getState().setProgressThreshold(data.progressThreshold);
       useContributionStore.getState().setContributions(data.contributions);
 
       // mapIndex 동기화: map_switch 유실 시 복구

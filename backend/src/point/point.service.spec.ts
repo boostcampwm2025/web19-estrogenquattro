@@ -17,6 +17,8 @@ import { DatabaseModule } from '../database/database.module';
 import { FocusTimeService } from '../focustime/focustime.service';
 import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
+import { TaskService } from '../task/task.service';
+import { PlayerService } from '../player/player.service';
 
 describe('PointService', () => {
   let service: PointService;
@@ -54,7 +56,13 @@ describe('PointService', () => {
         ]),
         DatabaseModule,
       ],
-      providers: [PointService, PointHistoryService, FocusTimeService],
+      providers: [
+        PointService,
+        PointHistoryService,
+        FocusTimeService,
+        TaskService,
+        PlayerService,
+      ],
     }).compile();
 
     service = module.get<PointService>(PointService);

@@ -92,6 +92,17 @@ export function useMusicPlayer() {
     window.dispatchEvent(event);
   }, [isPlaying]);
 
+  // 전역 리셋 이벤트 수신 (채널 이동 등)
+  useEffect(() => {
+    const handleReset = () => {
+      setIsPlaying(false);
+    };
+    window.addEventListener("reset_media", handleReset);
+    return () => {
+      window.removeEventListener("reset_media", handleReset);
+    };
+  }, []);
+
   const handlePlayTrack = (track: Track) => {
     if (currentTrack?.id === track.id) {
       setIsPlaying(!isPlaying);

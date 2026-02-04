@@ -10,10 +10,14 @@ const TOTAL_STAGES = 5;
 export default function ProgressBar() {
   const progress = useProgressStore((state) => state.progress);
   const mapIndex = useProgressStore((state) => state.mapIndex);
+  const progressThreshold = useProgressStore(
+    (state) => state.progressThreshold,
+  );
   const [displayProgress, setDisplayProgress] = useState(0);
 
   // 현재 스테이지 (1-indexed)
   const currentStage = mapIndex + 1;
+  const isLastMap = mapIndex >= 4;
 
   // Animate progress changes
   useEffect(() => {
@@ -45,10 +49,20 @@ export default function ProgressBar() {
     };
   }, [progress]); // displayProgress 의존성 제거 (무한 루프 방지)
 
+  // 기준값 기반으로 퍼센트 계산 (마지막 맵은 항상 100%)
+  const progressPercent = isLastMap
+    ? 100
+    : Math.min((displayProgress / progressThreshold) * 100, 100);
+
   // 몇 개의 섹션이 채워져야 하는지 계산
-  const filledSections = Math.floor((displayProgress / 100) * SECTION_COUNT);
+  const filledSections = Math.floor((progressPercent / 100) * SECTION_COUNT);
   const partialFill =
-    ((displayProgress / 100) * SECTION_COUNT - filledSections) * 100;
+    ((progressPercent / 100) * SECTION_COUNT - filledSections) * 100;
+
+  // 라벨 텍스트 결정 (마지막 맵은 항상 STAGE COMPLETE!)
+  const labelText = isLastMap
+    ? "STAGE COMPLETE!"
+    : `NEXT STAGE LOADING... (${currentStage}/${TOTAL_STAGES})`;
 
   return (
     <div
@@ -67,7 +81,7 @@ export default function ProgressBar() {
           `,
         }}
       >
-        NEXT STAGE LOADING... ({currentStage}/{TOTAL_STAGES})
+        {labelText}
       </span>
 
       {/* Pixel Art Progress Bar with rounded corners */}
@@ -130,15 +144,14 @@ export default function ProgressBar() {
               let fillPercent = 0;
 
               // 100%일 때 모든 섹션 채움
-              if (displayProgress >= 100) {
+              if (progressPercent >= 100) {
                 fillPercent = 100;
-              } else if (displayProgress <= 0) {
+              } else if (progressPercent <= 0) {
                 // 0%일 때 모든 섹션 비움
                 fillPercent = 0;
               } else if (i < filledSections) {
                 fillPercent = 100;
               } else if (i === filledSections) {
-                // partialFill을 그대로 적용 (threshold 제거)
                 fillPercent = partialFill;
               }
 

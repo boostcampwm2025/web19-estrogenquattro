@@ -14,12 +14,15 @@ import {
 } from '../focustime/entites/daily-focus-time.entity';
 import { Task } from '../task/entites/task.entity';
 import { DatabaseModule } from '../database/database.module';
+import { TaskService } from '../task/task.service';
+import { PlayerService } from '../player/player.service';
 
 describe('PointHistoryService', () => {
   let service: PointHistoryService;
   let pointHistoryRepository: Repository<PointHistory>;
   let playerRepository: Repository<Player>;
   let focusTimeRepository: Repository<DailyFocusTime>;
+  let taskRepository: Repository<Task>;
   let module: TestingModule;
 
   let player1: Player;
@@ -38,7 +41,12 @@ describe('PointHistoryService', () => {
         TypeOrmModule.forFeature([PointHistory, Player, DailyFocusTime, Task]),
         DatabaseModule,
       ],
-      providers: [PointHistoryService, FocusTimeService],
+      providers: [
+        PointHistoryService,
+        FocusTimeService,
+        TaskService,
+        PlayerService,
+      ],
     }).compile();
 
     service = module.get<PointHistoryService>(PointHistoryService);
@@ -51,6 +59,7 @@ describe('PointHistoryService', () => {
     focusTimeRepository = module.get<Repository<DailyFocusTime>>(
       getRepositoryToken(DailyFocusTime),
     );
+    taskRepository = module.get<Repository<Task>>(getRepositoryToken(Task));
   }, 30000);
 
   afterAll(async () => {
@@ -62,6 +71,7 @@ describe('PointHistoryService', () => {
   beforeEach(async () => {
     await pointHistoryRepository.clear();
     await focusTimeRepository.clear();
+    await taskRepository.clear();
     await playerRepository.clear();
 
     // 테스트용 플레이어 생성
@@ -278,6 +288,52 @@ describe('PointHistoryService', () => {
       expect(result[1].rank).toBe(2);
     });
 
+    it('type=TASK_COMPLETED일 때 TaskService로 분기하여 랭킹을 조회한다', async () => {
+      // Given
+      const weekendStartAt = new Date('2026-01-27T00:00:00Z');
+      const inRangeDate = new Date('2026-01-28T12:00:00Z');
+
+      // Player1: 2 tasks completed
+      const task1 = taskRepository.create({
+        player: player1,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 1',
+      });
+      const task2 = taskRepository.create({
+        player: player1,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 2',
+      });
+      await taskRepository.save([task1, task2]);
+
+      // Player2: 1 task completed
+      const task3 = taskRepository.create({
+        player: player2,
+        completedAt: inRangeDate,
+        createdAt: new Date(),
+        description: 'Task 3',
+      });
+      await taskRepository.save(task3);
+
+      // When
+      const result = await service.getHistoryRanks(
+        PointType.TASK_COMPLETED,
+        weekendStartAt,
+      );
+
+      // Then
+      expect(result).toHaveLength(2);
+      expect(result[0].playerId).toBe(player1.id);
+      expect(result[0].count).toBe(2);
+      expect(result[0].rank).toBe(1);
+
+      expect(result[1].playerId).toBe(player2.id);
+      expect(result[1].count).toBe(1);
+      expect(result[1].rank).toBe(2);
+    });
+
     it('type=COMMITTED일 때 기존 로직을 사용한다', async () => {
       // Given: PointHistory 데이터와 FocusTime 데이터 모두 존재
       const weekendStartAt = new Date('2026-01-27T00:00:00Z');
@@ -321,6 +377,60 @@ describe('PointHistoryService', () => {
       expect(result[0].rank).toBe(1);
       expect(result[1].playerId).toBe(player2.id);
       expect(result[1].rank).toBe(2);
+    });
+  });
+  describe('addHistory', () => {
+    it('activityAt이 주어지면 createdAt으로 설정된다 (과거 날짜 기록)', async () => {
+      // Given
+      const playerId = player1.id;
+      const type = PointType.TASK_COMPLETED;
+      const amount = 1;
+      const activityAt = new Date('2025-12-31T23:59:59Z'); // 과거 시점
+
+      // 트랜잭션 매니저 대신 기존 repository의 manager 사용 (테스트 편의상)
+      const manager = pointHistoryRepository.manager;
+
+      // When
+      const result = await service.addHistory(
+        manager,
+        playerId,
+        type,
+        amount,
+        null,
+        null,
+        activityAt,
+      );
+
+      // Then
+      expect(result.createdAt).toEqual(activityAt);
+      expect(result.activityAt).toEqual(activityAt);
+
+      // DB 저장 확인
+      const stored = await pointHistoryRepository.findOne({
+        where: { id: result.id },
+      });
+      expect(stored?.createdAt).toEqual(activityAt);
+    });
+
+    it('activityAt이 없으면 현재 시각으로 생성된다', async () => {
+      // Given
+      const playerId = player1.id;
+      const type = PointType.ISSUE_OPEN;
+      const amount = 1;
+
+      const manager = pointHistoryRepository.manager;
+
+      // When
+      const result = await service.addHistory(manager, playerId, type, amount);
+
+      // Then
+      expect(result.createdAt).toBeDefined();
+      expect(result.activityAt).toBeNull();
+
+      // 약 1초 내외 오차 허용 (DB 갔다오는 시간 고려)
+      const now = new Date();
+      const diff = Math.abs(now.getTime() - result.createdAt.getTime());
+      expect(diff).toBeLessThan(1000);
     });
   });
 });

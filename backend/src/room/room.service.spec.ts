@@ -311,4 +311,126 @@ describe('RoomService', () => {
       expect(playerIds).toHaveLength(1);
     });
   });
+  describe('getAllRooms', () => {
+    it('모든 방 정보를 반환한다', async () => {
+      const service = await createFreshService();
+      const rooms = service.getAllRooms();
+      expect(Object.keys(rooms)).toHaveLength(5);
+      expect(rooms['room-1']).toMatchObject({
+        id: 'room-1',
+        capacity: 14,
+        size: 0,
+      });
+    });
+  });
+
+  describe('reserveRoom', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('방을 예약하면 size가 증가하고 reservedRooms에 추가된다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+      const roomId = 'room-1';
+
+      service.reserveRoom(playerId, roomId);
+
+      const rooms = service.getAllRooms();
+      expect(rooms[roomId].size).toBe(1);
+    });
+
+    it('30초 후 예약이 자동 취소된다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+      const roomId = 'room-1';
+
+      service.reserveRoom(playerId, roomId);
+      jest.advanceTimersByTime(30000);
+
+      const rooms = service.getAllRooms();
+      expect(rooms[roomId].size).toBe(0);
+    });
+
+    it('이미 예약된 상태에서 다른 방을 예약하면 이전 예약은 취소된다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+
+      service.reserveRoom(playerId, 'room-1');
+      expect(service.getAllRooms()['room-1'].size).toBe(1);
+
+      service.reserveRoom(playerId, 'room-2');
+      expect(service.getAllRooms()['room-1'].size).toBe(0);
+      expect(service.getAllRooms()['room-2'].size).toBe(1);
+    });
+  });
+
+  describe('joinRoom with Reservation', () => {
+    it('예약된 방으로 입장 시 예약이 확정(consume)된다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+      const roomId = 'room-1';
+
+      service.reserveRoom(playerId, roomId);
+
+      // 예약 때문에 size가 1인 상태
+      expect(service.getAllRooms()[roomId].size).toBe(1);
+
+      const joinedRoomId = service.joinRoom('socket-1', roomId, playerId);
+      expect(joinedRoomId).toBe(roomId);
+
+      // 입장 후에도 size는 1이어야 함 (예약분 -> 실제 입장분으로 전환)
+      expect(service.getAllRooms()[roomId].size).toBe(1);
+    });
+
+    it('예약된 방이 아닌 다른 방으로 입장 시 예약은 취소되고 새 방에 입장한다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+      const reservedRoomId = 'room-1';
+      const targetRoomId = 'room-2';
+
+      service.reserveRoom(playerId, reservedRoomId);
+      expect(service.getAllRooms()[reservedRoomId].size).toBe(1);
+
+      const joinedRoomId = service.joinRoom('socket-1', targetRoomId, playerId);
+
+      expect(joinedRoomId).toBe(targetRoomId);
+      expect(service.getAllRooms()[reservedRoomId].size).toBe(0); // 예약 취소됨
+      expect(service.getAllRooms()[targetRoomId].size).toBe(1); // 새 방 입장
+    });
+  });
+
+  describe('randomJoin with Reservation', () => {
+    it('예약이 있어도 무시하고(취소하고) 랜덤 입장을 진행한다', async () => {
+      const service = await createFreshService();
+      const playerId = 1;
+      const reservedRoomId = 'room-1';
+
+      service.reserveRoom(playerId, reservedRoomId);
+      expect(service.getAllRooms()[reservedRoomId].size).toBe(1);
+
+      // randomJoin 호출
+      const joinedRoomId = service.randomJoin('socket-1', playerId);
+
+      // 예약되었던 방의 인원이 줄어들었거나(취소됨),
+      // 만약 우연히 같은 방에 배정되었다면 size가 1일 것임.
+      // 확실한 검증을 위해 "예약 자체가 사라졌는지"를 간접 확인할 수 있으면 좋으나,
+      // 여기서는 size 변화로 유추할 수 있음.
+
+      const rooms = service.getAllRooms();
+
+      // 만약 다른 방에 배정됐다면 room-1 size는 0이어야 함
+      if (joinedRoomId !== reservedRoomId) {
+        expect(rooms[reservedRoomId].size).toBe(0);
+        expect(rooms[joinedRoomId].size).toBe(1);
+      } else {
+        // 우연히 같은 방 배정
+        expect(rooms[reservedRoomId].size).toBe(1);
+      }
+    });
+  });
 });

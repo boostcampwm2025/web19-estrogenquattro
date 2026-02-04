@@ -11,6 +11,7 @@
     "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage --coverage.reporter=html",
     "generate-silhouettes": "tsx scripts/generate-silhouettes.ts"
   },
   "dependencies": {
