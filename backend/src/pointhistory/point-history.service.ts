@@ -22,7 +22,7 @@ export class PointHistoryService {
     private readonly focusTimeService: FocusTimeService,
   ) {}
 
-  async addHistoryWithManager(
+  async addHistory(
     manager: EntityManager,
     playerId: number,
     type: PointType,
@@ -40,6 +40,7 @@ export class PointHistoryService {
       repository: repository ?? null,
       description: description ?? null,
       activityAt: activityAt ?? null,
+      createdAt: activityAt ?? undefined, // activityAt이 있으면 createdAt으로 사용
     });
 
     return historyRepo.save(history);

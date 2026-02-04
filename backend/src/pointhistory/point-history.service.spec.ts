@@ -323,4 +323,58 @@ describe('PointHistoryService', () => {
       expect(result[1].rank).toBe(2);
     });
   });
+  describe('addHistory', () => {
+    it('activityAt이 주어지면 createdAt으로 설정된다 (과거 날짜 기록)', async () => {
+      // Given
+      const playerId = player1.id;
+      const type = PointType.TASK_COMPLETED;
+      const amount = 1;
+      const activityAt = new Date('2025-12-31T23:59:59Z'); // 과거 시점
+
+      // 트랜잭션 매니저 대신 기존 repository의 manager 사용 (테스트 편의상)
+      const manager = pointHistoryRepository.manager;
+
+      // When
+      const result = await service.addHistory(
+        manager,
+        playerId,
+        type,
+        amount,
+        null,
+        null,
+        activityAt,
+      );
+
+      // Then
+      expect(result.createdAt).toEqual(activityAt);
+      expect(result.activityAt).toEqual(activityAt);
+
+      // DB 저장 확인
+      const stored = await pointHistoryRepository.findOne({
+        where: { id: result.id },
+      });
+      expect(stored?.createdAt).toEqual(activityAt);
+    });
+
+    it('activityAt이 없으면 현재 시각으로 생성된다', async () => {
+      // Given
+      const playerId = player1.id;
+      const type = PointType.ISSUE_OPEN;
+      const amount = 1;
+
+      const manager = pointHistoryRepository.manager;
+
+      // When
+      const result = await service.addHistory(manager, playerId, type, amount);
+
+      // Then
+      expect(result.createdAt).toBeDefined();
+      expect(result.activityAt).toBeNull();
+
+      // 약 1초 내외 오차 허용 (DB 갔다오는 시간 고려)
+      const now = new Date();
+      const diff = Math.abs(now.getTime() - result.createdAt.getTime());
+      expect(diff).toBeLessThan(1000);
+    });
+  });
 });
