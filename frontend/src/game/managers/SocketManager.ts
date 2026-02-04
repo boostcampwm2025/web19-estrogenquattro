@@ -13,6 +13,7 @@ import {
 } from "../../stores/useFocusTimeStore";
 import { getTodayStartTime } from "@/utils/timeFormat";
 import { useRoomStore } from "../../stores/useRoomStore";
+import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
 
 interface PlayerData {
   userId: string;
@@ -258,6 +259,19 @@ export default class SocketManager {
       if (remotePlayer) {
         remotePlayer.destroy();
         this.otherPlayers.delete(data.userId);
+      }
+    });
+
+    // 입장 실패 처리 (방 없음, 방 꽉 짐 등)
+    socket.on("join_failed", (data: { message: string; code: string }) => {
+      console.warn("[SocketManager] join_failed:", data);
+      if (data.code === "ROOM_NOT_FOUND") {
+        alert("유효하지 않은 방입니다. 다시 로그인해주세요.");
+        window.location.href = "/login";
+      } else if (data.code === "ROOM_FULL") {
+        alert("방이 꽉 찼습니다. 다른 채널을 선택해주세요.");
+        // 채널 선택 모달 다시 열기
+        useModalStore.getState().openModal(MODAL_TYPES.CHANNEL_SELECT);
       }
     });
 
