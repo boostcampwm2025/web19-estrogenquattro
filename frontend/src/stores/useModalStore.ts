@@ -3,6 +3,7 @@ import { create } from "zustand";
 export const MODAL_TYPES = {
   USER_INFO: "userInfo",
   LEADERBOARD: "leaderboard",
+  CHANNEL_SELECT: "channelSelect",
 } as const;
 
 export type ModalType = (typeof MODAL_TYPES)[keyof typeof MODAL_TYPES] | null;

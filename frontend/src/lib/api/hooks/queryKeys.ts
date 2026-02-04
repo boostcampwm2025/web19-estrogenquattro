@@ -43,4 +43,7 @@ export const queryKeys = {
     ranks: (weekendStartAt: string, type: string) =>
       [...queryKeys.leaderboard.all, "ranks", weekendStartAt, type] as const,
   },
+  rooms: {
+    all: ["rooms"] as const,
+  },
 };

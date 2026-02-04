@@ -77,7 +77,7 @@ export const petHandlers = [
   }),
 
   // POST /api/pets/gacha - 가챠 실행
-  http.post("*/api/pets/gacha", async ({ request }) => {
+  http.post("*/api/pets/gacha", async () => {
     // Note: In real tests, we get playerId from auth context
     // For simplicity, we'll use the first player in the store
     const players = Array.from(playerStore.values());

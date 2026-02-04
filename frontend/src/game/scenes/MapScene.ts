@@ -9,6 +9,7 @@ import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
 import { API_URL } from "@/lib/api/client";
+import IrisTransition from "../effects/IrisTransition";
 
 export class MapScene extends Phaser.Scene {
   private player?: Player;
@@ -27,6 +28,7 @@ export class MapScene extends Phaser.Scene {
   private socketManager!: SocketManager;
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
+  private irisTransition!: IrisTransition;
 
   // Map Configuration
   // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
@@ -204,7 +206,55 @@ export class MapScene extends Phaser.Scene {
     );
     this.chatManager.setup();
 
-    // 6. Cleanup on scene shutdown
+    // 6. Iris Transition Setup
+    this.irisTransition = new IrisTransition(this);
+
+    // 채널 전환 시작 이벤트 리스너 (React -> Phaser)
+    const handleChannelTransition = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const onComplete = customEvent.detail?.onComplete;
+
+      if (this.player) {
+        // 플레이어 위치 기준으로 아이리스 닫기 (얼굴(0,0)보다 살짝 아래인 몸통(+20)을 중심으로)
+        const { x, y } = this.player.getContainer();
+        this.irisTransition.close(x + 200, y + 100, 1000, () => {
+          if (onComplete) onComplete();
+        });
+      } else {
+        // 플레이어가 없으면 즉시 완료 처리
+        if (onComplete) onComplete();
+      }
+    };
+    window.addEventListener(
+      "start_channel_transition",
+      handleChannelTransition,
+    );
+
+    // 채널 전환 완료 이벤트 리스너 (SocketManager -> Phaser)
+    const handleChannelTransitionComplete = () => {
+      if (this.player) {
+        const { x, y } = this.player.getContainer();
+        this.irisTransition.open(x + 200, y + 100, 2000);
+      }
+    };
+    window.addEventListener(
+      "channel_transition_complete",
+      handleChannelTransitionComplete,
+    );
+
+    this.events.once("destroy", () => {
+      window.removeEventListener(
+        "start_channel_transition",
+        handleChannelTransition,
+      );
+      window.removeEventListener(
+        "channel_transition_complete",
+        handleChannelTransitionComplete,
+      );
+      this.irisTransition?.destroy();
+    });
+
+    // 7. Cleanup on scene shutdown
     this.events.on("shutdown", this.cleanup, this);
   }
 
@@ -224,7 +274,14 @@ export class MapScene extends Phaser.Scene {
       this.setupPlayer();
 
       // Player 생성 후 joining 이벤트 emit
+      // Player 생성 후 joining 이벤트 emit
       this.socketManager.emitJoining();
+
+      // 아이리스 열기 (초기 스폰 위치)
+      if (this.player) {
+        const { x, y } = this.player.getContainer();
+        this.irisTransition.open(x + 200, y + 100, 1000);
+      }
 
       // Collisions Setup
       this.setupCollisions();
@@ -336,6 +393,9 @@ export class MapScene extends Phaser.Scene {
         const spawnPos = this.mapManager.getRandomSpawnPosition();
         this.player.setPosition(spawnPos.x, spawnPos.y);
         this.socketManager.sendRespawnPosition(spawnPos.x, spawnPos.y);
+
+        // 아이리스 열기 (새 위치에서)
+        this.irisTransition.open(spawnPos.x, spawnPos.y + 20, 1000);
       }
     });
   }
