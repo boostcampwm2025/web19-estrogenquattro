@@ -11,6 +11,7 @@ import {
   TaskNotOwnedException,
   TaskFocusingException,
 } from './exceptions/task.exceptions';
+import { HistoryRank } from '../pointhistory/point-history.service';
 
 @Injectable()
 export class TaskService {
@@ -162,5 +163,46 @@ export class TaskService {
         playerId,
       });
     });
+  }
+
+  async getTaskRanks(weekendStartAt: Date): Promise<HistoryRank[]> {
+    const weekendEndAt = new Date(weekendStartAt);
+    weekendEndAt.setDate(weekendEndAt.getDate() + 7);
+
+    const results = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.player_id', 'playerId')
+      .addSelect('player.nickname', 'nickname')
+      .addSelect('COUNT(*)', 'count')
+      .innerJoin('task.player', 'player')
+      .where('task.completedAt >= :startAt AND task.completedAt < :endAt', {
+        startAt: weekendStartAt,
+        endAt: weekendEndAt,
+      })
+      .groupBy('task.player_id')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    // 동점자 처리
+    let currentRank = 1;
+    let previousCount: number | null = null;
+
+    return results.map(
+      (row: { playerId: number; nickname: string; count: string }, index) => {
+        const count = Number(row.count);
+
+        if (previousCount !== null && count < previousCount) {
+          currentRank = index + 1;
+        }
+        previousCount = count;
+
+        return {
+          playerId: row.playerId,
+          nickname: row.nickname,
+          count,
+          rank: currentRank,
+        };
+      },
+    );
   }
 }
