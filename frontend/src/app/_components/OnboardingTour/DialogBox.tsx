@@ -91,14 +91,17 @@ export default function DialogBox({
                   ◀ 이전
                 </button>
               )}
-              {!isWaitingForTrigger && (
-                <button
-                  onClick={onNext}
-                  className="cursor-pointer rounded border-3 border-amber-900 bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] transition-all hover:bg-amber-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-                >
-                  {isLastStep ? "시작하기!" : "다음 ▶"}
-                </button>
-              )}
+              <button
+                onClick={onNext}
+                disabled={isWaitingForTrigger}
+                className={`rounded border-3 border-amber-900 px-4 py-2 text-sm font-bold text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] transition-all ${
+                  isWaitingForTrigger
+                    ? "cursor-not-allowed bg-gray-400 opacity-70 shadow-none"
+                    : "cursor-pointer bg-amber-600 hover:bg-amber-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                }`}
+              >
+                {isLastStep ? "시작하기!" : "다음 ▶"}
+              </button>
             </div>
           </div>
         </div>

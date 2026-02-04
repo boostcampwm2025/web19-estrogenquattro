@@ -17,7 +17,6 @@ export function TaskTimer({
 }: TaskTimerProps) {
   return (
     <div className="mb-6">
-      <div className="text-md mb-3 text-amber-900">[ Focus Time ]</div>
       <InlineAlert message={error} />
       <div className="mb-4 rounded-none border-3 border-amber-900 bg-white/50 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
         <div className="text-center text-3xl text-amber-900">{time}</div>
@@ -25,7 +24,7 @@ export function TaskTimer({
       <div className="flex gap-2">
         <Button
           onClick={onToggle}
-          className="text-md border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover flex flex-1 items-center justify-center gap-2 rounded-none border-2 py-1 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+          className="text-md border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-none border-2 py-1 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
         >
           {isRunning ? (
             <>

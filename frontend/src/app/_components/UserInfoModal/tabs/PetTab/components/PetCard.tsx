@@ -126,7 +126,7 @@ const PetCard = memo(function PetCard({
               <button
                 onClick={handleFeedClick}
                 disabled={isMaxStage || (!isReadyToEvolve && points < 10)}
-                className={`flex h-12 w-full flex-col items-center justify-center rounded text-base leading-tight font-bold transition-all ${
+                className={`flex h-12 w-full cursor-pointer flex-col items-center justify-center rounded text-base leading-tight font-bold transition-all ${
                   isMaxStage || (!isReadyToEvolve && points < 10)
                     ? "cursor-not-allowed border-r-4 border-b-4 border-gray-600 bg-gray-400 text-white opacity-70"
                     : isReadyToEvolve
