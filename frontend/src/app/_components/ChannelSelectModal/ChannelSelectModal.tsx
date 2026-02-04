@@ -68,13 +68,34 @@ export default function ChannelSelectModal() {
       await joinRoom(channel.roomId);
 
       // 2. 예약된 방 ID 설정 및 소켓 전환 (재연결)
+      // 2. 예약된 방 ID 설정
       useRoomStore.getState().setPendingRoomId(channel.roomId);
-      const socket = getSocket();
-      if (socket) {
-        socket.disconnect(); // 소켓 연결을 끊으면 SocketManager에서 재연결 로직이 수행됨
-        // 수동 연결 (일부 케이스에서 자동 연결이 안 될 수 있으므로 명시적 호출)
-        socket.connect();
+
+      // 3. 트랜지션 시작 이벤트 발생 (Phaser에서 수신)
+      // 트랜지션(Iris Close)이 완료되면 콜백으로 소켓 재연결 수행
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("start_channel_transition", {
+            detail: {
+              onComplete: () => {
+                const socket = getSocket();
+                if (socket) {
+                  socket.disconnect();
+                  socket.connect();
+                }
+              },
+            },
+          }),
+        );
+      } else {
+        // Window가 없는 환경(혹은 예외)에서는 즉시 이동
+        const socket = getSocket();
+        if (socket) {
+          socket.disconnect();
+          socket.connect();
+        }
       }
+
       closeModal();
     } catch (error: unknown) {
       console.error("채널 이동 실패", error);
