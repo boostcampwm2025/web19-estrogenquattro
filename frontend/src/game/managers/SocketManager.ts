@@ -60,6 +60,18 @@ export default class SocketManager {
   private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
   private mapSwitchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // 아바타 로더 리스너 추적 (비동기 로드 중 destroy 버그 수정)
+  private avatarLoaderListeners: Map<
+    string,
+    Array<{
+      errorListener: (file: Phaser.Loader.File) => void;
+      completeListener: () => void;
+      textureKey: string;
+    }>
+  > = new Map();
+  private avatarLoadingKeys: Set<string> = new Set();
+
   private getPlayer: () =>
     | {
         id: string;
@@ -257,6 +269,7 @@ export default class SocketManager {
     socket.on("player_left", (data: { userId: string }) => {
       const remotePlayer = this.otherPlayers.get(data.userId);
       if (remotePlayer) {
+        this.cleanupAllAvatarListeners(data.userId);
         remotePlayer.destroy();
         this.otherPlayers.delete(data.userId);
       }
@@ -453,15 +466,126 @@ export default class SocketManager {
       this.scene.physics.add.collider(remotePlayer.getContainer(), this.walls);
     }
 
-    if (!this.scene.textures.exists(username)) {
-      const imageUrl = `https://avatars.githubusercontent.com/${username}`;
+    this.loadAvatar(data, remotePlayer);
+  }
 
-      this.scene.load.image(username, imageUrl);
-      this.scene.load.once(`filecomplete-image-${username}`, () => {
-        remotePlayer.updateFaceTexture(username);
-      });
-      this.scene.load.start();
+  private loadAvatar(data: PlayerData, remotePlayer: RemotePlayer): void {
+    const targetUserId = data.userId;
+    const username = data.username || "unknown";
+    const textureKey = `avatar_${targetUserId}`;
+
+    // 이미 텍스처가 있으면 바로 적용
+    if (this.scene.textures.exists(textureKey)) {
+      remotePlayer.updateFaceTexture(textureKey);
+      return;
     }
+
+    const loader = this.scene.load;
+
+    // 이미 로드 중인지 확인 (자체 추적)
+    const isAlreadyLoading = this.avatarLoadingKeys.has(textureKey);
+
+    const cleanup = () => {
+      this.avatarLoadingKeys.delete(textureKey);
+      this.removeAvatarListener(
+        targetUserId,
+        errorListener,
+        completeListener,
+        textureKey,
+      );
+    };
+
+    const errorListener = (file: Phaser.Loader.File) => {
+      if (file.key === textureKey) {
+        console.error(
+          `[SocketManager] Avatar load error for ${textureKey}:`,
+          file,
+        );
+        cleanup();
+      }
+    };
+
+    const completeListener = () => {
+      cleanup();
+      const player = this.otherPlayers.get(targetUserId);
+      if (player) {
+        player.updateFaceTexture(textureKey);
+      }
+    };
+
+    // 리스너 등록 (배열에 추가)
+    this.addAvatarListener(targetUserId, {
+      errorListener,
+      completeListener,
+      textureKey,
+    });
+
+    loader.on("loaderror", errorListener);
+    loader.once(`filecomplete-image-${textureKey}`, completeListener);
+
+    // 이미 로드 중이 아닐 때만 새 로드 시작
+    if (!isAlreadyLoading) {
+      this.avatarLoadingKeys.add(textureKey);
+      const imageUrl = `https://avatars.githubusercontent.com/${username}`;
+      loader.image(textureKey, imageUrl);
+
+      if (!loader.isLoading()) {
+        loader.start();
+      }
+    }
+  }
+
+  private addAvatarListener(
+    userId: string,
+    listener: {
+      errorListener: (file: Phaser.Loader.File) => void;
+      completeListener: () => void;
+      textureKey: string;
+    },
+  ): void {
+    const existing = this.avatarLoaderListeners.get(userId) || [];
+    existing.push(listener);
+    this.avatarLoaderListeners.set(userId, existing);
+  }
+
+  private removeAvatarListener(
+    userId: string,
+    errorListener: (file: Phaser.Loader.File) => void,
+    completeListener: () => void,
+    textureKey: string,
+  ): void {
+    const listeners = this.avatarLoaderListeners.get(userId);
+    if (!listeners) return;
+
+    if (this.scene?.load) {
+      this.scene.load.off("loaderror", errorListener);
+      this.scene.load.off(`filecomplete-image-${textureKey}`, completeListener);
+    }
+
+    const filtered = listeners.filter(
+      (l) =>
+        l.errorListener !== errorListener &&
+        l.completeListener !== completeListener,
+    );
+
+    if (filtered.length > 0) {
+      this.avatarLoaderListeners.set(userId, filtered);
+    } else {
+      this.avatarLoaderListeners.delete(userId);
+    }
+  }
+
+  private cleanupAllAvatarListeners(userId: string): void {
+    const listeners = this.avatarLoaderListeners.get(userId);
+    if (!listeners || !this.scene?.load) return;
+
+    listeners.forEach(({ errorListener, completeListener, textureKey }) => {
+      this.scene.load.off("loaderror", errorListener);
+      this.scene.load.off(`filecomplete-image-${textureKey}`, completeListener);
+      this.avatarLoadingKeys.delete(textureKey);
+    });
+
+    this.avatarLoaderListeners.delete(userId);
   }
 
   setupCollisions(): void {
@@ -518,6 +642,13 @@ export default class SocketManager {
 
   destroy(): void {
     this.clearMapSwitchTimeout();
+
+    // 모든 아바타 로더 리스너 정리
+    this.avatarLoaderListeners.forEach((_, userId) => {
+      this.cleanupAllAvatarListeners(userId);
+    });
+    this.avatarLoadingKeys.clear();
+
     this.otherPlayers.forEach((player) => player.destroy());
     this.otherPlayers.clear();
   }

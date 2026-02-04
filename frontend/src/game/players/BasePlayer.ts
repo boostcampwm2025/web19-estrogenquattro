@@ -31,6 +31,15 @@ export default class BasePlayer {
 
   protected speed: number = 300;
 
+  // destroy 체크 + 리스너 정리
+  private isDestroyed: boolean = false;
+  private pendingLoaderListeners: Array<{
+    event: string;
+    callback: (file?: Phaser.Loader.File) => void;
+  }> = [];
+  private currentPetLoadVersion: number = 0;
+  private petLoadingKeys: Set<string> = new Set();
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -233,6 +242,17 @@ export default class BasePlayer {
 
   // 자원 해제
   destroy() {
+    this.isDestroyed = true;
+
+    // 대기 중인 로더 리스너 정리
+    if (this.scene?.load) {
+      this.pendingLoaderListeners.forEach(({ event, callback }) => {
+        this.scene.load.off(event, callback);
+      });
+    }
+    this.pendingLoaderListeners = [];
+    this.petLoadingKeys.clear();
+
     this.musicParticleEmitter?.destroy();
     this.pet.destroy();
     this.container.destroy();
@@ -241,7 +261,10 @@ export default class BasePlayer {
 
   // 얼굴 텍스처 업데이트
   updateFaceTexture(texture: string) {
-    if (this.faceSprite && this.scene.textures.exists(texture)) {
+    if (this.isDestroyed) return;
+    if (!this.faceSprite?.scene) return;
+
+    if (this.scene.textures.exists(texture)) {
       this.faceSprite.setTexture(texture);
       const FACE_RADIUS = 17;
       this.faceSprite.setDisplaySize(FACE_RADIUS * 2, FACE_RADIUS * 2);
@@ -263,18 +286,20 @@ export default class BasePlayer {
 
   // 펫 이미지 동적 로딩 및 설정
   setPet(imageUrl: string | null) {
+    if (this.isDestroyed) return;
+
+    // 버전 증가 (연속 호출 시 이전 로드 무효화)
+    this.currentPetLoadVersion++;
+    const thisLoadVersion = this.currentPetLoadVersion;
+
     if (!imageUrl) {
-      // 이미지가 없으면 펫 제거
-      this.pet.destroy();
+      // 이미지가 없으면 펫 제거 (clear로 재사용 가능하게)
+      this.pet.clear();
       return;
     }
 
-    const fileName = imageUrl.split("/").pop();
-    if (!fileName) {
-      console.warn("[BasePlayer] Invalid imageUrl format:", imageUrl);
-      return;
-    }
-    const textureKey = `pet_${fileName}`;
+    // 텍스처 키: URL 해시 사용 (파일명 충돌 방지)
+    const textureKey = `pet_${this.hashString(imageUrl)}`;
 
     // 이미 로드된 텍스처면 바로 적용
     if (this.scene.textures.exists(textureKey)) {
@@ -282,24 +307,76 @@ export default class BasePlayer {
       return;
     }
 
-    // 로드되지 않았다면 동적 로딩
-    this.scene.load.image(textureKey, imageUrl);
+    // 이미 로드 중인지 확인 (중복 로드 방지)
+    const isAlreadyLoading = this.petLoadingKeys.has(textureKey);
 
-    // 로드 에러 처리
-    const errorListener = (file: Phaser.Loader.File) => {
-      if (file.key === textureKey) {
+    const cleanup = () => {
+      this.petLoadingKeys.delete(textureKey);
+      this.cleanupListener("loaderror", errorListener);
+      this.cleanupListener(
+        `filecomplete-image-${textureKey}`,
+        completeListener,
+      );
+    };
+
+    const errorListener = (file?: Phaser.Loader.File) => {
+      if (file?.key === textureKey) {
         console.error(`[BasePlayer] Load error for ${textureKey}:`, file);
-        this.scene.load.off("loaderror", errorListener);
+        cleanup();
       }
     };
-    this.scene.load.on("loaderror", errorListener);
 
-    this.scene.load.once(`filecomplete-image-${textureKey}`, () => {
+    const completeListener = () => {
+      cleanup();
+      if (this.isDestroyed || thisLoadVersion !== this.currentPetLoadVersion)
+        return;
       this.pet.setTexture(textureKey);
-      this.scene.load.off("loaderror", errorListener); // 성공 시 에러 리스너 제거
-    });
+    };
 
-    this.scene.load.start();
+    this.registerListener("loaderror", errorListener);
+    this.registerListener(`filecomplete-image-${textureKey}`, completeListener);
+    this.scene.load.on("loaderror", errorListener);
+    this.scene.load.once(`filecomplete-image-${textureKey}`, completeListener);
+
+    // 이미 로드 중이 아닐 때만 새 로드 시작
+    if (!isAlreadyLoading) {
+      this.petLoadingKeys.add(textureKey);
+      this.scene.load.image(textureKey, imageUrl);
+
+      if (!this.scene.load.isLoading()) {
+        this.scene.load.start();
+      }
+    }
+  }
+
+  // 해시 헬퍼 (간단한 문자열 해시)
+  private hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  private registerListener(
+    event: string,
+    callback: (file?: Phaser.Loader.File) => void,
+  ) {
+    this.pendingLoaderListeners.push({ event, callback });
+  }
+
+  private cleanupListener(
+    event: string,
+    callback: (file?: Phaser.Loader.File) => void,
+  ) {
+    if (this.scene?.load) {
+      this.scene.load.off(event, callback);
+    }
+    this.pendingLoaderListeners = this.pendingLoaderListeners.filter(
+      (l) => !(l.event === event && l.callback === callback),
+    );
   }
 
   // 작업 상태 태그 표시 (항상 표시됨, 꼬리 없는 태그 스타일)

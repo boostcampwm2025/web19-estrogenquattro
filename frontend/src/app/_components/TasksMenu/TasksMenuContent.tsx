@@ -34,6 +34,7 @@ export default function TasksMenuContent({
     stopAllTasks,
     getTaskDisplayTime,
     clearTaskError,
+    removeCompletedTasks,
   } = useTasksStore(
     useShallow((state) => ({
       tasks: state.tasks,
@@ -49,6 +50,7 @@ export default function TasksMenuContent({
       stopAllTasks: state.stopAllTasks,
       getTaskDisplayTime: state.getTaskDisplayTime,
       clearTaskError: state.clearError,
+      removeCompletedTasks: state.removeCompletedTasks,
     })),
   );
 
@@ -56,6 +58,30 @@ export default function TasksMenuContent({
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  // KST 자정(UTC 15:00)에 완료된 태스크 제거
+  useEffect(() => {
+    const getMsUntilNextKSTMidnight = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setUTCHours(15, 0, 0, 0);
+      if (now.getUTCHours() >= 15) {
+        nextMidnight.setUTCDate(nextMidnight.getUTCDate() + 1);
+      }
+      return nextMidnight.getTime() - now.getTime();
+    };
+
+    const scheduleReset = () => {
+      const ms = getMsUntilNextKSTMidnight();
+      return window.setTimeout(() => {
+        removeCompletedTasks();
+        timerId = scheduleReset();
+      }, ms);
+    };
+
+    let timerId = scheduleReset();
+    return () => window.clearTimeout(timerId);
+  }, [removeCompletedTasks]);
 
   useEffect(() => {
     if (!error) return;

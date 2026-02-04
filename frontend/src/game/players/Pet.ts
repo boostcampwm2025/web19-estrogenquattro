@@ -8,6 +8,7 @@ export default class Pet {
   private sprite: Phaser.GameObjects.Image | null = null;
   private currentDirection: Direction = DIRECTION.STOP;
   private offset = { x: 35, y: 0 }; // 기본: 오른쪽
+  private isDestroyed: boolean = false;
 
   // 거리 및 크기 설정
   private readonly PET_SIZE = 50; // 펫 크기 (너비/높이)
@@ -21,9 +22,13 @@ export default class Pet {
   }
 
   setTexture(key: string): void {
-    if (!this.scene.textures.exists(key)) return;
+    if (this.isDestroyed) return;
+    if (!this.container?.scene) return;
+    if (!this.container.active) return;
+    if (!this.scene?.textures?.exists(key)) return;
 
     if (!this.sprite) {
+      if (!this.scene?.add) return;
       this.sprite = this.scene.add.image(this.offset.x, this.offset.y, key);
       this.setSpriteScale();
       this.sprite.setOrigin(0.5, 0.5);
@@ -31,6 +36,7 @@ export default class Pet {
       this.container.add(this.sprite);
       this.container.sendToBack(this.sprite);
     } else {
+      if (!this.sprite?.scene) return;
       this.sprite.setTexture(key);
       this.setSpriteScale(); // 텍스처 변경 후 사이즈 재설정
     }
@@ -113,10 +119,18 @@ export default class Pet {
     this.offset = { x: targetX, y: targetY };
   }
 
-  destroy(): void {
+  // 스프라이트만 정리 (재사용 가능)
+  clear(): void {
     if (this.sprite) {
       this.sprite.destroy();
       this.sprite = null;
     }
+    // isDestroyed는 설정하지 않음 → 이후 setTexture() 호출 가능
+  }
+
+  // 완전 파괴 (BasePlayer.destroy 시에만 호출)
+  destroy(): void {
+    this.isDestroyed = true;
+    this.clear();
   }
 }
