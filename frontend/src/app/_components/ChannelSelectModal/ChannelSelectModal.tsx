@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
-import { Users, LogIn } from "lucide-react";
+import { Users, LogIn, RefreshCw } from "lucide-react";
 import { getSocket } from "@/lib/socket";
 
 import { useRoomStore } from "@/stores/useRoomStore";
@@ -34,12 +34,30 @@ export default function ChannelSelectModal() {
 
   const isOpen = activeModal === MODAL_TYPES.CHANNEL_SELECT;
   // Room 시스템 훅 사용 (React Query 기반) - 모달이 열려있을 때만 데이터를 가져옴
-  const { rooms, joinRoom } = useRoomSystem({ enabled: isOpen });
+  const { rooms, joinRoom, isLoading, refetch, isFetching } = useRoomSystem({
+    enabled: isOpen,
+  });
 
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
     onClose: closeModal,
   });
+
+  const [isRefreshAnimating, setRefreshAnimating] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshAnimating || isFetching) return;
+
+    setRefreshAnimating(true);
+    // 최소 500ms 동안 애니메이션 유지
+    await Promise.all([
+      refetch(),
+      new Promise((resolve) => setTimeout(resolve, 500)),
+    ]);
+    setRefreshAnimating(false);
+  };
+
+  const isSpinning = isRefreshAnimating || isFetching;
 
   // 방 목록 데이터가 변경되면 채널 목록 상태 업데이트
   const channels = useMemo<Channel[]>(() => {
@@ -110,6 +128,8 @@ export default function ChannelSelectModal() {
       } else {
         alert("채널 이동에 실패했습니다.");
       }
+      // 실패 시 최신 상태로 갱신하여 인원리스트 업데이트
+      handleRefresh();
     }
   };
 
@@ -126,12 +146,25 @@ export default function ChannelSelectModal() {
         className={`relative w-full max-w-lg ${PIXEL_BG} ${PIXEL_BORDER} p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2
-            id="channel-select-title"
-            className="text-xl font-extrabold tracking-wider text-amber-900"
-          >
-            채널 선택
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2
+              id="channel-select-title"
+              className="text-xl font-extrabold tracking-wider text-amber-900"
+            >
+              채널 선택
+            </h2>
+
+            <button
+              onClick={handleRefresh}
+              disabled={isSpinning}
+              aria-label="채널 목록 새로고침"
+              className={`flex h-8 w-8 cursor-pointer items-center justify-center text-amber-900 disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <RefreshCw
+                className={`h-5 w-5 ${isSpinning ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
           <button
             onClick={handleClose}
             aria-label="채널 선택 모달 닫기"
