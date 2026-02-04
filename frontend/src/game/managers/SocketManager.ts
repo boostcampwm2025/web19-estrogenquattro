@@ -167,6 +167,11 @@ export default class SocketManager {
         // 로컬 Task 상태 정지 (UI 상의 Running 상태 제거)
         useTasksStore.getState().stopAllTasks();
 
+        // 트랜지션 완료 이벤트 발생 (MapScene에서 Iris Open 수행)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("channel_transition_complete"));
+        }
+
         this.emitJoining();
       }
     });
