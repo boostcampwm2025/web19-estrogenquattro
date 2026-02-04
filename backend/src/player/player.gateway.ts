@@ -127,14 +127,33 @@ export class PlayerGateway
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()
-    data: { x: number; y: number; username: string },
+    data: { x: number; y: number; username: string; roomId?: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const roomId = this.roomService.randomJoin(client.id);
-
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
     const { username, accessToken, playerId } = userData.user;
+
+    let roomId: string;
+    try {
+      if (data.roomId) {
+        roomId = this.roomService.joinRoom(client.id, data.roomId, playerId);
+      } else {
+        roomId = this.roomService.randomJoin(client.id, playerId);
+      }
+    } catch (error) {
+      const err = error as { message: string; code?: string };
+      this.logger.warn('Failed to join room', {
+        clientId: client.id,
+        requestedRoomId: data.roomId,
+        error: err.message,
+      });
+      client.emit('join_failed', {
+        message: err.message,
+        code: err.code,
+      });
+      return;
+    }
 
     // RoomService에 플레이어 등록
     this.roomService.addPlayer(roomId, playerId);
