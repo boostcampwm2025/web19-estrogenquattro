@@ -22,7 +22,7 @@ export class PointHistoryService {
     private readonly focusTimeService: FocusTimeService,
   ) {}
 
-  async addHistoryWithManager(
+  async addHistory(
     manager: EntityManager,
     playerId: number,
     type: PointType,

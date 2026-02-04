@@ -62,7 +62,7 @@ export class PointSettlementScheduler {
             PointType.FOCUSED,
             pointCount,
             null,
-            null,
+            '집중 시간 정산',
             end, // 어제 23:59:59로 기록
           );
           this.progressGateway.addProgress(
@@ -128,7 +128,7 @@ export class PointSettlementScheduler {
           PointType.TASK_COMPLETED,
           count,
           null,
-          null,
+          '태스크 완료 정산',
           end, // 어제 23:59:59로 기록
         );
         this.progressGateway.addProgress(nickname, ProgressSource.TASK, count);

@@ -323,7 +323,7 @@ describe('PointHistoryService', () => {
       expect(result[1].rank).toBe(2);
     });
   });
-  describe('addHistoryWithManager', () => {
+  describe('addHistory', () => {
     it('activityAt이 주어지면 createdAt으로 설정된다 (과거 날짜 기록)', async () => {
       // Given
       const playerId = player1.id;
@@ -335,7 +335,7 @@ describe('PointHistoryService', () => {
       const manager = pointHistoryRepository.manager;
 
       // When
-      const result = await service.addHistoryWithManager(
+      const result = await service.addHistory(
         manager,
         playerId,
         type,
@@ -365,12 +365,7 @@ describe('PointHistoryService', () => {
       const manager = pointHistoryRepository.manager;
 
       // When
-      const result = await service.addHistoryWithManager(
-        manager,
-        playerId,
-        type,
-        amount,
-      );
+      const result = await service.addHistory(manager, playerId, type, amount);
 
       // Then
       expect(result.createdAt).toBeDefined();

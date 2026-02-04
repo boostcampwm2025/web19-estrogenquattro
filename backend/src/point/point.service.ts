@@ -112,7 +112,7 @@ export class PointService {
         }
 
         // 2) 히스토리 기록
-        await this.pointHistoryService.addHistoryWithManager(
+        await this.pointHistoryService.addHistory(
           manager,
           playerId,
           activityType,
