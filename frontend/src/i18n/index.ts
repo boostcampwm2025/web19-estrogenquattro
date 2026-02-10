@@ -10,7 +10,7 @@ import enUi from "../locales/en/ui.json";
 import enGame from "../locales/en/game.json";
 
 i18n
-  // .use(LanguageDetector)
+  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
