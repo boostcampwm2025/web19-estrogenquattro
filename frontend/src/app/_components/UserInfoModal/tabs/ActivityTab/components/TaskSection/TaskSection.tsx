@@ -1,4 +1,5 @@
 import { Task } from "@/app/_components/TasksMenu/types";
+import { useTranslation } from "react-i18next";
 import { getTasksByDate, formatTimeFromSeconds } from "../../lib/dateStats";
 import { isSameDay } from "../../lib/dateUtils";
 import { formatSelectedDate } from "@/utils/timeFormat";
@@ -9,6 +10,7 @@ interface TaskSectionProps {
 }
 
 export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
+  const { t } = useTranslation("ui");
   const isToday = isSameDay(selectedDate, new Date());
   const dailyTasks = getTasksByDate(tasks, selectedDate).filter(
     (task) => isToday || task.completed,
@@ -17,7 +19,9 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
   return (
     <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-bold">Task 목록</p>
+        <p className="text-sm font-bold">
+          {t("userInfoModal.activity.taskSection.title")}
+        </p>
         <p className="text-xs text-amber-700">
           {formatSelectedDate(selectedDate)}
         </p>
@@ -26,7 +30,7 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
       <div className="space-y-2">
         {dailyTasks.length === 0 ? (
           <div className="py-4 text-center text-xs text-amber-700">
-            이 날짜에 등록된 Task가 없습니다.
+            {t("userInfoModal.activity.taskSection.empty")}
           </div>
         ) : (
           dailyTasks.map((task) => (

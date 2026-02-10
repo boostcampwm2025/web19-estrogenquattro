@@ -6,6 +6,7 @@ import { useModalClose } from "@/hooks/useModalClose";
 import { usePetSystem } from "./tabs/PetTab/hooks/usePetSystem";
 import { useShallow } from "zustand/react/shallow";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ProfileTab from "./tabs/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
@@ -19,6 +20,7 @@ const PIXEL_BTN_INACTIVE = "bg-amber-200 text-amber-900 hover:bg-amber-300";
 type TabType = "profile" | "activity" | "pet";
 
 export default function UserInfoModal() {
+  const { t } = useTranslation("ui");
   const { activeModal, userInfoPayload, closeModal } = useModalStore(
     useShallow((state) => ({
       activeModal: state.activeModal,
@@ -83,18 +85,18 @@ export default function UserInfoModal() {
 
         <div className="mb-0 flex gap-1">
           <TabButton
-            label="활동"
+            label={t("userInfoModal.tabs.activity")}
             isActive={activeTab === "activity"}
             onClick={() => setActiveTab("activity")}
           />
           <TabButton
             id="pet-tab-button"
-            label="펫"
+            label={t("userInfoModal.tabs.pet")}
             isActive={activeTab === "pet"}
             onClick={() => setActiveTab("pet")}
           />
           <TabButton
-            label="프로필"
+            label={t("userInfoModal.tabs.profile")}
             isActive={activeTab === "profile"}
             onClick={() => setActiveTab("profile")}
           />

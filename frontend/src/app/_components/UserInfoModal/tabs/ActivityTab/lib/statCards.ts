@@ -17,7 +17,7 @@ export function getStatCards(
   };
 
   return STAT_CARD_CONFIG.map((config) => ({
-    title: config.title,
+    titleKey: config.titleKey,
     value: valueMap[config.valueKey],
     type: config.type,
   }));

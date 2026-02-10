@@ -1,7 +1,7 @@
 import { STAT_CARD_CONFIG, StatCardType } from "../constants/constants";
 
 export type StatCardData = {
-  title: string;
+  titleKey: string;
   value: string;
   type: StatCardType | null;
 };

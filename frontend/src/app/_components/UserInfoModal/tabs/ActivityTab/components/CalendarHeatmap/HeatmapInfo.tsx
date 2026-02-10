@@ -1,20 +1,30 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { HelpCircle } from "lucide-react";
 
-// 포인트 획득 정책 데이터
 const POINT_POLICIES = [
-  { action: "집중 30분", points: 1 },
-  { action: "커밋", points: 2 },
-  { action: "PR 생성", points: 2 },
-  { action: "PR 머지", points: 4 },
-  { action: "PR 리뷰", points: 4 },
-  { action: "이슈 생성", points: 1 },
-  { action: "Task 완료", points: 1 },
+  {
+    actionKey: "userInfoModal.activity.heatmap.policies.focus30min",
+    points: 1,
+  },
+  { actionKey: "userInfoModal.activity.heatmap.policies.commit", points: 2 },
+  { actionKey: "userInfoModal.activity.heatmap.policies.prCreate", points: 2 },
+  { actionKey: "userInfoModal.activity.heatmap.policies.prMerge", points: 4 },
+  { actionKey: "userInfoModal.activity.heatmap.policies.prReview", points: 4 },
+  {
+    actionKey: "userInfoModal.activity.heatmap.policies.issueCreate",
+    points: 1,
+  },
+  {
+    actionKey: "userInfoModal.activity.heatmap.policies.taskComplete",
+    points: 1,
+  },
 ];
 
 export function HeatmapInfo() {
+  const { t } = useTranslation("ui");
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,7 +53,7 @@ export function HeatmapInfo() {
         onMouseLeave={handleMouseLeave}
       >
         <HelpCircle className="h-3 w-3" />
-        <span>포인트 획득 정책</span>
+        <span>{t("userInfoModal.activity.heatmap.pointPolicy")}</span>
       </div>
 
       {/* 호버 툴팁 */}
@@ -56,13 +66,17 @@ export function HeatmapInfo() {
           }}
         >
           <div className="mb-2 flex justify-between gap-12 border-b border-amber-700 pb-1 font-bold text-amber-300">
-            <span>활동</span>
-            <span>포인트</span>
+            <span>
+              {t("userInfoModal.activity.heatmap.policyHeader.action")}
+            </span>
+            <span>
+              {t("userInfoModal.activity.heatmap.policyHeader.point")}
+            </span>
           </div>
           <div className="space-y-1">
             {POINT_POLICIES.map((policy, index) => (
               <div key={index} className="flex justify-between gap-4">
-                <span>{policy.action}</span>
+                <span>{t(policy.actionKey)}</span>
                 <span className="text-amber-300">+{policy.points}P</span>
               </div>
             ))}

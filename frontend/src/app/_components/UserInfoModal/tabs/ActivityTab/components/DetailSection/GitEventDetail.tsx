@@ -2,6 +2,7 @@
 
 import { GIT_EVENT_TYPES } from "@/lib/api";
 import { useGitEventHistories } from "@/lib/api/hooks";
+import { useTranslation } from "react-i18next";
 import { StatCardType } from "../../constants/constants";
 import { Loading } from "@/_components/ui/loading";
 import { formatSelectedDate } from "@/utils/timeFormat";
@@ -22,18 +23,25 @@ const GIT_EVENT_TYPE_MAP: Record<
   [GIT_EVENT_TYPES.PR_REVIEWED]: GIT_EVENT_TYPES.PR_REVIEWED,
 };
 
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  [GIT_EVENT_TYPES.COMMITTED]: "커밋",
-  [GIT_EVENT_TYPES.ISSUE_OPEN]: "이슈",
-  [GIT_EVENT_TYPES.PR_OPEN]: "PR 생성",
-  [GIT_EVENT_TYPES.PR_REVIEWED]: "PR 리뷰",
+const EVENT_TYPE_LABEL_KEY: Record<string, string> = {
+  [GIT_EVENT_TYPES.COMMITTED]:
+    "userInfoModal.activity.gitEvent.label.committed",
+  [GIT_EVENT_TYPES.ISSUE_OPEN]:
+    "userInfoModal.activity.gitEvent.label.issueOpen",
+  [GIT_EVENT_TYPES.PR_OPEN]: "userInfoModal.activity.gitEvent.label.prOpen",
+  [GIT_EVENT_TYPES.PR_REVIEWED]:
+    "userInfoModal.activity.gitEvent.label.prReviewed",
 };
 
-const EVENT_CONTENT_HEADER: Record<string, string> = {
-  [GIT_EVENT_TYPES.COMMITTED]: "레포지토리 / 커밋 메시지",
-  [GIT_EVENT_TYPES.ISSUE_OPEN]: "레포지토리 / 이슈 제목",
-  [GIT_EVENT_TYPES.PR_OPEN]: "레포지토리 / PR 제목",
-  [GIT_EVENT_TYPES.PR_REVIEWED]: "레포지토리 / PR 제목",
+const EVENT_CONTENT_HEADER_KEY: Record<string, string> = {
+  [GIT_EVENT_TYPES.COMMITTED]:
+    "userInfoModal.activity.gitEvent.contentHeader.committed",
+  [GIT_EVENT_TYPES.ISSUE_OPEN]:
+    "userInfoModal.activity.gitEvent.contentHeader.issueOpen",
+  [GIT_EVENT_TYPES.PR_OPEN]:
+    "userInfoModal.activity.gitEvent.contentHeader.prOpen",
+  [GIT_EVENT_TYPES.PR_REVIEWED]:
+    "userInfoModal.activity.gitEvent.contentHeader.prReviewed",
 };
 
 export default function GitEventDetail({
@@ -41,6 +49,7 @@ export default function GitEventDetail({
   selectedDate,
   playerId,
 }: GitEventDetailProps) {
+  const { t } = useTranslation("ui");
   const { gitEvents, isLoading } = useGitEventHistories(playerId, selectedDate);
 
   const filteredEvents = gitEvents
@@ -61,11 +70,16 @@ export default function GitEventDetail({
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   };
 
+  const eventLabel = t(EVENT_TYPE_LABEL_KEY[selectedCard]);
+
   if (isLoading) {
     return (
       <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
         <div className="flex h-32 items-center justify-center">
-          <Loading size="sm" text="로딩 중..." />
+          <Loading
+            size="sm"
+            text={t("userInfoModal.activity.gitEvent.loading")}
+          />
         </div>
       </div>
     );
@@ -75,7 +89,7 @@ export default function GitEventDetail({
     <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold">
-          {EVENT_TYPE_LABEL[selectedCard]} 목록
+          {t("userInfoModal.activity.gitEvent.listTitle", { type: eventLabel })}
         </p>
         <p className="text-xs text-amber-700">
           {formatSelectedDate(selectedDate)}
@@ -84,14 +98,20 @@ export default function GitEventDetail({
 
       {filteredEvents.length === 0 ? (
         <div className="py-4 text-center text-xs text-amber-700">
-          이 날짜에 {EVENT_TYPE_LABEL[selectedCard]} 기록이 없습니다.
+          {t("userInfoModal.activity.gitEvent.empty", { type: eventLabel })}
         </div>
       ) : (
         <>
           <div className="mb-2 flex items-center gap-2 border-b border-amber-300 px-2 pb-1 text-xs font-semibold text-amber-800">
-            <span className="flex-1">{EVENT_CONTENT_HEADER[selectedCard]}</span>
-            <span className="w-36 text-center">시간</span>
-            <span className="w-16 text-center">포인트</span>
+            <span className="flex-1">
+              {t(EVENT_CONTENT_HEADER_KEY[selectedCard])}
+            </span>
+            <span className="w-36 text-center">
+              {t("userInfoModal.activity.gitEvent.time")}
+            </span>
+            <span className="w-16 text-center">
+              {t("userInfoModal.activity.gitEvent.point")}
+            </span>
           </div>
           <div className="space-y-2">
             {filteredEvents.map((event) => (
