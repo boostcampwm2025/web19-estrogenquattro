@@ -68,7 +68,7 @@ describe("TasksMenuContent", () => {
       />,
     );
 
-    expect(screen.getByText("[ Focus Time ]")).toBeInTheDocument();
+    expect(screen.getAllByText("00:00:00")[0]).toBeInTheDocument();
     expect(screen.getByText("[ Tasks ]")).toBeInTheDocument();
   });
 

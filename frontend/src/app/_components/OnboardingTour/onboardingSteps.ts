@@ -63,6 +63,14 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     triggerType: "manual",
   },
   {
+    id: "channel",
+    message:
+      "현재 채널을 확인하고 변경하고 싶으신가요?<br>채널 버튼을 눌러 다른 채널로 이동하여 새로운 친구들을 만나보세요!",
+    highlight: "#channel-select-button",
+    triggerType: "click",
+    triggerTarget: "#channel-select-button",
+  },
+  {
     id: "leaderboard",
     message:
       "당신의 기여도는 몇 위인가요? 누가 가장 몰입했는지 확인해 보세요!<br>매주 새로운 시즌이 시작되니, 이번 주 '기여왕' 에 도전해 보는 건 어떨까요?",

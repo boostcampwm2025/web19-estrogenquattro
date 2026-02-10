@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
-  "bg-amber-600 px-4 py-2 hover:bg-amber-500 text-white border-b-4 border-r-4 border-amber-800 active:border-b-0 active:border-r-0 active:translate-y-1 active:translate-x-1 disabled:opacity-50 disabled:cursor-not-allowed";
+  "cursor-pointer bg-amber-600 px-4 py-2 hover:bg-amber-500 text-white border-b-4 border-r-4 border-amber-800 active:border-b-0 active:border-r-0 active:translate-y-1 active:translate-x-1 disabled:opacity-50 disabled:cursor-not-allowed";
 
 interface PetGachaProps {
   onPetCollected: (petId: number) => void;
