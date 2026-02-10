@@ -1,0 +1,50 @@
+{
+  "steps": {
+    "info": {
+      "message": "Welcome to 'Want to Plant Some Grass?'!<br>I'm Jenkinsu, here to guide you through the service. Shall we take a look around?"
+    },
+    "move": {
+      "message": "This is your own space!<br>Use the arrow keys (↑,↓,←,→) or WASD to move your character freely!"
+    },
+    "chat": {
+      "message": "Want to chat with your teammates?<br>Press Enter to open the chat, type a message, and press Enter again to send!"
+    },
+    "progress": {
+      "message": "This gauge represents our collective 'passion'! It fills up as you focus on coding and contribute on GitHub.<br>What happens when we fill it up together?!"
+    },
+    "leaderboard": {
+      "message": "What's your contribution ranking? See who's been the most focused!<br>A new season starts every week — why not aim to be this week's top contributor?"
+    },
+    "character": {
+      "message": "Curious about your profile?<br>Click the user info button or your character in the game to open the modal!",
+      "afterModalMessage": "In the profile tab, you can check your focus history!<br>You can also see the point earning policy here.",
+      "subSteps": {
+        "petTab": "Now click the pet tab to meet your cute pet friends!",
+        "petGacha": "Welcome! Press the pet gacha button to meet your first pet friend!"
+      }
+    },
+    "pet": {
+      "message": "Congratulations! You've met your first pet!<br>Feed your pet to help it grow and evolve. You can also change your main pet in the codex!"
+    },
+    "task": {
+      "message": "Lastly, you can start a timer and play music from the task panel in the top right!<br>Ready to start focus mode? Let's go!"
+    }
+  },
+  "hints": {
+    "keypress": "Try pressing the arrow keys or WASD!",
+    "chatOpen": "Press Enter to open the chat!",
+    "chatClose": "Type a message and press Enter to close the chat!",
+    "clickButton": "Click the button!",
+    "clickUserInfo": "Click the user info button!",
+    "clickPetTab": "Click the pet tab!",
+    "clickPetGacha": "Click the pet gacha button!"
+  },
+  "ui": {
+    "skip": "Skip",
+    "prev": "◀ Prev",
+    "next": "Next ▶",
+    "start": "Let's Go!",
+    "mascotName": "Jenkinsu",
+    "mascotAlt": "Tutorial mascot"
+  }
+}
