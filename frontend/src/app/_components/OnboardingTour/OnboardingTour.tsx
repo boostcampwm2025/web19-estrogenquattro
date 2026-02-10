@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { ONBOARDING_STEPS } from "./onboardingSteps";
@@ -8,6 +9,8 @@ import DialogBox from "./DialogBox";
 import OnboardingHighlight from "./OnboardingHighlight";
 
 export default function OnboardingTour() {
+  const { t } = useTranslation("onboarding");
+
   const {
     isActive,
     currentStep,
@@ -53,7 +56,7 @@ export default function OnboardingTour() {
     if (modalSubStepIndex === -1) {
       return {
         highlight: step.afterModalHighlight ?? null,
-        message: step.afterModalMessage ?? step.message,
+        messageKey: step.afterModalMessageKey ?? step.messageKey,
         triggerType: "manual" as const,
         triggerTarget: undefined,
       };
@@ -350,25 +353,23 @@ export default function OnboardingTour() {
   const getTriggerHint = () => {
     if (isWaitingForModalGuide && currentSubStep?.triggerType === "click") {
       if (currentSubStep.triggerTarget === "#pet-tab-button") {
-        return "펫 탭을 클릭해보세요!";
+        return t("hints.clickPetTab");
       }
       if (currentSubStep.triggerTarget === "#pet-gacha-button") {
-        return "펫 뽑기 버튼을 클릭해보세요!";
+        return t("hints.clickPetGacha");
       }
-      return "해당 버튼을 클릭해보세요!";
+      return t("hints.clickButton");
     }
 
     switch (step.triggerType) {
       case "keypress":
-        return "방향키 또는 WASD를 눌러보세요!";
+        return t("hints.keypress");
       case "chat":
-        return isChatOpen
-          ? "메시지를 입력하고 엔터를 눌러 채팅창을 닫아보세요!"
-          : "엔터 키를 눌러 채팅창을 열어보세요!";
+        return isChatOpen ? t("hints.chatClose") : t("hints.chatOpen");
       case "click":
-        return "해당 버튼을 클릭해보세요!";
+        return t("hints.clickButton");
       case "modal-click":
-        return "유저 정보 버튼을 클릭해보세요!";
+        return t("hints.clickUserInfo");
       default:
         return undefined;
     }
@@ -385,16 +386,16 @@ export default function OnboardingTour() {
       ? currentSubStep.highlight
       : step.highlight;
 
-  const currentMessage =
+  const currentMessageKey =
     isWaitingForModalGuide && currentSubStep
-      ? currentSubStep.message
-      : step.message;
+      ? currentSubStep.messageKey
+      : step.messageKey;
 
   return (
     <>
       <OnboardingHighlight selector={currentHighlight} />
       <DialogBox
-        message={currentMessage}
+        message={t(currentMessageKey)}
         currentStep={currentStep}
         totalSteps={totalSteps}
         onNext={handleNextWithModalClose}
