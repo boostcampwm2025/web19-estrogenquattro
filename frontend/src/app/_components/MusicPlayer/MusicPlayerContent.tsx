@@ -238,7 +238,9 @@ export default function MusicPlayerContent({
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <p className="text-sm text-amber-700">{t("focusPanel.music.noTrack")}</p>
+            <p className="text-sm text-amber-700">
+              {t("focusPanel.music.noTrack")}
+            </p>
           </div>
         )}
       </div>

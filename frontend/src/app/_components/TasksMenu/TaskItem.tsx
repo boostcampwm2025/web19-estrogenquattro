@@ -117,7 +117,11 @@ export function TaskItem({
           <>
             <Button
               disabled={isPending}
-              aria-label={task.isRunning ? t("focusPanel.tasks.pauseTimer") : t("focusPanel.tasks.startTimer")}
+              aria-label={
+                task.isRunning
+                  ? t("focusPanel.tasks.pauseTimer")
+                  : t("focusPanel.tasks.startTimer")
+              }
               aria-pressed={task.isRunning}
               className={`flex h-8 w-8 items-center justify-center rounded-none border-2 transition-all ${
                 task.isRunning

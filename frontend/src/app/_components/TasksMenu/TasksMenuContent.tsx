@@ -245,7 +245,11 @@ export default function TasksMenuContent({
           <button
             onClick={handleMiniControlClick}
             className="cursor-pointer text-amber-900 hover:text-amber-700"
-            aria-label={isTimerRunning ? t("focusPanel.timer.stop") : t("focusPanel.timer.start")}
+            aria-label={
+              isTimerRunning
+                ? t("focusPanel.timer.stop")
+                : t("focusPanel.timer.start")
+            }
           >
             {isTimerRunning ? (
               <Pause className="h-5 w-5" />
@@ -259,7 +263,9 @@ export default function TasksMenuContent({
                 {lastTask.description}
               </p>
             ) : (
-              <p className="text-sm text-amber-700">{t("focusPanel.tasks.selectTask")}</p>
+              <p className="text-sm text-amber-700">
+                {t("focusPanel.tasks.selectTask")}
+              </p>
             )}
           </div>
           <span className="font-mono text-sm text-amber-900">
