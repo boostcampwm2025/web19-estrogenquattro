@@ -4,5 +4,65 @@
   "metadata": {
     "title": "Want to Plant Some Grass?",
     "description": "Online Co-working Service"
+  },
+  "userInfoModal": {
+    "tabs": {
+      "activity": "Activity",
+      "pet": "Pet",
+      "profile": "Profile"
+    },
+    "loading": "Loading profile...",
+    "activity": {
+      "statCards": {
+        "focusTime": "Focus Time",
+        "task": "Task",
+        "commit": "Commits",
+        "issueOpen": "Issues Opened",
+        "prOpen": "PRs Created",
+        "prReviewed": "PRs Reviewed"
+      },
+      "taskSection": {
+        "title": "Task List",
+        "empty": "No tasks registered for this date."
+      },
+      "gitEvent": {
+        "label": {
+          "committed": "Commit",
+          "issueOpen": "Issue",
+          "prOpen": "PR Created",
+          "prReviewed": "PR Review"
+        },
+        "contentHeader": {
+          "committed": "Repository / Commit Message",
+          "issueOpen": "Repository / Issue Title",
+          "prOpen": "Repository / PR Title",
+          "prReviewed": "Repository / PR Title"
+        },
+        "listTitle": "{{type}} List",
+        "empty": "No {{type}} records for this date.",
+        "time": "Time",
+        "point": "Points",
+        "loading": "Loading..."
+      },
+      "heatmap": {
+        "less": "less",
+        "more": "more",
+        "pointPolicy": "Point Policy",
+        "tooltipPoint": "Point: {{value}}",
+        "policyHeader": {
+          "action": "Action",
+          "point": "Points"
+        },
+        "policies": {
+          "focus30min": "Focus 30min",
+          "commit": "Commit",
+          "prCreate": "PR Created",
+          "prMerge": "PR Merged",
+          "prReview": "PR Review",
+          "issueCreate": "Issue Created",
+          "taskComplete": "Task Complete"
+        }
+      }
+    }
   }
 }

@@ -4,5 +4,65 @@
   "metadata": {
     "title": "잔디 심고 갈래?",
     "description": "온라인모각코서비스"
+  },
+  "userInfoModal": {
+    "tabs": {
+      "activity": "활동",
+      "pet": "펫",
+      "profile": "프로필"
+    },
+    "loading": "프로필 로딩 중...",
+    "activity": {
+      "statCards": {
+        "focusTime": "집중 시간",
+        "task": "Task",
+        "commit": "커밋",
+        "issueOpen": "이슈 생성",
+        "prOpen": "PR 생성",
+        "prReviewed": "PR 리뷰"
+      },
+      "taskSection": {
+        "title": "Task 목록",
+        "empty": "이 날짜에 등록된 Task가 없습니다."
+      },
+      "gitEvent": {
+        "label": {
+          "committed": "커밋",
+          "issueOpen": "이슈",
+          "prOpen": "PR 생성",
+          "prReviewed": "PR 리뷰"
+        },
+        "contentHeader": {
+          "committed": "레포지토리 / 커밋 메시지",
+          "issueOpen": "레포지토리 / 이슈 제목",
+          "prOpen": "레포지토리 / PR 제목",
+          "prReviewed": "레포지토리 / PR 제목"
+        },
+        "listTitle": "{{type}} 목록",
+        "empty": "이 날짜에 {{type}} 기록이 없습니다.",
+        "time": "시간",
+        "point": "포인트",
+        "loading": "로딩 중..."
+      },
+      "heatmap": {
+        "less": "less",
+        "more": "more",
+        "pointPolicy": "포인트 획득 정책",
+        "tooltipPoint": "Point: {{value}}",
+        "policyHeader": {
+          "action": "활동",
+          "point": "포인트"
+        },
+        "policies": {
+          "focus30min": "집중 30분",
+          "commit": "커밋",
+          "prCreate": "PR 생성",
+          "prMerge": "PR 머지",
+          "prReview": "PR 리뷰",
+          "issueCreate": "이슈 생성",
+          "taskComplete": "Task 완료"
+        }
+      }
+    }
   }
 }
