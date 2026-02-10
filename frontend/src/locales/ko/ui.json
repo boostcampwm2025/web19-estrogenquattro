@@ -63,6 +63,14 @@
           "taskComplete": "Task 완료"
         }
       }
+    },
+    "profile": {
+      "avatarAlt": "{{username}}의 프로필",
+      "followers": "팔로워",
+      "following": "팔로잉",
+      "follow": "팔로우",
+      "unfollow": "언팔로우",
+      "logout": "로그아웃"
     }
   }
 }

@@ -7,8 +7,10 @@ import { useAuthStore } from "@/stores/authStore";
 import { useGithubUser, useFollowStatus } from "@/lib/api/hooks/useGithub";
 import { useFollowMutation } from "@/lib/api/hooks/useFollowMutation";
 import { useShallow } from "zustand/react/shallow";
+import { useTranslation } from "react-i18next";
 
 export default function ProfileTab() {
+  const { t } = useTranslation("ui");
   const { targetUsername, targetPlayerId } = useModalStore(
     useShallow((state) => ({
       targetUsername: state.userInfoPayload?.username,
@@ -49,7 +51,9 @@ export default function ProfileTab() {
         <div className="h-24 w-24 overflow-hidden rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
           <img
             src={profileData.avatarUrl}
-            alt={`${profileData.githubUsername}의 프로필`}
+            alt={t("userInfoModal.profile.avatarAlt", {
+              username: profileData.githubUsername,
+            })}
             className="h-full w-full object-cover"
           />
         </div>
@@ -75,14 +79,18 @@ export default function ProfileTab() {
           <div className="text-2xl font-bold text-amber-900">
             {profileData.followers}
           </div>
-          <div className="text-sm text-amber-700">팔로워</div>
+          <div className="text-sm text-amber-700">
+            {t("userInfoModal.profile.followers")}
+          </div>
         </div>
         <div className="h-12 w-px bg-amber-900/20" />
         <div className="text-center">
           <div className="text-2xl font-bold text-amber-900">
             {profileData.following}
           </div>
-          <div className="text-sm text-amber-700">팔로잉</div>
+          <div className="text-sm text-amber-700">
+            {t("userInfoModal.profile.following")}
+          </div>
         </div>
       </div>
 
@@ -101,8 +109,8 @@ export default function ProfileTab() {
             {isLoadingFollowStatus || isSubmitting
               ? "..."
               : isFollowing
-                ? "언팔로우"
-                : "팔로우"}
+                ? t("userInfoModal.profile.unfollow")
+                : t("userInfoModal.profile.follow")}
           </Button>
         </div>
       )}
@@ -115,7 +123,7 @@ export default function ProfileTab() {
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-none border-2 border-red-700 bg-red-600 py-2 font-bold text-white shadow-[4px_4px_0px_0px_#7f1d1d] transition-all hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
           >
             <LogOut className="h-4 w-4" />
-            로그아웃
+            {t("userInfoModal.profile.logout")}
           </Button>
         </div>
       )}

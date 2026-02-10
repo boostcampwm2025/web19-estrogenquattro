@@ -63,6 +63,14 @@
           "taskComplete": "Task Complete"
         }
       }
+    },
+    "profile": {
+      "avatarAlt": "{{username}}'s profile",
+      "followers": "followers",
+      "following": "following",
+      "follow": "Follow",
+      "unfollow": "Unfollow",
+      "logout": "Logout"
     }
   }
 }
