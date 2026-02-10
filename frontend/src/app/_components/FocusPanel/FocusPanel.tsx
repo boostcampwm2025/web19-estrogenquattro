@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronsDown, ChevronsUp, Music, ListTodo } from "lucide-react";
 import MusicPlayerContent from "../MusicPlayer/MusicPlayerContent";
 import TasksMenuContent from "../TasksMenu/TasksMenuContent";
+import { useTranslation } from "react-i18next";
 
 const TABS = {
   TASKS: "tasks",
@@ -13,6 +14,7 @@ const TABS = {
 type Tab = (typeof TABS)[keyof typeof TABS];
 
 export default function FocusPanel() {
+  const { t } = useTranslation("ui");
   const [activeTab, setActiveTab] = useState<Tab>(TABS.TASKS);
   const [isExpanded, setIsExpanded] = useState(true);
   const [lastRunTaskId, setLastRunTaskId] = useState<number | null>(null);
@@ -72,7 +74,7 @@ export default function FocusPanel() {
         {/* 접기/펼치기 버튼 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          aria-label={isExpanded ? "패널 접기" : "패널 펼치기"}
+          aria-label={isExpanded ? t("focusPanel.collapsePanel") : t("focusPanel.expandPanel")}
           aria-expanded={isExpanded}
           className="flex w-full cursor-pointer items-center justify-center border-t-1 border-amber-900/30 bg-transparent py-2 text-amber-900 transition-colors hover:bg-amber-100"
         >

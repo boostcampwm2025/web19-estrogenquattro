@@ -72,5 +72,26 @@
       "unfollow": "Unfollow",
       "logout": "Logout"
     }
+  },
+  "focusPanel": {
+    "collapsePanel": "Collapse panel",
+    "expandPanel": "Expand panel",
+    "timer": {
+      "stop": "stop",
+      "start": "start"
+    },
+    "tasks": {
+      "newTaskPlaceholder": "new task...",
+      "selectTask": "Select a task",
+      "saveEdit": "Save edit",
+      "cancelEdit": "Cancel edit",
+      "pauseTimer": "Pause timer",
+      "startTimer": "Start timer",
+      "editTask": "Edit task",
+      "deleteTask": "Delete task"
+    },
+    "music": {
+      "noTrack": "no track playing"
+    }
   }
 }

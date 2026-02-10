@@ -4,6 +4,7 @@ import { Checkbox } from "@/_components/ui/checkbox";
 import { Button } from "@/_components/ui/button";
 import { Input } from "@/_components/ui/input";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface TaskItemProps {
   task: Task;
@@ -26,6 +27,7 @@ export function TaskItem({
   onEdit,
   formatTime,
 }: TaskItemProps) {
+  const { t } = useTranslation("ui");
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.description);
 
@@ -95,7 +97,7 @@ export function TaskItem({
             <Button
               type="button"
               disabled={isPending}
-              aria-label="작업 수정 저장"
+              aria-label={t("focusPanel.tasks.saveEdit")}
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none border-2 border-amber-800 bg-amber-700 text-amber-50 shadow-[2px_2px_0px_0px_#78350f] transition-all hover:bg-amber-800 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleEditSubmit}
             >
@@ -104,7 +106,7 @@ export function TaskItem({
             <Button
               type="button"
               disabled={isPending}
-              aria-label="작업 수정 취소"
+              aria-label={t("focusPanel.tasks.cancelEdit")}
               className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-lg hover:bg-retro-button-hover ml-1 flex h-7 w-7 items-center justify-center rounded-none border-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleEditCancel}
             >
@@ -115,7 +117,7 @@ export function TaskItem({
           <>
             <Button
               disabled={isPending}
-              aria-label={task.isRunning ? "타이머 일시정지" : "타이머 시작"}
+              aria-label={task.isRunning ? t("focusPanel.tasks.pauseTimer") : t("focusPanel.tasks.startTimer")}
               aria-pressed={task.isRunning}
               className={`flex h-8 w-8 items-center justify-center rounded-none border-2 transition-all ${
                 task.isRunning
@@ -132,7 +134,7 @@ export function TaskItem({
             </Button>
             <Button
               disabled={isPending}
-              aria-label="작업 편집"
+              aria-label={t("focusPanel.tasks.editTask")}
               className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-amber-900/50 bg-transparent text-amber-700 transition-all hover:bg-amber-100 hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleEditClick}
             >
@@ -140,7 +142,7 @@ export function TaskItem({
             </Button>
             <Button
               disabled={isPending}
-              aria-label="작업 삭제"
+              aria-label={t("focusPanel.tasks.deleteTask")}
               className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-amber-900/50 bg-transparent text-amber-700 transition-all hover:bg-amber-100 hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => onDelete(task.id)}
             >

@@ -72,5 +72,26 @@
       "unfollow": "언팔로우",
       "logout": "로그아웃"
     }
+  },
+  "focusPanel": {
+    "collapsePanel": "패널 접기",
+    "expandPanel": "패널 펼치기",
+    "timer": {
+      "stop": "정지",
+      "start": "시작"
+    },
+    "tasks": {
+      "newTaskPlaceholder": "새 작업...",
+      "selectTask": "Task를 선택해주세요",
+      "saveEdit": "작업 수정 저장",
+      "cancelEdit": "작업 수정 취소",
+      "pauseTimer": "타이머 일시정지",
+      "startTimer": "타이머 시작",
+      "editTask": "작업 편집",
+      "deleteTask": "작업 삭제"
+    },
+    "music": {
+      "noTrack": "재생 중인 곡 없음"
+    }
   }
 }
