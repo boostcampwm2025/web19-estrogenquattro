@@ -254,5 +254,21 @@
     "music": {
       "noTrack": "no track playing"
     }
+  },
+  "channel": {
+    "selectButton": "Select channel",
+    "title": "Select Channel",
+    "refreshLabel": "Refresh channel list",
+    "closeModal": "Close channel selection modal",
+    "status": {
+      "participating": "Joined",
+      "enter": "Join",
+      "full": "FULL"
+    },
+    "error": {
+      "moveFailed": "Channel move failed",
+      "roomFull": "The channel is full.",
+      "moveFailedAlert": "Failed to move channel."
+    }
   }
 }

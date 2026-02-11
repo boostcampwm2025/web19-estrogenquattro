@@ -254,5 +254,21 @@
     "music": {
       "noTrack": "재생 중인 곡 없음"
     }
+  },
+  "channel": {
+    "selectButton": "채널 선택",
+    "title": "채널 선택",
+    "refreshLabel": "채널 목록 새로고침",
+    "closeModal": "채널 선택 모달 닫기",
+    "status": {
+      "participating": "참여중",
+      "enter": "입장",
+      "full": "FULL"
+    },
+    "error": {
+      "moveFailed": "채널 이동 실패",
+      "roomFull": "채널이 가득 찼습니다.",
+      "moveFailedAlert": "채널 이동에 실패했습니다."
+    }
   }
 }
