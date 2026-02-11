@@ -10,8 +10,9 @@ import DialogBox from "./DialogBox";
 import OnboardingHighlight from "./OnboardingHighlight";
 
 const tDynamic = (key: OnboardingMessageKey): string =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (i18next.t as any)(key, { ns: "onboarding" });
+  (i18next.t as unknown as (k: string, opts: { ns: string }) => string)(key, {
+    ns: "onboarding",
+  });
 
 export default function OnboardingTour() {
   const { t } = useTranslation("onboarding");
