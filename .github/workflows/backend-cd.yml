@@ -17,8 +17,10 @@ jobs:
         key: ${{ secrets.KEY }}
         port: 22
         script: |
+          set -e
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm use 24.13.1
           cd web19-estrogenquattro
           git pull origin deploy/#453-gcp-cd
           cd backend
