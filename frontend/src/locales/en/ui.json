@@ -1,6 +1,42 @@
 {
   "focusTime": "Focus Time",
-  "leaderboard": "Leaderboard",
+  "leaderboard": {
+    "label": "Leaderboard",
+    "title": "Weekly Leaderboard",
+    "openButton": "Open leaderboard",
+    "closeModal": "Close leaderboard modal",
+    "seasonTimer": "Current Season Timer",
+    "day": "day",
+    "headers": {
+      "rank": "Rank",
+      "profile": "Profile",
+      "githubName": "GitHub Name",
+      "point": "Points",
+      "time": "Time",
+      "count": "Count"
+    },
+    "empty": "No ranking data available for this week yet.",
+    "tabs": {
+      "ALL": "Points",
+      "ISSUE_OPEN": "Issue Created",
+      "PR_OPEN": "PR Created",
+      "PR_MERGED": "PR Merged",
+      "PR_REVIEWED": "PR Review",
+      "COMMITTED": "Commit",
+      "TASK_COMPLETED": "Task Done",
+      "FOCUSED": "Focus Time"
+    },
+    "badges": {
+      "ALL": "Point Collector",
+      "ISSUE_OPEN": "Issue Hunter",
+      "PR_OPEN": "PR Pioneer",
+      "PR_MERGED": "PR Harvester",
+      "PR_REVIEWED": "PR Guardian",
+      "COMMITTED": "Gardener",
+      "TASK_COMPLETED": "Workaholic",
+      "FOCUSED": "Marathoner"
+    }
+  },
   "metadata": {
     "title": "Want to Plant Some Grass?",
     "description": "Online Co-working Service"

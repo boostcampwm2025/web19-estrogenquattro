@@ -1,6 +1,42 @@
 {
   "focusTime": "집중 시간",
-  "leaderboard": "리더보드",
+  "leaderboard": {
+    "label": "리더보드",
+    "title": "주간 순위표",
+    "openButton": "순위표 열기",
+    "closeModal": "리더보드 모달 닫기",
+    "seasonTimer": "현재 시즌 타이머",
+    "day": "day",
+    "headers": {
+      "rank": "순위",
+      "profile": "프로필",
+      "githubName": "깃허브 네임",
+      "point": "포인트",
+      "time": "시간",
+      "count": "횟수"
+    },
+    "empty": "아직 이번 주 랭킹 데이터가 없습니다.",
+    "tabs": {
+      "ALL": "포인트",
+      "ISSUE_OPEN": "Issue 생성",
+      "PR_OPEN": "PR 생성",
+      "PR_MERGED": "PR 병합",
+      "PR_REVIEWED": "PR 리뷰",
+      "COMMITTED": "커밋",
+      "TASK_COMPLETED": "Task 완료",
+      "FOCUSED": "집중 시간"
+    },
+    "badges": {
+      "ALL": "포인트 수집가",
+      "ISSUE_OPEN": "이슈 헌터",
+      "PR_OPEN": "PR 개척자",
+      "PR_MERGED": "PR 수확자",
+      "PR_REVIEWED": "PR 수호자",
+      "COMMITTED": "정원사",
+      "TASK_COMPLETED": "워커홀릭",
+      "FOCUSED": "마라토너"
+    }
+  },
   "metadata": {
     "title": "잔디 심고 갈래?",
     "description": "온라인모각코서비스"
