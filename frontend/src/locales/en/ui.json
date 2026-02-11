@@ -71,6 +71,131 @@
       "follow": "Follow",
       "unfollow": "Unfollow",
       "logout": "Logout"
+    },
+    "pet": {
+      "loading": "Loading...",
+      "notOwned": "You don't own this pet!",
+      "actionFailed": "Action failed: {{error}}",
+      "noPet": "No pets owned",
+      "noPetHint": "Get a new pet below!",
+      "card": {
+        "readyToEvolve": "✨ Ready to evolve!",
+        "evolve": "✨ Evolve",
+        "feed": "Feed (10 P)"
+      },
+      "codex": {
+        "title": "Pet Codex",
+        "collected": "{{count}} / {{total}} collected",
+        "representative": "Rep"
+      },
+      "gacha": {
+        "title": "Pet Gacha",
+        "notEnoughPoints": "Not enough points!",
+        "prompt": "What pet will you get?",
+        "cost": "(1 draw: 100 P)",
+        "button": "Draw Pet",
+        "hatching": "The egg is hatching!",
+        "noMorePets": "No more new pets to draw.",
+        "noMorePetsHint": "Try evolving your existing pets!",
+        "congrats": "Congratulations!",
+        "gotPet": "You found {{name}}!",
+        "duplicate": "You already have this friend!",
+        "refund": "Duplicate pets are refunded ",
+        "refundAmount": "50P",
+        "refundSuffix": ".",
+        "gachaFailed": "Draw failed: {{error}}",
+        "confirm": "OK"
+      },
+      "license": {
+        "ariaLabel": "View license info",
+        "text": "License Info"
+      },
+      "pets": {
+        "1": {
+          "name": "Gopher",
+          "description": "A cute mole from Google. Loves simple and clear code."
+        },
+        "2": {
+          "name": "Goroutine",
+          "description": "Very light and fast. Never gets tired even with thousands running."
+        },
+        "3": {
+          "name": "Go Hunter",
+          "description": "Master of memory management. Catches and cleans unused resources."
+        },
+        "4": {
+          "name": "Whaley",
+          "description": "A baby whale dreaming of the wide ocean. Sprays cute fountains."
+        },
+        "5": {
+          "name": "Ocean",
+          "description": "Explores the deep sea. Cuts through waves with elegant movements."
+        },
+        "6": {
+          "name": "Leviathan",
+          "description": "Legend of the sea. Rules the ocean with massive waves."
+        },
+        "7": {
+          "name": "Duke",
+          "description": "Your first friend traveling the Java world. Charming red nose."
+        },
+        "8": {
+          "name": "JavaBean",
+          "description": "A bean with warm coffee aroma. Grows well anywhere."
+        },
+        "9": {
+          "name": "JVM",
+          "description": "King of virtual machines. Controls and rules over memory regions."
+        },
+        "10": {
+          "name": "Bugdroid",
+          "description": "A cute green robot. Embraces the open-source spirit."
+        },
+        "11": {
+          "name": "Jetpack",
+          "description": "Armed with the latest libraries. Manages lifecycles perfectly."
+        },
+        "12": {
+          "name": "Material",
+          "description": "Implements refined design. Shines in billions of users' hands."
+        },
+        "13": {
+          "name": "Konqi",
+          "description": "A cute green dragon. Dreams of a free desktop environment."
+        },
+        "14": {
+          "name": "Plasma",
+          "description": "Evolved with elegant UI. Master of customization."
+        },
+        "15": {
+          "name": "Krender",
+          "description": "Provides the perfect desktop experience. Can handle all widgets."
+        },
+        "16": {
+          "name": "Tux",
+          "description": "A cute penguin. Carries the power of the kernel."
+        },
+        "17": {
+          "name": "Systemd",
+          "description": "Manages all processes. Has the ability to reduce boot time."
+        },
+        "18": {
+          "name": "Linux Torvalds",
+          "description": "Legend of the open-source world. Dominates servers worldwide."
+        },
+        "19": {
+          "name": "Ferris",
+          "description": "A cute red crab. Guarantees memory safety."
+        },
+        "20": {
+          "name": "Borrow Checker",
+          "description": "Guardian of the ownership system. Catches bugs at compile time."
+        },
+        "21": {
+          "name": "Zero Cost",
+          "description": "The ultimate abstraction. As fast as C++ but much safer."
+        }
+      }
     }
   },
   "focusPanel": {

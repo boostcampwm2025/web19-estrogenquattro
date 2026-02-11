@@ -5,9 +5,8 @@ import PetCard from "./PetCard";
 
 describe("PetCard 컴포넌트", () => {
   const defaultStageData = {
+    id: 1,
     stage: 1,
-    name: "테스트고퍼",
-    description: "귀여운 고퍼입니다",
     image: "/assets/mascot/gopher_stage1.webp",
     maxExp: 100,
   };
@@ -29,13 +28,17 @@ describe("PetCard 컴포넌트", () => {
     it("펫 이름이 표시된다", () => {
       render(<PetCard {...defaultProps} />);
 
-      expect(screen.getByText("테스트고퍼")).toBeInTheDocument();
+      expect(screen.getByText("고퍼")).toBeInTheDocument();
     });
 
     it("펫 설명이 표시된다", () => {
       render(<PetCard {...defaultProps} />);
 
-      expect(screen.getByText("귀여운 고퍼입니다")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "구글에서 온 귀여운 두더지입니다. 단순하고 명료한 코드를 좋아합니다.",
+        ),
+      ).toBeInTheDocument();
     });
 
     it("경험치 바가 표시된다", () => {
@@ -124,7 +127,7 @@ describe("PetCard 컴포넌트", () => {
     it("펫 정보는 여전히 표시된다", () => {
       render(<PetCard {...defaultProps} isOwner={false} />);
 
-      expect(screen.getByText("테스트고퍼")).toBeInTheDocument();
+      expect(screen.getByText("고퍼")).toBeInTheDocument();
       expect(screen.getByText("EXP")).toBeInTheDocument();
     });
   });
