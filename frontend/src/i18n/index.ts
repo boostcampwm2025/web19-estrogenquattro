@@ -6,16 +6,30 @@ import koCommon from "../locales/ko/common.json";
 import koUi from "../locales/ko/ui.json";
 import koGame from "../locales/ko/game.json";
 import koOnboarding from "../locales/ko/onboarding.json";
+import koLogin from "../locales/ko/login.json";
 import enCommon from "../locales/en/common.json";
 import enUi from "../locales/en/ui.json";
 import enGame from "../locales/en/game.json";
 import enOnboarding from "../locales/en/onboarding.json";
+import enLogin from "../locales/en/login.json";
 
 export const defaultNS = "ui";
 
 export const resources = {
-  ko: { common: koCommon, ui: koUi, game: koGame, onboarding: koOnboarding },
-  en: { common: enCommon, ui: enUi, game: enGame, onboarding: enOnboarding },
+  ko: {
+    common: koCommon,
+    ui: koUi,
+    game: koGame,
+    onboarding: koOnboarding,
+    login: koLogin,
+  },
+  en: {
+    common: enCommon,
+    ui: enUi,
+    game: enGame,
+    onboarding: enOnboarding,
+    login: enLogin,
+  },
 } as const;
 
 i18n

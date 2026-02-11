@@ -1,29 +1,32 @@
 import { Github, VideoOff, Computer, PawPrint, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 interface HeroSectionProps {
   onLogin: () => void;
 }
 
-const features = [
-  {
-    label: "캠 / 마이크 없는 부담 없는 온라인 모각코",
-    icon: VideoOff,
-    color: "bg-amber-700",
-  },
-  {
-    label: "GitHub 연동으로 커밋, PR이 게임 요소로!",
-    icon: Computer,
-    color: "bg-amber-800",
-  },
-  {
-    label: "귀여운 펫 수집과 진화 시스템",
-    icon: PawPrint,
-    color: "bg-amber-900",
-  },
-];
-
 export default function HeroSection({ onLogin }: HeroSectionProps) {
+  const { t } = useTranslation("login");
+
+  const features = [
+    {
+      label: t((r) => r.hero.features[0]),
+      icon: VideoOff,
+      color: "bg-amber-700",
+    },
+    {
+      label: t((r) => r.hero.features[1]),
+      icon: Computer,
+      color: "bg-amber-800",
+    },
+    {
+      label: t((r) => r.hero.features[2]),
+      icon: PawPrint,
+      color: "bg-amber-900",
+    },
+  ];
+
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-[#ffecb3]/40 to-white px-6 pt-12 dark:from-slate-900 dark:to-slate-950">
       <div className="relative z-10 mx-auto max-w-6xl space-y-16 text-center">
@@ -36,7 +39,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
               className="font-display text-lg font-bold tracking-[0.1em] text-amber-600 uppercase sm:text-xl sm:tracking-[0.2em] dark:text-amber-400"
             >
               <span className="relative inline-block">
-                잔디
+                {t((r) => r.hero.tagline1)}
                 <motion.span
                   initial={{ opacity: 0, scale: 0, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -51,7 +54,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
                   🌱
                 </motion.span>
               </span>{" "}
-              심고 갈래?
+              {t((r) => r.hero.tagline2)}
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
@@ -59,10 +62,10 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
               transition={{ delay: 0.2, duration: 0.8 }}
               className="font-display text-3xl leading-[1.2] font-extrabold tracking-tight text-amber-950 sm:text-5xl dark:text-white"
             >
-              혼자 하는 코딩은 이제 그만!
+              {t((r) => r.hero.title1)}
               <br />
               <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-                함께 몰입하고 성장하세요
+                {t((r) => r.hero.title2)}
               </span>
             </motion.h1>
           </div>
@@ -134,7 +137,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
             className="pixel-button-2d font-display flex items-center gap-3 bg-amber-600 px-10 py-5 text-2xl font-bold text-white shadow-[6px_6px_0px_0px_rgba(120,53,15,0.3)] hover:bg-amber-500"
           >
             <Github className="h-6 w-6" />
-            GitHub로 시작하기
+            {t((r) => r.hero.loginButton)}
           </motion.button>
           <motion.button
             onClick={() => {
@@ -146,7 +149,7 @@ export default function HeroSection({ onLogin }: HeroSectionProps) {
             whileTap={{ scale: 0.98 }}
             className="pixel-button-2d font-display flex items-center gap-2 border-2 border-amber-900/10 bg-white/50 px-10 py-5 text-xl font-bold text-amber-900 shadow-[6px_6px_0px_0px_rgba(120,53,15,0.1)] backdrop-blur-sm hover:bg-white/80"
           >
-            둘러보기
+            {t((r) => r.hero.browseButton)}
             <ArrowRight className="h-5 w-5" />
           </motion.button>
         </motion.div>

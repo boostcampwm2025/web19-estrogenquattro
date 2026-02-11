@@ -1,0 +1,64 @@
+{
+  "hero": {
+    "tagline1": "Grass",
+    "tagline2": "Wanna plant some?",
+    "title1": "No more coding alone!",
+    "title2": "Immerse and grow together",
+    "features": {
+      "0": "No cam/mic needed — stress-free online co-working",
+      "1": "GitHub integration turns commits & PRs into game elements!",
+      "2": "Cute pet collection & evolution system"
+    },
+    "loginButton": "Start with GitHub",
+    "browseButton": "Explore"
+  },
+  "features": {
+    "heading": "The perfect immersion tool for developers",
+    "subheading": "Three core features to transform your coding life",
+    "items": {
+      "0": {
+        "title": "GitHub Activity Integration",
+        "description": "Detects GitHub activities like commits (push), PRs, and issue creation.<br>Your contributions instantly appear as character effects!",
+        "highlights": ["Real-time detection", "Auto sync", "Visual effects"]
+      },
+      "1": {
+        "title": "Personal Achievement Visualization",
+        "description": "How much did you focus today?<br>Track daily activity with grass/calendar and check task completion at a glance.",
+        "highlights": ["Daily records", "Statistics", "Achievement display"]
+      },
+      "2": {
+        "title": "Evolving Virtual Space",
+        "description": "Maps run on 7-day seasons!<br>When collective goals are met, the map expands and grows.",
+        "highlights": ["Seasonal system", "Map expansion", "Shared goals"]
+      }
+    }
+  },
+  "evolution": {
+    "heading": "Grow your pets through immersion!",
+    "subheading1": "Points accumulate every time you do dev activities (Commit, PR, Review).",
+    "subheading2": "What can you do with those points?",
+    "cards": {
+      "0": {
+        "title": "Gacha",
+        "description": "Draw random cute pets!"
+      },
+      "1": {
+        "title": "Feed",
+        "description": "Invest points in your pet to gain experience."
+      },
+      "2": {
+        "title": "Evolution",
+        "description": "Up to 3 stages! Your pet becomes even stronger."
+      }
+    },
+    "example": {
+      "heading": "Evolution Example",
+      "subheading": "Pets evolve up to 3 stages",
+      "stage": "Stage {{n}}",
+      "secret": "Find out for yourself!"
+    }
+  },
+  "demo": {
+    "iframeTitle": "Using Pet Gacha and Feeding"
+  }
+}
