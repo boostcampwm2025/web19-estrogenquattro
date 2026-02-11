@@ -1,6 +1,15 @@
 {
   "status": {
-    "focusing": "Working",
-    "resting": "Resting"
+    "focusing": "working",
+    "resting": "resting"
+  },
+  "time": {
+    "minutes": "{{m}}min",
+    "hours": "{{h}}h",
+    "hoursMinutes": "{{h}}h {{m}}min"
+  },
+  "date": {
+    "format": "{{weekday}}, {{month}} {{day}}, {{year}}",
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   }
 }

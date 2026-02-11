@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 /**
  * [로컬 타임존 기준] YYYY-MM-DD 형식의 날짜 문자열 반환
  * - 사용자가 선택한 날짜를 API에 전달할 때 사용
@@ -71,18 +73,27 @@ export function parseLocalDate(dateStr: string): Date {
  * @returns 포맷된 시간 문자열
  */
 export function formatFocusTime(seconds: number): string {
+  const t = (key: string, opts?: Record<string, unknown>) =>
+    (
+      i18next.t as unknown as (
+        k: string,
+        o: { ns: string } & Record<string, unknown>,
+      ) => string
+    )(key, { ns: "game", ...opts });
+
   const totalMinutes = Math.floor(seconds / 60);
   let result = "⏱️";
 
   if (totalMinutes < 60) {
-    result += `${totalMinutes}분`;
+    result += t("time.minutes", { m: totalMinutes });
   } else {
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
 
-    result += `${hours}시간`;
     if (mins > 0) {
-      result += ` ${mins}분`;
+      result += t("time.hoursMinutes", { h: hours, m: mins });
+    } else {
+      result += t("time.hours", { h: hours });
     }
   }
 
@@ -95,12 +106,25 @@ export function formatFocusTime(seconds: number): string {
  * @returns 포맷된 날짜 문자열 (예: "2026년 1월 29일 수")
  */
 export function formatSelectedDate(date: Date): string {
+  const t = (key: string, opts?: Record<string, unknown>) =>
+    (
+      i18next.t as unknown as (
+        k: string,
+        o: { ns: string } & Record<string, unknown>,
+      ) => string
+    )(key, { ns: "game", ...opts });
+
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-  const weekday = weekdays[date.getDay()];
-  return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
+  const day = String(date.getDate()).padStart(2, "0");
+  const weekdays = i18next.store?.data?.[i18next.language]?.game as
+    | Record<string, unknown>
+    | undefined;
+  const weekdayList = (weekdays?.date as Record<string, unknown> | undefined)
+    ?.weekdays as string[] | undefined;
+  const weekday = weekdayList?.[date.getDay()] ?? "";
+
+  return t("date.format", { year, month, day, weekday });
 }
 
 /**
