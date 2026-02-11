@@ -2,7 +2,7 @@ name: Backend CD
 
 on:
   push:
-    branches: [ "deploy/#453-gcp-cd" ]
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -24,7 +24,7 @@ jobs:
           export PNPM_HOME="$HOME/.local/share/pnpm"
           export PATH="$PNPM_HOME:$PATH"
           cd web19-estrogenquattro
-          git pull origin deploy/#453-gcp-cd
+          git pull origin main
           cd backend
           pnpm run migration:generate || true
           pnpm run migration:run
