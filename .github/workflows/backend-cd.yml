@@ -1,0 +1,24 @@
+name: Backend CD
+
+on:
+  push:
+    branches: [ "deploy/#453-gcp-cd" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: 22
+        script: |
+          cd web19-estrogenquattro
+          git pull origin deploy/#453-gcp-cd
+          pnpm run migration:generate
+          pnpm run migration:run
+          pnpm run deploy:reload

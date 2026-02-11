@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "잔디 심고 갈래?",
+  title: "뭐 심고 갈래?",
   description: "온라인모각코서비스",
   icons: {
     icon: "/jandi.ico",
