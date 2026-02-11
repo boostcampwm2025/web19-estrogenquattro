@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useModalStore } from "@/stores/useModalStore";
-import { ONBOARDING_STEPS } from "./onboardingSteps";
+import { ONBOARDING_STEPS, type OnboardingMessageKey } from "./onboardingSteps";
 import DialogBox from "./DialogBox";
 import OnboardingHighlight from "./OnboardingHighlight";
+
+const tDynamic = (key: OnboardingMessageKey): string =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (i18next.t as any)(key, { ns: "onboarding" });
 
 export default function OnboardingTour() {
   const { t } = useTranslation("onboarding");
@@ -349,30 +354,32 @@ export default function OnboardingTour() {
     return step.triggerType !== "manual";
   };
 
-  // 트리거 힌트 메시지 생성
+  // 트리거 힌트 메시지 생성 (고정 키 → selector 방식)
   const getTriggerHint = () => {
     if (isWaitingForModalGuide && currentSubStep?.triggerType === "click") {
       if (currentSubStep.triggerTarget === "#pet-tab-button") {
-        return t("hints.clickPetTab");
+        return t((r) => r.hints.clickPetTab);
       }
       if (currentSubStep.triggerTarget === "#pet-gacha-button") {
-        return t("hints.clickPetGacha");
+        return t((r) => r.hints.clickPetGacha);
       }
-      return t("hints.clickButton");
+      return t((r) => r.hints.clickButton);
     }
 
     switch (step.triggerType) {
       case "keypress":
-        return t("hints.keypress");
+        return t((r) => r.hints.keypress);
       case "chat":
-        return isChatOpen ? t("hints.chatClose") : t("hints.chatOpen");
+        return isChatOpen
+          ? t((r) => r.hints.chatClose)
+          : t((r) => r.hints.chatOpen);
       case "click":
         if (step.triggerTarget === "#channel-select-button") {
-          return t("hints.clickChannel");
+          return t((r) => r.hints.clickChannel);
         }
-        return t("hints.clickButton");
+        return t((r) => r.hints.clickButton);
       case "modal-click":
-        return t("hints.clickUserInfo");
+        return t((r) => r.hints.clickUserInfo);
       default:
         return undefined;
     }
@@ -398,7 +405,7 @@ export default function OnboardingTour() {
     <>
       <OnboardingHighlight selector={currentHighlight} />
       <DialogBox
-        message={t(currentMessageKey)}
+        message={tDynamic(currentMessageKey)}
         currentStep={currentStep}
         totalSteps={totalSteps}
         onNext={handleNextWithModalClose}

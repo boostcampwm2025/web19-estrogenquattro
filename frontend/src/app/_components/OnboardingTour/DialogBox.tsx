@@ -37,7 +37,7 @@ export default function DialogBox({
         <div className="absolute top-1/2 -left-4 z-10 -translate-y-1/2">
           <Image
             src="/assets/mascot/tutorial_man1.png"
-            alt={t("ui.mascotAlt")}
+            alt={t((r) => r.ui.mascotAlt)}
             width={300}
             height={300}
             className="h-56 w-56 object-contain drop-shadow-lg"
@@ -50,7 +50,7 @@ export default function DialogBox({
           {/* 스텝 인디케이터 */}
           <div className="mb-2 flex items-center gap-2">
             <span className="rounded bg-amber-600 px-2 py-0.5 font-bold text-white">
-              {t("ui.mascotName")}
+              {t((r) => r.ui.mascotName)}
             </span>
             <span className="text-xs text-amber-600">
               ({currentStep + 1}/{totalSteps})
@@ -82,7 +82,7 @@ export default function DialogBox({
               onClick={onSkip}
               className="cursor-pointer text-sm text-amber-600 underline transition-colors hover:text-amber-800"
             >
-              {t("ui.skip")}
+              {t((r) => r.ui.skip)}
             </button>
 
             <div className="flex gap-2">
@@ -91,7 +91,7 @@ export default function DialogBox({
                   onClick={onPrev}
                   className="cursor-pointer rounded border-3 border-amber-900 bg-amber-200 px-4 py-2 text-sm font-bold text-amber-900 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] transition-all hover:bg-amber-300 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                 >
-                  {t("ui.prev")}
+                  {t((r) => r.ui.prev)}
                 </button>
               )}
               <button
@@ -103,7 +103,7 @@ export default function DialogBox({
                     : "cursor-pointer bg-amber-600 hover:bg-amber-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                 }`}
               >
-                {isLastStep ? t("ui.start") : t("ui.next")}
+                {isLastStep ? t((r) => r.ui.start) : t((r) => r.ui.next)}
               </button>
             </div>
           </div>

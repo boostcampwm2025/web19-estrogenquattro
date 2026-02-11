@@ -1,7 +1,22 @@
+/** onboarding 네임스페이스에서 사용 가능한 메시지 키 */
+export type OnboardingMessageKey =
+  | "steps.info.message"
+  | "steps.move.message"
+  | "steps.chat.message"
+  | "steps.progress.message"
+  | "steps.channel.message"
+  | "steps.leaderboard.message"
+  | "steps.character.message"
+  | "steps.character.afterModalMessage"
+  | "steps.character.subSteps.petTab"
+  | "steps.character.subSteps.petGacha"
+  | "steps.pet.message"
+  | "steps.task.message";
+
 export interface OnboardingStep {
   id: string;
   /** i18n 키 (onboarding 네임스페이스 기준) */
-  messageKey: string;
+  messageKey: OnboardingMessageKey;
   highlight: string | null;
   /** 자동 진행 트리거 타입 */
   triggerType: "manual" | "keypress" | "chat" | "click" | "modal-click";
@@ -10,12 +25,12 @@ export interface OnboardingStep {
   /** 모달 열린 후 다음 하이라이트 대상 */
   afterModalHighlight?: string;
   /** 모달 열린 후 표시할 메시지 (i18n 키) */
-  afterModalMessageKey?: string;
+  afterModalMessageKey?: OnboardingMessageKey;
   /** 추가 하이라이트 단계들 (모달 내 여러 단계 진행용) */
   modalSubSteps?: {
     highlight: string;
     /** i18n 키 (onboarding 네임스페이스 기준) */
-    messageKey: string;
+    messageKey: OnboardingMessageKey;
     triggerType: "manual" | "click";
     triggerTarget?: string;
     /** 클릭 후 대기 시간 (ms) */
