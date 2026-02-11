@@ -62,8 +62,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     id: "channel",
-    message:
-      "현재 채널을 확인하고 변경하고 싶으신가요?<br>채널 버튼을 눌러 다른 채널로 이동하여 새로운 친구들을 만나보세요!",
+    messageKey: "steps.channel.message",
     highlight: "#channel-select-button",
     triggerType: "click",
     triggerTarget: "#channel-select-button",

@@ -367,6 +367,9 @@ export default function OnboardingTour() {
       case "chat":
         return isChatOpen ? t("hints.chatClose") : t("hints.chatOpen");
       case "click":
+        if (step.triggerTarget === "#channel-select-button") {
+          return t("hints.clickChannel");
+        }
         return t("hints.clickButton");
       case "modal-click":
         return t("hints.clickUserInfo");

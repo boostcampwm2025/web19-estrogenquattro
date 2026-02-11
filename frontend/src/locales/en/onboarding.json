@@ -12,6 +12,9 @@
     "progress": {
       "message": "This gauge represents our collective 'passion'! It fills up as you focus on coding and contribute on GitHub.<br>What happens when we fill it up together?!"
     },
+    "channel": {
+      "message": "Want to check or change your current channel?<br>Press the channel button to move to another channel and meet new friends!"
+    },
     "leaderboard": {
       "message": "What's your contribution ranking? See who's been the most focused!<br>A new season starts every week — why not aim to be this week's top contributor?"
     },
@@ -35,6 +38,7 @@
     "chatOpen": "Press Enter to open the chat!",
     "chatClose": "Type a message and press Enter to close the chat!",
     "clickButton": "Click the button!",
+    "clickChannel": "Click the channel button!",
     "clickUserInfo": "Click the user info button!",
     "clickPetTab": "Click the pet tab!",
     "clickPetGacha": "Click the pet gacha button!"

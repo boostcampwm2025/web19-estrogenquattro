@@ -103,7 +103,7 @@ export default function DialogBox({
                     : "cursor-pointer bg-amber-600 hover:bg-amber-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                 }`}
               >
-                {isLastStep ? "시작하기!" : "다음 ▶"}
+                {isLastStep ? t("ui.start") : t("ui.next")}
               </button>
             </div>
           </div>
