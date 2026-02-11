@@ -42,6 +42,7 @@
     "description": "온라인모각코서비스"
   },
   "userInfoModal": {
+    "openButton": "내 프로필 열기",
     "tabs": {
       "activity": "활동",
       "pet": "펫",

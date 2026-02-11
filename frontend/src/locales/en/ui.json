@@ -42,6 +42,7 @@
     "description": "Online Co-working Service"
   },
   "userInfoModal": {
+    "openButton": "Open my profile",
     "tabs": {
       "activity": "Activity",
       "pet": "Pet",
