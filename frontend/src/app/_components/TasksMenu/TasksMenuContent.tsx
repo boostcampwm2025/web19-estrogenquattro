@@ -247,8 +247,8 @@ export default function TasksMenuContent({
             className="cursor-pointer text-amber-900 hover:text-amber-700"
             aria-label={
               isTimerRunning
-                ? t("focusPanel.timer.stop")
-                : t("focusPanel.timer.start")
+                ? t(($) => $.focusPanel.timer.stop)
+                : t(($) => $.focusPanel.timer.start)
             }
           >
             {isTimerRunning ? (
@@ -264,7 +264,7 @@ export default function TasksMenuContent({
               </p>
             ) : (
               <p className="text-sm text-amber-700">
-                {t("focusPanel.tasks.selectTask")}
+                {t(($) => $.focusPanel.tasks.selectTask)}
               </p>
             )}
           </div>

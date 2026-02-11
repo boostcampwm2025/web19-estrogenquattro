@@ -20,7 +20,7 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
     <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold">
-          {t("userInfoModal.activity.taskSection.title")}
+          {t(($) => $.userInfoModal.activity.taskSection.title)}
         </p>
         <p className="text-xs text-amber-700">
           {formatSelectedDate(selectedDate)}
@@ -30,7 +30,7 @@ export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
       <div className="space-y-2">
         {dailyTasks.length === 0 ? (
           <div className="py-4 text-center text-xs text-amber-700">
-            {t("userInfoModal.activity.taskSection.empty")}
+            {t(($) => $.userInfoModal.activity.taskSection.empty)}
           </div>
         ) : (
           dailyTasks.map((task) => (

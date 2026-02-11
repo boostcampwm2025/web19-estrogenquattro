@@ -26,7 +26,7 @@ export default function ActivityTab() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loading size="lg" text={t("userInfoModal.loading")} />
+        <Loading size="lg" text={t(($) => $.userInfoModal.loading)} />
       </div>
     );
   }

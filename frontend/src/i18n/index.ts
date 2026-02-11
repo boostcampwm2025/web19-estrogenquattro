@@ -9,24 +9,20 @@ import enCommon from "../locales/en/common.json";
 import enUi from "../locales/en/ui.json";
 import enGame from "../locales/en/game.json";
 
+export const defaultNS = "ui";
+
+export const resources = {
+  ko: { common: koCommon, ui: koUi, game: koGame },
+  en: { common: enCommon, ui: enUi, game: enGame },
+} as const;
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      ko: {
-        common: koCommon,
-        ui: koUi,
-        game: koGame,
-      },
-      en: {
-        common: enCommon,
-        ui: enUi,
-        game: enGame,
-      },
-    },
+    resources,
     fallbackLng: "en",
-    defaultNS: "ui",
+    defaultNS,
     interpolation: {
       escapeValue: false,
     },

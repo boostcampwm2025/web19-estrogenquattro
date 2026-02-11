@@ -52,7 +52,9 @@ export default function StatsSection({
           return (
             <StatCard
               key={index}
-              title={t(card.titleKey)}
+              title={t(
+                ($) => $.userInfoModal.activity.statCards[card.titleKey],
+              )}
               value={card.value}
               onClick={cardType ? () => onCardSelect(cardType) : undefined}
               isSelected={cardType === selectedCard}

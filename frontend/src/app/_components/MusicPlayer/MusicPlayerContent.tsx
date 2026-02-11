@@ -78,7 +78,7 @@ export default function MusicPlayerContent({
             </>
           ) : (
             <p className="truncate text-xs font-bold text-amber-700">
-              ♪ {t("focusPanel.music.noTrack")}
+              ♪ {t(($) => $.focusPanel.music.noTrack)}
             </p>
           )}
         </section>
@@ -239,7 +239,7 @@ export default function MusicPlayerContent({
         ) : (
           <div className="flex items-center gap-2">
             <p className="text-sm text-amber-700">
-              {t("focusPanel.music.noTrack")}
+              {t(($) => $.focusPanel.music.noTrack)}
             </p>
           </div>
         )}

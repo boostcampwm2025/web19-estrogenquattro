@@ -31,12 +31,12 @@ export function TaskTimer({
           {isRunning ? (
             <>
               <Pause className="h-4 w-4" />
-              {t("focusPanel.timer.stop")}
+              {t(($) => $.focusPanel.timer.stop)}
             </>
           ) : (
             <>
               <Play className="h-4 w-4" />
-              {t("focusPanel.timer.start")}
+              {t(($) => $.focusPanel.timer.start)}
             </>
           )}
         </Button>

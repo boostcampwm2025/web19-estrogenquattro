@@ -95,7 +95,7 @@ export function TaskList({
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder={t("focusPanel.tasks.newTaskPlaceholder")}
+              placeholder={t(($) => $.focusPanel.tasks.newTaskPlaceholder)}
               className="flex-1 rounded-none border-2 border-amber-900 bg-white px-3 py-1 text-sm text-amber-900 placeholder:text-amber-500"
               autoFocus
             />

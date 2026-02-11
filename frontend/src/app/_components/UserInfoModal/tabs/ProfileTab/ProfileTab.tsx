@@ -51,7 +51,7 @@ export default function ProfileTab() {
         <div className="h-24 w-24 overflow-hidden rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]">
           <img
             src={profileData.avatarUrl}
-            alt={t("userInfoModal.profile.avatarAlt", {
+            alt={t(($) => $.userInfoModal.profile.avatarAlt, {
               username: profileData.githubUsername,
             })}
             className="h-full w-full object-cover"
@@ -80,7 +80,7 @@ export default function ProfileTab() {
             {profileData.followers}
           </div>
           <div className="text-sm text-amber-700">
-            {t("userInfoModal.profile.followers")}
+            {t(($) => $.userInfoModal.profile.followers)}
           </div>
         </div>
         <div className="h-12 w-px bg-amber-900/20" />
@@ -89,7 +89,7 @@ export default function ProfileTab() {
             {profileData.following}
           </div>
           <div className="text-sm text-amber-700">
-            {t("userInfoModal.profile.following")}
+            {t(($) => $.userInfoModal.profile.following)}
           </div>
         </div>
       </div>
@@ -109,8 +109,8 @@ export default function ProfileTab() {
             {isLoadingFollowStatus || isSubmitting
               ? "..."
               : isFollowing
-                ? t("userInfoModal.profile.unfollow")
-                : t("userInfoModal.profile.follow")}
+                ? t(($) => $.userInfoModal.profile.unfollow)
+                : t(($) => $.userInfoModal.profile.follow)}
           </Button>
         </div>
       )}
@@ -123,7 +123,7 @@ export default function ProfileTab() {
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-none border-2 border-red-700 bg-red-600 py-2 font-bold text-white shadow-[4px_4px_0px_0px_#7f1d1d] transition-all hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
           >
             <LogOut className="h-4 w-4" />
-            {t("userInfoModal.profile.logout")}
+            {t(($) => $.userInfoModal.profile.logout)}
           </Button>
         </div>
       )}

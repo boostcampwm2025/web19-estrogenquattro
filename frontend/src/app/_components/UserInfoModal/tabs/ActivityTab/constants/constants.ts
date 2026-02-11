@@ -10,32 +10,32 @@ export type StatCardType =
 
 export const STAT_CARD_CONFIG = [
   {
-    titleKey: "userInfoModal.activity.statCards.focusTime",
+    titleKey: "focusTime",
     valueKey: "focusTime",
     type: null,
   },
   {
-    titleKey: "userInfoModal.activity.statCards.task",
+    titleKey: "task",
     valueKey: "task",
     type: STAT_CARD_TYPES.TASK,
   },
   {
-    titleKey: "userInfoModal.activity.statCards.commit",
+    titleKey: "commit",
     valueKey: "commit",
     type: STAT_CARD_TYPES.COMMITTED,
   },
   {
-    titleKey: "userInfoModal.activity.statCards.issueOpen",
+    titleKey: "issueOpen",
     valueKey: "issue",
     type: STAT_CARD_TYPES.ISSUE_OPEN,
   },
   {
-    titleKey: "userInfoModal.activity.statCards.prOpen",
+    titleKey: "prOpen",
     valueKey: "prCreated",
     type: STAT_CARD_TYPES.PR_OPEN,
   },
   {
-    titleKey: "userInfoModal.activity.statCards.prReviewed",
+    titleKey: "prReviewed",
     valueKey: "prReviewed",
     type: STAT_CARD_TYPES.PR_REVIEWED,
   },

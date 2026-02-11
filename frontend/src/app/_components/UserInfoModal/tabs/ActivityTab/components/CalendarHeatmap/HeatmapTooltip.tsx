@@ -20,7 +20,9 @@ export function HeatmapTooltip({ day, position }: HeatmapTooltipProps) {
     >
       <div>{formatDate(day.date)}</div>
       <div className="mt-1 text-amber-300">
-        {t("userInfoModal.activity.heatmap.tooltipPoint", { value: day.value })}
+        {t(($) => $.userInfoModal.activity.heatmap.tooltipPoint, {
+          value: day.value,
+        })}
       </div>
     </div>
   );

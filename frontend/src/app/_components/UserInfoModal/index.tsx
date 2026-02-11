@@ -85,18 +85,18 @@ export default function UserInfoModal() {
 
         <div className="mb-0 flex gap-1">
           <TabButton
-            label={t("userInfoModal.tabs.activity")}
+            label={t(($) => $.userInfoModal.tabs.activity)}
             isActive={activeTab === "activity"}
             onClick={() => setActiveTab("activity")}
           />
           <TabButton
             id="pet-tab-button"
-            label={t("userInfoModal.tabs.pet")}
+            label={t(($) => $.userInfoModal.tabs.pet)}
             isActive={activeTab === "pet"}
             onClick={() => setActiveTab("pet")}
           />
           <TabButton
-            label={t("userInfoModal.tabs.profile")}
+            label={t(($) => $.userInfoModal.tabs.profile)}
             isActive={activeTab === "profile"}
             onClick={() => setActiveTab("profile")}
           />
