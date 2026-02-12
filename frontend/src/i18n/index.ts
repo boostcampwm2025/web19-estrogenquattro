@@ -32,18 +32,16 @@ export const resources = {
   },
 } as const;
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: "en",
-    defaultNS,
-    interpolation: {
-      escapeValue: false,
-    },
-    // 리소스가 이미 번들에 포함되어 있으므로 동기 초기화
-    initImmediate: false,
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: "en", // 초기 렌더링 시 서버/클라이언트 불일치 방지 (Hydration Error Fix)
+  fallbackLng: "en",
+  defaultNS,
+  interpolation: {
+    escapeValue: false,
+  },
+  // 리소스가 이미 번들에 포함되어 있으므로 동기 초기화
+  initImmediate: false,
+});
 
 export default i18n;
