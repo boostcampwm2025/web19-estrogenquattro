@@ -111,7 +111,7 @@ describe("PetGacha 컴포넌트", () => {
 
       await waitFor(() => {
         expect(screen.getByText("축하합니다!")).toBeInTheDocument();
-        expect(screen.getByText(/테스트고퍼/)).toBeInTheDocument();
+        expect(screen.getByText(/고퍼/)).toBeInTheDocument();
       });
 
       vi.useRealTimers();

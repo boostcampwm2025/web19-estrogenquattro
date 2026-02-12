@@ -1,3 +1,10 @@
+import i18next from "i18next";
+
+const LOCALE_MAP: Record<string, string> = {
+  ko: "ko-KR",
+  en: "en-US",
+};
+
 /**
  * [로컬 타임존 기준] YYYY-MM-DD 형식의 날짜 문자열 반환
  * - 사용자가 선택한 날짜를 API에 전달할 때 사용
@@ -90,17 +97,19 @@ export function formatFocusTime(seconds: number): string {
 }
 
 /**
- * Date 객체를 "YYYY년 M월 DD일 요일" 형식으로 변환
+ * Date 객체를 로케일에 맞는 날짜 형식으로 변환
+ * ko: "2026년 1월 29일 수" / en: "Wed, Jan 29, 2026"
  * @param date - 포맷팅할 날짜
- * @returns 포맷된 날짜 문자열 (예: "2026년 1월 29일 수")
+ * @returns 포맷된 날짜 문자열
  */
 export function formatSelectedDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-  const weekday = weekdays[date.getDay()];
-  return `${year}년 ${month}월 ${String(day).padStart(2, "0")}일 ${weekday}`;
+  const locale = LOCALE_MAP[i18next.language] ?? "en-US";
+  return date.toLocaleDateString(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
 }
 
 /**

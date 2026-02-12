@@ -1,6 +1,7 @@
 import { Play, Pause } from "lucide-react";
 import { Button } from "@/_components/ui/button";
 import { InlineAlert } from "@/_components/ui/inline-alert";
+import { useTranslation } from "react-i18next";
 
 interface TaskTimerProps {
   time: string;
@@ -15,6 +16,7 @@ export function TaskTimer({
   onToggle,
   error,
 }: TaskTimerProps) {
+  const { t } = useTranslation("ui");
   return (
     <div className="mb-6">
       <InlineAlert message={error} />
@@ -29,12 +31,12 @@ export function TaskTimer({
           {isRunning ? (
             <>
               <Pause className="h-4 w-4" />
-              정지
+              {t(($) => $.focusPanel.timer.stop)}
             </>
           ) : (
             <>
               <Play className="h-4 w-4" />
-              시작
+              {t(($) => $.focusPanel.timer.start)}
             </>
           )}
         </Button>

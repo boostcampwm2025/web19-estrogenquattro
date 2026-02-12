@@ -1,5 +1,6 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { GithubEventsRes } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 import GrassCard from "./GrassCard";
 import StatCard from "./StatCard";
 import { formatTimeFromSeconds } from "../../lib/dateStats";
@@ -29,6 +30,7 @@ export default function StatsSection({
   selectedCard,
   onCardSelect,
 }: StatsSectionProps) {
+  const { t } = useTranslation("ui");
   const focusTimeStr = formatTimeFromSeconds(focusTimeSeconds ?? 0);
   const isToday = isSameDay(selectedDate, new Date());
   const taskCount = isToday
@@ -50,7 +52,9 @@ export default function StatsSection({
           return (
             <StatCard
               key={index}
-              title={card.title}
+              title={t(
+                ($) => $.userInfoModal.activity.statCards[card.titleKey],
+              )}
               value={card.value}
               onClick={cardType ? () => onCardSelect(cardType) : undefined}
               isSelected={cardType === selectedCard}

@@ -1,0 +1,275 @@
+{
+  "focusTime": "집중 시간",
+  "leaderboard": {
+    "label": "리더보드",
+    "title": "주간 순위표",
+    "openButton": "순위표 열기",
+    "closeModal": "리더보드 모달 닫기",
+    "seasonTimer": "현재 시즌 타이머",
+    "day": "day",
+    "headers": {
+      "rank": "순위",
+      "profile": "프로필",
+      "githubName": "깃허브 네임",
+      "point": "포인트",
+      "time": "시간",
+      "count": "횟수"
+    },
+    "empty": "아직 이번 주 랭킹 데이터가 없습니다.",
+    "tabs": {
+      "ALL": "포인트",
+      "ISSUE_OPEN": "Issue 생성",
+      "PR_OPEN": "PR 생성",
+      "PR_MERGED": "PR 병합",
+      "PR_REVIEWED": "PR 리뷰",
+      "COMMITTED": "커밋",
+      "TASK_COMPLETED": "Task 완료",
+      "FOCUSED": "집중 시간"
+    },
+    "badges": {
+      "ALL": "포인트 수집가",
+      "ISSUE_OPEN": "이슈 헌터",
+      "PR_OPEN": "PR 개척자",
+      "PR_MERGED": "PR 수확자",
+      "PR_REVIEWED": "PR 수호자",
+      "COMMITTED": "정원사",
+      "TASK_COMPLETED": "워커홀릭",
+      "FOCUSED": "마라토너"
+    }
+  },
+  "metadata": {
+    "title": "잔디 심고 갈래?",
+    "description": "온라인모각코서비스"
+  },
+  "userInfoModal": {
+    "openButton": "내 프로필 열기",
+    "tabs": {
+      "activity": "활동",
+      "pet": "펫",
+      "profile": "프로필"
+    },
+    "loading": "프로필 로딩 중...",
+    "activity": {
+      "statCards": {
+        "focusTime": "집중 시간",
+        "task": "Task",
+        "commit": "커밋",
+        "issueOpen": "이슈 생성",
+        "prOpen": "PR 생성",
+        "prReviewed": "PR 리뷰"
+      },
+      "taskSection": {
+        "title": "Task 목록",
+        "empty": "이 날짜에 등록된 Task가 없습니다."
+      },
+      "gitEvent": {
+        "label": {
+          "committed": "커밋",
+          "issueOpen": "이슈",
+          "prOpen": "PR 생성",
+          "prReviewed": "PR 리뷰"
+        },
+        "contentHeader": {
+          "committed": "레포지토리 / 커밋 메시지",
+          "issueOpen": "레포지토리 / 이슈 제목",
+          "prOpen": "레포지토리 / PR 제목",
+          "prReviewed": "레포지토리 / PR 제목"
+        },
+        "listTitle": "{{type}} 목록",
+        "empty": "이 날짜에 {{type}} 기록이 없습니다.",
+        "time": "시간",
+        "point": "포인트",
+        "loading": "로딩 중..."
+      },
+      "heatmap": {
+        "less": "less",
+        "more": "more",
+        "pointPolicy": "포인트 획득 정책",
+        "tooltipPoint": "Point: {{value}}",
+        "policyHeader": {
+          "action": "활동",
+          "point": "포인트"
+        },
+        "policies": {
+          "focus30min": "집중 30분",
+          "commit": "커밋",
+          "prCreate": "PR 생성",
+          "prMerge": "PR 머지",
+          "prReview": "PR 리뷰",
+          "issueCreate": "이슈 생성",
+          "taskComplete": "Task 완료"
+        }
+      }
+    },
+    "profile": {
+      "avatarAlt": "{{username}}의 프로필",
+      "followers": "팔로워",
+      "following": "팔로잉",
+      "follow": "팔로우",
+      "unfollow": "언팔로우",
+      "logout": "로그아웃"
+    },
+    "pet": {
+      "loading": "Loading...",
+      "notOwned": "보유하지 않은 펫입니다!",
+      "actionFailed": "작업 실패: {{error}}",
+      "noPet": "보유한 펫이 없습니다",
+      "noPetHint": "아래에서 새로운 펫을 받아보세요!",
+      "card": {
+        "readyToEvolve": "✨ 진화가 가능합니다!",
+        "evolve": "✨ 진화",
+        "feed": "밥주기 (10 P)"
+      },
+      "codex": {
+        "title": "펫 도감",
+        "collected": "{{count}} / {{total}} 수집",
+        "representative": "대표펫"
+      },
+      "gacha": {
+        "title": "펫 뽑기",
+        "notEnoughPoints": "포인트가 부족합니다!",
+        "prompt": "어떤 펫이 나올까요?",
+        "cost": "(1회: 100 P)",
+        "button": "펫 뽑기",
+        "hatching": "알이 깨지고 있어요!",
+        "noMorePets": "더 이상 뽑을 새로운 펫이 없습니다.",
+        "noMorePetsHint": "기존 펫을 성장시켜 진화해 보세요!",
+        "congrats": "축하합니다!",
+        "gotPet": "{{name}}을(를) 만났습니다!",
+        "duplicate": "이미 함께하고 있는 친구네요!",
+        "refund": "중복으로 뽑은 펫은 ",
+        "refundAmount": "50P가 환급",
+        "refundSuffix": " 됩니다.",
+        "gachaFailed": "뽑기 실패: {{error}}",
+        "confirm": "확인"
+      },
+      "license": {
+        "ariaLabel": "라이선스 정보 보기",
+        "text": "라이선스 정보"
+      },
+      "pets": {
+        "1": {
+          "name": "고퍼",
+          "description": "구글에서 온 귀여운 두더지입니다. 단순하고 명료한 코드를 좋아합니다."
+        },
+        "2": {
+          "name": "고루틴",
+          "description": "매우 가볍고 빠릅니다. 수천 마리가 동시에 뛰어놀아도 지치지 않습니다."
+        },
+        "3": {
+          "name": "고헌터",
+          "description": "메모리 관리에 통달했습니다. 사용하지 않는 자원을 포착해 정리합니다."
+        },
+        "4": {
+          "name": "웨일리",
+          "description": "넓은 바다를 꿈꾸는 아기 고래입니다. 귀여운 분수를 뿜습니다."
+        },
+        "5": {
+          "name": "오션",
+          "description": "깊은 바다를 탐험합니다. 우아한 움직임으로 물살을 가릅니다."
+        },
+        "6": {
+          "name": "리바이어던",
+          "description": "바다의 전설입니다. 거대한 파도를 일으키며 대양을 지배합니다."
+        },
+        "7": {
+          "name": "듀크",
+          "description": "자바 세상을 여행하는 당신의 첫 번째 친구입니다. 빨간 코가 매력적입니다."
+        },
+        "8": {
+          "name": "자바콩",
+          "description": "따뜻한 커피 향이 나는 콩입니다. 어디서든 잘 자랍니다."
+        },
+        "9": {
+          "name": "JVM",
+          "description": "가상 머신의 제왕입니다. 메모리 영역을 통제하며 군림합니다."
+        },
+        "10": {
+          "name": "버그드로이드",
+          "description": "귀여운 초록색 로봇입니다. 오픈소스 정신을 품고 있습니다."
+        },
+        "11": {
+          "name": "젯팩",
+          "description": "최신 라이브러리로 무장했습니다. 생명주기를 완벽하게 관리합니다."
+        },
+        "12": {
+          "name": "머티리얼",
+          "description": "세련된 디자인을 구현합니다. 수십억 사용자의 손 안에서 빛납니다."
+        },
+        "13": {
+          "name": "콘키",
+          "description": "귀여운 초록색 드래곤입니다. 자유로운 데스크톱 환경을 꿈꿉니다."
+        },
+        "14": {
+          "name": "플라즈마",
+          "description": "유려한 UI로 진화했습니다. 커스터마이징의 달인입니다."
+        },
+        "15": {
+          "name": "크렌더",
+          "description": "완벽한 데스크톱 경험을 제공합니다. 모든 위젯을 다룰 수 있습니다."
+        },
+        "16": {
+          "name": "턱스",
+          "description": "귀여운 펭귄입니다. 커널의 힘을 품고 있습니다."
+        },
+        "17": {
+          "name": "시스템디",
+          "description": "모든 프로세스를 관장합니다. 부팅 시간을 단축시키는 능력이 있습니다."
+        },
+        "18": {
+          "name": "리눅스 토발즈",
+          "description": "오픈소스 세상의 전설입니다. 전 세계 서버를 지배합니다."
+        },
+        "19": {
+          "name": "페리스",
+          "description": "귀여운 빨간 게입니다. 메모리 안전성을 보장합니다."
+        },
+        "20": {
+          "name": "보로우 체커",
+          "description": "소유권 시스템의 수호자입니다. 컴파일 타임에 버그를 잡아냅니다."
+        },
+        "21": {
+          "name": "제로 코스트",
+          "description": "추상화의 완성체입니다. C++만큼 빠르지만 훨씬 안전합니다."
+        }
+      }
+    }
+  },
+  "focusPanel": {
+    "collapsePanel": "패널 접기",
+    "expandPanel": "패널 펼치기",
+    "timer": {
+      "stop": "정지",
+      "start": "시작"
+    },
+    "tasks": {
+      "newTaskPlaceholder": "새 작업...",
+      "selectTask": "Task를 선택해주세요",
+      "saveEdit": "작업 수정 저장",
+      "cancelEdit": "작업 수정 취소",
+      "pauseTimer": "타이머 일시정지",
+      "startTimer": "타이머 시작",
+      "editTask": "작업 편집",
+      "deleteTask": "작업 삭제"
+    },
+    "music": {
+      "noTrack": "재생 중인 곡 없음"
+    }
+  },
+  "channel": {
+    "selectButton": "채널 선택",
+    "title": "채널 선택",
+    "refreshLabel": "채널 목록 새로고침",
+    "closeModal": "채널 선택 모달 닫기",
+    "status": {
+      "participating": "참여중",
+      "enter": "입장",
+      "full": "FULL"
+    },
+    "error": {
+      "moveFailed": "채널 이동 실패",
+      "roomFull": "채널이 가득 찼습니다.",
+      "moveFailedAlert": "채널 이동에 실패했습니다."
+    }
+  }
+}

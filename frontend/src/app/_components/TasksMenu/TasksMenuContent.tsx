@@ -8,6 +8,7 @@ import { formatTime, formatTaskTime } from "./utils/timeFormat";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 import { useShallow } from "zustand/react/shallow";
+import { useTranslation } from "react-i18next";
 
 interface TasksMenuContentProps {
   isExpanded: boolean;
@@ -20,6 +21,7 @@ export default function TasksMenuContent({
   lastRunTaskId,
   setLastRunTaskId,
 }: TasksMenuContentProps) {
+  const { t } = useTranslation("ui");
   const {
     tasks,
     isLoading,
@@ -243,7 +245,11 @@ export default function TasksMenuContent({
           <button
             onClick={handleMiniControlClick}
             className="cursor-pointer text-amber-900 hover:text-amber-700"
-            aria-label={isTimerRunning ? "정지" : "시작"}
+            aria-label={
+              isTimerRunning
+                ? t(($) => $.focusPanel.timer.stop)
+                : t(($) => $.focusPanel.timer.start)
+            }
           >
             {isTimerRunning ? (
               <Pause className="h-5 w-5" />
@@ -257,7 +263,9 @@ export default function TasksMenuContent({
                 {lastTask.description}
               </p>
             ) : (
-              <p className="text-sm text-amber-700">Task를 선택해주세요</p>
+              <p className="text-sm text-amber-700">
+                {t(($) => $.focusPanel.tasks.selectTask)}
+              </p>
             )}
           </div>
           <span className="font-mono text-sm text-amber-900">

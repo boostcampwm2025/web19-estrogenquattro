@@ -10,6 +10,7 @@ import { getSocket } from "@/lib/socket";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useRoomSystem } from "@/lib/api/hooks/useRoomSystem";
 import { RoomInfo } from "@/lib/api/room";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -23,6 +24,7 @@ interface Channel {
 }
 
 export default function ChannelSelectModal() {
+  const { t } = useTranslation("ui");
   const { activeModal, closeModal } = useModalStore(
     useShallow((state) => ({
       activeModal: state.activeModal,
@@ -116,7 +118,10 @@ export default function ChannelSelectModal() {
 
       closeModal();
     } catch (error: unknown) {
-      console.error("채널 이동 실패", error);
+      console.error(
+        t(($) => $.channel.error.moveFailed),
+        error,
+      );
       // 409 Conflict: 방이 가득 찬 경우 (API 에러 핸들링은 client.ts에서 일부 처리되지만, 추가 처리가 필요할 수 있음)
       if (
         typeof error === "object" &&
@@ -124,9 +129,9 @@ export default function ChannelSelectModal() {
         "status" in error &&
         (error as { status: number }).status === 409
       ) {
-        alert("채널이 가득 찼습니다.");
+        alert(t(($) => $.channel.error.roomFull));
       } else {
-        alert("채널 이동에 실패했습니다.");
+        alert(t(($) => $.channel.error.moveFailedAlert));
       }
       // 실패 시 최신 상태로 갱신하여 인원리스트 업데이트
       handleRefresh();
@@ -151,13 +156,13 @@ export default function ChannelSelectModal() {
               id="channel-select-title"
               className="text-xl font-extrabold tracking-wider text-amber-900"
             >
-              채널 선택
+              {t(($) => $.channel.title)}
             </h2>
 
             <button
               onClick={handleRefresh}
               disabled={isSpinning}
-              aria-label="채널 목록 새로고침"
+              aria-label={t(($) => $.channel.refreshLabel)}
               className={`flex h-8 w-8 cursor-pointer items-center justify-center text-amber-900 disabled:cursor-not-allowed disabled:opacity-50`}
             >
               <RefreshCw
@@ -167,7 +172,7 @@ export default function ChannelSelectModal() {
           </div>
           <button
             onClick={handleClose}
-            aria-label="채널 선택 모달 닫기"
+            aria-label={t(($) => $.channel.closeModal)}
             className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
           >
             X
@@ -222,7 +227,11 @@ export default function ChannelSelectModal() {
                     }`}
                   >
                     <span className="font-bold tracking-wider">
-                      {isCurrent ? "참여중" : isFull ? "FULL" : "입장"}
+                      {isCurrent
+                        ? t(($) => $.channel.status.participating)
+                        : isFull
+                          ? t(($) => $.channel.status.full)
+                          : t(($) => $.channel.status.enter)}
                     </span>
                     {!isFull && !isCurrent && <LogIn className="h-4 w-4" />}
                   </button>

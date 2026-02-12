@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import "@/i18n";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // useState를 사용하여 클라이언트 사이드에서만 QueryClient가 생성되도록 보장 (Hydration mismatch 방지)

@@ -1,0 +1,6 @@
+{
+  "error": {
+    "taskFocusing": "Cannot delete a task while focusing.",
+    "focusStartFailed": "Failed to start focus session."
+  }
+}

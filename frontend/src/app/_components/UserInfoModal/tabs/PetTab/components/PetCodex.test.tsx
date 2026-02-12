@@ -76,8 +76,9 @@ describe("PetCodex 컴포넌트", () => {
     it("수집된 펫은 실제 이름이 표시된다", () => {
       render(<PetCodex {...defaultProps} />);
 
+      // id 1 = "고퍼", id 2 = "고루틴" (i18n ko/ui.json)
       expect(screen.getByText("고퍼")).toBeInTheDocument();
-      expect(screen.getByText("고퍼2")).toBeInTheDocument();
+      expect(screen.getByText("고루틴")).toBeInTheDocument();
     });
 
     it("수집된 펫은 클릭 가능하다", async () => {

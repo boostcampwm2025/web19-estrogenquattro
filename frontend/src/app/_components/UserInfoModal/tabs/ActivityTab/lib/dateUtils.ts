@@ -1,5 +1,13 @@
+import i18next from "i18next";
+
+const LOCALE_MAP: Record<string, string> = {
+  ko: "ko-KR",
+  en: "en-US",
+};
+
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString("ko-KR", {
+  const locale = LOCALE_MAP[i18next.language] ?? "en-US";
+  return date.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",
