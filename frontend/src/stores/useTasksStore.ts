@@ -69,7 +69,10 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         set({
           tasks: [],
           pendingTaskIds: [],
-          error: i18next.t(($: { error: { loginRequired: string } }) => $.error.loginRequired, { ns: "common" }),
+          error: i18next.t(
+            ($: { error: { loginRequired: string } }) => $.error.loginRequired,
+            { ns: "common" },
+          ),
           isLoading: false,
         });
         return;
@@ -93,7 +96,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
       } catch (error) {
         devLogger.error("Failed to fetch tasks", { date, error });
         set({
-          error: i18next.t(($: { error: { taskFetchFailed: string } }) => $.error.taskFetchFailed, { ns: "common" }),
+          error: i18next.t(
+            ($: { error: { taskFetchFailed: string } }) =>
+              $.error.taskFetchFailed,
+            { ns: "common" },
+          ),
           isLoading: false,
         });
       }
@@ -102,11 +109,22 @@ export const useTasksStore = create<TasksStore>((set, get) => {
     addTask: async (text: string) => {
       const trimmedText = text.trim();
       if (!trimmedText) {
-        set({ error: i18next.t(($: { error: { taskInputRequired: string } }) => $.error.taskInputRequired, { ns: "common" }) });
+        set({
+          error: i18next.t(
+            ($: { error: { taskInputRequired: string } }) =>
+              $.error.taskInputRequired,
+            { ns: "common" },
+          ),
+        });
         return;
       }
       if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
-        set({ error: i18next.t(($: { error: { taskTooLong: string } }) => $.error.taskTooLong, { ns: "common" }) });
+        set({
+          error: i18next.t(
+            ($: { error: { taskTooLong: string } }) => $.error.taskTooLong,
+            { ns: "common" },
+          ),
+        });
         return;
       }
       try {
@@ -115,7 +133,13 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         set((state) => ({ tasks: [...state.tasks, newTask], error: null }));
       } catch (error) {
         devLogger.error("Failed to create task", { error });
-        set({ error: i18next.t(($: { error: { taskCreateFailed: string } }) => $.error.taskCreateFailed, { ns: "common" }) });
+        set({
+          error: i18next.t(
+            ($: { error: { taskCreateFailed: string } }) =>
+              $.error.taskCreateFailed,
+            { ns: "common" },
+          ),
+        });
       }
     },
 
@@ -148,7 +172,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           tasks: state.tasks.map((t) =>
             t.id === id ? { ...t, completed: task.completed } : t,
           ),
-          error: i18next.t(($: { error: { taskToggleFailed: string } }) => $.error.taskToggleFailed, { ns: "common" }),
+          error: i18next.t(
+            ($: { error: { taskToggleFailed: string } }) =>
+              $.error.taskToggleFailed,
+            { ns: "common" },
+          ),
         }));
       } finally {
         removePending(id);
@@ -180,7 +208,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         const errorCode = error instanceof ApiError ? error.code : undefined;
         const errorMessage = getErrorMessage(
           errorCode,
-          i18next.t(($: { error: { taskDeleteFailed: string } }) => $.error.taskDeleteFailed, { ns: "common" }),
+          i18next.t(
+            ($: { error: { taskDeleteFailed: string } }) =>
+              $.error.taskDeleteFailed,
+            { ns: "common" },
+          ),
         );
         // 롤백
         set((state) => ({
@@ -199,11 +231,22 @@ export const useTasksStore = create<TasksStore>((set, get) => {
     editTask: async (id: number, newText: string) => {
       const trimmedText = newText.trim();
       if (!trimmedText) {
-        set({ error: i18next.t(($: { error: { taskInputRequired: string } }) => $.error.taskInputRequired, { ns: "common" }) });
+        set({
+          error: i18next.t(
+            ($: { error: { taskInputRequired: string } }) =>
+              $.error.taskInputRequired,
+            { ns: "common" },
+          ),
+        });
         return;
       }
       if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
-        set({ error: i18next.t(($: { error: { taskTooLong: string } }) => $.error.taskTooLong, { ns: "common" }) });
+        set({
+          error: i18next.t(
+            ($: { error: { taskTooLong: string } }) => $.error.taskTooLong,
+            { ns: "common" },
+          ),
+        });
         return;
       }
       if (isPending(id)) return;
@@ -243,7 +286,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           tasks: state.tasks.map((t) =>
             t.id === id ? { ...t, description: oldDescription } : t,
           ),
-          error: i18next.t(($: { error: { taskEditFailed: string } }) => $.error.taskEditFailed, { ns: "common" }),
+          error: i18next.t(
+            ($: { error: { taskEditFailed: string } }) =>
+              $.error.taskEditFailed,
+            { ns: "common" },
+          ),
         }));
       } finally {
         removePending(id);

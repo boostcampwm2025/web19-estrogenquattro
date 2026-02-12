@@ -17,10 +17,9 @@ export function getErrorMessage(
 ): string {
   if (code && code in ERROR_CODE_TO_KEY) {
     const key = ERROR_CODE_TO_KEY[code];
-    return i18next.t(
-      ($: { error: Record<string, string> }) => $.error[key],
-      { ns: "common" },
-    );
+    return i18next.t(($: { error: Record<string, string> }) => $.error[key], {
+      ns: "common",
+    });
   }
   return (
     fallback ??

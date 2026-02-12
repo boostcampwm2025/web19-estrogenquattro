@@ -96,7 +96,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const socket = getSocket();
     if (!socket?.connected) {
       set({
-        error: i18next.t(($: { error: { serverDisconnected: string } }) => $.error.serverDisconnected, { ns: "common" }),
+        error: i18next.t(
+          ($: { error: { serverDisconnected: string } }) =>
+            $.error.serverDisconnected,
+          { ns: "common" },
+        ),
       });
       return;
     }
@@ -126,7 +130,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
             baseFocusSeconds: prev.baseFocusSeconds,
             serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
             serverReceivedAt: prev.serverReceivedAt,
-            error: response?.error || i18next.t(($: { error: { focusStartFailed: string } }) => $.error.focusStartFailed, { ns: "common" }),
+            error:
+              response?.error ||
+              i18next.t(
+                ($: { error: { focusStartFailed: string } }) =>
+                  $.error.focusStartFailed,
+                { ns: "common" },
+              ),
           });
         }
       },
@@ -142,7 +152,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const socket = getSocket();
     if (!socket?.connected) {
       set({
-        error: i18next.t(($: { error: { serverDisconnected: string } }) => $.error.serverDisconnected, { ns: "common" }),
+        error: i18next.t(
+          ($: { error: { serverDisconnected: string } }) =>
+            $.error.serverDisconnected,
+          { ns: "common" },
+        ),
       });
       return;
     }
@@ -171,7 +185,12 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
             baseFocusSeconds: prev.baseFocusSeconds,
             serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
             serverReceivedAt: prev.serverReceivedAt,
-            error: response?.error || i18next.t(($: { error: { restFailed: string } }) => $.error.restFailed, { ns: "common" }),
+            error:
+              response?.error ||
+              i18next.t(
+                ($: { error: { restFailed: string } }) => $.error.restFailed,
+                { ns: "common" },
+              ),
           });
         }
       },

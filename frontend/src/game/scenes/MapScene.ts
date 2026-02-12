@@ -425,7 +425,9 @@ export class MapScene extends Phaser.Scene {
     const text = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY,
-      i18next.t(($: { session: { ended: string } }) => $.session.ended, { ns: "game" }),
+      i18next.t(($: { session: { ended: string } }) => $.session.ended, {
+        ns: "game",
+      }),
       {
         fontSize: "24px",
         color: "#ffffff",

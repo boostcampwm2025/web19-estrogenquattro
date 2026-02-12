@@ -282,10 +282,21 @@ export default class SocketManager {
     socket.on("join_failed", (data: { message: string; code: string }) => {
       console.warn("[SocketManager] join_failed:", data);
       if (data.code === "ROOM_NOT_FOUND") {
-        alert(i18next.t(($: { joinFailed: { roomNotFound: string } }) => $.joinFailed.roomNotFound, { ns: "game" }));
+        alert(
+          i18next.t(
+            ($: { joinFailed: { roomNotFound: string } }) =>
+              $.joinFailed.roomNotFound,
+            { ns: "game" },
+          ),
+        );
         window.location.href = "/login";
       } else if (data.code === "ROOM_FULL") {
-        alert(i18next.t(($: { joinFailed: { roomFull: string } }) => $.joinFailed.roomFull, { ns: "game" }));
+        alert(
+          i18next.t(
+            ($: { joinFailed: { roomFull: string } }) => $.joinFailed.roomFull,
+            { ns: "game" },
+          ),
+        );
         // 채널 선택 모달 다시 열기
         useModalStore.getState().openModal(MODAL_TYPES.CHANNEL_SELECT);
       }
