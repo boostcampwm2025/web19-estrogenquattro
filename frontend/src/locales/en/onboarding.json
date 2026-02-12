@@ -1,7 +1,7 @@
 {
   "steps": {
     "info": {
-      "message": "Welcome to 'Commit and Chill'!<br>I'm Jenkinsu, here to guide you through the service. Shall we take a look around?"
+      "message": "Welcome to 'Commit Please'!<br>I'm Jenkinsu, here to guide you through the service. Shall we take a look around?"
     },
     "move": {
       "message": "This is your own space!<br>Use the arrow keys (↑,↓,←,→) or WASD to move your character freely!"
