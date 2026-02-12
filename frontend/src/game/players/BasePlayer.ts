@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import i18next from "i18next";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { MODAL_TYPES, useModalStore } from "@/stores/useModalStore";
 import Pet from "./Pet";
@@ -394,7 +395,15 @@ export default class BasePlayer {
     this.taskBubbleContainer.setName("taskBubble");
 
     // 상태에 따른 스타일 및 텍스트 결정
-    let statusText = isFocusing ? "작업 중" : "휴식 중";
+    let statusText = isFocusing
+      ? (i18next.t as unknown as (k: string, o: { ns: string }) => string)(
+          "status.focusing",
+          { ns: "game" },
+        )
+      : (i18next.t as unknown as (k: string, o: { ns: string }) => string)(
+          "status.resting",
+          { ns: "game" },
+        );
     if (isFocusing && taskName) {
       const MAX_TASK_NAME_LENGTH = 15;
       statusText =

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ONBOARDING_STEPS } from "@/app/_components/OnboardingTour/onboardingSteps";
 
 const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 
@@ -31,7 +32,7 @@ interface OnboardingState {
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   isActive: false,
   currentStep: 0,
-  totalSteps: 8,
+  totalSteps: ONBOARDING_STEPS.length,
   isShowingAction: false,
   isChatOpen: false,
   isWaitingForModalGuide: false,

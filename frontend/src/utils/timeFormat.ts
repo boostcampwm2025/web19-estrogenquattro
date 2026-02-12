@@ -78,18 +78,27 @@ export function parseLocalDate(dateStr: string): Date {
  * @returns 포맷된 시간 문자열
  */
 export function formatFocusTime(seconds: number): string {
+  const t = (key: string, opts?: Record<string, unknown>) =>
+    (
+      i18next.t as unknown as (
+        k: string,
+        o: { ns: string } & Record<string, unknown>,
+      ) => string
+    )(key, { ns: "game", ...opts });
+
   const totalMinutes = Math.floor(seconds / 60);
   let result = "⏱️";
 
   if (totalMinutes < 60) {
-    result += `${totalMinutes}분`;
+    result += t("time.minutes", { m: totalMinutes });
   } else {
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
 
-    result += `${hours}시간`;
     if (mins > 0) {
-      result += ` ${mins}분`;
+      result += t("time.hoursMinutes", { h: hours, m: mins });
+    } else {
+      result += t("time.hours", { h: hours });
     }
   }
 

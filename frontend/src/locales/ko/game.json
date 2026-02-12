@@ -2,5 +2,14 @@
   "status": {
     "focusing": "작업 중",
     "resting": "휴식 중"
+  },
+  "time": {
+    "minutes": "{{m}}분",
+    "hours": "{{h}}시간",
+    "hoursMinutes": "{{h}}시간 {{m}}분"
+  },
+  "date": {
+    "format": "{{year}}년 {{month}}월 {{day}}일 {{weekday}}",
+    "weekdays": ["일", "월", "화", "수", "목", "금", "토"]
   }
 }

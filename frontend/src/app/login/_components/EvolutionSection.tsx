@@ -1,29 +1,32 @@
 import { Sparkles, Heart, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 export default function EvolutionSection() {
+  const { t } = useTranslation("login");
+
   const features = [
     {
       icon: Sparkles,
       emoji: "🐣",
-      title: "가챠",
-      description: "랜덤으로 귀여운 펫을 뽑으세요!",
+      title: t((r) => r.evolution.cards[0].title),
+      description: t((r) => r.evolution.cards[0].description),
       color: "from-yellow-500 to-orange-500",
       textColor: "text-amber-600",
     },
     {
       icon: Heart,
       emoji: "🍖",
-      title: "밥주기",
-      description: "펫에게 포인트를 투자해 경험치를 쌓으세요.",
+      title: t((r) => r.evolution.cards[1].title),
+      description: t((r) => r.evolution.cards[1].description),
       color: "from-pink-500 to-red-500",
       textColor: "text-rose-600",
     },
     {
       icon: TrendingUp,
       emoji: "⭐",
-      title: "진화",
-      description: "최대 3단계까지! 펫도 강력해집니다.",
+      title: t((r) => r.evolution.cards[2].title),
+      description: t((r) => r.evolution.cards[2].description),
       color: "from-purple-500 to-indigo-500",
       textColor: "text-violet-600",
     },
@@ -56,11 +59,12 @@ export default function EvolutionSection() {
           className="mb-20 text-center"
         >
           <h2 className="font-display mb-6 text-4xl leading-tight sm:text-5xl">
-            몰입으로 펫을 성장시키세요!
+            {t((r) => r.evolution.heading)}
           </h2>
           <p className="mx-auto max-w-2xl text-2xl text-slate-500 dark:text-slate-400">
-            개발 활동(Commit, PR, Review)을 할 때마다 포인트가 쌓입니다.
-            <br /> 쌓인 포인트로 무엇을 할 수 있냐고요?
+            {t((r) => r.evolution.subheading1)}
+            <br />
+            {t((r) => r.evolution.subheading2)}
           </p>
         </motion.div>
 
@@ -109,9 +113,11 @@ export default function EvolutionSection() {
           className="mt-20"
         >
           <div className="mb-12 text-center">
-            <h3 className="font-display mb-2 text-3xl font-bold">진화 예시</h3>
+            <h3 className="font-display mb-2 text-3xl font-bold">
+              {t((r) => r.evolution.example.heading)}
+            </h3>
             <p className="text-lg text-slate-500 dark:text-slate-400">
-              펫은 최대 3단계까지 진화합니다
+              {t((r) => r.evolution.example.subheading)}
             </p>
           </div>
 
@@ -129,11 +135,13 @@ export default function EvolutionSection() {
                 <div className="relative h-32 w-32">
                   <img
                     src="/assets/pets/whale/pet_whale_1.webp"
-                    alt="Whale 1단계"
+                    alt="Whale Stage 1"
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <p className="text-sm font-bold text-amber-900">1단계</p>
+                <p className="text-sm font-bold text-amber-900">
+                  {t((r) => r.evolution.example.stage, { n: 1 })}
+                </p>
               </motion.div>
 
               {/* Arrow 1 */}
@@ -158,11 +166,13 @@ export default function EvolutionSection() {
                 <div className="relative h-32 w-32">
                   <img
                     src="/assets/pets/whale/pet_whale_2.webp"
-                    alt="Whale 2단계"
+                    alt="Whale Stage 2"
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <p className="text-sm font-bold text-amber-900">2단계</p>
+                <p className="text-sm font-bold text-amber-900">
+                  {t((r) => r.evolution.example.stage, { n: 2 })}
+                </p>
               </motion.div>
 
               {/* Arrow 2 */}
@@ -187,12 +197,14 @@ export default function EvolutionSection() {
                 <div className="relative h-32 w-32">
                   <img
                     src="/assets/pets/whale/pet_whale_3_silhouette.webp"
-                    alt="Whale 3단계 Secret"
+                    alt="Whale Stage 3 Secret"
                     className="pointer-events-none h-full w-full object-contain"
                   />
                 </div>
                 <p className="text-sm font-bold text-gray-500">???</p>
-                <p className="text-xs text-gray-400">직접 확인해보세요!</p>
+                <p className="text-xs text-gray-400">
+                  {t((r) => r.evolution.example.secret)}
+                </p>
               </motion.div>
             </div>
           </div>

@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from "react";
+import { useTranslation } from "react-i18next";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
 
 export default function DemoSection() {
+  const { t } = useTranslation("login");
+
   const isMounted = useSyncExternalStore(
     subscribe,
     getSnapshot,
@@ -21,7 +24,7 @@ export default function DemoSection() {
           {isMounted && (
             <iframe
               src="https://demo.arcade.software/4gu3eVafFI6UHrOYCR37?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true"
-              title="펫 뽑기와 밥주기 사용하기"
+              title={t((r) => r.demo.iframeTitle)}
               loading="lazy"
               allowFullScreen
               allow="clipboard-write"
