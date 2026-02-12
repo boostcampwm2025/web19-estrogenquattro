@@ -17,7 +17,7 @@ export default function DemoSection() {
   return (
     <footer className="mx-auto w-[70%] py-24">
       <div className="space-y-8 text-center">
-        <h2 className="font-display text-sm font-bold tracking-[0.3em] text-amber-900/40 uppercase">
+        {/* <h2 className="font-display text-sm font-bold tracking-[0.3em] text-amber-900/40 uppercase">
           Service Demo
         </h2>
         <div className="relative aspect-video overflow-hidden border-amber-900/10 bg-white/5 shadow-2xl backdrop-blur-sm">
@@ -32,7 +32,7 @@ export default function DemoSection() {
               style={{ colorScheme: "light" }}
             />
           )}
-        </div>
+        </div> */}
         <div className="font-display pt-8 text-[10px] tracking-[0.2em] text-amber-900/30 uppercase">
           © 2026 ESTROGEN QUATTRO. ALL RIGHTS RESERVED.
         </div>
