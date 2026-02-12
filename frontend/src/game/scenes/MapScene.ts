@@ -83,8 +83,8 @@ export class MapScene extends Phaser.Scene {
 
     // Body Sprite Sheet
     this.load.spritesheet("body", "/assets/body.png", {
-      frameWidth: 64,
-      frameHeight: 64,
+      frameWidth: 125,
+      frameHeight: 125,
     });
 
     // Default Face

@@ -61,6 +61,7 @@ export default class BasePlayer {
     // 2. 몸통 스프라이트 생성
     this.bodySprite = scene.add.sprite(0, 5, "body");
     this.bodySprite.setFrame(0);
+    this.bodySprite.setScale(0.512); // 125x125 → 64x64
 
     // 3. 얼굴 & 마스크
     const FACE_RADIUS = 17;
