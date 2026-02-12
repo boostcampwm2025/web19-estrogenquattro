@@ -2,6 +2,7 @@ import { useState, memo } from "react";
 import Image from "next/image";
 import { Pet, UserPet } from "@/lib/api/pet";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -22,14 +23,20 @@ const PetGacha = memo(function PetGacha({
   points,
   hasCollectedAllStage1 = false,
 }: PetGachaProps) {
+  const { t } = useTranslation("ui");
   const [status, setStatus] = useState<"idle" | "animating" | "result">("idle");
   const [resultPet, setResultPet] = useState<Pet | null>(null);
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [showRefundAnim, setShowRefundAnim] = useState(false);
+  const resultPetId = resultPet
+    ? (String(
+        resultPet.id,
+      ) as keyof (typeof import("@/locales/ko/ui.json"))["userInfoModal"]["pet"]["pets"])
+    : null;
 
   const handleSummon = async () => {
     if (points < 100) {
-      alert("포인트가 부족합니다!");
+      alert(t(($) => $.userInfoModal.pet.gacha.notEnoughPoints));
       return;
     }
 
@@ -58,7 +65,9 @@ const PetGacha = memo(function PetGacha({
         throw new Error("Unknown pet received");
       }
     } catch (e) {
-      alert("뽑기 실패: " + e);
+      alert(
+        t(($) => $.userInfoModal.pet.gacha.gachaFailed, { error: String(e) }),
+      );
       setStatus("idle");
     }
   };
@@ -74,7 +83,9 @@ const PetGacha = memo(function PetGacha({
     <div className={`flex flex-col gap-4 bg-amber-50 p-6 ${PIXEL_BORDER}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-amber-900/20 pb-2">
-        <h3 className="text-xl font-bold text-amber-900">펫 뽑기</h3>
+        <h3 className="text-xl font-bold text-amber-900">
+          {t(($) => $.userInfoModal.pet.gacha.title)}
+        </h3>
       </div>
 
       {/* Main Content */}
@@ -87,20 +98,20 @@ const PetGacha = memo(function PetGacha({
             {hasCollectedAllStage1 ? (
               <>
                 <p className="text-center text-xs text-amber-600">
-                  더 이상 뽑을 새로운 펫이 없습니다.
+                  {t(($) => $.userInfoModal.pet.gacha.noMorePets)}
                   <br />
-                  기존 펫을 성장시켜 진화해 보세요!
+                  {t(($) => $.userInfoModal.pet.gacha.noMorePetsHint)}
                 </p>
                 <button id="pet-gacha-button" disabled className={PIXEL_BTN}>
-                  펫 뽑기
+                  {t(($) => $.userInfoModal.pet.gacha.button)}
                 </button>
               </>
             ) : (
               <>
                 <p className="text-center text-sm text-amber-700">
-                  어떤 펫이 나올까요?
+                  {t(($) => $.userInfoModal.pet.gacha.prompt)}
                   <br />
-                  (1회: 100 P)
+                  {t(($) => $.userInfoModal.pet.gacha.cost)}
                 </p>
                 <button
                   id="pet-gacha-button"
@@ -108,7 +119,7 @@ const PetGacha = memo(function PetGacha({
                   disabled={points < 100}
                   className={PIXEL_BTN}
                 >
-                  펫 뽑기
+                  {t(($) => $.userInfoModal.pet.gacha.button)}
                 </button>
               </>
             )}
@@ -119,17 +130,17 @@ const PetGacha = memo(function PetGacha({
           <div className="flex flex-col items-center gap-4">
             <div className="gacha-egg animating" />
             <p className="animate-pulse text-lg font-bold text-amber-800">
-              알이 깨지고 있어요!
+              {t(($) => $.userInfoModal.pet.gacha.hatching)}
             </p>
           </div>
         )}
 
-        {status === "result" && resultPet && (
+        {status === "result" && resultPet && resultPetId && (
           <div className="animate-pop flex flex-col items-center gap-4">
             <div className="relative h-24 w-24">
               <Image
                 src={resultPet.actualImgUrl}
-                alt={resultPet.name}
+                alt={t(($) => $.userInfoModal.pet.pets[resultPetId].name)}
                 fill
                 className="object-contain"
                 style={{ imageRendering: "pixelated" }}
@@ -139,26 +150,27 @@ const PetGacha = memo(function PetGacha({
               {isDuplicate ? (
                 <>
                   <p className="font-bold text-amber-700">
-                    이미 함께하고 있는 친구네요!
+                    {t(($) => $.userInfoModal.pet.gacha.duplicate)}
                   </p>
                   <span className="font mt-1 font-bold text-amber-800">
-                    중복으로 뽑은 펫은{" "}
+                    {t(($) => $.userInfoModal.pet.gacha.refund)}
                     <span className="font mt-1 rounded bg-amber-200 px-2 py-0.5 text-amber-800">
-                      50P가 환급
-                    </span>{" "}
-                    됩니다.
+                      {t(($) => $.userInfoModal.pet.gacha.refundAmount)}
+                    </span>
+                    {t(($) => $.userInfoModal.pet.gacha.refundSuffix)}
                   </span>
                 </>
               ) : (
                 <>
                   <p className="text-lg font-bold text-amber-900">
-                    축하합니다!
+                    {t(($) => $.userInfoModal.pet.gacha.congrats)}
                   </p>
                   <p className="text-sm text-amber-700">
-                    <span className="font-bold text-amber-900">
-                      {resultPet.name}
-                    </span>
-                    을(를) 만났습니다!
+                    {t(($) => $.userInfoModal.pet.gacha.gotPet, {
+                      name: t(
+                        ($) => $.userInfoModal.pet.pets[resultPetId].name,
+                      ),
+                    })}
                   </p>
                 </>
               )}
@@ -183,7 +195,7 @@ const PetGacha = memo(function PetGacha({
             </AnimatePresence>
 
             <button onClick={resetGacha} className={PIXEL_BTN}>
-              확인
+              {t(($) => $.userInfoModal.pet.gacha.confirm)}
             </button>
           </div>
         )}

@@ -1,8 +1,275 @@
 {
   "focusTime": "Focus Time",
-  "leaderboard": "Leaderboard",
+  "leaderboard": {
+    "label": "Leaderboard",
+    "title": "Weekly Leaderboard",
+    "openButton": "Open leaderboard",
+    "closeModal": "Close leaderboard modal",
+    "seasonTimer": "Current Season Timer",
+    "day": "day",
+    "headers": {
+      "rank": "Rank",
+      "profile": "Profile",
+      "githubName": "GitHub Name",
+      "point": "Points",
+      "time": "Time",
+      "count": "Count"
+    },
+    "empty": "No ranking data available for this week yet.",
+    "tabs": {
+      "ALL": "Points",
+      "ISSUE_OPEN": "Issue Created",
+      "PR_OPEN": "PR Created",
+      "PR_MERGED": "PR Merged",
+      "PR_REVIEWED": "PR Review",
+      "COMMITTED": "Commit",
+      "TASK_COMPLETED": "Task Done",
+      "FOCUSED": "Focus Time"
+    },
+    "badges": {
+      "ALL": "Point Collector",
+      "ISSUE_OPEN": "Issue Hunter",
+      "PR_OPEN": "PR Pioneer",
+      "PR_MERGED": "PR Harvester",
+      "PR_REVIEWED": "PR Guardian",
+      "COMMITTED": "Gardener",
+      "TASK_COMPLETED": "Workaholic",
+      "FOCUSED": "Marathoner"
+    }
+  },
   "metadata": {
     "title": "Want to Plant Some Grass?",
     "description": "Online Co-working Service"
+  },
+  "userInfoModal": {
+    "openButton": "Open my profile",
+    "tabs": {
+      "activity": "Activity",
+      "pet": "Pet",
+      "profile": "Profile"
+    },
+    "loading": "Loading profile...",
+    "activity": {
+      "statCards": {
+        "focusTime": "Focus Time",
+        "task": "Task",
+        "commit": "Commits",
+        "issueOpen": "Issues Opened",
+        "prOpen": "PRs Created",
+        "prReviewed": "PRs Reviewed"
+      },
+      "taskSection": {
+        "title": "Task List",
+        "empty": "No tasks registered for this date."
+      },
+      "gitEvent": {
+        "label": {
+          "committed": "Commit",
+          "issueOpen": "Issue",
+          "prOpen": "PR Created",
+          "prReviewed": "PR Review"
+        },
+        "contentHeader": {
+          "committed": "Repository / Commit Message",
+          "issueOpen": "Repository / Issue Title",
+          "prOpen": "Repository / PR Title",
+          "prReviewed": "Repository / PR Title"
+        },
+        "listTitle": "{{type}} List",
+        "empty": "No {{type}} records for this date.",
+        "time": "Time",
+        "point": "Points",
+        "loading": "Loading..."
+      },
+      "heatmap": {
+        "less": "less",
+        "more": "more",
+        "pointPolicy": "Point Policy",
+        "tooltipPoint": "Point: {{value}}",
+        "policyHeader": {
+          "action": "Action",
+          "point": "Points"
+        },
+        "policies": {
+          "focus30min": "Focus 30min",
+          "commit": "Commit",
+          "prCreate": "PR Created",
+          "prMerge": "PR Merged",
+          "prReview": "PR Review",
+          "issueCreate": "Issue Created",
+          "taskComplete": "Task Complete"
+        }
+      }
+    },
+    "profile": {
+      "avatarAlt": "{{username}}'s profile",
+      "followers": "followers",
+      "following": "following",
+      "follow": "Follow",
+      "unfollow": "Unfollow",
+      "logout": "Logout"
+    },
+    "pet": {
+      "loading": "Loading...",
+      "notOwned": "You don't own this pet!",
+      "actionFailed": "Action failed: {{error}}",
+      "noPet": "No pets owned",
+      "noPetHint": "Get a new pet below!",
+      "card": {
+        "readyToEvolve": "✨ Ready to evolve!",
+        "evolve": "✨ Evolve",
+        "feed": "Feed (10 P)"
+      },
+      "codex": {
+        "title": "Pet Codex",
+        "collected": "{{count}} / {{total}} collected",
+        "representative": "Rep"
+      },
+      "gacha": {
+        "title": "Pet Gacha",
+        "notEnoughPoints": "Not enough points!",
+        "prompt": "What pet will you get?",
+        "cost": "(1 draw: 100 P)",
+        "button": "Draw Pet",
+        "hatching": "The egg is hatching!",
+        "noMorePets": "No more new pets to draw.",
+        "noMorePetsHint": "Try evolving your existing pets!",
+        "congrats": "Congratulations!",
+        "gotPet": "You found {{name}}!",
+        "duplicate": "You already have this friend!",
+        "refund": "Duplicate pets are refunded ",
+        "refundAmount": "50P",
+        "refundSuffix": ".",
+        "gachaFailed": "Draw failed: {{error}}",
+        "confirm": "OK"
+      },
+      "license": {
+        "ariaLabel": "View license info",
+        "text": "License Info"
+      },
+      "pets": {
+        "1": {
+          "name": "Gopher",
+          "description": "A cute mole from Google. Loves simple and clear code."
+        },
+        "2": {
+          "name": "Goroutine",
+          "description": "Very light and fast. Never gets tired even with thousands running."
+        },
+        "3": {
+          "name": "Go Hunter",
+          "description": "Master of memory management. Catches and cleans unused resources."
+        },
+        "4": {
+          "name": "Whaley",
+          "description": "A baby whale dreaming of the wide ocean. Sprays cute fountains."
+        },
+        "5": {
+          "name": "Ocean",
+          "description": "Explores the deep sea. Cuts through waves with elegant movements."
+        },
+        "6": {
+          "name": "Leviathan",
+          "description": "Legend of the sea. Rules the ocean with massive waves."
+        },
+        "7": {
+          "name": "Duke",
+          "description": "Your first friend traveling the Java world. Charming red nose."
+        },
+        "8": {
+          "name": "JavaBean",
+          "description": "A bean with warm coffee aroma. Grows well anywhere."
+        },
+        "9": {
+          "name": "JVM",
+          "description": "King of virtual machines. Controls and rules over memory regions."
+        },
+        "10": {
+          "name": "Bugdroid",
+          "description": "A cute green robot. Embraces the open-source spirit."
+        },
+        "11": {
+          "name": "Jetpack",
+          "description": "Armed with the latest libraries. Manages lifecycles perfectly."
+        },
+        "12": {
+          "name": "Material",
+          "description": "Implements refined design. Shines in billions of users' hands."
+        },
+        "13": {
+          "name": "Konqi",
+          "description": "A cute green dragon. Dreams of a free desktop environment."
+        },
+        "14": {
+          "name": "Plasma",
+          "description": "Evolved with elegant UI. Master of customization."
+        },
+        "15": {
+          "name": "Krender",
+          "description": "Provides the perfect desktop experience. Can handle all widgets."
+        },
+        "16": {
+          "name": "Tux",
+          "description": "A cute penguin. Carries the power of the kernel."
+        },
+        "17": {
+          "name": "Systemd",
+          "description": "Manages all processes. Has the ability to reduce boot time."
+        },
+        "18": {
+          "name": "Linux Torvalds",
+          "description": "Legend of the open-source world. Dominates servers worldwide."
+        },
+        "19": {
+          "name": "Ferris",
+          "description": "A cute red crab. Guarantees memory safety."
+        },
+        "20": {
+          "name": "Borrow Checker",
+          "description": "Guardian of the ownership system. Catches bugs at compile time."
+        },
+        "21": {
+          "name": "Zero Cost",
+          "description": "The ultimate abstraction. As fast as C++ but much safer."
+        }
+      }
+    }
+  },
+  "focusPanel": {
+    "collapsePanel": "Collapse panel",
+    "expandPanel": "Expand panel",
+    "timer": {
+      "stop": "stop",
+      "start": "start"
+    },
+    "tasks": {
+      "newTaskPlaceholder": "new task...",
+      "selectTask": "Select a task",
+      "saveEdit": "Save edit",
+      "cancelEdit": "Cancel edit",
+      "pauseTimer": "Pause timer",
+      "startTimer": "Start timer",
+      "editTask": "Edit task",
+      "deleteTask": "Delete task"
+    },
+    "music": {
+      "noTrack": "no track playing"
+    }
+  },
+  "channel": {
+    "selectButton": "Select channel",
+    "title": "Select Channel",
+    "refreshLabel": "Refresh channel list",
+    "closeModal": "Close channel selection modal",
+    "status": {
+      "participating": "Joined",
+      "enter": "Join",
+      "full": "FULL"
+    },
+    "error": {
+      "moveFailed": "Channel move failed",
+      "roomFull": "The channel is full.",
+      "moveFailedAlert": "Failed to move channel."
+    }
   }
 }

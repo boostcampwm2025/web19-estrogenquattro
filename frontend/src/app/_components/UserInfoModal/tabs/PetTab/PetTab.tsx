@@ -7,8 +7,10 @@ import { LicenseInfo } from "./components/LicenseInfo";
 import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
 import { UserPet } from "@/lib/api/pet";
+import { useTranslation } from "react-i18next";
 
 export default function PetTab() {
+  const { t } = useTranslation("ui");
   const targetPlayerId = useModalStore(
     (state) => state.userInfoPayload?.playerId,
   );
@@ -72,9 +74,8 @@ export default function PetTab() {
   const petCardData = useMemo(() => {
     return selectedPetDef
       ? {
+          id: selectedPetDef.id,
           stage: selectedPetDef.evolutionStage,
-          name: selectedPetDef.name,
-          description: selectedPetDef.description,
           image: selectedPetDef.actualImgUrl,
           maxExp: requiredExp,
         }
@@ -86,7 +87,7 @@ export default function PetTab() {
 
   const handleAction = useCallback(async () => {
     if (!currentUserPet) {
-      alert("보유하지 않은 펫입니다!");
+      alert(t(($) => $.userInfoModal.pet.notOwned));
       return;
     }
 
@@ -108,7 +109,7 @@ export default function PetTab() {
         await feed(currentUserPet.id);
       }
     } catch (e) {
-      alert("작업 실패: " + e);
+      alert(t(($) => $.userInfoModal.pet.actionFailed, { error: String(e) }));
     }
   }, [currentUserPet, isReadyToEvolve, evolve, equip, feed]);
 
@@ -167,7 +168,7 @@ export default function PetTab() {
 
   // playerId가 유효하지 않거나 필수 데이터(allPets)가 없으면 로딩
   if (!playerId || (allPets.length === 0 && isLoading))
-    return <div>Loading...</div>;
+    return <div>{t(($) => $.userInfoModal.pet.loading)}</div>;
 
   const points = player?.totalPoint ?? 0;
 
@@ -190,9 +191,11 @@ export default function PetTab() {
         />
       ) : (
         <div className="border-4 border-amber-900/20 bg-amber-50 p-8 text-center text-amber-700">
-          <p className="text-lg font-bold">보유한 펫이 없습니다</p>
+          <p className="text-lg font-bold">
+            {t(($) => $.userInfoModal.pet.noPet)}
+          </p>
           {isOwner && (
-            <p className="text-sm">아래에서 새로운 펫을 받아보세요!</p>
+            <p className="text-sm">{t(($) => $.userInfoModal.pet.noPetHint)}</p>
           )}
         </div>
       )}

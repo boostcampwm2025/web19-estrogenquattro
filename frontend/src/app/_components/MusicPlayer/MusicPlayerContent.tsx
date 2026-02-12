@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useMusicPlayer } from "./useMusicPlayer";
 import { LOOP_MODES, TRACKS } from "./constants";
+import { useTranslation } from "react-i18next";
 
 interface MusicPlayerContentProps {
   isExpanded: boolean;
@@ -20,6 +21,7 @@ interface MusicPlayerContentProps {
 export default function MusicPlayerContent({
   isExpanded,
 }: MusicPlayerContentProps) {
+  const { t } = useTranslation("ui");
   const {
     isPlaying,
     currentTrack,
@@ -76,7 +78,7 @@ export default function MusicPlayerContent({
             </>
           ) : (
             <p className="truncate text-xs font-bold text-amber-700">
-              ♪ 재생 중인 곡 없음
+              ♪ {t(($) => $.focusPanel.music.noTrack)}
             </p>
           )}
         </section>
@@ -236,7 +238,9 @@ export default function MusicPlayerContent({
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <p className="text-sm text-amber-700">재생 중인 곡 없음</p>
+            <p className="text-sm text-amber-700">
+              {t(($) => $.focusPanel.music.noTrack)}
+            </p>
           </div>
         )}
       </div>

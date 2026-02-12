@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useState, memo } from "react";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_BTN =
@@ -9,9 +10,8 @@ interface PetCardProps {
   exp: number;
   maxExp: number;
   currentStageData: {
+    id: number;
     stage: number;
-    name: string;
-    description: string;
     image: string;
     maxExp: number;
   };
@@ -28,6 +28,12 @@ const PetCard = memo(function PetCard({
   isOwner,
   points,
 }: PetCardProps) {
+  const { t } = useTranslation("ui");
+  const petId = String(
+    currentStageData.id,
+  ) as keyof (typeof import("@/locales/ko/ui.json"))["userInfoModal"]["pet"]["pets"];
+  const petName = t(($) => $.userInfoModal.pet.pets[petId].name);
+  const petDescription = t(($) => $.userInfoModal.pet.pets[petId].description);
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
 
   const isMaxStage = maxExp === 0;
@@ -75,7 +81,7 @@ const PetCard = memo(function PetCard({
           ))}
           <Image
             src={currentStageData.image}
-            alt={currentStageData.name}
+            alt={petName}
             fill
             className="object-contain"
             style={{ imageRendering: "pixelated" }}
@@ -84,15 +90,13 @@ const PetCard = memo(function PetCard({
       </div>
       <div className="flex flex-1 flex-col justify-between text-sm font-bold">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold tracking-widest">
-            {currentStageData.name}
-          </h2>
+          <h2 className="text-2xl font-bold tracking-widest">{petName}</h2>
         </div>
 
         <p className="text-sm text-amber-700">
           {isReadyToEvolve
-            ? "✨ 진화가 가능합니다!"
-            : currentStageData.description}
+            ? t(($) => $.userInfoModal.pet.card.readyToEvolve)
+            : petDescription}
         </p>
 
         {/* 경험치 및 밥주기 섹션 */}
@@ -134,7 +138,11 @@ const PetCard = memo(function PetCard({
                       : PIXEL_BTN
                 }`}
               >
-                <span>{isReadyToEvolve ? "✨ 진화" : "밥주기 (10 P)"}</span>
+                <span>
+                  {isReadyToEvolve
+                    ? t(($) => $.userInfoModal.pet.card.evolve)
+                    : t(($) => $.userInfoModal.pet.card.feed)}
+                </span>
               </button>
             </div>
           )}

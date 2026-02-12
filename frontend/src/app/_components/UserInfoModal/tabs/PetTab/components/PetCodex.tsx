@@ -1,5 +1,6 @@
 import { Pet } from "@/lib/api/pet";
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-4 border-amber-900";
 const PIXEL_CARD =
@@ -20,6 +21,7 @@ const PetCodex = memo(function PetCodex({
   onPetSelect,
   isOwner,
 }: PetCodexProps) {
+  const { t } = useTranslation("ui");
   // 미리 펫들을 종류별로 그룹화 (Memoized)
   const groupedPets = useMemo(() => {
     return allPets.reduce<Record<string, Pet[]>>((acc, pet) => {
@@ -35,9 +37,14 @@ const PetCodex = memo(function PetCodex({
     <div className={`flex flex-col gap-4 bg-amber-50 p-6 ${PIXEL_BORDER}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-amber-900/20 pb-2">
-        <h3 className="text-xl font-bold text-amber-900">펫 도감</h3>
+        <h3 className="text-xl font-bold text-amber-900">
+          {t(($) => $.userInfoModal.pet.codex.title)}
+        </h3>
         <span className="text-xs font-bold text-amber-700">
-          {collectedPetIds.length} / {allPets.length} 수집
+          {t(($) => $.userInfoModal.pet.codex.collected, {
+            count: collectedPetIds.length,
+            total: allPets.length,
+          })}
         </span>
       </div>
 
@@ -54,6 +61,9 @@ const PetCodex = memo(function PetCodex({
                 // 선택된 펫은 곧 장착된 펫이므로 강조 표시 및 뱃지 부착
                 const isEquipped = pet.id === equippedPetId;
                 const isLast = index === pets.length - 1;
+                const petId = String(
+                  pet.id,
+                ) as keyof (typeof import("@/locales/ko/ui.json"))["userInfoModal"]["pet"]["pets"];
 
                 return (
                   <div key={pet.id} className="contents">
@@ -69,12 +79,19 @@ const PetCodex = memo(function PetCodex({
                             ? "cursor-default"
                             : "bg-gray-200"
                       } ${isEquipped ? "border-amber-600 bg-amber-200" : ""}`}
-                      title={isCollected ? pet.description : "???"}
+                      title={
+                        isCollected
+                          ? t(
+                              ($) =>
+                                $.userInfoModal.pet.pets[petId].description,
+                            )
+                          : "???"
+                      }
                     >
                       {/* 장착 뱃지 (선택된 펫 = 장착된 펫) */}
                       {isEquipped && (
                         <div className="absolute -top-2 -right-2 z-10 rotate-12 rounded border border-red-800 bg-red-500 px-1.5 py-0.5 text-[12px] font-bold text-white shadow-sm">
-                          대표펫
+                          {t(($) => $.userInfoModal.pet.codex.representative)}
                         </div>
                       )}
                       <div className="relative mb-2 flex h-14 w-14 items-center justify-center">
@@ -84,7 +101,11 @@ const PetCodex = memo(function PetCodex({
                               ? pet.actualImgUrl
                               : pet.silhouetteImgUrl
                           }
-                          alt={isCollected ? pet.name : "???"}
+                          alt={
+                            isCollected
+                              ? t(($) => $.userInfoModal.pet.pets[petId].name)
+                              : "???"
+                          }
                           className="h-full w-full object-contain"
                         />
                       </div>
@@ -93,7 +114,9 @@ const PetCodex = memo(function PetCodex({
                           isCollected ? "text-amber-900" : "text-gray-500"
                         }`}
                       >
-                        {isCollected ? pet.name : "???"}
+                        {isCollected
+                          ? t(($) => $.userInfoModal.pet.pets[petId].name)
+                          : "???"}
                       </p>
                     </div>
 

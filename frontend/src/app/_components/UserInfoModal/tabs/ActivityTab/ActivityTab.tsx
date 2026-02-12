@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarHeatmap } from "./components/CalendarHeatmap/CalendarHeatmap";
 import StatsSection from "./components/StatsSection/StatsSection";
 import DetailSection from "./components/DetailSection/DetailSection";
@@ -9,6 +10,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { STAT_CARD_TYPES, StatCardType } from "./constants/constants";
 
 export default function ActivityTab() {
+  const { t } = useTranslation("ui");
   const targetPlayerId = useModalStore(
     (state) => state.userInfoPayload?.playerId,
   );
@@ -24,7 +26,7 @@ export default function ActivityTab() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loading size="lg" text="프로필 로딩 중..." />
+        <Loading size="lg" text={t(($) => $.userInfoModal.loading)} />
       </div>
     );
   }
