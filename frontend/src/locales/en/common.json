@@ -1,6 +1,24 @@
 {
+  "loading": "Loading...",
+  "verifying": "Verifying...",
+  "connectionLost": "Connection to server lost.",
+  "refresh": "Refresh",
+  "medalAlt": "{{rank}} place medal",
   "error": {
     "taskFocusing": "Cannot delete a task while focusing.",
-    "focusStartFailed": "Failed to start focus session."
+    "taskNotFound": "Task not found.",
+    "taskNotOwned": "You can only delete your own tasks.",
+    "unknownError": "An unknown error occurred.",
+    "loginRequired": "Login required.",
+    "taskFetchFailed": "Failed to load tasks.",
+    "taskInputRequired": "Please enter task content.",
+    "taskTooLong": "Task must be 100 characters or less.",
+    "taskCreateFailed": "Failed to create task.",
+    "taskToggleFailed": "Failed to change task status.",
+    "taskDeleteFailed": "Failed to delete task.",
+    "taskEditFailed": "Failed to edit task.",
+    "serverDisconnected": "Not connected to server. Please try again later.",
+    "focusStartFailed": "Failed to start focus session.",
+    "restFailed": "Failed to switch to rest mode."
   }
 }

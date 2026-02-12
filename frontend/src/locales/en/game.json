@@ -11,5 +11,15 @@
   "date": {
     "format": "{{weekday}}, {{month}} {{day}}, {{year}}",
     "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  },
+  "chat": {
+    "placeholder": "Type a message (Enter to send)"
+  },
+  "session": {
+    "ended": "Another tab has connected.\nYour session has ended."
+  },
+  "joinFailed": {
+    "roomNotFound": "Invalid room. Please log in again.",
+    "roomFull": "Room is full. Please select another channel."
   }
 }

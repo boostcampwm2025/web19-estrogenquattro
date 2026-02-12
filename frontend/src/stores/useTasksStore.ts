@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import i18next from "i18next";
 import { Task } from "@/app/_components/TasksMenu/types";
 import { taskApi, ApiError } from "@/lib/api";
 import { devLogger } from "@/lib/devLogger";
@@ -68,7 +69,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         set({
           tasks: [],
           pendingTaskIds: [],
-          error: "로그인이 필요합니다.",
+          error: i18next.t(($: { error: { loginRequired: string } }) => $.error.loginRequired, { ns: "common" }),
           isLoading: false,
         });
         return;
@@ -92,7 +93,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
       } catch (error) {
         devLogger.error("Failed to fetch tasks", { date, error });
         set({
-          error: "Task 목록을 불러오는데 실패했습니다.",
+          error: i18next.t(($: { error: { taskFetchFailed: string } }) => $.error.taskFetchFailed, { ns: "common" }),
           isLoading: false,
         });
       }
@@ -101,11 +102,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
     addTask: async (text: string) => {
       const trimmedText = text.trim();
       if (!trimmedText) {
-        set({ error: "Task 내용을 입력해주세요." });
+        set({ error: i18next.t(($: { error: { taskInputRequired: string } }) => $.error.taskInputRequired, { ns: "common" }) });
         return;
       }
       if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
-        set({ error: "Task는 100자 이하로 입력해주세요." });
+        set({ error: i18next.t(($: { error: { taskTooLong: string } }) => $.error.taskTooLong, { ns: "common" }) });
         return;
       }
       try {
@@ -114,7 +115,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         set((state) => ({ tasks: [...state.tasks, newTask], error: null }));
       } catch (error) {
         devLogger.error("Failed to create task", { error });
-        set({ error: "Task 생성에 실패했습니다." });
+        set({ error: i18next.t(($: { error: { taskCreateFailed: string } }) => $.error.taskCreateFailed, { ns: "common" }) });
       }
     },
 
@@ -147,7 +148,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           tasks: state.tasks.map((t) =>
             t.id === id ? { ...t, completed: task.completed } : t,
           ),
-          error: "Task 상태 변경에 실패했습니다.",
+          error: i18next.t(($: { error: { taskToggleFailed: string } }) => $.error.taskToggleFailed, { ns: "common" }),
         }));
       } finally {
         removePending(id);
@@ -179,7 +180,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         const errorCode = error instanceof ApiError ? error.code : undefined;
         const errorMessage = getErrorMessage(
           errorCode,
-          "Task 삭제에 실패했습니다.",
+          i18next.t(($: { error: { taskDeleteFailed: string } }) => $.error.taskDeleteFailed, { ns: "common" }),
         );
         // 롤백
         set((state) => ({
@@ -198,11 +199,11 @@ export const useTasksStore = create<TasksStore>((set, get) => {
     editTask: async (id: number, newText: string) => {
       const trimmedText = newText.trim();
       if (!trimmedText) {
-        set({ error: "Task 내용을 입력해주세요." });
+        set({ error: i18next.t(($: { error: { taskInputRequired: string } }) => $.error.taskInputRequired, { ns: "common" }) });
         return;
       }
       if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
-        set({ error: "Task는 100자 이하로 입력해주세요." });
+        set({ error: i18next.t(($: { error: { taskTooLong: string } }) => $.error.taskTooLong, { ns: "common" }) });
         return;
       }
       if (isPending(id)) return;
@@ -242,7 +243,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           tasks: state.tasks.map((t) =>
             t.id === id ? { ...t, description: oldDescription } : t,
           ),
-          error: "Task 수정에 실패했습니다.",
+          error: i18next.t(($: { error: { taskEditFailed: string } }) => $.error.taskEditFailed, { ns: "common" }),
         }));
       } finally {
         removePending(id);

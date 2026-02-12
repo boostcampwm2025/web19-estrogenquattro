@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function AuthCallbackPage() {
+  const { t } = useTranslation("common");
   const { fetchUser, isAuthenticated, isLoading } = useAuthStore();
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export default function AuthCallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-900">
       <div className="text-center">
         <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-600 border-t-white" />
-        <p className="text-white">인증 확인 중...</p>
+        <p className="text-white">{t(($) => $.verifying)}</p>
       </div>
     </div>
   );
