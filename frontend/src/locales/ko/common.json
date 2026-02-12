@@ -1,6 +1,24 @@
 {
+  "loading": "로딩 중...",
+  "verifying": "인증 확인 중...",
+  "connectionLost": "서버와의 연결이 끊어졌습니다.",
+  "refresh": "새로고침",
+  "medalAlt": "{{rank}}등 메달",
   "error": {
     "taskFocusing": "집중 중인 태스크는 삭제할 수 없습니다.",
-    "focusStartFailed": "집중 시작에 실패했습니다."
+    "taskNotFound": "태스크를 찾을 수 없습니다.",
+    "taskNotOwned": "본인의 태스크만 삭제할 수 있습니다.",
+    "unknownError": "알 수 없는 오류가 발생했습니다.",
+    "loginRequired": "로그인이 필요합니다.",
+    "taskFetchFailed": "Task 목록을 불러오는데 실패했습니다.",
+    "taskInputRequired": "Task 내용을 입력해주세요.",
+    "taskTooLong": "Task는 100자 이하로 입력해주세요.",
+    "taskCreateFailed": "Task 생성에 실패했습니다.",
+    "taskToggleFailed": "Task 상태 변경에 실패했습니다.",
+    "taskDeleteFailed": "Task 삭제에 실패했습니다.",
+    "taskEditFailed": "Task 수정에 실패했습니다.",
+    "serverDisconnected": "서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.",
+    "focusStartFailed": "집중 시작에 실패했습니다.",
+    "restFailed": "휴식 전환에 실패했습니다."
   }
 }

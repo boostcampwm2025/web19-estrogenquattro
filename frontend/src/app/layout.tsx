@@ -12,15 +12,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// 정적 빌드를 위해 기본값 설정 (영어)
 export const metadata: Metadata = {
-  title: "잔디 심고 갈래?",
-  description: "온라인모각코서비스",
+  title: "Commit Please",
+  description: "Online Co-working Service",
   icons: {
     icon: "/jandi.ico",
   },
 };
 
 import Providers from "./_components/Providers";
+import DynamicTitle from "./_components/DynamicTitle";
 
 export default function RootLayout({
   children,
@@ -32,7 +34,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <DynamicTitle />
+          {children}
+        </Providers>
       </body>
     </html>
   );

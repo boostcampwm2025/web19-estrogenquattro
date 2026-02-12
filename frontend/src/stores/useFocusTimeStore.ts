@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import i18next from "i18next";
 import { getSocket } from "@/lib/socket";
 import { getTodayStartTime } from "@/utils/timeFormat";
 
@@ -95,7 +96,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const socket = getSocket();
     if (!socket?.connected) {
       set({
-        error: "서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.",
+        error: i18next.t(
+          ($: { error: { serverDisconnected: string } }) =>
+            $.error.serverDisconnected,
+          { ns: "common" },
+        ),
       });
       return;
     }
@@ -125,7 +130,13 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
             baseFocusSeconds: prev.baseFocusSeconds,
             serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
             serverReceivedAt: prev.serverReceivedAt,
-            error: response?.error || "집중 시작에 실패했습니다.",
+            error:
+              response?.error ||
+              i18next.t(
+                ($: { error: { focusStartFailed: string } }) =>
+                  $.error.focusStartFailed,
+                { ns: "common" },
+              ),
           });
         }
       },
@@ -141,7 +152,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     const socket = getSocket();
     if (!socket?.connected) {
       set({
-        error: "서버와 연결되지 않았습니다. 잠시 후 다시 시도해주세요.",
+        error: i18next.t(
+          ($: { error: { serverDisconnected: string } }) =>
+            $.error.serverDisconnected,
+          { ns: "common" },
+        ),
       });
       return;
     }
@@ -170,7 +185,12 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
             baseFocusSeconds: prev.baseFocusSeconds,
             serverCurrentSessionSeconds: prev.serverCurrentSessionSeconds,
             serverReceivedAt: prev.serverReceivedAt,
-            error: response?.error || "휴식 전환에 실패했습니다.",
+            error:
+              response?.error ||
+              i18next.t(
+                ($: { error: { restFailed: string } }) => $.error.restFailed,
+                { ns: "common" },
+              ),
           });
         }
       },

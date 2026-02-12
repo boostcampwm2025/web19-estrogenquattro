@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import i18next from "i18next";
 import Player from "../players/Player";
 import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
@@ -424,7 +425,9 @@ export class MapScene extends Phaser.Scene {
     const text = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY,
-      "다른 탭에서 접속하여\n현재 세션이 종료되었습니다.",
+      i18next.t(($: { session: { ended: string } }) => $.session.ended, {
+        ns: "game",
+      }),
       {
         fontSize: "24px",
         color: "#ffffff",

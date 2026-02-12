@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 import { useContributionStore } from "@/stores/useContributionStore";
 
 const MAX_DISPLAY_COUNT = 3;
@@ -13,6 +14,7 @@ const MEDAL_IMAGES = [
 ];
 
 export default function ContributionList() {
+  const { t } = useTranslation("common");
   const contributions = useContributionStore((state) => state.contributions);
 
   // 상위 3명만 정렬하여 표시
@@ -28,7 +30,7 @@ export default function ContributionList() {
         <div key={name} className="flex items-center gap-1">
           <Image
             src={MEDAL_IMAGES[index]}
-            alt={`${index + 1}등 메달`}
+            alt={t(($) => $.medalAlt, { rank: index + 1 })}
             width={20}
             height={20}
             className="h-5 w-5"

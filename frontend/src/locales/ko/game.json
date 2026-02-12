@@ -11,5 +11,15 @@
   "date": {
     "format": "{{year}}년 {{month}}월 {{day}}일 {{weekday}}",
     "weekdays": ["일", "월", "화", "수", "목", "금", "토"]
+  },
+  "chat": {
+    "placeholder": "메시지를 입력하세요 (Enter로 전송)"
+  },
+  "session": {
+    "ended": "다른 탭에서 접속하여\n현재 세션이 종료되었습니다."
+  },
+  "joinFailed": {
+    "roomNotFound": "유효하지 않은 방입니다. 다시 로그인해주세요.",
+    "roomFull": "방이 꽉 찼습니다. 다른 채널을 선택해주세요."
   }
 }
