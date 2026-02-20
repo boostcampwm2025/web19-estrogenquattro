@@ -1,0 +1,46 @@
+# ② Per-frame Binary (ArrayBuffer)
+# 매 프레임 바이너리 데이터 전송 (20회/초)
+#
+# SLO: p95 ≤ 50ms, p99 ≤ 100ms, 에러율 ≤ 0.1%
+
+config:
+  target: 'http://localhost:4999'
+  socketio:
+    transports:
+      - websocket
+  processor: './processor.js'
+  phases:
+    - duration: 30
+      arrivalRate: 1
+      name: 'Warm-up (5 users)'
+      maxVusers: 5
+    - duration: 120
+      arrivalRate: 1
+      name: 'Ramp-up to 65 users'
+      maxVusers: 65
+    - duration: 10
+      arrivalRate: 5
+      name: 'Spike to 70 users'
+      maxVusers: 70
+
+scenarios:
+  - name: 'Per-frame binary movement (20 events/sec)'
+    engine: socketio
+    flow:
+      - function: 'setupUser'
+      - emit:
+          channel: 'joining'
+          data:
+            x: '{{ startX }}'
+            y: '{{ startY }}'
+            username: '{{ username }}'
+            roomId: '{{ roomId }}'
+      - think: 1
+      # 120초간 50ms 간격 바이너리 이동 이벤트
+      - loop:
+          - function: 'generateBinaryMoveData'
+          - emit:
+              channel: 'moving_binary'
+              data: '{{ binaryPayload }}'
+          - think: 0.05
+        count: 2400

@@ -1,0 +1,49 @@
+# ① State-change only + JSON (현재 방식)
+# 상태 변경 시에만 JSON 이벤트 전송 (~3회/초)
+#
+# SLO: p95 ≤ 50ms, p99 ≤ 100ms, 에러율 ≤ 0.1%
+
+config:
+  target: 'http://localhost:4999'
+  socketio:
+    transports:
+      - websocket
+  processor: './processor.js'
+  phases:
+    # Phase 1: Warm-up — 서버 안정화
+    - duration: 30
+      arrivalRate: 1
+      name: 'Warm-up (5 users)'
+      maxVusers: 5
+    # Phase 2: Ramp-up — 점진적 증가
+    - duration: 120
+      arrivalRate: 1
+      name: 'Ramp-up to 65 users'
+      maxVusers: 65
+    # Phase 3: Spike — 급증
+    - duration: 10
+      arrivalRate: 5
+      name: 'Spike to 70 users'
+      maxVusers: 70
+
+scenarios:
+  - name: 'State-change movement (3 events/sec)'
+    engine: socketio
+    flow:
+      - function: 'setupUser'
+      - emit:
+          channel: 'joining'
+          data:
+            x: '{{ startX }}'
+            y: '{{ startY }}'
+            username: '{{ username }}'
+            roomId: '{{ roomId }}'
+      - think: 1
+      # 120초간 ~3회/초 이동 이벤트
+      - loop:
+          - function: 'generateStateChangeData'
+          - emit:
+              channel: 'moving_json'
+              data: '{{ movePayload }}'
+          - think: 0.34
+        count: 360
