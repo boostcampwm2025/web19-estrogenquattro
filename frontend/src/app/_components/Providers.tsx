@@ -21,9 +21,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  // locale 변경 시 document.title 업데이트
+  // locale 변경 시 document.title 업데이트 및 클라이언트 언어 감지
   useEffect(() => {
     if (ready && i18n.isInitialized) {
+      // 1. 클라이언트 사이드 언어 감지 및 적용 (Hydration 이후 수행)
+      // 서버는 항상 'en'으로 렌더링되므로, 클라이언트에서 사용자 언어를 감지하여 전환
+      if (i18n.language === "en") {
+        const detectedLng = navigator.language.split("-")[0]; // ko-KR -> ko
+        if (
+          detectedLng &&
+          detectedLng !== "en" &&
+          ["ko", "en"].includes(detectedLng)
+        ) {
+          i18n.changeLanguage(detectedLng);
+        }
+      }
+
+      // 2. 타이틀 업데이트
       document.title = t(($) => $.metadata.title);
     }
   }, [i18n.language, i18n.isInitialized, ready, t]);
