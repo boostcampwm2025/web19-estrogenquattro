@@ -13,10 +13,12 @@ Zustand를 사용한 클라이언트 상태 관리 구조
 | **useAuthStore** | `authStore.ts` | 인증 상태, 사용자 정보 |
 | **useFocusTimeStore** | `useFocusTimeStore.ts` | 집중/휴식 상태, 시간 관리 |
 | **useTasksStore** | `useTasksStore.ts` | Task CRUD, 타이머 |
-| **usePointStore** | `pointStore.ts` | 포인트 (현재 Mock) |
+| **useProgressStore** | `useProgressStore.ts` | 프로그레스/맵 인덱스/기준값 |
+| **useContributionStore** | `useContributionStore.ts` | 기여도 목록 상태 |
 | **useModalStore** | `useModalStore.ts` | 전역 모달 상태 (UserInfo, Leaderboard 등) |
 | **useOnboardingStore** | `useOnboardingStore.ts` | 온보딩 투어 상태 관리 |
 | **useConnectionStore** | `useConnectionStore.ts` | 서버 연결 상태 관리 |
+| **useRoomStore** | `useRoomStore.ts` | 현재 방/예약 방 상태 |
 
 ---
 
@@ -169,23 +171,35 @@ try {
 
 ---
 
-### usePointStore
+### useProgressStore
 
-포인트 관리 (현재 Mock 데이터)
+맵 진행 상태 관리
 
 ```typescript
-interface PointState {
-  points: number;  // 기본값: 1000
-}
-
-interface PointActions {
-  addPoints(amount: number): void;
-  subtractPoints(amount: number): boolean;  // 실패 시 false
-  setPoints(amount: number): void;
+interface ProgressStore {
+  progress: number;            // 현재 누적값
+  mapIndex: number;            // 현재 맵 인덱스 (0-4)
+  progressThreshold: number;   // 현재 맵 기준값 (200/300/400/500)
+  setProgress(value: number): void;
+  setMapIndex(index: number): void;
+  setProgressThreshold(threshold: number): void;
+  reset(): void;
 }
 ```
 
-> **Note:** 현재 백엔드 연동 없이 로컬 상태만 관리
+---
+
+### useContributionStore
+
+기여도 목록 상태 관리
+
+```typescript
+interface ContributionStore {
+  contributions: Record<string, number>; // { username: points }
+  setContributions(data: Record<string, number>): void;
+  reset(): void;
+}
+```
 
 ---
 
@@ -194,7 +208,7 @@ interface PointActions {
 전역 모달 상태 관리 (UserInfo, Leaderboard 등 상호 배제적 모달)
 
 ```typescript
-type ModalType = "userInfo" | "leaderboard" | null;
+type ModalType = "userInfo" | "leaderboard" | "channelSelect" | null;
 
 interface UserInfoPayload {
   playerId: number;
@@ -207,7 +221,7 @@ interface ModalState {
 
   openModal: (type: ModalType, payload?: UserInfoPayload) => void;
   closeModal: () => void;
-  toggleModal: (type: ModalType) => void;
+  toggleModal: (type: ModalType, payload?: UserInfoPayload) => void;
 }
 ```
 
@@ -225,7 +239,7 @@ interface ModalState {
 interface OnboardingState {
   isActive: boolean;           // 온보딩 진행 중 여부
   currentStep: number;         // 현재 스텝 (0-based)
-  totalSteps: number;          // 총 스텝 수 (기본 8)
+  totalSteps: number;          // 총 스텝 수 (ONBOARDING_STEPS.length)
   isShowingAction: boolean;    // 트리거 실행 중 (배경 숨김)
   isChatOpen: boolean;         // 채팅 인풋 열림 상태
   isWaitingForModalGuide: boolean;  // 모달 가이드 진행 중
@@ -273,6 +287,21 @@ interface ConnectionState {
 
 ---
 
+### useRoomStore
+
+현재 방/예약 방 상태 관리
+
+```typescript
+interface RoomState {
+  roomId: string;
+  pendingRoomId: string | null;  // 채널 이동 예약 방
+  setRoomId(roomId: string): void;
+  setPendingRoomId(roomId: string | null): void;
+}
+```
+
+---
+
 ## 스토어 간 상호작용
 
 ```mermaid
@@ -284,7 +313,9 @@ flowchart TB
     subgraph 게임플레이
         Focus[useFocusTimeStore]
         Tasks[useTasksStore]
-        Point[usePointStore]
+        Progress[useProgressStore]
+        Contributions[useContributionStore]
+        Room[useRoomStore]
     end
 
     subgraph UI
@@ -294,7 +325,8 @@ flowchart TB
     Auth -->|user 정보| Focus
     Auth -->|playerId| Tasks
     Focus <-->|Task 집중 시간| Tasks
-    Tasks -->|완료 시 포인트| Point
+    Progress -->|상위 3명 표시| Contributions
+    Room -->|채널 이동 예약| Modal
 ```
 
 ### 주요 상호작용
@@ -322,9 +354,14 @@ useAuthStore.getState().fetchUser();
 // 게임 입장 시 (MapScene.create)
 // joined 이벤트 수신 후
 useFocusTimeStore.getState().syncFromServer(focusTimeData);
+useRoomStore.getState().setRoomId(roomId);
 
 // 게임 페이지 진입 시
 useTasksStore.getState().fetchTasks();
+
+// 소켓 상태 수신 시
+useProgressStore.getState().setProgress(progress);
+useContributionStore.getState().setContributions(contributions);
 ```
 
 ---

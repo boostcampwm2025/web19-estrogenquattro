@@ -10,11 +10,12 @@
 
 | 기능 | 상태 | 비고 |
 |------|------|------|
-| 포인트 조회 | ✅ 구현 | GET `/api/points` |
+| 포인트 조회 | ✅ 구현 | GET `/api/points?targetPlayerId&currentTime` |
+| 포인트 랭킹 | ✅ 구현 | GET `/api/points/ranks?weekendStartAt` |
 | 포인트 획득 (GitHub) | ✅ 구현 | 폴링 시 자동 적립 |
 | 포인트 획득 (Task) | ✅ 구현 | Task 완료 시 +1 |
 | 포인트 획득 (집중) | ✅ 구현 | 30분마다 +1 |
-| 포인트 소비 | ❌ 미구현 | 펫 시스템 연동 필요 |
+| 포인트 소비 | ✅ 구현 | 펫 가챠/먹이주기에서 차감 |
 | 포인트 히스토리 | ✅ 구현 | point_history 테이블 사용 |
 
 ---
@@ -86,16 +87,15 @@ enum PointType {
 
 ---
 
-## 포인트 소비처 (설계)
+## 포인트 소비처
 
 ### 펫 시스템
 
 | 항목 | 비용 | 현재 값 |
 |------|------|--------|
-| 가챠 1회 | 100 | 0 (무료) |
-| 먹이주기 1회 | 10 | 0 (무료) |
-
-> **Note:** 현재 모든 비용이 0으로 설정되어 테스트 용이
+| 가챠 1회 | 100 | 적용 중 |
+| 먹이주기 1회 | 10 | 적용 중 |
+| 중복 가챠 환급 | 50 | `POST /api/pets/gacha/refund` |
 
 ---
 
@@ -104,79 +104,66 @@ enum PointType {
 ### 포인트 조회
 
 ```
-GET /api/points
+GET /api/points?targetPlayerId=:playerId&currentTime=:date
 ```
 
 **Response:**
 ```json
-{
-  "points": [
-    {
-      "id": 1,
-      "amount": 150,
-      "createdDate": "2026-01-22"
-    }
-  ]
-}
+[
+  {
+    "id": 1,
+    "amount": 150,
+    "createdAt": "2026-01-22T00:00:00.000Z"
+  }
+]
 ```
 
-### 포인트 요약 (Planned)
+### 주간 포인트 랭킹
 
 ```
-GET /api/points?date=YYYY-MM-DD&aggregate=summary
-```
-
-**Response:**
-```json
-{
-  "date": "2026-01-22",
-  "amount": 150
-}
-```
-
-### 포인트 히스토리 (Planned)
-
-```
-GET /api/points/history?limit=20
+GET /api/points/ranks?weekendStartAt=:date
 ```
 
 **Response:**
 ```json
-{
-  "items": [
-    {
-      "type": "COMMITTED",
-      "amount": 2,
-      "createdAt": "2026-01-22T10:30:00Z"
-    },
-    {
-      "type": "TASK_COMPLETED",
-      "amount": 1,
-      "createdAt": "2026-01-22T11:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "playerId": 1,
+    "nickname": "octocat",
+    "totalPoints": 42,
+    "rank": 1
+  }
+]
+```
+
+### 활동 히스토리 (Git/Task/Focus)
+
+```
+GET /api/git-histories?targetPlayerId=:playerId&startAt=:date&endAt=:date
+```
+
+**Response:**
+```json
+[
+  {
+    "type": "COMMITTED",
+    "amount": 2,
+    "createdAt": "2026-01-22T10:30:00Z"
+  },
+  {
+    "type": "TASK_COMPLETED",
+    "amount": 1,
+    "createdAt": "2026-01-22T11:00:00Z"
+  }
+]
 ```
 
 ---
 
-## 클라이언트 상태 (usePointStore)
+## 클라이언트 연동
 
-현재 Mock 데이터만 사용:
-
-```typescript
-interface PointState {
-  points: number;  // 기본값: 1000
-}
-
-interface PointActions {
-  addPoints(amount: number): void;
-  subtractPoints(amount: number): boolean;  // 부족 시 false
-  setPoints(amount: number): void;
-}
-```
-
-> **Note:** 백엔드 연동 없이 로컬 상태만 관리 중
+- 포인트/랭킹 데이터는 React Query 기반 API 훅으로 조회
+- 실시간 기여도는 `useContributionStore`로 관리 (`progress_update` 수신)
 
 ---
 
@@ -189,14 +176,14 @@ sequenceDiagram
     participant Poll as GithubPollService
     participant PS as PointService
     participant DB as Database
-    participant GW as GithubGateway
+    participant GW as ProgressGateway
 
     Poll->>Poll: GitHub REST API 이벤트 감지
     Poll->>PS: addPoint(playerId, type, count, repository, description)
     Note right of PS: count는 이벤트 개수<br/>포인트 = ACTIVITY_POINT_MAP[type] × count
     PS->>DB: DailyPoint 업데이트
     PS->>DB: PointHistory 추가 (상세 정보 포함)
-    Poll->>GW: castGithubEventToRoom()
+    Poll->>GW: castProgressUpdate()
 ```
 
 **point_history 저장 예시:**
@@ -220,6 +207,12 @@ sequenceDiagram
     Task->>PS: Task 완료 시 +1
     Focus->>PS: 30분 누적 시 +1
 ```
+
+### 일일 정산 스케줄 (구현)
+
+- 매일 KST 00:00에 전날 데이터 기준으로 Task/Focus 정산
+- 정산 히스토리는 `activityAt`을 전날 23:59:59로 기록
+- 일요일 자정 정산은 주간 실시간 랭킹(progress)에는 반영하지 않음
 
 ### Phase 3: 포인트 소비 (Planned)
 
@@ -245,9 +238,9 @@ sequenceDiagram
 ### 포인트 표시 UI
 
 ```typescript
-// 헤더 또는 사이드바에 포인트 표시
-const { points } = usePointStore();
-return <PointBadge>{points} P</PointBadge>;
+// React Query로 조회된 일별 포인트 합계를 표시
+const total = points.reduce((sum, p) => sum + p.amount, 0);
+return <PointBadge>{total} P</PointBadge>;
 ```
 
 ### 포인트 부족 알림
@@ -276,7 +269,7 @@ erDiagram
         bigint id PK
         bigint player_id FK
         int amount
-        date created_date
+        datetime created_at
     }
 
     point_history {

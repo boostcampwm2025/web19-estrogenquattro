@@ -52,7 +52,7 @@ socket.on('disconnect', async (reason) => {
 socket.on('connect', () => {
   callbacks.hideConnectionLostOverlay();
   // joining 이벤트 전송 (초기 연결 시만 실행, reconnection: false)
-  socket.emit('joining', { x, y, username });
+  socket.emit('joining', { x, y, username, roomId: 'room-1' /* optional */ });
 });
 ```
 
@@ -87,12 +87,13 @@ socket.on('connect', () => {
 socket.emit('joining', {
   x: number,        // 초기 X 좌표
   y: number,        // 초기 Y 좌표
-  username: string  // 사용자명 (표시용)
+  username: string, // 사용자명 (표시용)
+  roomId?: string   // 선택 입장 시 지정 방 ID (예: room-3)
 });
 ```
 
 **서버 동작:**
-1. 랜덤 방 배정 (`RoomService.randomJoin`)
+1. `roomId`가 있으면 지정 방 입장 (`RoomService.joinRoom`), 없으면 랜덤 배정 (`RoomService.randomJoin`)
 2. 중복 접속 시 이전 세션 종료 (`session_replaced`)
 3. 플레이어 정보 저장 및 방 플레이어 등록
 4. 기존 플레이어 목록 전송 (`players_synced`, 포커스 상태 포함)
@@ -100,6 +101,9 @@ socket.emit('joining', {
 6. 포커스 타임 레코드 생성/조회
 7. GitHub 폴링 시작
 8. 전역 게임 상태 전송 (`game_state`)
+
+**입장 실패:**
+- 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
 
 ---
 
@@ -249,6 +253,21 @@ socket.emit('pet_equipping', {
 
 ---
 
+### music_status
+
+음악 재생 상태 변경
+
+```typescript
+socket.emit('music_status', {
+  isListening: boolean  // 음악 재생 중 여부
+});
+```
+
+**서버 동작:**
+- 같은 방에 `player_music_status` 브로드캐스트
+
+---
+
 ## 서버 → 클라이언트
 
 ### joined
@@ -266,6 +285,22 @@ socket.on('joined', (data: {
 }) => {
   // roomId 저장
   // focusTime으로 로컬 상태 복원 (새로고침 대응)
+});
+```
+
+---
+
+### join_failed
+
+방 입장 실패 알림
+
+```typescript
+socket.on('join_failed', (data: {
+  message: string,
+  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL'
+}) => {
+  // ROOM_FULL: 채널 선택 모달 다시 열기
+  // ROOM_NOT_FOUND: 로그인 화면으로 이동
 });
 ```
 
@@ -527,6 +562,21 @@ socket.on('pet_equipped', (data: {
   petImage: string | null  // 펫 이미지 URL (null이면 펫 해제)
 }) => {
   // RemotePlayer의 펫 이미지 업데이트
+});
+```
+
+---
+
+### player_music_status
+
+다른 플레이어의 음악 재생 상태 변경 알림
+
+```typescript
+socket.on('player_music_status', (data: {
+  userId: string,
+  isListening: boolean
+}) => {
+  // RemotePlayer에 음표 이펙트 on/off 반영
 });
 ```
 

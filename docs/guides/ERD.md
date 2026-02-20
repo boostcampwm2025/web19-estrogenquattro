@@ -26,7 +26,10 @@ erDiagram
         bigint social_id UK "GitHub 유니크 ID"
         varchar nickname "로그인 시 업데이트"
         int equipped_pet_id FK "장착된 펫 ID"
-        int total_point "총 포인트"
+        int total_point "총 포인트 (기본 100)"
+        boolean is_newbie "신규 유저 여부"
+        int focusing_task_id "현재 집중 Task ID (nullable)"
+        datetime last_focus_start_time "현재 집중 시작 시각 (nullable)"
     }
 
     tasks {
@@ -71,14 +74,14 @@ erDiagram
         enum type "활동 타입"
         bigint player_id FK
         int count "활동 횟수"
-        string created_date "집계 날짜 (YYYY-MM-DD)"
+        datetime created_at "집계 시각"
     }
 
     daily_point {
         bigint id PK
         bigint player_id FK
         int amount "일별 포인트"
-        string created_date "집계 날짜 (YYYY-MM-DD)"
+        datetime created_at "집계 시각"
     }
 
     point_history {
@@ -101,7 +104,7 @@ erDiagram
 
     global_state {
         int id PK
-        int progress "프로그레스 (0-99)"
+        int progress "현재 맵 기준 누적값 (0~threshold)"
         text contributions "기여도 JSON"
         int map_index "현재 맵 인덱스 (0-4)"
         datetime updated_at "마지막 업데이트"
@@ -122,7 +125,10 @@ erDiagram
 | social_id | bigint | UNIQUE, NOT NULL | GitHub 유니크 ID |
 | nickname | varchar(20) | NOT NULL | 닉네임 (로그인 시 업데이트) |
 | equipped_pet_id | int | FK → pets.id, NULL 허용 | 장착된 펫 ID |
-| total_point | int | DEFAULT 0 | 총 누적 포인트 |
+| total_point | int | DEFAULT 100 | 총 누적 포인트 |
+| is_newbie | boolean | DEFAULT true | 신규 유저 온보딩 여부 |
+| focusing_task_id | int | NULL 허용 | 현재 집중 중인 Task ID |
+| last_focus_start_time | datetime | NULL 허용 | 집중 시작 시각 (null이면 휴식) |
 
 ---
 
@@ -158,7 +164,7 @@ erDiagram
 | current_task_id | int | FK → tasks.id, NULL 허용 | 현재 집중 중인 Task ID |
 
 > **Note:** `created_at`은 datetime 타입으로 저장되며, 프론트엔드에서 UTC 범위를 전달하여 조회.
-> `current_task_id`는 Task 테이블과 ManyToOne 관계로 연결됨.
+> `status`, `last_focus_start_time`, `current_task_id`는 V2 기준 deprecated 상태이며, 실제 집중 상태는 `players.last_focus_start_time` / `players.focusing_task_id`로 판단합니다.
 
 ---
 
@@ -204,9 +210,7 @@ erDiagram
 | type | enum | NOT NULL | 활동 타입 |
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | count | int | DEFAULT 0 | 활동 횟수 |
-| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
-
-> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
+| created_at | datetime | NOT NULL | 집계 시각 |
 
 **활동 타입 (type):**
 - `ISSUE_OPEN` - 이슈 생성
@@ -215,7 +219,7 @@ erDiagram
 - `PR_REVIEWED` - PR 리뷰
 - `COMMITTED` - 커밋
 
-**인덱스:** `UNIQUE(player_id, type, created_date)` - 플레이어별 타입별 일별 1개 레코드
+**인덱스:** `(player_id, type, created_at)` 조회 최적화 인덱스
 
 ---
 
@@ -228,11 +232,9 @@ erDiagram
 | id | bigint | PK, AUTO_INCREMENT | 고유 ID |
 | player_id | bigint | FK → players.id | 플레이어 ID |
 | amount | int | DEFAULT 0 | 일별 누적 포인트 |
-| created_date | string | NOT NULL | 집계 기준 날짜 (YYYY-MM-DD 형식) |
+| created_at | datetime | NOT NULL | 집계 시각 |
 
-**인덱스:** `UNIQUE(player_id, created_date)` - 플레이어별 일별 1개 레코드
-
-> **Note:** `created_date`는 TypeORM에서 `string` 타입으로 저장 (SQLite date 컬럼)
+**인덱스:** `(player_id, created_at)` 조회 최적화 인덱스
 
 ---
 
@@ -299,7 +301,7 @@ erDiagram
 | 컬럼 | 타입 | 제약조건 | 설명 |
 |------|------|----------|------|
 | id | int | PK, AUTO_INCREMENT | 고유 ID (항상 1) |
-| progress | int | DEFAULT 0 | 프로그레스 (0-99) |
+| progress | int | DEFAULT 0 | 현재 맵 기준 누적값 (0~threshold) |
 | contributions | text | DEFAULT '{}' | 기여도 JSON (username → points) |
 | map_index | int | DEFAULT 0 | 현재 맵 인덱스 (0-4) |
 | updated_at | datetime | AUTO | 마지막 업데이트 시각 |
@@ -315,12 +317,12 @@ erDiagram
 | 활동 | 포인트 |
 |------|--------|
 | 커밋 (COMMITTED) | +2 |
-| PR 생성 (PR_OPEN) | +5 |
-| PR 머지 (PR_MERGED) | +10 |
-| PR 리뷰 (PR_REVIEWED) | +3 |
-| 이슈 생성 (ISSUE_OPEN) | +3 |
+| PR 생성 (PR_OPEN) | +2 |
+| PR 머지 (PR_MERGED) | +4 |
+| PR 리뷰 (PR_REVIEWED) | +4 |
+| 이슈 생성 (ISSUE_OPEN) | +1 |
 | 작업 완료 (TASK_COMPLETED) | +1 |
-| 집중 시간 10분 (FOCUSED) | +1 |
+| 집중 시간 30분 (FOCUSED) | +1 |
 
 ---
 
