@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import type { Server, ServerOptions } from 'socket.io';
 import { getFrontendUrls } from './frontend-urls';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const customParser = require('socket.io-msgpack-parser');
 
 export class ConfiguredSocketIoAdapter extends IoAdapter {
   constructor(
@@ -26,6 +28,7 @@ export class ConfiguredSocketIoAdapter extends IoAdapter {
     return super.createIOServer(port, {
       ...options,
       cors,
+      parser: customParser,
     }) as Server;
   }
 }
