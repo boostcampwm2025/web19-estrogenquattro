@@ -8,7 +8,6 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -20,19 +19,24 @@ const TOTAL_MAP_COUNT = 5;
 export class MapController {
   private readonly logger = new Logger(MapController.name);
   private readonly assetsPath: string;
-  private readonly mapTheme: string;
 
-  constructor(
-    private readonly progressGateway: ProgressGateway,
-    private readonly configService: ConfigService,
-  ) {
-    // 환경변수 또는 __dirname 기반 경로
-    this.assetsPath =
-      this.configService.get<string>('ASSETS_PATH') ??
-      path.join(__dirname, '..', '..', 'assets');
+  constructor(private readonly progressGateway: ProgressGateway) {
+    this.assetsPath = path.join(__dirname, '..', '..', 'assets');
+  }
 
-    // 맵 테마: 'desert', 'city', 'underwater_city'
-    this.mapTheme = this.configService.get<string>('MAP_THEME') ?? 'desert';
+  private getMapThemeByKstWeek(): string {
+    const kstTimeMs = Date.now() + 9 * 60 * 60 * 1000;
+    const kstDate = new Date(kstTimeMs);
+
+    const d = new Date(Date.UTC(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+
+    const themes = ['desert', 'underwater_city', 'city'];
+    return themes[weekNo % 3];
   }
 
   /**
@@ -61,13 +65,14 @@ export class MapController {
       throw new ForbiddenException('Map not unlocked yet');
     }
 
+    const mapTheme = this.getMapThemeByKstWeek();
     const stageNum = index + 1;
-    const fileName = `${this.mapTheme}_stage${stageNum}.webp`;
+    const fileName = `${mapTheme}_stage${stageNum}.webp`;
 
     const filePath = path.join(
       this.assetsPath,
       'maps',
-      this.mapTheme,
+      mapTheme,
       fileName,
     );
 
