@@ -24,6 +24,8 @@
 | `FRONTEND_URL` | `http://localhost:8080` | 프론트엔드 URL (리다이렉트용) |
 | `GITHUB_CALLBACK_URL` | `http://localhost:8080/auth/github/callback` | OAuth 콜백 URL |
 | `ASSETS_PATH` | `__dirname` 기반 | 맵 에셋 경로 (미설정 시 `backend/assets/`) |
+| `MAP_THEME` | `desert` | 맵 테마 (`desert`, `city`, `underwater_city`) |
+| `LOG_LEVEL` | `debug(dev) / info(prod)` | Winston 로그 레벨 |
 
 ### Axiom 로깅
 
@@ -48,6 +50,8 @@ JWT_SECRET=your_jwt_secret_key_must_be_at_least_32_characters_long
 PORT=8080
 FRONTEND_URL=http://localhost:3000
 GITHUB_CALLBACK_URL=http://localhost:8080/auth/github/callback
+MAP_THEME=desert
+LOG_LEVEL=debug
 
 # Axiom (프로덕션 전용)
 AXIOM_TOKEN=your_axiom_token
@@ -77,6 +81,20 @@ export const envValidationSchema = Joi.object({
   GITHUB_CALLBACK_URL: Joi.string().default(
     'http://localhost:8080/auth/github/callback',
   ),
+  ASSETS_PATH: Joi.string().optional(),
+  LOG_LEVEL: Joi.string()
+    .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
+    .optional(),
+  AXIOM_TOKEN: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  AXIOM_DATASET: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 });
 ```
 

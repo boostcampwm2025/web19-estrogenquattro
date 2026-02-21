@@ -40,7 +40,7 @@ github() {
 
 **OAuth Scope:**
 ```typescript
-scope: ['read:user']  // 사용자 프로필 읽기 권한 (최소 권한 원칙)
+scope: ['read:user', 'user:follow']  // 프로필 조회 + 팔로우/언팔로우 기능
 ```
 
 ---
@@ -230,11 +230,12 @@ class UserStore {
 - CSRF 기본 보호
 - 동일 사이트 요청에만 쿠키 전송
 
-### scope: ['read:user']
+### scope: ['read:user', 'user:follow']
 
 - 사용자 프로필 읽기 권한
+- 사용자 팔로우/언팔로우 권한
 - 최소 권한 원칙에 따라 필요한 권한만 요청
-- GitHub 활동 폴링은 `/events/public` 엔드포인트 사용 (scope 불필요)
+- GitHub 활동 폴링은 `/events/public` 엔드포인트 사용 (추가 scope 불필요)
 
 ---
 

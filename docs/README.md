@@ -2,6 +2,19 @@
 
 GitHub 활동 기반 멀티플레이어 게이미피케이션 서비스
 
+## LLM 컨텍스트 운영 규칙
+
+이 저장소의 `docs/`는 사람 온보딩보다 **LLM 컨텍스트 공급**이 1순위입니다.
+
+| Tier | 기본 로딩 | 목적 | 대표 경로 |
+|------|-----------|------|-----------|
+| `core` | 항상 포함 | 전역 규칙/불변 조건 | `docs/README.md`, `docs/context/core/*` |
+| `module` | 주제 매칭 시 포함 | 도메인별 상세 컨텍스트 | `docs/context/modules/*`, `docs/api/*`, `docs/features/*` |
+| `archive` | 기본 제외 | 과거 기록/히스토리 보존 | `docs/plan/**`, `docs/legacy/**` |
+
+- 실제 로딩 정책은 `docs/context-manifest.yaml`을 기준으로 합니다.
+- 긴 문서보다 카드형 요약(`docs/context/**`)을 우선 사용하고, 필요 시 원문으로 확장합니다.
+
 ## 문서 구조
 
 ### Architecture (아키텍처)
@@ -26,7 +39,8 @@ REST API 및 WebSocket 이벤트 명세
 |------|------|
 | [REST_ENDPOINTS.md](./api/REST_ENDPOINTS.md) | REST API 엔드포인트 |
 | [SOCKET_EVENTS.md](./api/SOCKET_EVENTS.md) | Socket.io 이벤트 명세 |
-| [GITHUB_POLLING.md](./api/GITHUB_POLLING.md) | GitHub GraphQL 폴링 |
+| [GITHUB_POLLING.md](./api/GITHUB_POLLING.md) | GitHub REST Events 폴링 |
+| [PET_EVENTS.md](./api/PET_EVENTS.md) | 펫 시스템 API 명세 |
 
 ### Features (기능 문서)
 
@@ -68,6 +82,30 @@ REST API 및 WebSocket 이벤트 명세
 | [TEST_CONVENTION.md](./conventions/TEST_CONVENTION.md) | 테스트 컨벤션 |
 | [MARKDOWN_CONVENTION.md](./conventions/MARKDOWN_CONVENTION.md) | 마크다운 컨벤션 |
 
+### Context (LLM 전용)
+
+LLM 컨텍스트 전달 효율을 높이기 위한 카드형/정책 문서
+
+| 문서 | 설명 |
+|------|------|
+| [context-manifest.yaml](./context-manifest.yaml) | 로딩 우선순위/제외 규칙/토큰 예산 |
+| [PROJECT_CORE.md](./context/core/PROJECT_CORE.md) | 전역 핵심 컨텍스트 카드 |
+| [API_REST_CARD.md](./context/modules/API_REST_CARD.md) | REST API 요약 카드 |
+| [SOCKET_EVENTS_CARD.md](./context/modules/SOCKET_EVENTS_CARD.md) | 소켓 이벤트 요약 카드 |
+| [GITHUB_POLLING_CARD.md](./context/modules/GITHUB_POLLING_CARD.md) | GitHub 폴링 요약 카드 |
+
+### Legacy (보관 문서)
+
+사용은 권장하지 않지만 기록 보존을 위해 유지하는 문서
+
+| 문서 | 설명 |
+|------|------|
+| [CLAUDE_LEGACY.md](./legacy/CLAUDE_LEGACY.md) | 이전 에이전트 작업 가이드 |
+| [CONVENTION.md](./legacy/CONVENTION.md) | 통합 컨벤션 (레거시) |
+| [REST_API_REPORT.md](./legacy/REST_API_REPORT.md) | GitHub 이벤트 폴링 실험 리포트 |
+| [github-graphql-response-sample.json](./legacy/github-graphql-response-sample.json) | GraphQL 응답 샘플 (레거시) |
+| [performance-optimization-calendar-heatmap.md](./legacy/refactoring/fe/performance-optimization-calendar-heatmap.md) | 캘린더 히트맵 최적화 기록 (레거시) |
+
 ---
 
 ## 신규 개발자 온보딩 경로
@@ -93,7 +131,7 @@ pnpm install
 pnpm dev
 
 # 빌드
-pnpm build
+pnpm build:all
 ```
 
 자세한 내용은 [DEVELOPMENT.md](./guides/DEVELOPMENT.md) 참고
@@ -102,7 +140,7 @@ pnpm build
 
 ## 코드-문서 매핑
 
-`/sync-docs` 명령어가 참조하는 매핑 테이블입니다.
+코드 변경 시 어떤 문서를 함께 점검할지 정의한 매핑 테이블입니다.
 
 | 코드 경로 | 관련 문서 |
 |-----------|----------|
@@ -110,16 +148,21 @@ pnpm build
 | `backend/src/focustime/` | `docs/features/FOCUS_TIME.md`, `docs/features/FOCUS_TIME_DETAIL.md` |
 | `backend/src/task/` | `docs/api/REST_ENDPOINTS.md` |
 | `backend/src/github/` | `docs/api/GITHUB_POLLING.md` |
+| `backend/src/github/map.controller.ts` | `docs/api/REST_ENDPOINTS.md`, `docs/architecture/GAME_ENGINE.md` |
 | `backend/src/player/` | `docs/api/SOCKET_EVENTS.md` |
 | `backend/src/room/` | `docs/features/ROOM_JOIN_FLOW.md` |
 | `backend/src/userpet/` | `docs/features/PET_SYSTEM.md` |
+| `backend/src/chat/` | `docs/api/SOCKET_EVENTS.md` |
 | `backend/src/point/` | `docs/features/POINT_SYSTEM.md` |
 | `backend/src/database/` | `docs/guides/ERD.md`, `docs/guides/DATABASE.md` |
+| `frontend/src/lib/api/pet.ts` | `docs/api/PET_EVENTS.md` |
+| `frontend/src/lib/api/room.ts` | `docs/api/REST_ENDPOINTS.md`, `docs/features/ROOM_JOIN_FLOW.md` |
 | `frontend/src/lib/socket.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `frontend/src/game/` | `docs/architecture/GAME_ENGINE.md` |
 | `frontend/src/game/scenes/` | `docs/architecture/GAME_ENGINE.md` |
 | `frontend/src/game/managers/` | `docs/architecture/GAME_MANAGERS.md` |
 | `frontend/src/stores/` | `docs/architecture/STATE_MANAGEMENT.md` |
+| `frontend/src/i18n/`, `frontend/src/locales/` | `docs/architecture/TECH_STACK.md` |
 | `*.entity.ts` | `docs/guides/ERD.md` |
 | `*.gateway.ts` | `docs/api/SOCKET_EVENTS.md` |
 | `*.controller.ts` | `docs/api/REST_ENDPOINTS.md` |
@@ -134,6 +177,6 @@ pnpm build
 
 | 항목 | 마지막 동기화 | 커밋 |
 |------|-------------|------|
-| 전체 문서 | 2026-02-03 | [`4d3283a`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/4d3283a) |
+| 전체 문서 | 2026-02-20 | [`b8b632e`](https://github.com/boostcampwm2025/web19-estrogenquattro/commit/b8b632e) |
 
 > 문서와 코드 불일치 발견 시 이슈로 등록해주세요.

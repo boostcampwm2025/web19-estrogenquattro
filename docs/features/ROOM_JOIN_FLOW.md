@@ -13,20 +13,26 @@
 | 항목 | 값 | 설명 |
 |------|---|------|
 | 용량 | 14명 | 방당 최대 인원 |
-| 초기 방 | 3개 | room-1, room-2, room-3 |
-| 자동 생성 | Yes | 모든 방이 가득 차면 새 방 생성 |
-| 배정 방식 | 랜덤 | 여유 있는 방 중 랜덤 선택 |
+| 방 개수 | 5개(고정) | room-1 ~ room-5 |
+| 자동 생성 | No | 고정된 5개 방만 사용 |
+| 배정 방식 | 랜덤 + 선택 진입 | 기본 랜덤, 선택 시 지정 방 진입 |
+
+### 채널 선택(방 선택) API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| GET | `/api/rooms` | 현재 방 목록/인원 조회 |
+| PATCH | `/api/rooms/:roomId` | 방 입장 예약 (30초 TTL) |
 
 ### 방 상태 전이
 
 ```mermaid
 stateDiagram-v2
-    [*] --> 여유있음: 서버 시작 (초기 3개 방)
+    [*] --> 여유있음: 서버 시작 (room-1 ~ room-5)
     여유있음 --> 여유있음: 플레이어 입장 (size < capacity)
     여유있음 --> 만석: 플레이어 입장 (size = capacity)
     만석 --> 여유있음: 플레이어 퇴장
-    만석 --> 신규방생성: 배정 시도 (모든 방 만석)
-    신규방생성 --> 여유있음: 새 방 생성
+    만석 --> 입장실패: 지정 방/랜덤 모두 만석
 ```
 
 ---
@@ -54,9 +60,9 @@ sequenceDiagram
     S-->>P: 연결 성공
 
     Note over B,DB: 3단계: 방 입장
-    P->>S: emit('joining', { x, y, username })
+    P->>S: emit('joining', { x, y, username, roomId? })
 
-    S->>S: randomJoin() - 방 배정
+    S->>S: roomId 있으면 joinRoom(), 없으면 randomJoin()
     S->>S: 중복 접속 체크
 
     alt 중복 접속
@@ -69,7 +75,7 @@ sequenceDiagram
 
     Note over B,DB: 4단계: 동기화 이벤트 수신
     S-->>P: emit('players_synced', [...기존 플레이어])
-    S-->>P: emit('github_state', { progress, contributions })
+    S-->>P: emit('game_state', { progress, contributions, mapIndex, progressThreshold })
     S-->>P: emit('joined', { roomId, focusTime })
 
     Note over B,DB: 5단계: 다른 플레이어에게 알림
@@ -142,12 +148,13 @@ sequenceDiagram
 socket.emit('joining', {
   x: number,        // 초기 X 좌표
   y: number,        // 초기 Y 좌표
-  username: string  // 표시용 사용자명
+  username: string, // 표시용 사용자명
+  roomId?: string   // 선택 입장 시 지정 방 ID (예: room-3)
 });
 ```
 
 **서버 처리:**
-1. `randomJoin()` - 방 배정
+1. `roomId`가 있으면 `joinRoom()`, 없으면 `randomJoin()`
 2. 중복 접속 체크 및 이전 세션 종료
 3. `players` Map에 정보 저장
 4. DB에서 Player, FocusTime 조회
@@ -222,17 +229,36 @@ socket.on('player_joined', (data: {
 
 ---
 
-### github_state (S→C)
+### game_state (S→C)
 
-현재 방의 GitHub 상태 전송
+현재 전역 게임 상태 전송
 
 ```typescript
-socket.on('github_state', (state: {
-  progress: number,                      // 0-99
-  contributions: Record<string, number>  // username -> points
+socket.on('game_state', (state: {
+  progress: number,
+  contributions: Record<string, number>,
+  mapIndex: number,
+  progressThreshold: number
 }) => {
   // 프로그레스바 초기값 설정
   // 기여도 목록 초기값 설정
+  // mapIndex 동기화
+});
+```
+
+---
+
+### join_failed (S→C)
+
+방 입장 실패 알림 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
+
+```typescript
+socket.on('join_failed', (data: {
+  message: string,
+  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL'
+}) => {
+  // ROOM_FULL: 채널 선택 모달 재오픈
+  // ROOM_NOT_FOUND: 로그인 페이지로 이동
 });
 ```
 
@@ -269,7 +295,7 @@ sequenceDiagram
     S->>S: 중복 체크
 
     S-->>A: players_synced
-    S-->>A: github_state
+    S-->>A: game_state
     S-->>A: joined
     S-->>B: player_joined
 

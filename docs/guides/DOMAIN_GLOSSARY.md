@@ -12,7 +12,7 @@
 
 플레이어가 작업에 집중하고 있는 상태
 
-- `DailyFocusTime.status = 'FOCUSING'`
+- `Player.lastFocusStartTime !== null`
 - 집중 시간이 1초씩 누적됨
 - 다른 플레이어에게 집중 중임이 표시됨 (말풍선)
 - `lastFocusStartTime`에 집중 시작 시각 기록
@@ -21,7 +21,7 @@
 
 플레이어가 휴식 중인 상태
 
-- `DailyFocusTime.status = 'RESTING'`
+- `Player.lastFocusStartTime === null`
 - 집중 시간 누적 정지
 - 방 입장 시 기본 상태
 
@@ -96,10 +96,9 @@ interface UserBaseline {
 
 방의 GitHub 기여 진행 게이지
 
-- 범위: 0-99%
-- 커밋 1개 = +2%
-- PR 1개 = +5%
-- 100% 도달 시 다음 맵으로 전환, 0%로 리셋
+- 범위: 현재 맵 기준 `0 ~ progressThreshold`
+- 증가량: 활동별 포인트 합산(커밋 +2, PR 생성 +2, 머지 +4, 리뷰 +4, 이슈 +1)
+- 기준값 도달 시 다음 맵으로 전환 (마지막 맵은 고정)
 
 ### Contributions (기여도)
 
@@ -123,9 +122,9 @@ contributions: Record<username, points>
 | 속성 | 값 |
 |------|---|
 | 최대 인원 | 14명 |
-| 초기 방 수 | 3개 (room-1, room-2, room-3) |
-| 배정 방식 | 여유 있는 방 중 랜덤 |
-| 자동 생성 | 모든 방이 가득 차면 새 방 생성 |
+| 방 개수 | 5개 고정 (room-1 ~ room-5) |
+| 배정 방식 | 랜덤 또는 선택 입장 |
+| 자동 생성 | 없음 |
 
 ### RoomState (방 상태)
 
@@ -133,7 +132,7 @@ contributions: Record<username, points>
 
 ```typescript
 interface RoomState {
-  progress: number;                      // 0-99
+  progress: number;                      // 현재 맵 기준 누적값
   contributions: Record<string, number>; // username -> points
 }
 ```

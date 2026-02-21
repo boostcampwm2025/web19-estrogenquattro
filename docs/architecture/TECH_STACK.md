@@ -10,6 +10,7 @@
 | **Phaser** | 3.90 | 2D 게임 엔진 |
 | **Zustand** | 5 | 상태 관리 |
 | **React Query** | 5 | 서버 상태 관리 |
+| **i18next + react-i18next** | - | 다국어(i18n) |
 | **Tailwind CSS** | 4 | 스타일링 |
 | **Socket.io-client** | 4.8 | WebSocket 클라이언트 |
 
@@ -47,7 +48,9 @@ const nextConfig: NextConfig = {
 | **SQLite** | - | 데이터베이스 |
 | **Passport** | - | 인증 미들웨어 |
 | **Winston** | - | 로깅 |
+| **Axiom** | - | 프로덕션 로그 수집 |
 | **Prometheus** | - | 메트릭 |
+| **Octokit** | - | GitHub 사용자/팔로우 API 연동 |
 
 ### NestJS 선택 이유
 
@@ -76,7 +79,8 @@ const nextConfig: NextConfig = {
 ### OAuth Scope
 
 ```
-repo  # private 레포 활동 감지를 위해 필요
+read:user    # 프로필 조회
+user:follow  # 팔로우/언팔로우
 ```
 
 ---
@@ -111,14 +115,15 @@ module.exports = {
 
 | API | 용도 |
 |-----|------|
-| **GitHub GraphQL API** | 사용자 기여 활동 조회 |
+| **GitHub REST Events API** | 사용자 활동 폴링 (커밋/PR/이슈/리뷰) |
+| **GitHub REST Users API (Octokit)** | 프로필/팔로우 상태 조회 및 팔로우/언팔로우 |
 
-### GraphQL 선택 이유 (REST → GraphQL 전환)
+### REST Events 선택 이유 (GraphQL → REST 전환)
 
-| 항목 | REST API | GraphQL API |
+| 항목 | GraphQL API | REST Events API |
 |------|----------|-------------|
-| 캐시 문제 | CDN 캐시로 최신 데이터 안 옴 | 캐시 문제 없음 |
-| 데이터 정확성 | 이벤트 기반 (누락 가능) | 커밋 수 기반 (정확) |
+| 데이터 상세 | 집계 중심 | 이벤트 상세(레포/제목) 제공 |
+| 변경 감지 | 쿼리 비교 필요 | ETag + 이벤트 ID 기준점 처리 용이 |
 | Rate Limit | 5,000/hour | 5,000/hour (동일) |
 
 ---
