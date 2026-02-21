@@ -52,6 +52,7 @@ REST API 및 WebSocket 이벤트 명세
 | [FOCUS_TIME.md](./features/FOCUS_TIME.md) | 포커스 타임 개요 |
 | [FOCUS_TIME_DETAIL.md](./features/FOCUS_TIME_DETAIL.md) | 포커스 타임 구현 상세 |
 | [ROOM_JOIN_FLOW.md](./features/ROOM_JOIN_FLOW.md) | 방 입장 및 게임 시작 흐름 |
+| [USE_CASES.md](./features/USE_CASES.md) | pre-report 기반 서비스 유스케이스 정리 |
 | [PET_SYSTEM.md](./features/PET_SYSTEM.md) | 펫 시스템 (가챠, 진화, 장착) |
 | [POINT_SYSTEM.md](./features/POINT_SYSTEM.md) | 포인트 시스템 |
 
@@ -168,6 +169,7 @@ pnpm build:all
 | `*.controller.ts` | `docs/api/REST_ENDPOINTS.md` |
 | `backend/src/scheduler/` | `docs/architecture/BACKEND_MODULES.md` |
 | `backend/src/pointhistory/` | `docs/features/POINT_SYSTEM.md`, `docs/api/REST_ENDPOINTS.md` |
+| `backend/test/*.e2e-spec.ts` | `docs/conventions/TEST_CONVENTION.md`, `docs/features/USE_CASES.md` |
 
 > 새 모듈/기능 추가 시 이 테이블도 함께 업데이트하세요.
 
