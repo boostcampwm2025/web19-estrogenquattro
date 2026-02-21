@@ -30,7 +30,7 @@ class DailyPoint {
   id: number;
   playerId: number;
   amount: number;           // 일별 누적 포인트
-  createdDate: Date;        // YYYY-MM-DD
+  createdAt: Date;          // datetime (DB 컬럼명: created_at)
 }
 ```
 

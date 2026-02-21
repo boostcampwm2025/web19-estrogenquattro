@@ -299,6 +299,7 @@ FOCUSING → 소켓 끊김 → 자동 RESTING 전환 (시간 누적)
 - `docs/plan/done/` — 전체 유지
 
 ### 제거
+
 | 디렉토리 | 파일 수 | 대체 문서 |
 |----------|---------|-----------|
 | `docs/api/` | 4개 | agent/SOCKET_EVENTS.md, agent/REST_API.md |

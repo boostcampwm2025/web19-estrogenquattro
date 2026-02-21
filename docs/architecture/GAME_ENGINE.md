@@ -239,7 +239,7 @@ frontend/public/assets/
 
 클라이언트는 맵 이미지를 정적으로 번들하지 않고 서버 API로 동적 로드합니다.
 
-```
+```http
 GET /api/maps/:index
 ```
 

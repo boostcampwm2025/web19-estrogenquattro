@@ -634,15 +634,19 @@ GET /api/git-histories?targetPlayerId=101&startAt=YYYY-MM-DDTHH:mm:ss.sssZ&endAt
     "id": 1,
     "type": "COMMITTED",
     "amount": 2,
+    "repository": "owner/repo",
     "description": "feat: 새 기능 추가",
-    "createdAt": "2025-01-18T10:35:00.000Z"
+    "createdAt": "2025-01-18T10:35:00.000Z",
+    "activityAt": "2025-01-18T10:30:00.000Z"
   },
   {
     "id": 2,
     "type": "PR_OPEN",
     "amount": 2,
+    "repository": "owner/repo",
     "description": "로그인 기능 구현",
-    "createdAt": "2025-01-18T11:00:00.000Z"
+    "createdAt": "2025-01-18T11:00:00.000Z",
+    "activityAt": "2025-01-18T10:58:00.000Z"
   }
 ]
 ```
@@ -650,7 +654,9 @@ GET /api/git-histories?targetPlayerId=101&startAt=YYYY-MM-DDTHH:mm:ss.sssZ&endAt
 **필드 설명:**
 - `type`: 포인트 타입 (`COMMITTED`, `PR_OPEN`, `PR_MERGED`, `PR_REVIEWED`, `ISSUE_OPEN`, `TASK_COMPLETED`, `FOCUSED`)
 - `amount`: 획득 포인트
+- `repository`: 저장소명 (`owner/repo`)
 - `description`: 활동 상세 (커밋 메시지, PR/이슈 제목 등)
+- `activityAt`: 실제 GitHub 활동 발생 시각
 
 ---
 

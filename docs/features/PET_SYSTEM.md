@@ -96,7 +96,7 @@ sequenceDiagram
         S-->>C: 400 Pet is already at max level
     end
 
-    S->>DB: 포인트 차감 (현재 0)
+    S->>DB: 포인트 차감 (10)
     S->>DB: 경험치 +10
     S-->>C: 200 { exp: N, pet: {...} }
 

@@ -20,7 +20,7 @@
 | `last_focus_start_time` | datetime | V2에서 deprecated |
 | `current_task_id` | int | V2에서 deprecated |
 
-> **V2 상태 소스:** 실제 집중 상태는 `Player.lastFocusStartTime`(null 여부), 현재 집중 태스크는 `Player.focusingTaskId`를 사용합니다.
+> **V2 상태 소스:** 실제 집중 상태는 `players.last_focus_start_time`(=`Player.lastFocusStartTime`, null 여부), 현재 집중 태스크는 `players.focusing_task_id`(=`Player.focusingTaskId`)를 사용합니다.
 
 ---
 
@@ -28,7 +28,7 @@
 
 1. **방 입장**: `findOrCreate`로 당일 레코드 생성/조회
 2. **focusing**: `Player.lastFocusStartTime` 기록, `Player.focusingTaskId` 저장 (선택)
-3. **resting**: 집중 시간 누적 후 `Player.lastFocusStartTime = null`, `focusingTaskId = null`
+3. **resting**: 집중 시간 누적 후 `players.last_focus_start_time`(V2) = `null`, `players.focusing_task_id` = `null`
 4. **disconnect**: `RESTING` 처리 시도 (예외는 로깅)
 
 ```mermaid
@@ -111,7 +111,7 @@ sequenceDiagram
     Store->>Store: status = RESTING<br/>isFocusTimerRunning = false
 
     Server->>DB: startResting(playerId)
-    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusSeconds += elapsed<br/>status = RESTING<br/>(lastFocusStartTime 유지)
+    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusSeconds += elapsed<br/>status = RESTING<br/>(daily_focus_time.last_focus_start_time 유지, V1 deprecated)<br/>players.last_focus_start_time = null (V2)
     DB-->>Server: focusTime
 
     Server->>Others: emit('rested', { userId, status,<br/>totalFocusSeconds })

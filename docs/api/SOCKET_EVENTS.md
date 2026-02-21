@@ -300,7 +300,7 @@ socket.on('join_failed', (data: {
   code: 'ROOM_NOT_FOUND' | 'ROOM_FULL'
 }) => {
   // ROOM_FULL: 채널 선택 모달 다시 열기
-  // ROOM_NOT_FOUND: 로그인 화면으로 이동
+  // ROOM_NOT_FOUND: 고정 방(room-1~room-5) 밖 roomId 요청은 세션/URL 이상으로 간주하여 로그인 화면으로 이동
 });
 ```
 

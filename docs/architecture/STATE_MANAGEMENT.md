@@ -325,7 +325,7 @@ flowchart TB
     Auth -->|user 정보| Focus
     Auth -->|playerId| Tasks
     Focus <-->|Task 집중 시간| Tasks
-    Progress -->|상위 3명 표시| Contributions
+    Progress -->|game_state/progress_update 수신 시 함께 표시| Contributions
     Room -->|채널 이동 예약| Modal
 ```
 

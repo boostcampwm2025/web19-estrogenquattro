@@ -153,6 +153,7 @@ totalRooms = 5;          // room-1 ~ room-5 고정
 ```
 
 **주요 메서드:**
+
 | 메서드 | 설명 |
 |--------|------|
 | `reserveRoom(playerId, roomId)` | 선택 입장용 예약 (30초 TTL) |
@@ -478,8 +479,8 @@ export class FocusTimeService {
 ### Gateway 간 이벤트 전달
 
 ```typescript
-// PlayerGateway에서 GithubGateway 호출
-this.githubGateway.castGithubEventToRoom(event, roomId);
+// PlayerGateway에서 ProgressGateway 상태 참조
+const globalState = this.progressGateway.getGlobalState();
 ```
 
 ---

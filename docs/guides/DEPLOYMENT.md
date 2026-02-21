@@ -158,8 +158,8 @@ const nextConfig: NextConfig = {
 - 대상: SSH 접속 가능한 서버(GCP VM)
 - 동작:
 1. 서버에서 `git pull origin main`
-2. `backend`에서 마이그레이션 실행 (`pnpm run migration:run`)
-3. 루트에서 `pnpm run deploy:reload`
+2. `backend`에서 마이그레이션 실행 (`pnpm migration:run`)
+3. 루트에서 `pnpm deploy:reload`
 
 필요한 GitHub Secrets:
 - `HOST`

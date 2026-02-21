@@ -19,6 +19,7 @@ erDiagram
     pets ||--o{ user_pets : "is owned as"
     pets ||--o{ user_pet_codex : "is recorded in"
     players ||--o| pets : "equips"
+    players }o--o| tasks : "focuses on (V2)"
     daily_focus_time }o--o| tasks : "focuses on"
 
     players {

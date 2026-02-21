@@ -42,7 +42,7 @@ flowchart LR
     end
 
     subgraph 월드좌표
-        B[월드 크기<br/>1024x1024]
+        B[월드 크기<br/>512x512]
     end
 
     subgraph Tiled

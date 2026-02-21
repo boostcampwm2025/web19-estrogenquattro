@@ -217,8 +217,8 @@ SQLite는 별도의 `DATE` 타입이 없고 `TEXT`로 저장됩니다.
 **예시:**
 
 ```typescript
-// date 컬럼 - UTC 문자열로 저장
-createdDate: new Date().toISOString().slice(0, 10)  // "2026-01-22"
+// date 컬럼 - UTC 문자열로 저장 (예: scheduledDate)
+scheduledDate: new Date().toISOString().slice(0, 10)  // "2026-01-22"
 
 // datetime 컬럼 - Date 객체 사용
 lastFocusStartTime: new Date()
