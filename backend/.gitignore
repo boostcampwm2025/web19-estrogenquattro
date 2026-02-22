@@ -65,3 +65,5 @@ src/database/migrations/
 
 # Database files
 data/*.sqlite
+
+*.tsbuildinfo
