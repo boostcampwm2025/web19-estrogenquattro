@@ -184,15 +184,29 @@ export default class MapManager {
         oldMapImage.destroy();
       }
 
-      // 기존 텍스처 제거 (새 테마 이미지를 다시 로드하기 위해)
       const currentMap = this.maps[mapIndex];
+
+      // 기존 텍스처 제거 (새 테마 이미지를 다시 로드하기 위해)
       if (this.scene.textures.exists(currentMap.image)) {
         this.scene.textures.remove(currentMap.image);
+      }
+
+      // 기존 tilemap 캐시 제거 (새 테마 tilemap을 다시 로드하기 위해)
+      if (this.scene.cache.tilemap.exists(currentMap.tilemap)) {
+        this.scene.cache.tilemap.remove(currentMap.tilemap);
       }
 
       this.walls?.clear(true, true);
       this.easterEggGroup?.clear(true, true);
       this.easterEggs.clear();
+
+      // tilemap + 이미지 모두 다시 로드
+      if (currentMap.tilemapPath) {
+        this.scene.load.tilemapTiledJSON(
+          currentMap.tilemap,
+          currentMap.tilemapPath,
+        );
+      }
 
       this.loadAndSetup(mapIndex, () => {
         onMapReady();
