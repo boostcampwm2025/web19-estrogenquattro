@@ -96,11 +96,12 @@ socket.emit('joining', {
 1. `roomId`가 있으면 지정 방 입장 (`RoomService.joinRoom`), 없으면 랜덤 배정 (`RoomService.randomJoin`)
 2. 중복 접속 시 이전 세션 종료 (`session_replaced`)
 3. 플레이어 정보 저장 및 방 플레이어 등록
-4. 기존 플레이어 목록 전송 (`players_synced`, 포커스 상태 포함)
-5. 다른 플레이어에게 입장 알림 (`player_joined`)
-6. 포커스 타임 레코드 생성/조회
-7. GitHub 폴링 시작
-8. 전역 게임 상태 전송 (`game_state`)
+4. stale 세션 정산 (`settleStaleSession`, 최대 600초/10분 클램프)
+5. 기존 플레이어 목록 전송 (`players_synced`, 포커스 상태 포함)
+6. 다른 플레이어에게 입장 알림 (`player_joined`)
+7. 포커스 타임 레코드 생성/조회
+8. GitHub 폴링 시작
+9. 전역 게임 상태 전송 (`game_state`)
 
 **입장 실패:**
 - 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
@@ -287,6 +288,9 @@ socket.on('joined', (data: {
   // focusTime으로 로컬 상태 복원 (새로고침 대응)
 });
 ```
+
+`focusTime.totalFocusSeconds`에는 `joining` 과정의 stale 정산 결과가 반영된다.
+stale 구간이 길어도 `settleStaleSession` 정책으로 최대 `600초`까지만 누적된다.
 
 ---
 
