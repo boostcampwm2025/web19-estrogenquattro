@@ -79,11 +79,12 @@ describe('Auth Flow E2E', () => {
     const callbackCookie = (callbackResponse.headers['set-cookie'] as string[])
       .find((cookie) => cookie.startsWith('access_token='))
       ?.split(';')[0];
+    expect(callbackCookie).toBeDefined();
 
     // When: 발급된 쿠키를 포함해 auth/me를 호출하면
     const response = await request(context.app.getHttpServer())
       .get('/auth/me')
-      .set('Cookie', callbackCookie ?? '')
+      .set('Cookie', callbackCookie!)
       .expect(200);
 
     // Then: 사용자 필수 필드를 포함한 인증 정보가 반환된다
