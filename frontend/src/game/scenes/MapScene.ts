@@ -200,13 +200,11 @@ export class MapScene extends Phaser.Scene {
       this.username,
       () => this.player,
     );
-    // TODO: 타일맵 작업용 임시 고정 (작업 완료 후 원복)
-    const FIXED_MAP_INDEX = 0;
     this.socketManager.connect({
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
-      onMapSwitch: () => this.performMapSwitch(FIXED_MAP_INDEX),
-      onMapSyncRequired: () => this.performMapSwitch(FIXED_MAP_INDEX),
-      onInitialMapLoad: () => this.initializeWithMap(FIXED_MAP_INDEX),
+      onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
+      onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
+      onInitialMapLoad: (mapIndex) => this.initializeWithMap(mapIndex),
     });
 
     // 5. Chat Setup
@@ -390,6 +388,10 @@ export class MapScene extends Phaser.Scene {
    * 맵 전환 공통 로직 (서버 map_switch/game_state 이벤트에서 호출)
    */
   private performMapSwitch(mapIndex: number) {
+    // 테마가 바뀌었을 수 있으므로 maps 배열 재생성
+    this.maps = MapScene.buildMaps();
+    this.mapManager.updateMaps(this.maps);
+
     this.mapManager.switchToMap(mapIndex, () => {
       this.setupCollisions();
       const { width, height } = this.mapManager.getMapSize();

@@ -43,6 +43,10 @@ export default class MapManager {
     this.maps = maps;
   }
 
+  updateMaps(maps: MapConfig[]): void {
+    this.maps = maps;
+  }
+
   /**
    * 맵 이미지를 동적으로 로드하고 setup 호출
    * @param mapIndex 로드할 맵 인덱스
