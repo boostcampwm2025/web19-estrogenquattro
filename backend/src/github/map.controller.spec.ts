@@ -1,15 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MapController } from './map.controller';
 import { ProgressGateway } from './progress.gateway';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import * as path from 'path';
 
 describe('MapController', () => {
   let controller: MapController;
-  let progressGateway: jest.Mocked<ProgressGateway>;
 
   beforeEach(async () => {
-    // Mock ProgressGateway
     const mockProgressGateway = {
       getMapIndex: jest.fn().mockReturnValue(0),
     };
@@ -25,7 +21,6 @@ describe('MapController', () => {
     }).compile();
 
     controller = module.get<MapController>(MapController);
-    progressGateway = module.get(ProgressGateway);
   });
 
   afterEach(() => {
@@ -37,8 +32,9 @@ describe('MapController', () => {
   });
 
   describe('getMapThemeByKstWeek (Private Method Testing)', () => {
-    // 테스트의 편의를 위해 private 메서드에 접근
-    const getMapTheme = () => (controller as any).getMapThemeByKstWeek();
+    const getMapTheme = (): string =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+      (controller as any).getMapThemeByKstWeek();
 
     /**
      * 특정 날짜 문자열(UTC 기준)을 넣었을 때 테마를 반환하는지 테스트
