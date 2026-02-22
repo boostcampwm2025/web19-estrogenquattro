@@ -28,15 +28,23 @@ export class MapController {
     const kstTimeMs = Date.now() + 9 * 60 * 60 * 1000;
     const kstDate = new Date(kstTimeMs);
 
-    const d = new Date(Date.UTC(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate()));
+    const d = new Date(
+      Date.UTC(
+        kstDate.getUTCFullYear(),
+        kstDate.getUTCMonth(),
+        kstDate.getUTCDate(),
+      ),
+    );
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 
-    const themes = ['desert', 'underwater_city', 'city'];
-    return themes[weekNo % 3];
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(
+      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+    );
+
+    const themes = ['desert', 'city'];
+    return themes[weekNo % 2];
   }
 
   /**
@@ -69,12 +77,7 @@ export class MapController {
     const stageNum = index + 1;
     const fileName = `${mapTheme}_stage${stageNum}.webp`;
 
-    const filePath = path.join(
-      this.assetsPath,
-      'maps',
-      mapTheme,
-      fileName,
-    );
+    const filePath = path.join(this.assetsPath, 'maps', mapTheme, fileName);
 
     // 파일 존재 확인
     if (!fs.existsSync(filePath)) {

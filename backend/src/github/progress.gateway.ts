@@ -199,7 +199,7 @@ export class ProgressGateway implements OnModuleInit {
   }
 
   /**
-   * progress_update 이벤트 전송 (절대값 동기화)`
+   * progress_update 이벤트 전송 (절대값 동기화)
    */
   public castProgressUpdate(
     username: string,

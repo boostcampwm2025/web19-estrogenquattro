@@ -33,38 +33,44 @@ export class MapScene extends Phaser.Scene {
 
   // Map Configuration
   // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
-  private maps: MapConfig[] = [
-    {
-      image: "tiles1",
-      tilemap: "tilemap1",
-      imagePath: `${API_URL}/api/maps/0`,
-      tilemapPath: "/assets/tilemaps/desert_stage1.json",
-    },
-    {
-      image: "tiles2",
-      tilemap: "tilemap2",
-      imagePath: `${API_URL}/api/maps/1`,
-      tilemapPath: "/assets/tilemaps/desert_stage2.json",
-    },
-    {
-      image: "tiles3",
-      tilemap: "tilemap3",
-      imagePath: `${API_URL}/api/maps/2`,
-      tilemapPath: "/assets/tilemaps/desert_stage3.json",
-    },
-    {
-      image: "tiles4",
-      tilemap: "tilemap4",
-      imagePath: `${API_URL}/api/maps/3`,
-      tilemapPath: "/assets/tilemaps/desert_stage4.json",
-    },
-    {
-      image: "tiles5",
-      tilemap: "tilemap5",
-      imagePath: `${API_URL}/api/maps/4`,
-      tilemapPath: "/assets/tilemaps/desert_stage5.json",
-    },
-  ];
+  // tilemapPath: KST 주차 기반 테마 로테이션
+  private maps: MapConfig[] = MapScene.buildMaps();
+
+  /**
+   * KST 기준 ISO 주차 번호로 맵 테마 결정 (백엔드와 동일 로직)
+   */
+  private static getMapThemeByKstWeek(): string {
+    const kstTimeMs = Date.now() + 9 * 60 * 60 * 1000;
+    const kstDate = new Date(kstTimeMs);
+
+    const d = new Date(
+      Date.UTC(
+        kstDate.getUTCFullYear(),
+        kstDate.getUTCMonth(),
+        kstDate.getUTCDate(),
+      ),
+    );
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(
+      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+    );
+
+    const themes = ["desert", "city"];
+    return themes[weekNo % 2];
+  }
+
+  private static buildMaps(): MapConfig[] {
+    const theme = MapScene.getMapThemeByKstWeek();
+    return Array.from({ length: 5 }, (_, i) => ({
+      image: `tiles${i + 1}`,
+      tilemap: `tilemap${i + 1}`,
+      imagePath: `${API_URL}/api/maps/${i}`,
+      tilemapPath: `/assets/tilemaps/${theme}/${theme}_stage${i + 1}.json`,
+    }));
+  }
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -405,6 +411,86 @@ export class MapScene extends Phaser.Scene {
     const walls = this.mapManager.getWalls();
     if (walls && this.player) {
       this.physics.add.collider(this.player.getContainer(), walls);
+    }
+    this.setupEasterEggs();
+  }
+
+  private easterEggDisabled = false;
+
+  private setupEasterEggs() {
+    const easterEggGroup = this.mapManager.getEasterEggGroup();
+    if (!easterEggGroup || !this.player) return;
+
+    const collider = this.physics.add.overlap(
+      this.player.getContainer(),
+      easterEggGroup,
+      (_player, zone) => {
+        if (this.easterEggDisabled) return;
+
+        const gameObj = zone as Phaser.GameObjects.Rectangle;
+        const name = gameObj.getData("easterEggName") as string;
+        if (!name) return;
+
+        const zones = this.mapManager.getEasterEggs().get(name);
+        if (!zones || zones.length < 2) return;
+
+        const currentZone = { x: gameObj.x, y: gameObj.y };
+        const target = zones.find(
+          (z) =>
+            Math.abs(z.x - currentZone.x) > 1 ||
+            Math.abs(z.y - currentZone.y) > 1,
+        );
+        if (!target || !this.player) return;
+
+        // 텔레포트 실행 후 overlap 자체를 비활성화
+        this.player.setPosition(target.x, target.y);
+        this.easterEggDisabled = true;
+        collider.active = false;
+
+        // 다음 프레임부터 overlap 복원 체크 시작
+        this.time.delayedCall(500, () => {
+          this.checkEasterEggReactivate(collider, easterEggGroup);
+        });
+      },
+    );
+  }
+
+  private checkEasterEggReactivate(
+    collider: Phaser.Physics.Arcade.Collider,
+    easterEggGroup: Phaser.Physics.Arcade.StaticGroup,
+  ) {
+    if (!this.player) return;
+
+    const container = this.player.getContainer();
+    const body = container.body as Phaser.Physics.Arcade.Body;
+    const playerRect = new Phaser.Geom.Rectangle(
+      body.x,
+      body.y,
+      body.width,
+      body.height,
+    );
+
+    // 모든 easteregg zone과 겹치지 않는지 확인
+    const overlapsAny = easterEggGroup.getChildren().some((child) => {
+      const zone = child as Phaser.GameObjects.Rectangle;
+      const zoneRect = new Phaser.Geom.Rectangle(
+        zone.x - zone.width / 2,
+        zone.y - zone.height / 2,
+        zone.width,
+        zone.height,
+      );
+      return Phaser.Geom.Intersects.RectangleToRectangle(playerRect, zoneRect);
+    });
+
+    if (!overlapsAny) {
+      // 모든 포탈에서 벗어남 → 재활성화
+      this.easterEggDisabled = false;
+      collider.active = true;
+    } else {
+      // 아직 포탈 위에 있음 → 다음 프레임에 다시 체크
+      this.time.delayedCall(50, () => {
+        this.checkEasterEggReactivate(collider, easterEggGroup);
+      });
     }
   }
 
