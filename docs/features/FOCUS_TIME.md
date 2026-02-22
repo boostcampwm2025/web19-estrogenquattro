@@ -46,9 +46,15 @@ stateDiagram-v2
 ### 클라이언트 → 서버
 
 ```typescript
-socket.emit('focusing', { taskName?: string, taskId?: number });  // taskName, taskId는 선택
+socket.emit('focusing', { taskName?: string, taskId?: number });  // taskName(선택, UTF-8 45 bytes 이하), taskId(선택)
+socket.emit('focus_task_updating', { taskName: string });         // taskName(UTF-8 45 bytes 이하)
 socket.emit('resting');
 ```
+
+**입력 제한 정책:**
+- `taskName`은 trim 기준 빈 문자열이면 전송하지 않는다.
+- `taskName`이 45 bytes(UTF-8)를 초과하거나 타입이 올바르지 않으면 ack 실패(`{ success: false, error }`)를 반환한다.
+- `players_synced`/`player_joined`로 전송되는 `taskName`도 UTF-8 45 bytes 이내로 정규화된다.
 
 ### 서버 → 클라이언트
 
@@ -86,7 +92,7 @@ sequenceDiagram
     participant Others as 다른 플레이어들
 
     Browser->>Store: 집중 버튼 클릭
-    Store->>Server: emit('focusing', { taskName })
+    Store->>Server: emit('focusing', { taskName })<br/>(taskName은 45 bytes 이내로 정규화)
     Store->>Store: status = FOCUSING<br/>isFocusTimerRunning = true
 
     Server->>DB: startFocusing(playerId)
@@ -197,7 +203,7 @@ sequenceDiagram
 
     Browser->>Browser: Task 이름 수정 "코딩" → "리뷰"
     Browser->>Server: API: PATCH /api/tasks/:id
-    Browser->>Server: emit('focus_task_updating', { taskName: "리뷰" })
+    Browser->>Server: emit('focus_task_updating', { taskName: "리뷰" })<br/>(45 bytes 이내)
 
     Server->>Others: emit('focus_task_updated', { userId, taskName })
 

@@ -36,7 +36,7 @@ erDiagram
     tasks {
         bigint id PK
         bigint player_id FK
-        varchar description "작업 설명 (100자)"
+        varchar description "작업 설명 (최대 300 bytes, UTF-8)"
         int total_focus_seconds "누적 집중 시간 (초)"
         datetime completed_at "완료 시각 (nullable)"
         datetime created_at "생성 시각"
@@ -141,12 +141,13 @@ erDiagram
 |------|------|----------|------|
 | id | bigint | PK, AUTO_INCREMENT | 고유 ID |
 | player_id | bigint | FK → players.id | 플레이어 ID |
-| description | varchar(100) | | 작업 설명 |
+| description | varchar(300) | | 작업 설명 (UTF-8 300 bytes 이하) |
 | total_focus_seconds | int | DEFAULT 0 | 누적 집중 시간 (초) |
 | completed_at | datetime | NULL 허용 | 완료 시각 |
 | created_at | datetime | NOT NULL | 생성 시각 |
 
 > **Note:** `completed_at`, `created_at`은 datetime 타입으로 저장되며, 프론트엔드에서 UTC 범위를 전달하여 조회
+> 포커스 관련 소켓 payload의 `taskName`은 별도로 UTF-8 45 bytes 제한을 사용합니다.
 
 ---
 

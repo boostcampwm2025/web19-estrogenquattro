@@ -325,6 +325,7 @@ updateFocusDisplay() {
 
 > **Note:** 기존 `setInterval` 기반에서 타임스탬프 기반으로 변경됨.
 > `SocketManager.updateRemotePlayers()`에서 매 프레임 `updateFocusDisplay()` 호출.
+> `options.taskName`은 서버에서 UTF-8 45 bytes 이내로 정규화된 값이다.
 
 ### 시간 표시 형식
 

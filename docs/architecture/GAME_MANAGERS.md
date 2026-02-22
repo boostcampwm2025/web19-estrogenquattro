@@ -236,6 +236,7 @@ sendRespawnPosition(x: number, y: number): void {
 - HTML `<input>` 요소 사용 (Phaser 객체 아님)
 - 게임 캔버스 위에 오버레이
 - 키보드 이벤트 처리
+- 입력 중 `TextEncoder` 기준 UTF-8 90 bytes로 메시지를 정규화
 
 ### 키 바인딩
 
@@ -264,7 +265,7 @@ sequenceDiagram
     C->>C: input 표시, 포커스
 
     U->>C: 메시지 입력 + Enter
-    C->>S: sendChat(message)
+    C->>S: sendChat(normalizedMessage)
     S->>S: socket.emit('chatting', {message})
     C->>C: input 숨기기
 ```
