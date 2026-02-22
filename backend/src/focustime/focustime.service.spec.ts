@@ -272,6 +272,22 @@ describe('FocusTimeService', () => {
       expect(updatedPlayer?.lastFocusStartTime).toBeNull();
     });
 
+    it('startResting 경로는 stale 10분 상한의 영향을 받지 않는다', async () => {
+      // Given: 집중 시작 후 20분 경과한 상태
+      const player = await createTestPlayer('TestPlayer8-2');
+      await service.startFocusing(player.id);
+      await playerRepository.update(
+        { id: player.id },
+        { lastFocusStartTime: new Date(Date.now() - 20 * 60 * 1000) },
+      );
+
+      // When
+      const result = await service.startResting(player.id);
+
+      // Then: startResting은 기존 정산 정책(24시간 상한)을 유지한다
+      expect(result.totalFocusSeconds).toBeGreaterThanOrEqual(1200);
+    });
+
     it('집중 중이 아니면 아무 작업도 하지 않는다', async () => {
       // Given: 플레이어만 존재 (집중 시작 안 함)
       const player = await createTestPlayer('TestPlayer9');
@@ -347,6 +363,52 @@ describe('FocusTimeService', () => {
         .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
         .getOne();
       expect(focusTime?.totalFocusSeconds).toBeGreaterThanOrEqual(10);
+      expect(focusTime?.totalFocusSeconds).toBeLessThanOrEqual(600);
+    });
+
+    it('stale 세션이 10분을 초과하면 10분(600초)으로 클램프한다', async () => {
+      // Given: 집중 시작 후 2시간 동안 disconnect 정산이 누락된 상태
+      const player = await createTestPlayer('TestPlayer11-2');
+      await service.startFocusing(player.id);
+      await playerRepository.update(
+        { id: player.id },
+        { lastFocusStartTime: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      );
+
+      // When
+      await service.settleStaleSession(player.id);
+
+      // Then
+      const { start, end } = getTodayKstRangeUtc();
+      const focusTime = await focusTimeRepository
+        .createQueryBuilder('ft')
+        .where('ft.player.id = :playerId', { playerId: player.id })
+        .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
+      expect(focusTime?.totalFocusSeconds).toBe(600);
+    });
+
+    it('stale 세션이 10분 이하이면 실제 경과 시간으로 정산한다', async () => {
+      // Given: 집중 시작 후 90초 경과
+      const player = await createTestPlayer('TestPlayer11-3');
+      await service.startFocusing(player.id);
+      await playerRepository.update(
+        { id: player.id },
+        { lastFocusStartTime: new Date(Date.now() - 90 * 1000) },
+      );
+
+      // When
+      await service.settleStaleSession(player.id);
+
+      // Then
+      const { start, end } = getTodayKstRangeUtc();
+      const focusTime = await focusTimeRepository
+        .createQueryBuilder('ft')
+        .where('ft.player.id = :playerId', { playerId: player.id })
+        .andWhere('ft.createdAt BETWEEN :start AND :end', { start, end })
+        .getOne();
+      expect(focusTime?.totalFocusSeconds).toBeGreaterThanOrEqual(90);
+      expect(focusTime?.totalFocusSeconds).toBeLessThanOrEqual(120);
     });
 
     it('집중 중이 아니면 아무 작업도 하지 않는다', async () => {

@@ -28,12 +28,16 @@ import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity
 import { GlobalState } from '../src/github/entities/global-state.entity';
 import { GithubPollService } from '../src/github/github.poll-service';
 import { ProgressGateway } from '../src/github/progress.gateway';
+import { PointHistoryController } from '../src/pointhistory/point-history.controller';
+import { PointHistoryService } from '../src/pointhistory/point-history.service';
+import { PointHistory } from '../src/pointhistory/entities/point-history.entity';
 import { PlayerController } from '../src/player/player.controller';
 import { PlayerGateway } from '../src/player/player.gateway';
 import { Player } from '../src/player/entites/player.entity';
 import { PlayerService } from '../src/player/player.service';
 import { RoomService } from '../src/room/room.service';
 import { Task } from '../src/task/entites/task.entity';
+import { TaskService } from '../src/task/task.service';
 import { PetController } from '../src/userpet/pet.controller';
 import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
@@ -94,6 +98,7 @@ export async function createTestApp(
         Player,
         Task,
         DailyFocusTime,
+        PointHistory,
         Pet,
         UserPet,
         UserPetCodex,
@@ -105,7 +110,12 @@ export async function createTestApp(
         signOptions: { expiresIn: '1d' },
       }),
     ],
-    controllers: [AuthController, PlayerController, PetController],
+    controllers: [
+      AuthController,
+      PlayerController,
+      PetController,
+      PointHistoryController,
+    ],
     providers: [
       UserStore,
       JwtStrategy,
@@ -119,6 +129,8 @@ export async function createTestApp(
       PlayerGateway,
       ChatGateway,
       PetService,
+      PointHistoryService,
+      TaskService,
       WriteLockService,
       {
         provide: GithubPollService,

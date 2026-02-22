@@ -8,6 +8,7 @@ import { Task } from '../task/entites/task.entity';
 import { getTodayKstRangeUtc } from '../util/date.util';
 
 const MAX_SESSION_SECONDS = 24 * 60 * 60; // 24시간
+const MAX_STALE_SETTLE_SECONDS = 10 * 60; // 10분
 
 export interface FocusRank {
   playerId: number;
@@ -248,6 +249,7 @@ export class FocusTimeService {
     manager: EntityManager,
     player: Player,
     now: Date,
+    maxSessionSeconds = MAX_SESSION_SECONDS,
   ): Promise<number> {
     if (!player.lastFocusStartTime) {
       return 0;
@@ -258,10 +260,7 @@ export class FocusTimeService {
     const diffSeconds = Math.floor(diffMs / 1000);
 
     // 유효 범위 클램프 (음수 방지 + 24시간 초과 방지)
-    const validSeconds = Math.max(
-      0,
-      Math.min(diffSeconds, MAX_SESSION_SECONDS),
-    );
+    const validSeconds = Math.max(0, Math.min(diffSeconds, maxSessionSeconds));
 
     if (validSeconds > 0) {
       // 오늘 daily_focus_time에 누적
@@ -330,13 +329,29 @@ export class FocusTimeService {
         }
 
         if (player.lastFocusStartTime) {
+          const rawSessionSeconds = Math.floor(
+            (now.getTime() - player.lastFocusStartTime.getTime()) / 1000,
+          );
+          const clampedSessionSeconds = Math.max(
+            0,
+            Math.min(rawSessionSeconds, MAX_STALE_SETTLE_SECONDS),
+          );
+
           this.logger.log('Settling stale session', {
             method: 'settleStaleSession',
             playerId,
             startedAt: player.lastFocusStartTime.toISOString(),
+            rawSessionSeconds,
+            settledSessionSeconds: clampedSessionSeconds,
+            maxStaleSessionSeconds: MAX_STALE_SETTLE_SECONDS,
           });
 
-          await this.settleCurrentSession(manager, player, now);
+          await this.settleCurrentSession(
+            manager,
+            player,
+            now,
+            MAX_STALE_SETTLE_SECONDS,
+          );
 
           // player 초기화
           player.focusingTaskId = null;
