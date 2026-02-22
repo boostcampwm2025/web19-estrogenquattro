@@ -323,7 +323,7 @@ export class MapScene extends Phaser.Scene {
     const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
 
     // 다음 월요일 KST 00:00 계산
-    const daysUntilMonday = ((8 - kstNow.getUTCDay()) % 7) || 7;
+    const daysUntilMonday = (8 - kstNow.getUTCDay()) % 7 || 7;
     const nextMonday = new Date(
       Date.UTC(
         kstNow.getUTCFullYear(),
