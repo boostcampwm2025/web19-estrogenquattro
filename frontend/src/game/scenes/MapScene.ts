@@ -200,11 +200,13 @@ export class MapScene extends Phaser.Scene {
       this.username,
       () => this.player,
     );
+    // TODO: 타일맵 작업용 임시 고정 (작업 완료 후 원복)
+    const FIXED_MAP_INDEX = 0;
     this.socketManager.connect({
       showSessionEndedOverlay: () => this.showSessionEndedOverlay(),
-      onMapSwitch: (mapIndex) => this.performMapSwitch(mapIndex),
-      onMapSyncRequired: (mapIndex) => this.performMapSwitch(mapIndex),
-      onInitialMapLoad: (mapIndex) => this.initializeWithMap(mapIndex),
+      onMapSwitch: () => this.performMapSwitch(FIXED_MAP_INDEX),
+      onMapSyncRequired: () => this.performMapSwitch(FIXED_MAP_INDEX),
+      onInitialMapLoad: () => this.initializeWithMap(FIXED_MAP_INDEX),
     });
 
     // 5. Chat Setup
