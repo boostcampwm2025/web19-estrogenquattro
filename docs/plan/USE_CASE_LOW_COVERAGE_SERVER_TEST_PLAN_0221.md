@@ -64,7 +64,7 @@
 | TC-PET-NEG-02 | UC-10 | 도감에 없는 펫 ID | `PATCH /api/players/me/equipped-pet` | `400 You do not own this pet` |
 | TC-MOVE-01 | UC-03 | 같은 방 사용자 2명 접속 | A가 `moving` 전송 | B가 `moved` 이벤트 수신 |
 | TC-MAP-01 | UC-07 | 진행도 임계치 직전 상태 | 점수 가산 이벤트 발생 | `map_switch` 발생 + mapIndex 증가 |
-| TC-MAP-EDGE-01 | UC-07 | 마지막 맵(mapIndex=4), 진행도 임계치 근접 상태 | 점수 가산 이벤트 발생 | 진행도는 임계치 이하로 clamp, 추가 `map_switch` 없음 |
+| TC-MAP-EDGE-01 | UC-07 | 마지막 맵(mapIndex=4), 진행도 임계치 근접 상태 | 점수 가산 이벤트 발생 | 진행도는 상한값(500)으로 clamp, 추가 `map_switch` 없음 |
 | TC-ONBOARD-01 | UC-11 | `isNewbie=true` 사용자 | `PATCH /api/players/newbie` | DB에서 `isNewbie=false` 확인 |
 | TC-ONBOARD-NEG-01 | UC-11 | JWT 쿠키 없는 요청 | `PATCH /api/players/newbie` | `401 Unauthorized` |
 
@@ -108,3 +108,25 @@
 | 재산정 시점 | P0 완료 직후 1회, P1 완료 직후 1회 |
 | 산정 방식 | 기존 정성 매트릭스(0~100) 산정 기준과 동일 기준 유지 |
 | 반영 방식 | 유스케이스별 커버리지 수치/근거 테스트/판단 코멘트 동시 업데이트 |
+
+## PR 리뷰 반영 내역 (2026-02-22)
+
+- 코멘트: Backend E2E CI job timeout 누락
+  - 변경 파일: `.github/workflows/backend-e2e-ci.yml`
+  - 변경 내용: `jobs.e2e.timeout-minutes: 15` 추가
+  - 검증: PR GitHub Actions 재실행 시 `Backend E2E CI` 성공 확인
+
+- 코멘트: auth/me 테스트에서 callback 쿠키 누락 시 실패 원인 불명확
+  - 변경 파일: `backend/test/auth-flow.e2e-spec.ts`
+  - 변경 내용: `callbackCookie` 선검증(`toBeDefined`) 추가 후 쿠키 값을 명시적으로 주입
+  - 검증: `cd backend && pnpm test:e2e --runInBand` 통과
+
+- 코멘트: TC-MAP-EDGE-01 설명이 테스트 기대치와 모호하게 불일치
+  - 변경 파일: `docs/plan/USE_CASE_LOW_COVERAGE_SERVER_TEST_PLAN_0221.md`
+  - 변경 내용: Then 절을 `상한값(500)으로 clamp`로 명시
+  - 검증: `backend/test/progress-season.e2e-spec.ts` 기대치와 수동 대조
+
+- 코멘트: `docs/pre-report.md` 코드 펜스 언어 미지정(MD040)
+  - 변경 파일: `docs/pre-report.md`
+  - 변경 내용: 코드 블록 시작 펜스를 ` ```text `로 변경
+  - 검증: 문서 렌더링/린트 규칙 수동 확인
