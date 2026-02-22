@@ -335,25 +335,37 @@ export class MapScene extends Phaser.Scene {
     const nextMondayUtcMs = nextMonday.getTime() - 9 * 60 * 60 * 1000;
     const msUntilChange = nextMondayUtcMs - Date.now();
 
-    if (msUntilChange <= 0) return;
+    if (msUntilChange <= 0) {
+      // 이미 지남 — 테마 확인 후 다음 주 예약
+      this.applyThemeIfChanged();
+      this.themeChangeTimer = window.setTimeout(
+        () => this.scheduleThemeChange(),
+        1000,
+      );
+      return;
+    }
 
     this.themeChangeTimer = window.setTimeout(() => {
-      const newTheme = MapScene.getMapThemeByKstWeek();
-      if (newTheme !== this.currentTheme) {
-        this.currentTheme = newTheme;
-        this.maps = MapScene.buildMaps();
-        this.mapManager.updateMaps(this.maps);
-        this.mapManager.reloadCurrentMap(() => {
-          this.setupCollisions();
-          const { width, height } = this.mapManager.getMapSize();
-          this.cameraController.updateBounds(width, height);
-          this.socketManager.setWalls(this.mapManager.getWalls()!);
-          this.socketManager.setupCollisions();
-        });
-      }
+      this.applyThemeIfChanged();
       // 다음 주 전환도 예약
       this.scheduleThemeChange();
     }, msUntilChange);
+  }
+
+  private applyThemeIfChanged(): void {
+    const newTheme = MapScene.getMapThemeByKstWeek();
+    if (newTheme !== this.currentTheme) {
+      this.currentTheme = newTheme;
+      this.maps = MapScene.buildMaps();
+      this.mapManager.updateMaps(this.maps);
+      this.mapManager.reloadCurrentMap(() => {
+        this.setupCollisions();
+        const { width, height } = this.mapManager.getMapSize();
+        this.cameraController.updateBounds(width, height);
+        this.socketManager.setWalls(this.mapManager.getWalls()!);
+        this.socketManager.setupCollisions();
+      });
+    }
   }
 
   private createAnimations() {
@@ -526,20 +538,17 @@ export class MapScene extends Phaser.Scene {
 
         // 다음 프레임부터 overlap 복원 체크 시작
         this.time.delayedCall(500, () => {
-          this.checkEasterEggReactivate(
-            this.easterEggCollider!,
-            easterEggGroup,
-          );
+          this.checkEasterEggReactivate();
         });
       },
     );
   }
 
-  private checkEasterEggReactivate(
-    collider: Phaser.Physics.Arcade.Collider,
-    easterEggGroup: Phaser.Physics.Arcade.StaticGroup,
-  ) {
-    if (!this.player) return;
+  private checkEasterEggReactivate() {
+    if (!this.player || !this.easterEggCollider) return;
+
+    const easterEggGroup = this.mapManager.getEasterEggGroup();
+    if (!easterEggGroup) return;
 
     const container = this.player.getContainer();
     const body = container.body as Phaser.Physics.Arcade.Body;
@@ -565,11 +574,11 @@ export class MapScene extends Phaser.Scene {
     if (!overlapsAny) {
       // 모든 포탈에서 벗어남 → 재활성화
       this.easterEggDisabled = false;
-      collider.active = true;
+      this.easterEggCollider.active = true;
     } else {
       // 아직 포탈 위에 있음 → 다음 프레임에 다시 체크
       this.time.delayedCall(50, () => {
-        this.checkEasterEggReactivate(collider, easterEggGroup);
+        this.checkEasterEggReactivate();
       });
     }
   }
