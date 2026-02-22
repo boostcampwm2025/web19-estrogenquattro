@@ -436,6 +436,14 @@ export class MapScene extends Phaser.Scene {
    * 맵 전환 공통 로직 (서버 map_switch/game_state 이벤트에서 호출)
    */
   private performMapSwitch(mapIndex: number) {
+    // 유효성 검사
+    if (mapIndex < 0 || mapIndex >= this.maps.length) {
+      console.warn(
+        `[MapScene] Invalid mapIndex from server: ${mapIndex}, using 0`,
+      );
+      mapIndex = 0;
+    }
+
     // 테마가 바뀌었을 수 있으므로 maps 배열 재생성
     this.maps = MapScene.buildMaps();
     this.mapManager.updateMaps(this.maps);
@@ -460,20 +468,37 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupCollisions() {
+    // 이전 collider 정리
+    if (this.wallCollider) {
+      this.physics.world.removeCollider(this.wallCollider);
+      this.wallCollider = undefined;
+    }
+    if (this.easterEggCollider) {
+      this.physics.world.removeCollider(this.easterEggCollider);
+      this.easterEggCollider = undefined;
+    }
+
     const walls = this.mapManager.getWalls();
     if (walls && this.player) {
-      this.physics.add.collider(this.player.getContainer(), walls);
+      this.wallCollider = this.physics.add.collider(
+        this.player.getContainer(),
+        walls,
+      );
     }
     this.setupEasterEggs();
   }
 
   private easterEggDisabled = false;
+  private wallCollider?: Phaser.Physics.Arcade.Collider;
+  private easterEggCollider?: Phaser.Physics.Arcade.Collider;
 
   private setupEasterEggs() {
+    this.easterEggDisabled = false;
+
     const easterEggGroup = this.mapManager.getEasterEggGroup();
     if (!easterEggGroup || !this.player) return;
 
-    const collider = this.physics.add.overlap(
+    this.easterEggCollider = this.physics.add.overlap(
       this.player.getContainer(),
       easterEggGroup,
       (_player, zone) => {
@@ -497,11 +522,14 @@ export class MapScene extends Phaser.Scene {
         // 텔레포트 실행 후 overlap 자체를 비활성화
         this.player.setPosition(target.x, target.y);
         this.easterEggDisabled = true;
-        collider.active = false;
+        this.easterEggCollider!.active = false;
 
         // 다음 프레임부터 overlap 복원 체크 시작
         this.time.delayedCall(500, () => {
-          this.checkEasterEggReactivate(collider, easterEggGroup);
+          this.checkEasterEggReactivate(
+            this.easterEggCollider!,
+            easterEggGroup,
+          );
         });
       },
     );
