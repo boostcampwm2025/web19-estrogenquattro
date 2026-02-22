@@ -29,7 +29,7 @@ MapScene
 ### 핵심 설정
 
 ```typescript
-private worldScale: number = 2;   // 이미지 2배, 좌표 원본 기준
+private worldScale: number = 4;   // 이미지 4배, 좌표 원본 기준
 private tileSize: number = 32;    // 타일 크기
 ```
 
@@ -42,7 +42,7 @@ flowchart LR
     end
 
     subgraph 월드좌표
-        B[월드 크기<br/>1024x1024]
+        B[월드 크기<br/>512x512]
     end
 
     subgraph Tiled
@@ -57,12 +57,13 @@ flowchart LR
 
 | 메서드 | 설명 |
 |--------|------|
+| `loadAndSetup(mapIndex, onComplete)` | 맵 이미지 동적 로드 후 setup 수행 |
 | `setup()` | 맵 이미지 배치, Tiled JSON에서 충돌 영역 생성 |
 | `getMapSize()` | 월드 좌표 기준 맵 크기 반환 |
 | `getWalls()` | 충돌용 StaticGroup 반환 |
 | `getRandomSpawnPosition()` | 벽과 겹치지 않는 스폰 위치 계산 |
-| `switchToNextMap(callback)` | 페이드 애니메이션 + 다음 맵 전환 |
-| `getWorldScale()` | worldScale 값 반환 (= 2) |
+| `switchToMap(mapIndex, callback)` | 페이드 애니메이션 + 지정 맵 전환 |
+| `getWorldScale()` | worldScale 값 반환 (= 4) |
 
 ### 맵 전환 흐름
 
@@ -71,11 +72,10 @@ sequenceDiagram
     participant S as MapScene
     participant M as MapManager
 
-    S->>M: switchToNextMap(callback)
+    S->>M: switchToMap(mapIndex, callback)
     M->>M: fadeOut(500ms)
     M->>M: 기존 맵/충돌 제거
-    M->>M: currentMapIndex++
-    M->>M: setup() - 새 맵 로드
+    M->>M: loadAndSetup(mapIndex)
     M->>S: callback()
     M->>M: fadeIn(500ms)
 ```
@@ -111,17 +111,20 @@ private otherPlayers: Map<userId, RemotePlayer>;
 | 이벤트 | 처리 |
 |--------|------|
 | `joined` | roomId 저장, focusTime 동기화 |
+| `join_failed` | 방 입장 실패 처리 (`ROOM_NOT_FOUND`, `ROOM_FULL`) |
 | `players_synced` | 기존 플레이어들 RemotePlayer 생성 |
 | `player_joined` | 새 플레이어 RemotePlayer 추가 |
 | `player_left` | RemotePlayer 제거 |
 | `moved` | RemotePlayer 위치/방향 업데이트 |
 | `chatted` | 말풍선 표시 |
-| `github_event` | 프로그레스/기여도 업데이트 |
+| `game_state` | 초기 progress/mapIndex/기여도 동기화 |
+| `progress_update` | 실시간 progress/mapIndex/기여도 동기화 |
 | `map_switch` | 맵 전환 요청 처리 (1초 디바운스) |
 | `focused` | RemotePlayer 집중 상태 설정 |
 | `rested` | RemotePlayer 휴식 상태 설정 |
 | `focus_task_updated` | 말풍선 Task 이름 업데이트 |
 | `pet_equipped` | RemotePlayer 펫 이미지 변경 |
+| `player_music_status` | RemotePlayer 음악 이펙트 on/off |
 | `session_replaced` | 세션 종료 오버레이 표시 |
 
 ### map_switch 디바운스
@@ -153,7 +156,7 @@ sequenceDiagram
     Sock-->>S: players_synced
     S->>S: createRemotePlayers()
 
-    Sock-->>S: github_state
+    Sock-->>S: game_state
     S->>Scene: progressBar.setProgress()
 
     Sock-->>S: joined

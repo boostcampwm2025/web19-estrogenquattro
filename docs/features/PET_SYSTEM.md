@@ -39,6 +39,7 @@ Pet (펫 마스터)
 | GET | `/api/pets/inventory/:playerId` | 보유 펫 목록 |
 | GET | `/api/pets/codex/:playerId` | 펫 도감 (수집한 펫 ID 목록) |
 | POST | `/api/pets/gacha` | 가챠 실행 |
+| POST | `/api/pets/gacha/refund` | 중복 가챠 환급 |
 | POST | `/api/pets/feed` | 먹이주기 |
 | POST | `/api/pets/evolve` | 진화 |
 
@@ -95,7 +96,7 @@ sequenceDiagram
         S-->>C: 400 Pet is already at max level
     end
 
-    S->>DB: 포인트 차감 (현재 0)
+    S->>DB: 포인트 차감 (10)
     S->>DB: 경험치 +10
     S-->>C: 200 { exp: N, pet: {...} }
 
@@ -179,12 +180,10 @@ stateDiagram-v2
 
 | 액션 | 포인트 비용 | 획득 |
 |------|------------|------|
-| 가챠 | 0 | Stage 1 펫 (랜덤) |
-| 가챠 (중복) | 0 | 포인트 환급 |
-| 먹이주기 | 0 | 경험치 +10 |
+| 가챠 | 100 | Stage 1 펫 (랜덤) |
+| 가챠 (중복) | 100 (차감 후) | 환급 +50 |
+| 먹이주기 | 10 | 경험치 +10 |
 | 진화 | 0 | 다음 단계 펫 |
-
-> **Note:** 현재 모든 비용이 0으로 설정되어 있음. 중복 펫 뽑기 시 일부 포인트 환급.
 
 ---
 

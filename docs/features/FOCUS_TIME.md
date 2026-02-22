@@ -15,18 +15,20 @@
 |------|------|------|
 | `player_id` | bigint | 플레이어 ID |
 | `total_focus_seconds` | int | 누적 집중 시간(초) |
-| `status` | enum | `FOCUSING` \| `RESTING` |
-| `created_date` | date | `YYYY-MM-DD` |
-| `last_focus_start_time` | datetime | 마지막 집중 시작 시각 (nullable) |
-| `current_task_id` | int | 현재 집중 중인 Task ID (nullable) |
+| `created_at` | datetime | 집계 기준일 (KST 00:00) |
+| `status` | enum | `FOCUSING` \| `RESTING` (V2에서 deprecated) |
+| `last_focus_start_time` | datetime | V2에서 deprecated |
+| `current_task_id` | int | V2에서 deprecated |
+
+> **V2 상태 소스:** 실제 집중 상태는 `players.last_focus_start_time`(=`Player.lastFocusStartTime`, null 여부), 현재 집중 태스크는 `players.focusing_task_id`(=`Player.focusingTaskId`)를 사용합니다.
 
 ---
 
 ## 상태 전이
 
 1. **방 입장**: `findOrCreate`로 당일 레코드 생성/조회
-2. **focusing**: 상태를 `FOCUSING`으로 변경하고 `last_focus_start_time` 기록, `current_task_id` 저장 (선택)
-3. **resting**: 집중 시간 누적 후 상태를 `RESTING`으로 변경, `current_task_id`가 있으면 해당 Task에도 집중 시간 누적
+2. **focusing**: `Player.lastFocusStartTime` 기록, `Player.focusingTaskId` 저장 (선택)
+3. **resting**: 집중 시간 누적 후 `players.last_focus_start_time`(V2) = `null`, `players.focusing_task_id` = `null`
 4. **disconnect**: `RESTING` 처리 시도 (예외는 로깅)
 
 ```mermaid
@@ -109,7 +111,7 @@ sequenceDiagram
     Store->>Store: status = RESTING<br/>isFocusTimerRunning = false
 
     Server->>DB: startResting(playerId)
-    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusSeconds += elapsed<br/>status = RESTING<br/>(lastFocusStartTime 유지)
+    Note over DB: elapsed = now - lastFocusStartTime<br/>totalFocusSeconds += elapsed<br/>status = RESTING<br/>(daily_focus_time.last_focus_start_time 유지, V1 deprecated)<br/>players.last_focus_start_time = null (V2)
     DB-->>Server: focusTime
 
     Server->>Others: emit('rested', { userId, status,<br/>totalFocusSeconds })
@@ -167,28 +169,6 @@ sequenceDiagram
 
 ### 6. 새로고침 (joined 이벤트)
 
-> ⚠️ **버그 #121**: 현재 `joined` 이벤트에 focusTime 정보가 없어서 새로고침 시 집중 시간이 0으로 초기화됨
-
-```mermaid
-sequenceDiagram
-    participant Browser as 브라우저 (fpg)
-    participant Server as 서버
-    participant DB as DB
-
-    Note over Browser: 페이지 새로고침
-    Browser->>Server: emit('joining', { x, y, username })
-
-    Server->>DB: findOrCreate(player)
-    DB-->>Server: focusTime { status: FOCUSING, totalFocusSeconds: 600 }
-
-    Server->>Browser: emit('joined', { roomId })
-    Note over Server: ❌ focusTime 정보 누락!
-
-    Note over Browser: useFocusTimeStore 초기화<br/>focusTime = 0 ❌
-```
-
-**수정 후 (버그 #121 해결):**
-
 ```mermaid
 sequenceDiagram
     participant Browser as 브라우저 (fpg)
@@ -208,23 +188,6 @@ sequenceDiagram
 ```
 
 ### 7. Task 이름 변경
-
-> ⚠️ **버그 #122**: 현재 Task 이름 변경 시 다른 플레이어에게 전파되지 않음
-
-```mermaid
-sequenceDiagram
-    participant Browser as 브라우저 (fpg, 집중 중)
-    participant Server as 서버
-    participant Others as 다른 플레이어들
-
-    Browser->>Browser: Task 이름 수정 "코딩" → "리뷰"
-    Browser->>Server: API: PATCH /api/tasks/:id
-    Note over Server: DB만 업데이트<br/>❌ 소켓 이벤트 없음!
-
-    Note over Others: 여전히 "코딩"으로 표시 ❌
-```
-
-**수정 후 (버그 #122 해결):**
 
 ```mermaid
 sequenceDiagram
@@ -267,5 +230,5 @@ setInterval(() => seconds++, 1000);   // 1초마다 +1 증가
 ## 주의사항
 
 - 방 입장 전에 `focusing/resting`을 호출하면 에러가 발생할 수 있다.
-- `created_date`는 `YYYY-MM-DD` 문자열을 기준으로 조회한다.
+- 조회 시 `startAt`, `endAt` UTC 범위를 기준으로 `created_at`(datetime) 필드를 사용한다.
 - 클라이언트 시계와 서버 시계가 다를 수 있으므로 시간 계산은 서버에서 수행한다.

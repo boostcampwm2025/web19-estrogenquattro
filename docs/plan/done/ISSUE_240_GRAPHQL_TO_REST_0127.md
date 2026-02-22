@@ -8,7 +8,7 @@
 
 ## 참조한 문서
 
-- [docs/REST_API_REPORT.md](../REST_API_REPORT.md): REST API Events 엔드포인트 실험 결과
+- [docs/legacy/REST_API_REPORT.md](../../legacy/REST_API_REPORT.md): REST API Events 엔드포인트 실험 결과
 - [docs/api/GITHUB_POLLING.md](../api/GITHUB_POLLING.md): 현재 GraphQL 폴링 시스템 명세
 - [GitHub Event Types](https://docs.github.com/en/rest/using-the-rest-api/github-event-types): 공식 문서
 

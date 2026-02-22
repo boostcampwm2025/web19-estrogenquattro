@@ -143,8 +143,28 @@ const isProd = process.env.NODE_ENV === 'production';
 const nextConfig: NextConfig = {
   output: isProd ? 'export' : undefined,
   distDir: isProd ? '../backend/public' : '.next',
+  images: {
+    unoptimized: isProd, // 정적 export 환경 대응
+  },
 };
 ```
+
+---
+
+## GitHub Actions CD
+
+`main` 브랜치 push 시 `.github/workflows/backend-cd.yml`가 실행됩니다.
+
+- 대상: SSH 접속 가능한 서버(GCP VM)
+- 동작:
+1. 서버에서 `git pull origin main`
+2. `backend`에서 마이그레이션 실행 (`pnpm migration:run`)
+3. 루트에서 `pnpm deploy:reload`
+
+필요한 GitHub Secrets:
+- `HOST`
+- `USERNAME`
+- `KEY`
 
 ---
 

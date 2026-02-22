@@ -96,7 +96,7 @@ sequenceDiagram
     rect rgb(248, 248, 255)
         Note over S: 5. Controls Setup
         S->>S: createCursorKeys()
-        S->>S: addKey(X)
+        S->>S: addKey(W/A/S/D)
     end
 
     rect rgb(255, 255, 240)
@@ -114,8 +114,8 @@ sequenceDiagram
     rect rgb(255, 245, 238)
         Note over S,SM: 8. Socket Setup
         S->>SM: new SocketManager(scene, username, player)
-        S->>SM: setWalls(), setProgressBarController()
-        S->>SM: connect(overlayCallbacks)
+        S->>SM: setWalls()
+        S->>SM: connect({ onMapSwitch, onMapSyncRequired, onInitialMapLoad })
     end
 
     rect rgb(245, 255, 250)
@@ -210,26 +210,48 @@ export class RemotePlayer extends BasePlayer {
 ### 에셋 구조
 
 ```
-frontend/public/assets/
+backend/assets/
 ├── maps/
-│   ├── desert_stage1.webp   # 맵 이미지 1
-│   ├── desert_stage2.webp   # 맵 이미지 2
-│   ├── desert_stage3.webp   # 맵 이미지 3
-│   ├── desert_stage4.webp   # 맵 이미지 4
-│   └── desert_stage5.webp   # 맵 이미지 5
+│   ├── desert/desert_stage1.webp
+│   ├── desert/desert_stage2.webp
+│   ├── desert/desert_stage3.webp
+│   ├── desert/desert_stage4.webp
+│   ├── desert/desert_stage5.webp
+│   ├── city/city_stage1.webp
+│   └── underwater_city/underwater_city_stage5.webp
+│
+frontend/public/assets/
 ├── tilemaps/
 │   ├── desert_stage1.json   # Tiled 충돌 데이터 1
 │   ├── desert_stage2.json   # Tiled 충돌 데이터 2
 │   ├── desert_stage3.json   # Tiled 충돌 데이터 3
 │   ├── desert_stage4.json   # Tiled 충돌 데이터 4
 │   └── desert_stage5.json   # Tiled 충돌 데이터 5
-├── grass/
-│   ├── grass_level_0.webp   # 잔디 레벨 0 (활동 없음)
-│   ├── grass_level_1.webp   # 잔디 레벨 1
-│   ├── grass_level_2.webp   # 잔디 레벨 2
-│   └── grass_level_3.webp   # 잔디 레벨 3 (활동 많음)
+├── music/note/
+│   ├── note1.png
+│   ├── note2.png
+│   ├── note3.png
+│   └── note4.png
 └── body.png                  # 캐릭터 스프라이트 시트
 ```
+
+### 맵 이미지 로딩 방식
+
+클라이언트는 맵 이미지를 정적으로 번들하지 않고 서버 API로 동적 로드합니다.
+
+```http
+GET /api/maps/:index
+```
+
+- 현재 해금된 맵 인덱스만 접근 가능 (스포일러 방지)
+- `game_state.mapIndex` 기반으로 최초 맵 동기화 후 로드
+- 맵 전환 시 `map_switch` 이벤트의 `mapIndex`로 다음 맵 로드
+
+### 입력 체계
+
+- 방향키 + `WASD` 모두 지원
+- 대각선 이동 지원 (`left-up`, `right-down` 등)
+- 월드 좌표 스케일: `MapManager.worldScale = 4`
 
 ### Tiled JSON 충돌 영역
 
@@ -357,8 +379,10 @@ sequenceDiagram
 interface ProgressState {
   progress: number;
   mapIndex: number;
+  progressThreshold: number;
   setProgress: (progress: number) => void;
   setMapIndex: (index: number) => void;
+  setProgressThreshold: (threshold: number) => void;
   reset: () => void;
 }
 ```
@@ -427,6 +451,10 @@ socket.on('rested', (data) => {
   // RemotePlayer 휴식 상태로 전환
   // totalFocusSeconds 업데이트
 });
+
+socket.on('player_music_status', (data) => {
+  // RemotePlayer 음표 이펙트 on/off
+});
 ```
 
 ### 이벤트 전송 (update)
@@ -449,7 +477,7 @@ socket.emit('moving', {
 ### 캐릭터 스프라이트 시트
 
 ```
-body.png (4방향 x 4프레임)
+body.png (4방향 x 4프레임, 프레임 크기 125x125 / 렌더 스케일 0.512)
 ├── Row 0: 아래 방향 걷기
 ├── Row 1: 왼쪽 방향 걷기
 ├── Row 2: 오른쪽 방향 걷기

@@ -47,11 +47,11 @@ export class Task {
   @Column({ type: 'int', name: 'total_focus_seconds', default: 0 })
   totalFocusSeconds: number;
 
-  @Column({ type: 'date', name: 'completed_date', nullable: true })
-  completedDate: string | null;  // YYYY-MM-DD (UTC)
+  @Column({ type: 'datetime', name: 'completed_at', nullable: true })
+  completedAt: Date | null;
 
-  @Column({ type: 'date', name: 'created_date' })
-  createdDate: string;  // YYYY-MM-DD (UTC)
+  @Column({ type: 'datetime', name: 'created_at' })
+  createdAt: Date;
 }
 ```
 
@@ -79,11 +79,11 @@ export class DailyFocusTime {
   })
   status: FocusStatus;
 
-  @Column({ name: 'created_date', type: 'date', nullable: false })
-  createdDate: string;
+  @Column({ name: 'created_at', type: 'datetime', nullable: false })
+  createdAt: Date;
 
   @Column({ name: 'last_focus_start_time', type: 'datetime', nullable: true })
-  lastFocusStartTime: Date;
+  lastFocusStartTime: Date | null;
 }
 ```
 
@@ -197,6 +197,14 @@ pnpm migration:run       # 실행
 - 대규모 트래픽에 부적합
 - 스케일아웃 불가
 
+### 쓰기 직렬화 (뮤텍스 락)
+
+SQLite의 단일 writer 제약을 완화하기 위해 `WriteLockService`를 사용합니다.
+
+- 위치: `backend/src/database/write-lock.service.ts`
+- 적용 서비스: `FocusTimeService`, `PointService`, `PetService`
+- 사용 패턴: `writeLock.runExclusive(() => dataSource.transaction(...))`
+
 ### 날짜 타입 규칙
 
 SQLite는 별도의 `DATE` 타입이 없고 `TEXT`로 저장됩니다.
@@ -209,8 +217,8 @@ SQLite는 별도의 `DATE` 타입이 없고 `TEXT`로 저장됩니다.
 **예시:**
 
 ```typescript
-// date 컬럼 - UTC 문자열로 저장
-createdDate: new Date().toISOString().slice(0, 10)  // "2026-01-22"
+// date 컬럼 - UTC 문자열로 저장 (예: scheduledDate)
+scheduledDate: new Date().toISOString().slice(0, 10)  // "2026-01-22"
 
 // datetime 컬럼 - Date 객체 사용
 lastFocusStartTime: new Date()

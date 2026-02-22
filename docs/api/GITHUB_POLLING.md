@@ -21,7 +21,7 @@ REST Events API 호출 (ETag 조건부 요청)
        ↓
 기준점 대비 변경 감지
        ↓
-변경 있음 → DB 저장 + 포인트 적립 + github_event 브로드캐스트
+변경 있음 → DB 저장 + 포인트 적립 + progress_update 브로드캐스트
        ↓
 프로그레스바/기여도 업데이트
 ```
@@ -157,44 +157,45 @@ GET https://api.github.com/repos/{owner}/{repo}/pulls/{number}
 ## 프로그레스 계산
 
 ```typescript
-// backend/src/github/github.gateway.ts
-const PROGRESS_PER_COMMIT = 2;
-const PROGRESS_PER_PR = 5;
+// backend/src/github/progress.gateway.ts
+const ACTIVITY_POINT_MAP = {
+  COMMITTED: 2,
+  PR_OPEN: 2,
+  PR_MERGED: 4,
+  PR_REVIEWED: 4,
+  ISSUE_OPEN: 1,
+};
 
-// 프로그레스 증가량
-const progressIncrement =
-  event.pushCount * PROGRESS_PER_COMMIT +
-  event.pullRequestCount * PROGRESS_PER_PR;
-
-// 100% 도달 시 리셋
-state.progress = (state.progress + progressIncrement) % 100;
+progressIncrement =
+  commitCount * ACTIVITY_POINT_MAP.COMMITTED +
+  prCount * ACTIVITY_POINT_MAP.PR_OPEN +
+  mergeCount * ACTIVITY_POINT_MAP.PR_MERGED +
+  reviewCount * ACTIVITY_POINT_MAP.PR_REVIEWED +
+  issueCount * ACTIVITY_POINT_MAP.ISSUE_OPEN;
 ```
 
 | 기여 유형 | 프로그레스 증가량 |
 |----------|------------------|
-| 커밋 1개 | +2% |
-| PR 1개 | +5% |
+| 커밋 1개 | +2 |
+| PR 생성 1개 | +2 |
+| PR 머지 1개 | +4 |
+| PR 리뷰 1개 | +4 |
+| 이슈 생성 1개 | +1 |
+
+> **Note:** 마지막 맵(stage 5)에서는 기준값(500)까지만 누적되고, 맵 순환은 하지 않습니다.
 
 ---
 
 ## 이벤트 데이터
 
-### github_event (S→C)
-
 ```typescript
 interface GithubEventData {
   username: string;
-  pushCount: number;       // 새 커밋 수
-  pullRequestCount: number; // 새 PR 수
-}
-```
-
-### github_state (S→C, 입장 시)
-
-```typescript
-interface RoomGithubState {
-  progress: number;                      // 0-99
-  contributions: Record<string, number>; // username -> 포인트
+  commitCount: number;
+  prCount: number;
+  mergeCount: number;
+  issueCount: number;
+  reviewCount: number;
 }
 ```
 
@@ -412,5 +413,5 @@ export function isPrResponse(data: unknown): data is PrResponse {
 ## 관련 문서
 
 - [POINT_SYSTEM.md](../features/POINT_SYSTEM.md) - 포인트 시스템
-- [SOCKET_EVENTS.md](./SOCKET_EVENTS.md) - github_event 소켓 이벤트
+- [SOCKET_EVENTS.md](./SOCKET_EVENTS.md) - progress_update / game_state 소켓 이벤트
 - [ERD.md](../guides/ERD.md) - daily_github_activity, point_history 테이블
