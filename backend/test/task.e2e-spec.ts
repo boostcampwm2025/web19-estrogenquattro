@@ -24,6 +24,9 @@ describe('Task E2E', () => {
   let playerRepository: Repository<Player>;
   let taskRepository: Repository<Task>;
 
+  const getHttpServer = (): Parameters<typeof request>[0] =>
+    context.app.getHttpServer() as Parameters<typeof request>[0];
+
   beforeAll(async () => {
     context = await createTestApp({ includeTaskController: true });
     playerRepository = getRepository(context, Player);
@@ -47,7 +50,7 @@ describe('Task E2E', () => {
     });
 
     // When: 300bytes description 생성
-    const created = await request(context.app.getHttpServer())
+    const created = await request(getHttpServer())
       .post('/api/tasks')
       .set('Cookie', seeded.cookie)
       .send({ description: 'a'.repeat(300) })
@@ -58,7 +61,7 @@ describe('Task E2E', () => {
     expect(createdBody.description).toBe('a'.repeat(300));
 
     // When: 301bytes description 생성
-    const tooLong = await request(context.app.getHttpServer())
+    const tooLong = await request(getHttpServer())
       .post('/api/tasks')
       .set('Cookie', seeded.cookie)
       .send({ description: 'a'.repeat(301) })
@@ -75,7 +78,7 @@ describe('Task E2E', () => {
       socialId: 23002,
       username: 'task-update-user',
     });
-    const created = await request(context.app.getHttpServer())
+    const created = await request(getHttpServer())
       .post('/api/tasks')
       .set('Cookie', seeded.cookie)
       .send({ description: '초기 Task' })
@@ -84,7 +87,7 @@ describe('Task E2E', () => {
     const taskId = createdBody.id;
 
     // When: 300bytes description 수정
-    const updated = await request(context.app.getHttpServer())
+    const updated = await request(getHttpServer())
       .patch(`/api/tasks/${taskId}`)
       .set('Cookie', seeded.cookie)
       .send({ description: 'a'.repeat(300) })
@@ -95,7 +98,7 @@ describe('Task E2E', () => {
     expect(updatedBody.description).toBe('a'.repeat(300));
 
     // When: 301bytes description 수정
-    const tooLong = await request(context.app.getHttpServer())
+    const tooLong = await request(getHttpServer())
       .patch(`/api/tasks/${taskId}`)
       .set('Cookie', seeded.cookie)
       .send({ description: 'a'.repeat(301) })
