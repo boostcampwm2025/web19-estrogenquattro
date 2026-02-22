@@ -12,7 +12,7 @@
     "loginRequired": "로그인이 필요합니다.",
     "taskFetchFailed": "Task 목록을 불러오는데 실패했습니다.",
     "taskInputRequired": "Task 내용을 입력해주세요.",
-    "taskTooLong": "Task는 100자 이하로 입력해주세요.",
+    "taskTooLong": "Task는 UTF-8 기준 300 bytes 이하로 입력해주세요.",
     "taskCreateFailed": "Task 생성에 실패했습니다.",
     "taskToggleFailed": "Task 상태 변경에 실패했습니다.",
     "taskDeleteFailed": "Task 삭제에 실패했습니다.",

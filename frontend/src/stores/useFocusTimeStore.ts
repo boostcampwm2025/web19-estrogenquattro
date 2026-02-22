@@ -2,6 +2,7 @@ import { create } from "zustand";
 import i18next from "i18next";
 import { getSocket } from "@/lib/socket";
 import { getTodayStartTime } from "@/utils/timeFormat";
+import { normalizeFocusTaskName } from "@/utils/textBytes";
 
 export const FOCUS_STATUS = {
   FOCUSING: "FOCUSING",
@@ -120,7 +121,11 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
     // 소켓 이벤트 전송 (응답 callback 포함)
     socket.emit(
       "focusing",
-      { taskName, taskId, startAt: getTodayStartTime() },
+      {
+        taskName: normalizeFocusTaskName(taskName),
+        taskId,
+        startAt: getTodayStartTime(),
+      },
       (response: { success: boolean; error?: string }) => {
         if (!response?.success) {
           // 에러 시 이전 상태로 완전 롤백 (집중 세션 유지)
