@@ -30,6 +30,8 @@ export class MapScene extends Phaser.Scene {
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
   private irisTransition!: IrisTransition;
+  private themeChangeTimer?: number;
+  private currentTheme: string = MapScene.getMapThemeByKstWeek();
 
   // Map Configuration
   // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
@@ -216,6 +218,9 @@ export class MapScene extends Phaser.Scene {
     // 6. Iris Transition Setup
     this.irisTransition = new IrisTransition(this);
 
+    // 7. 테마 자동 전환 타이머 (다음 월요일 KST 00:00에 테마 리로드)
+    this.scheduleThemeChange();
+
     // 채널 전환 시작 이벤트 리스너 (React -> Phaser)
     const handleChannelTransition = (event: Event) => {
       const customEvent = event as CustomEvent;
@@ -304,8 +309,51 @@ export class MapScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    if (this.themeChangeTimer) {
+      window.clearTimeout(this.themeChangeTimer);
+    }
     this.cameraController?.destroy();
     this.events.off("shutdown", this.cleanup, this);
+  }
+
+  /**
+   * 다음 월요일 KST 00:00에 테마 전환을 예약
+   */
+  private scheduleThemeChange(): void {
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
+    // 다음 월요일 KST 00:00 계산
+    const daysUntilMonday = ((8 - kstNow.getUTCDay()) % 7) || 7;
+    const nextMonday = new Date(
+      Date.UTC(
+        kstNow.getUTCFullYear(),
+        kstNow.getUTCMonth(),
+        kstNow.getUTCDate() + daysUntilMonday,
+      ),
+    );
+    // nextMonday는 KST 기준이므로 UTC로 변환: KST 00:00 = UTC 15:00 전날
+    const nextMondayUtcMs = nextMonday.getTime() - 9 * 60 * 60 * 1000;
+    const msUntilChange = nextMondayUtcMs - Date.now();
+
+    if (msUntilChange <= 0) return;
+
+    this.themeChangeTimer = window.setTimeout(() => {
+      const newTheme = MapScene.getMapThemeByKstWeek();
+      if (newTheme !== this.currentTheme) {
+        this.currentTheme = newTheme;
+        this.maps = MapScene.buildMaps();
+        this.mapManager.updateMaps(this.maps);
+        this.mapManager.reloadCurrentMap(() => {
+          this.setupCollisions();
+          const { width, height } = this.mapManager.getMapSize();
+          this.cameraController.updateBounds(width, height);
+          this.socketManager.setWalls(this.mapManager.getWalls()!);
+          this.socketManager.setupCollisions();
+        });
+      }
+      // 다음 주 전환도 예약
+      this.scheduleThemeChange();
+    }, msUntilChange);
   }
 
   private createAnimations() {

@@ -170,6 +170,38 @@ export default class MapManager {
   }
 
   /**
+   * 테마 변경 시 현재 맵을 새 테마로 리로드
+   * 텍스처 캐시를 무효화하고 새 이미지를 로드
+   */
+  reloadCurrentMap(onMapReady: () => void): void {
+    const mapIndex = this.currentMapIndex;
+
+    this.scene.cameras.main.fadeOut(500, 0, 0, 0);
+
+    this.scene.cameras.main.once("camerafadeoutcomplete", () => {
+      const oldMapImage = this.scene.children.getByName("mapImage");
+      if (oldMapImage) {
+        oldMapImage.destroy();
+      }
+
+      // 기존 텍스처 제거 (새 테마 이미지를 다시 로드하기 위해)
+      const currentMap = this.maps[mapIndex];
+      if (this.scene.textures.exists(currentMap.image)) {
+        this.scene.textures.remove(currentMap.image);
+      }
+
+      this.walls?.clear(true, true);
+      this.easterEggGroup?.clear(true, true);
+      this.easterEggs.clear();
+
+      this.loadAndSetup(mapIndex, () => {
+        onMapReady();
+        this.scene.cameras.main.fadeIn(500, 0, 0, 0);
+      });
+    });
+  }
+
+  /**
    * 특정 맵으로 전환 (서버 주도 맵 전환)
    * 맵 이미지가 없으면 동적으로 로드
    */
