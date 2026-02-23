@@ -28,8 +28,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       // 서버는 항상 'en'으로 렌더링되므로, 클라이언트에서 사용자 언어를 감지하여 전환
       if (i18n.language === "en") {
         const savedLng = localStorage.getItem("i18nextLng");
-        const detectedLng =
-          savedLng ?? navigator.language.split("-")[0]; // localStorage 우선, 없으면 브라우저 언어
+        const detectedLng = savedLng ?? navigator.language.split("-")[0]; // localStorage 우선, 없으면 브라우저 언어
         if (
           detectedLng &&
           detectedLng !== "en" &&
