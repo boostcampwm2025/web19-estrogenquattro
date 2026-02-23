@@ -90,7 +90,7 @@ export class MapScene extends Phaser.Scene {
     });
 
     // Body Sprite Sheet
-    this.load.spritesheet("body", "/assets/body.png", {
+    this.load.spritesheet("body", "/assets/body_v2.png", {
       frameWidth: 125,
       frameHeight: 125,
     });
