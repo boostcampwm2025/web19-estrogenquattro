@@ -11,6 +11,7 @@ import { useRoomStore } from "@/stores/useRoomStore";
 import { useRoomSystem } from "@/lib/api/hooks/useRoomSystem";
 import { RoomInfo } from "@/lib/api/room";
 import { useTranslation } from "react-i18next";
+import { Analytics } from "@/lib/analytics";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -117,6 +118,9 @@ export default function ChannelSelectModal() {
       }
 
       closeModal();
+
+      // GA4: 채널 접속 이벤트
+      Analytics.roomJoin(channel.count);
     } catch (error: unknown) {
       console.error(
         t(($) => $.channel.error.moveFailed),
