@@ -341,10 +341,11 @@ export class PlayerGateway
     const player = this.players.get(client.id);
     if (!player) return;
 
-    if (Buffer.isBuffer(data) && data.length >= 12) {
-      player.x = data.readFloatLE(0);
-      player.y = data.readFloatLE(4);
-    }
+    // 유효하지 않은 페이로드는 무시 (브로드캐스트 차단)
+    if (!Buffer.isBuffer(data) || data.length < 12) return;
+
+    player.x = data.readFloatLE(0);
+    player.y = data.readFloatLE(4);
 
     // 같은 방 사람들에게 userId + Binary 데이터 전송 (패스스루)
     client.to(player.roomId).emit('moved', client.id, data);
