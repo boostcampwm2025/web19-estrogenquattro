@@ -344,8 +344,15 @@ export class PlayerGateway
     // 유효하지 않은 페이로드는 무시 (브로드캐스트 차단)
     if (!Buffer.isBuffer(data) || data.length < 12) return;
 
-    player.x = data.readFloatLE(0);
-    player.y = data.readFloatLE(4);
+    const x = data.readFloatLE(0);
+    const y = data.readFloatLE(4);
+
+    // 디코딩된 좌표 유효성 검증 (NaN, Infinity, 맵 범위 초과 차단)
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (x < -1000 || x > 10000 || y < -1000 || y > 10000) return;
+
+    player.x = x;
+    player.y = y;
 
     // 같은 방 사람들에게 userId + Binary 데이터 전송 (패스스루)
     client.to(player.roomId).emit('moved', client.id, data);
