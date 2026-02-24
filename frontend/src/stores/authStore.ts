@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devLogger } from "@/lib/devLogger";
+import { Analytics } from "@/lib/analytics";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -33,12 +34,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (response.ok) {
         const user = await response.json();
         set({ user, isAuthenticated: true, isLoading: false });
+        Analytics.authSuccess();
       } else {
         set({ user: null, isAuthenticated: false, isLoading: false });
+        Analytics.authFailed(`http_${response.status}`);
       }
     } catch (error) {
       devLogger.error("Failed to fetch user", { error });
       set({ user: null, isAuthenticated: false, isLoading: false });
+      Analytics.authFailed("network_error");
     }
   },
 

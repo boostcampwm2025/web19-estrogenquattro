@@ -134,8 +134,10 @@ export default function ChannelSelectModal() {
         (error as { status: number }).status === 409
       ) {
         alert(t(($) => $.channel.error.roomFull));
+        Analytics.roomJoinFailed("room_full");
       } else {
         alert(t(($) => $.channel.error.moveFailedAlert));
+        Analytics.roomJoinFailed("unknown");
       }
       // 실패 시 최신 상태로 갱신하여 인원리스트 업데이트
       handleRefresh();

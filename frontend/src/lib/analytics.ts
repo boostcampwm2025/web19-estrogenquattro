@@ -95,4 +95,28 @@ export const Analytics = {
   tutorialSkip: (currentStep: number) => {
     Analytics.event("tutorial_skip", { step: currentStep });
   },
+
+  // ── Login Funnel ──
+
+  loginClick: () => {
+    Analytics.event("login_click", { method: "github" });
+  },
+
+  authCallback: () => {
+    Analytics.event("auth_callback");
+  },
+
+  authSuccess: () => {
+    Analytics.event("auth_success");
+  },
+
+  authFailed: (reason: string) => {
+    Analytics.event("auth_failed", { reason });
+  },
+
+  // ── Operational ──
+
+  roomJoinFailed: (reason: string) => {
+    Analytics.event("room_join_failed", { reason });
+  },
 };
