@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/i18n";
-import { Analytics } from "@/lib/analytics";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const { t, i18n, ready } = useTranslation("ui");
@@ -28,22 +27,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       // 1. 클라이언트 사이드 언어 감지 및 적용 (Hydration 이후 수행)
       // 서버는 항상 'en'으로 렌더링되므로, 클라이언트에서 사용자 언어를 감지하여 전환
       if (i18n.language === "en") {
-        const detectedLng = navigator.language.split("-")[0]; // ko-KR -> ko
+        const savedLng = localStorage.getItem("i18nextLng");
+        const detectedLng = (savedLng ?? navigator.language).split("-")[0]; // ko-KR -> ko 정규화
         if (
           detectedLng &&
           detectedLng !== "en" &&
           ["ko", "en"].includes(detectedLng)
         ) {
           i18n.changeLanguage(detectedLng);
-          return; // 언어 전환 후 useEffect가 다시 실행되므로 여기서 중단
+          localStorage.setItem("i18nextLng", detectedLng);
         }
       }
 
       // 2. 타이틀 업데이트
       document.title = t(($) => $.metadata.title);
-
-      // 3. GA4: 언어 감지 완료 후 최종 언어로만 유저 속성 설정
-      Analytics.setUserProperties({ language: i18n.language });
     }
   }, [i18n.language, i18n.isInitialized, ready, t]);
 
