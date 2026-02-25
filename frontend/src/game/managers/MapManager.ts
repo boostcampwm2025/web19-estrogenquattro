@@ -14,6 +14,13 @@ interface WallRect {
   height: number;
 }
 
+export interface EasterEggZone {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface SpawnPosition {
   x: number;
   y: number;
@@ -24,6 +31,8 @@ export default class MapManager {
   private maps: MapConfig[];
   private currentMapIndex: number = 0;
   private walls?: Phaser.Physics.Arcade.StaticGroup;
+  private easterEggGroup?: Phaser.Physics.Arcade.StaticGroup;
+  private easterEggs: Map<string, EasterEggZone[]> = new Map();
   private tileSize: number = 32;
 
   // 월드 스케일: 이미지는 4배 크기, 좌표는 원본 크기 기준
@@ -31,6 +40,10 @@ export default class MapManager {
 
   constructor(scene: Phaser.Scene, maps: MapConfig[]) {
     this.scene = scene;
+    this.maps = maps;
+  }
+
+  updateMaps(maps: MapConfig[]): void {
     this.maps = maps;
   }
 
@@ -77,6 +90,8 @@ export default class MapManager {
     this.scene.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
     this.walls = this.scene.physics.add.staticGroup();
+    this.easterEggGroup = this.scene.physics.add.staticGroup();
+    this.easterEggs = new Map();
 
     // tilemap이 있는 경우에만 충돌 처리
     if (currentMap.tilemap) {
@@ -85,19 +100,29 @@ export default class MapManager {
       const collisionLayer = map.getObjectLayer("Collisions");
       if (collisionLayer) {
         collisionLayer.objects.forEach((obj) => {
+          if (obj.x === undefined || obj.y === undefined) return;
+
+          const cx = (obj.x + (obj.width || 0) / 2) / this.worldScale;
+          const cy = (obj.y + (obj.height || 0) / 2) / this.worldScale;
+          const w = (obj.width || 0) / this.worldScale;
+          const h = (obj.height || 0) / this.worldScale;
+
+          const isEasterEgg = obj.type === "easteregg";
           const isWall =
             ("class" in obj && obj.class === "wall") || obj.type === "wall";
 
-          if (isWall && obj.x !== undefined && obj.y !== undefined) {
-            // Tiled 좌표도 스케일 적용
-            const wall = this.scene.add.rectangle(
-              (obj.x + (obj.width || 0) / 2) / this.worldScale,
-              (obj.y + (obj.height || 0) / 2) / this.worldScale,
-              (obj.width || 0) / this.worldScale,
-              (obj.height || 0) / this.worldScale,
-              0xff0000,
-              0,
-            );
+          if (isEasterEgg && obj.name) {
+            // easteregg 영역 등록
+            const zone = this.scene.add.rectangle(cx, cy, w, h, 0x00ff00, 0);
+            zone.setVisible(false);
+            zone.setData("easterEggName", obj.name);
+            this.easterEggGroup?.add(zone);
+
+            const zones = this.easterEggs.get(obj.name) || [];
+            zones.push({ x: cx, y: cy, width: w, height: h });
+            this.easterEggs.set(obj.name, zones);
+          } else if (isWall) {
+            const wall = this.scene.add.rectangle(cx, cy, w, h, 0xff0000, 0);
             wall.setVisible(false);
             this.walls?.add(wall);
           }
@@ -114,6 +139,14 @@ export default class MapManager {
 
   getWalls(): Phaser.Physics.Arcade.StaticGroup | undefined {
     return this.walls;
+  }
+
+  getEasterEggGroup(): Phaser.Physics.Arcade.StaticGroup | undefined {
+    return this.easterEggGroup;
+  }
+
+  getEasterEggs(): Map<string, EasterEggZone[]> {
+    return this.easterEggs;
   }
 
   getMapSize(): { width: number; height: number } {
@@ -137,6 +170,52 @@ export default class MapManager {
   }
 
   /**
+   * 테마 변경 시 현재 맵을 새 테마로 리로드
+   * 텍스처 캐시를 무효화하고 새 이미지를 로드
+   */
+  reloadCurrentMap(onMapReady: () => void): void {
+    const mapIndex = this.currentMapIndex;
+
+    this.scene.cameras.main.fadeOut(500, 0, 0, 0);
+
+    this.scene.cameras.main.once("camerafadeoutcomplete", () => {
+      const oldMapImage = this.scene.children.getByName("mapImage");
+      if (oldMapImage) {
+        oldMapImage.destroy();
+      }
+
+      const currentMap = this.maps[mapIndex];
+
+      // 기존 텍스처 제거 (새 테마 이미지를 다시 로드하기 위해)
+      if (this.scene.textures.exists(currentMap.image)) {
+        this.scene.textures.remove(currentMap.image);
+      }
+
+      // 기존 tilemap 캐시 제거 (새 테마 tilemap을 다시 로드하기 위해)
+      if (this.scene.cache.tilemap.exists(currentMap.tilemap)) {
+        this.scene.cache.tilemap.remove(currentMap.tilemap);
+      }
+
+      this.walls?.clear(true, true);
+      this.easterEggGroup?.clear(true, true);
+      this.easterEggs.clear();
+
+      // tilemap + 이미지 모두 다시 로드
+      if (currentMap.tilemapPath) {
+        this.scene.load.tilemapTiledJSON(
+          currentMap.tilemap,
+          currentMap.tilemapPath,
+        );
+      }
+
+      this.loadAndSetup(mapIndex, () => {
+        onMapReady();
+        this.scene.cameras.main.fadeIn(500, 0, 0, 0);
+      });
+    });
+  }
+
+  /**
    * 특정 맵으로 전환 (서버 주도 맵 전환)
    * 맵 이미지가 없으면 동적으로 로드
    */
@@ -153,6 +232,8 @@ export default class MapManager {
       }
 
       this.walls?.clear(true, true);
+      this.easterEggGroup?.clear(true, true);
+      this.easterEggs.clear();
 
       // 동적 로드 후 setup
       this.loadAndSetup(mapIndex, () => {
@@ -168,6 +249,8 @@ export default class MapManager {
 
   destroy(): void {
     this.walls?.clear(true, true);
+    this.easterEggGroup?.clear(true, true);
+    this.easterEggs.clear();
     const mapImage = this.getMapImage();
     if (mapImage) mapImage.destroy();
   }
@@ -177,23 +260,29 @@ export default class MapManager {
    */
   getRandomSpawnPosition(): SpawnPosition {
     const { width: mapWidth, height: mapHeight } = this.getMapSize();
-    const maxAttempts = 10;
+    const maxAttempts = 200;
     const playerSize = 32;
+    const wallMargin = 16; // wall 경계에서 추가 여유 (틈새 스폰 방지)
 
-    // 중앙 부근 범위 (맵 중앙 기준 20% 영역)
+    // 중앙 부근 범위 (맵 중앙 기준 60% 영역)
     const centerX = mapWidth / 2;
     const centerY = mapHeight / 2;
-    const rangeX = mapWidth * 0.2;
-    const rangeY = mapHeight * 0.2;
+    const rangeX = mapWidth * 0.6;
+    const rangeY = mapHeight * 0.6;
 
-    // 현재 wall 정보를 가져옴
-    const wallRects = this.getWallRects();
+    // 현재 wall 정보를 가져옴 (마진 적용하여 팽창)
+    const wallRects = this.getWallRects().map((wall) => ({
+      x: wall.x - wallMargin,
+      y: wall.y - wallMargin,
+      width: wall.width + wallMargin * 2,
+      height: wall.height + wallMargin * 2,
+    }));
 
     for (let i = 0; i < maxAttempts; i++) {
       const x = centerX + (Math.random() - 0.5) * rangeX;
       const y = centerY + (Math.random() - 0.5) * rangeY;
 
-      // wall과 충돌하는지 확인
+      // wall(마진 포함)과 충돌하는지 확인
       const collides = wallRects.some((wall) =>
         this.rectIntersects(
           x - playerSize / 2,
