@@ -109,6 +109,9 @@ socket.emit('joining', {
 **입장 실패:**
 - 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
 
+**입장 실패:**
+- 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
+
 ---
 
 ### moving
@@ -302,6 +305,22 @@ socket.on('joined', (data: {
 
 `focusTime.totalFocusSeconds`에는 `joining` 과정의 stale 정산 결과가 반영된다.
 stale 구간이 길어도 `settleStaleSession` 정책으로 최대 `600초`까지만 누적된다.
+
+---
+
+### join_failed
+
+방 입장 실패 알림
+
+```typescript
+socket.on('join_failed', (data: {
+  message: string,
+  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL'
+}) => {
+  // ROOM_FULL: 채널 선택 모달 다시 열기
+  // ROOM_NOT_FOUND: 고정 방(room-1~room-5) 밖 roomId 요청은 세션/URL 이상으로 간주하여 로그인 화면으로 이동
+});
+```
 
 ---
 
