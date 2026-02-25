@@ -189,6 +189,20 @@ async startResting(playerId: number): Promise<DailyFocusTime> {
 }
 ```
 
+### settleStaleSession (재접속 안전 정산)
+
+`disconnect -> resting` 정산이 누락된 상태에서 재접속하면 `settleStaleSession`이 실행된다.
+
+- 적용 시점: `joining` 처리 초반 (`PlayerGateway.handleJoin`)
+- 상한 정책: stale 경과 시간은 최대 `600초(10분)`까지만 누적
+- 적용 범위: `settleStaleSession` 경로에만 적용
+- 상태 처리: 정산 후 `Player.lastFocusStartTime`, `Player.focusingTaskId`를 초기화
+
+```typescript
+const MAX_STALE_SETTLE_SECONDS = 10 * 60;
+await settleCurrentSession(manager, player, now, MAX_STALE_SETTLE_SECONDS);
+```
+
 ### 경과 시간 계산
 
 ```typescript
@@ -325,6 +339,7 @@ updateFocusDisplay() {
 
 > **Note:** 기존 `setInterval` 기반에서 타임스탬프 기반으로 변경됨.
 > `SocketManager.updateRemotePlayers()`에서 매 프레임 `updateFocusDisplay()` 호출.
+> `options.taskName`은 서버에서 UTF-8 45 bytes 이내로 정규화된 값이다.
 
 ### 시간 표시 형식
 

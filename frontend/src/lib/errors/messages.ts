@@ -4,6 +4,7 @@ const ERROR_CODE_TO_KEY: Record<string, string> = {
   TASK_FOCUSING: "taskFocusing",
   TASK_NOT_FOUND: "taskNotFound",
   TASK_NOT_OWNED: "taskNotOwned",
+  TASK_TOO_LONG: "taskTooLong",
 };
 
 /**

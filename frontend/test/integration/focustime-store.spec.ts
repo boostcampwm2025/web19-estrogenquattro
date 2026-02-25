@@ -153,6 +153,25 @@ describe("useFocusTimeStore 롤백", () => {
     );
   });
 
+  it("startFocusing은 taskName을 45bytes로 정규화해 전송한다", async () => {
+    // Given: FOCUSING 상태가 아닌 기본 상태
+    const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");
+
+    // When: 45bytes를 초과하는 한글 taskName으로 집중 시작
+    useFocusTimeStore.getState().startFocusing("가".repeat(20), 2); // 60bytes
+
+    // Then: payload taskName이 45bytes로 정규화되어 전송됨
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "focusing",
+      {
+        taskName: "가".repeat(15), // 45bytes
+        taskId: 2,
+        startAt: expect.any(String),
+      },
+      expect.any(Function),
+    );
+  });
+
   it("Task 전환 시 낙관적 업데이트가 적용된다", async () => {
     // Given: Task A로 집중 중인 상태
     const { useFocusTimeStore } = await import("@/stores/useFocusTimeStore");

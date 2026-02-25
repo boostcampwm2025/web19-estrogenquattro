@@ -1,6 +1,7 @@
 import { Task } from "@/app/_components/TasksMenu/types";
 import { useTranslation } from "react-i18next";
-import { formatTimeFromSeconds } from "../../lib/dateStats";
+import { getTasksByDate, formatTimeFromSeconds } from "../../lib/dateStats";
+import { isSameDay } from "../../lib/dateUtils";
 import { formatSelectedDate } from "@/utils/timeFormat";
 
 interface TaskSectionProps {
@@ -10,7 +11,10 @@ interface TaskSectionProps {
 
 export default function TaskSection({ tasks, selectedDate }: TaskSectionProps) {
   const { t } = useTranslation("ui");
-  const dailyTasks = tasks;
+  const isToday = isSameDay(selectedDate, new Date());
+  const dailyTasks = getTasksByDate(tasks, selectedDate).filter(
+    (task) => isToday || task.completed,
+  );
 
   return (
     <div className="rounded-none border-2 border-amber-800/20 bg-amber-50 p-3">

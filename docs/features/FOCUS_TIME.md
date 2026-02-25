@@ -26,7 +26,7 @@
 
 ## 상태 전이
 
-1. **방 입장**: `findOrCreate`로 당일 레코드 생성/조회
+1. **방 입장 (`joining`)**: `settleStaleSession`으로 미정산 세션을 먼저 정리한 뒤 `findOrCreate`로 당일 레코드 생성/조회
 2. **focusing**: `Player.lastFocusStartTime` 기록, `Player.focusingTaskId` 저장 (선택)
 3. **resting**: 집중 시간 누적 후 `players.last_focus_start_time`(V2) = `null`, `players.focusing_task_id` = `null`
 4. **disconnect**: `RESTING` 처리 시도 (예외는 로깅)
@@ -41,14 +41,29 @@ stateDiagram-v2
 
 ---
 
+## 재접속 stale 정산 정책 (Issue #456)
+
+- 적용 경로: `PlayerGateway.handleJoin` → `FocusTimeService.settleStaleSession`
+- stale 허용 최대 구간: `600초 (10분)`
+- 10분 초과 stale 세션은 `600초`만 누적 후 `players.last_focus_start_time`, `players.focusing_task_id`를 초기화
+- 정상 `focusing -> resting` 경로(`startResting`)에는 이 상한을 적용하지 않음
+
+---
+
 ## 소켓 이벤트
 
 ### 클라이언트 → 서버
 
 ```typescript
-socket.emit('focusing', { taskName?: string, taskId?: number });  // taskName, taskId는 선택
+socket.emit('focusing', { taskName?: string, taskId?: number });  // taskName(선택, UTF-8 45 bytes 이하), taskId(선택)
+socket.emit('focus_task_updating', { taskName: string });         // taskName(UTF-8 45 bytes 이하)
 socket.emit('resting');
 ```
+
+**입력 제한 정책:**
+- `taskName`은 trim 기준 빈 문자열이면 전송하지 않는다.
+- `taskName`이 45 bytes(UTF-8)를 초과하거나 타입이 올바르지 않으면 ack 실패(`{ success: false, error }`)를 반환한다.
+- `players_synced`/`player_joined`로 전송되는 `taskName`도 UTF-8 45 bytes 이내로 정규화된다.
 
 ### 서버 → 클라이언트
 
@@ -86,7 +101,7 @@ sequenceDiagram
     participant Others as 다른 플레이어들
 
     Browser->>Store: 집중 버튼 클릭
-    Store->>Server: emit('focusing', { taskName })
+    Store->>Server: emit('focusing', { taskName })<br/>(taskName은 45 bytes 이내로 정규화)
     Store->>Store: status = FOCUSING<br/>isFocusTimerRunning = true
 
     Server->>DB: startFocusing(playerId)
@@ -197,7 +212,7 @@ sequenceDiagram
 
     Browser->>Browser: Task 이름 수정 "코딩" → "리뷰"
     Browser->>Server: API: PATCH /api/tasks/:id
-    Browser->>Server: emit('focus_task_updating', { taskName: "리뷰" })
+    Browser->>Server: emit('focus_task_updating', { taskName: "리뷰" })<br/>(45 bytes 이내)
 
     Server->>Others: emit('focus_task_updated', { userId, taskName })
 
@@ -230,5 +245,6 @@ setInterval(() => seconds++, 1000);   // 1초마다 +1 증가
 ## 주의사항
 
 - 방 입장 전에 `focusing/resting`을 호출하면 에러가 발생할 수 있다.
+- `joining` 시 stale 정산은 최대 10분까지만 반영된다(과대 정산 방지 목적).
 - 조회 시 `startAt`, `endAt` UTC 범위를 기준으로 `created_at`(datetime) 필드를 사용한다.
 - 클라이언트 시계와 서버 시계가 다를 수 있으므로 시간 계산은 서버에서 수행한다.

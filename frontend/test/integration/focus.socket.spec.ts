@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { io, type Socket } from "socket.io-client";
 import { createTestSocketServer } from "../mocks/socket-server";
+import customParser from "socket.io-msgpack-parser";
 
 type JoinedClient = {
   socket: Socket;
@@ -16,7 +17,7 @@ const createJoinedClient = async (
   url: string,
   username: string,
 ): Promise<JoinedClient> => {
-  const socket = io(url, { transports: ["websocket"] });
+  const socket = io(url, { transports: ["websocket"], parser: customParser });
   await waitForEvent(socket, "connect");
   socket.emit("joining", { x: 0, y: 0, username });
   await waitForEvent(socket, "joined");

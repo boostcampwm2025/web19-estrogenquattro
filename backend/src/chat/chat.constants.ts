@@ -1,1 +1,2 @@
-export const CHAT_MAX_LENGTH = 30;
+// UTF-8 byte limit
+export const CHAT_MAX_LENGTH = 90;
