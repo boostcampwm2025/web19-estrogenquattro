@@ -23,6 +23,7 @@ import { UserStore } from '../src/auth/user.store';
 import { WsJwtGuard } from '../src/auth/ws-jwt.guard';
 import { ChatGateway } from '../src/chat/chat.gateway';
 import { WriteLockService } from '../src/database/write-lock.service';
+import { FocusTimeGateway } from '../src/focustime/focustime.gateway';
 import { FocusTimeService } from '../src/focustime/focustime.service';
 import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity';
 import { GlobalState } from '../src/github/entities/global-state.entity';
@@ -36,8 +37,9 @@ import { PlayerGateway } from '../src/player/player.gateway';
 import { Player } from '../src/player/entites/player.entity';
 import { PlayerService } from '../src/player/player.service';
 import { RoomService } from '../src/room/room.service';
-import { Task } from '../src/task/entites/task.entity';
+import { TaskController } from '../src/task/task.controller';
 import { TaskService } from '../src/task/task.service';
+import { Task } from '../src/task/entites/task.entity';
 import { PetController } from '../src/userpet/pet.controller';
 import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
@@ -51,6 +53,9 @@ export interface CreateTestAppOptions {
   database?: string;
   dropSchema?: boolean;
   githubGuardUser?: User;
+  includeFocusTimeGateway?: boolean;
+  includeTaskController?: boolean;
+  includePointHistoryController?: boolean;
 }
 
 export interface TestAppContext {
@@ -71,6 +76,49 @@ export async function createTestApp(
     subscribeGithubEvent: jest.fn(),
     unsubscribeGithubEvent: jest.fn(),
   };
+
+  const controllers: Array<any> = [
+    AuthController,
+    PlayerController,
+    PetController,
+  ];
+  if (options.includeTaskController) {
+    controllers.push(TaskController);
+  }
+  if (options.includePointHistoryController) {
+    controllers.push(PointHistoryController);
+  }
+
+  const providers: Array<any> = [
+    UserStore,
+    JwtStrategy,
+    JwtGuard,
+    GithubGuard,
+    WsJwtGuard,
+    RoomService,
+    ProgressGateway,
+    FocusTimeService,
+    PlayerService,
+    PlayerGateway,
+    ChatGateway,
+    PetService,
+    WriteLockService,
+    {
+      provide: GithubPollService,
+      useValue: githubPollServiceMock,
+    },
+  ];
+
+  if (options.includeFocusTimeGateway) {
+    providers.push(FocusTimeGateway);
+  }
+
+  if (options.includeTaskController || options.includePointHistoryController) {
+    providers.push(TaskService);
+  }
+  if (options.includePointHistoryController) {
+    providers.push(PointHistoryService);
+  }
 
   const builder: TestingModuleBuilder = Test.createTestingModule({
     imports: [
@@ -110,33 +158,8 @@ export async function createTestApp(
         signOptions: { expiresIn: '1d' },
       }),
     ],
-    controllers: [
-      AuthController,
-      PlayerController,
-      PetController,
-      PointHistoryController,
-    ],
-    providers: [
-      UserStore,
-      JwtStrategy,
-      JwtGuard,
-      GithubGuard,
-      WsJwtGuard,
-      RoomService,
-      ProgressGateway,
-      FocusTimeService,
-      PlayerService,
-      PlayerGateway,
-      ChatGateway,
-      PetService,
-      PointHistoryService,
-      TaskService,
-      WriteLockService,
-      {
-        provide: GithubPollService,
-        useValue: githubPollServiceMock,
-      },
-    ],
+    controllers,
+    providers,
   });
 
   if (options.githubGuardUser) {

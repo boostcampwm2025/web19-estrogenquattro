@@ -11,10 +11,14 @@ import {
   parseLocalDate,
   toDateString,
 } from "@/utils/timeFormat";
+import {
+  MAX_TASK_TEXT_LENGTH,
+  exceedsUtf8ByteLimit,
+  normalizeFocusTaskName,
+} from "@/utils/textBytes";
 import { getErrorMessage } from "@/lib/errors/messages";
 import { mapTaskResToTask } from "@/app/_components/TasksMenu/utils/mappers";
-
-const MAX_TASK_TEXT_LENGTH = 100;
+import { Analytics } from "@/lib/analytics";
 
 interface TasksStore {
   tasks: Task[];
@@ -118,7 +122,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         });
         return;
       }
-      if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
+      if (exceedsUtf8ByteLimit(trimmedText, MAX_TASK_TEXT_LENGTH)) {
         set({
           error: i18next.t(
             ($: { error: { taskTooLong: string } }) => $.error.taskTooLong,
@@ -131,13 +135,18 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         const response = await taskApi.createTask(trimmedText);
         const newTask = mapTaskResToTask(response);
         set((state) => ({ tasks: [...state.tasks, newTask], error: null }));
+        Analytics.taskCreate();
       } catch (error) {
         devLogger.error("Failed to create task", { error });
+        const errorCode = error instanceof ApiError ? error.code : undefined;
         set({
-          error: i18next.t(
-            ($: { error: { taskCreateFailed: string } }) =>
-              $.error.taskCreateFailed,
-            { ns: "common" },
+          error: getErrorMessage(
+            errorCode,
+            i18next.t(
+              ($: { error: { taskCreateFailed: string } }) =>
+                $.error.taskCreateFailed,
+              { ns: "common" },
+            ),
           ),
         });
       }
@@ -164,6 +173,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           await taskApi.uncompleteTask(id);
         } else {
           await taskApi.completeTask(id);
+          Analytics.taskComplete();
         }
       } catch (error) {
         devLogger.error("Failed to toggle task", { id, error });
@@ -203,6 +213,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
 
       try {
         await taskApi.deleteTask(id);
+        Analytics.taskDelete();
       } catch (error) {
         devLogger.error("Failed to delete task", { id, error });
         const errorCode = error instanceof ApiError ? error.code : undefined;
@@ -240,7 +251,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         });
         return;
       }
-      if (trimmedText.length > MAX_TASK_TEXT_LENGTH) {
+      if (exceedsUtf8ByteLimit(trimmedText, MAX_TASK_TEXT_LENGTH)) {
         set({
           error: i18next.t(
             ($: { error: { taskTooLong: string } }) => $.error.taskTooLong,
@@ -275,21 +286,28 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           if (status === FOCUS_STATUS.FOCUSING) {
             const socket = getSocket();
             if (socket?.connected) {
-              socket.emit("focus_task_updating", { taskName: trimmedText });
+              const taskName = normalizeFocusTaskName(trimmedText);
+              if (taskName) {
+                socket.emit("focus_task_updating", { taskName });
+              }
             }
           }
         }
       } catch (error) {
         devLogger.error("Failed to update task", { id, error });
+        const errorCode = error instanceof ApiError ? error.code : undefined;
         // 롤백
         set((state) => ({
           tasks: state.tasks.map((t) =>
             t.id === id ? { ...t, description: oldDescription } : t,
           ),
-          error: i18next.t(
-            ($: { error: { taskEditFailed: string } }) =>
-              $.error.taskEditFailed,
-            { ns: "common" },
+          error: getErrorMessage(
+            errorCode,
+            i18next.t(
+              ($: { error: { taskEditFailed: string } }) =>
+                $.error.taskEditFailed,
+              { ns: "common" },
+            ),
           ),
         }));
       } finally {

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/i18n";
+import { Analytics } from "@/lib/analytics";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const { t, i18n, ready } = useTranslation("ui");
@@ -34,11 +35,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           ["ko", "en"].includes(detectedLng)
         ) {
           i18n.changeLanguage(detectedLng);
+          return; // 언어 전환 후 useEffect가 다시 실행되므로 여기서 중단
         }
       }
 
       // 2. 타이틀 업데이트
       document.title = t(($) => $.metadata.title);
+
+      // 3. GA4: 언어 감지 완료 후 최종 언어로만 유저 속성 설정
+      Analytics.setUserProperties({ language: i18n.language });
     }
   }, [i18n.language, i18n.isInitialized, ready, t]);
 

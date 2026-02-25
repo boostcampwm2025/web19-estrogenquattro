@@ -106,6 +106,9 @@ socket.emit('joining', {
 **입장 실패:**
 - 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
 
+**입장 실패:**
+- 지정 방 없음/만석 시 `join_failed` 이벤트 전송 (`ROOM_NOT_FOUND`, `ROOM_FULL`)
+
 ---
 
 ### moving
@@ -138,22 +141,22 @@ socket.emit('moving', {
 
 ```typescript
 socket.emit('chatting', {
-  message: string  // 채팅 메시지 (최대 30자)
+  message: string  // 채팅 메시지 (최대 90 bytes, UTF-8)
 });
 ```
 
 **메시지 제한:**
-- 최대 길이: 30자 (원문 기준, trim 전)
+- 최대 길이: 90 bytes (UTF-8, trim 전 원문 기준)
 - 공백만 있는 메시지 불가
 
 **서버 동작:**
 1. 타입 검증 (`message`가 문자열인지)
-2. 내용 검증 (공백만 있거나 30자 초과 시 무시)
+2. 내용 검증 (공백만 있거나 90 bytes 초과 시 무시)
 3. 같은 방에 `chatted` 브로드캐스트
 
 **비정상 메시지 처리:**
 - 검증 실패 시 조용히 무시 (클라이언트에 피드백 없음)
-- 정상 사용자는 클라이언트 검증(HTML maxLength)으로 차단됨
+- 정상 사용자는 클라이언트 `TextEncoder` 기반 선검증으로 차단됨
 
 ---
 
@@ -163,10 +166,14 @@ socket.emit('chatting', {
 
 ```typescript
 socket.emit('focusing', {
-  taskName?: string,  // 집중할 태스크 이름 (선택)
+  taskName?: string,  // 집중할 태스크 이름 (선택, 최대 45 bytes UTF-8)
   taskId?: number     // 집중할 태스크 ID (선택, 서버에 집중 시간 누적용)
 });
 ```
+
+**payload 제한:**
+- `taskName`은 UTF-8 기준 최대 45 bytes
+- `taskName`이 제한을 초과하거나 타입이 올바르지 않으면 ack 실패 응답
 
 **서버 동작:**
 - 포커스 상태를 `FOCUSING`으로 변경
@@ -214,11 +221,12 @@ socket.emit('resting');
 
 ```typescript
 socket.emit('focus_task_updating', {
-  taskName: string  // 변경된 태스크 이름
+  taskName: string  // 변경된 태스크 이름 (최대 45 bytes UTF-8)
 });
 ```
 
 **서버 동작:**
+- payload 검증 (`taskName` 문자열/비어있지 않음/45 bytes 이하)
 - `lastFocusStartTime`을 변경하지 않음 (집중 세션 유지)
 - 같은 방에 `focus_task_updated` 브로드캐스트
 
@@ -226,6 +234,9 @@ socket.emit('focus_task_updating', {
 ```typescript
 // 성공
 { success: true, data: { userId, username, taskName } }
+
+// 실패
+{ success: false, error: string }
 ```
 
 ---
@@ -310,6 +321,22 @@ socket.on('join_failed', (data: {
 
 ---
 
+### join_failed
+
+방 입장 실패 알림
+
+```typescript
+socket.on('join_failed', (data: {
+  message: string,
+  code: 'ROOM_NOT_FOUND' | 'ROOM_FULL'
+}) => {
+  // ROOM_FULL: 채널 선택 모달 다시 열기
+  // ROOM_NOT_FOUND: 고정 방(room-1~room-5) 밖 roomId 요청은 세션/URL 이상으로 간주하여 로그인 화면으로 이동
+});
+```
+
+---
+
 ### players_synced
 
 기존 플레이어 목록 (입장 시 수신)
@@ -328,7 +355,7 @@ socket.on('players_synced', (players: Array<{
   lastFocusStartTime: string | null,
   totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
-  taskName: string | null  // 현재 집중 중인 태스크 이름 (RESTING 시 null)
+  taskName: string | null  // 현재 집중 중인 태스크 이름 (최대 45 bytes, RESTING 시 null)
 }>) => {
   // RemotePlayer 생성
 });
@@ -351,7 +378,7 @@ socket.on('player_joined', (data: {
   status: 'FOCUSING' | 'RESTING',
   totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
-  taskName: string | null  // 현재 집중 중인 태스크 이름 (RESTING 시 null)
+  taskName: string | null  // 현재 집중 중인 태스크 이름 (최대 45 bytes, RESTING 시 null)
 }) => {
   // RemotePlayer 생성
 });
@@ -515,7 +542,7 @@ socket.on('focused', (data: {
   lastFocusStartTime: string,
   totalFocusSeconds: number,
   currentSessionSeconds: number,  // 서버가 계산한 현재 세션 경과 시간 (초)
-  taskName?: string
+  taskName?: string  // 최대 45 bytes
 }) => {
   // 포커스 상태 표시 업데이트
 });
@@ -548,7 +575,7 @@ socket.on('rested', (data: {
 socket.on('focus_task_updated', (data: {
   userId: string,
   username: string,
-  taskName: string
+  taskName: string  // 최대 45 bytes
 }) => {
   // RemotePlayer의 태스크 말풍선 업데이트
 });

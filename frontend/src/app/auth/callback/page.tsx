@@ -3,12 +3,14 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
+import { Analytics } from "@/lib/analytics";
 
 export default function AuthCallbackPage() {
   const { t } = useTranslation("common");
   const { fetchUser, isAuthenticated, isLoading } = useAuthStore();
 
   useEffect(() => {
+    Analytics.authCallback();
     fetchUser();
   }, [fetchUser]);
 
