@@ -96,6 +96,73 @@ describe('Auth Flow E2E', () => {
     });
   });
 
+  it('동일 githubId 사용자가 username 변경 후 재로그인하면 auth/me가 최신 프로필을 반환한다', async () => {
+    // Given: 기존 username으로 로그인 가능한 상태
+    const original = { ...guardUser };
+
+    try {
+      const firstCallback = await request(context.app.getHttpServer())
+        .get('/auth/github/callback')
+        .expect(302);
+      const firstCookie = (
+        firstCallback.headers['set-cookie'] as string[] | undefined
+      )
+        ?.find((cookie) => cookie.startsWith('access_token='))
+        ?.split(';')[0];
+      expect(firstCookie).toBeDefined();
+
+      const firstMe = await request(context.app.getHttpServer())
+        .get('/auth/me')
+        .set('Cookie', firstCookie!)
+        .expect(200);
+      expect(firstMe.body).toMatchObject({
+        githubId: original.githubId,
+        username: original.username,
+        avatarUrl: original.avatarUrl,
+        playerId: original.playerId,
+      });
+
+      // When: GitHub username/avatar가 변경된 상태로 다시 로그인하면
+      Object.assign(guardUser, {
+        username: 'auth-user-renamed',
+        avatarUrl: 'https://github.com/auth-user-renamed.png',
+      });
+
+      // 테스트 환경에서는 GithubGuard를 mock하므로 전략(UserStore 동기화)을 수동 반영
+      context.userStore.findOrCreate({
+        githubId: guardUser.githubId,
+        username: guardUser.username,
+        avatarUrl: guardUser.avatarUrl,
+        accessToken: 'test-oauth-token-renamed',
+        playerId: original.playerId,
+      });
+
+      const secondCallback = await request(context.app.getHttpServer())
+        .get('/auth/github/callback')
+        .expect(302);
+      const secondCookie = (
+        secondCallback.headers['set-cookie'] as string[] | undefined
+      )
+        ?.find((cookie) => cookie.startsWith('access_token='))
+        ?.split(';')[0];
+      expect(secondCookie).toBeDefined();
+
+      // Then: /auth/me가 최신 username/avatarUrl을 반환한다
+      const secondMe = await request(context.app.getHttpServer())
+        .get('/auth/me')
+        .set('Cookie', secondCookie!)
+        .expect(200);
+      expect(secondMe.body).toMatchObject({
+        githubId: original.githubId,
+        username: 'auth-user-renamed',
+        avatarUrl: 'https://github.com/auth-user-renamed.png',
+        playerId: original.playerId,
+      });
+    } finally {
+      Object.assign(guardUser, original);
+    }
+  });
+
   it('로그아웃을 호출하면 인증 쿠키를 제거하고 프론트로 리다이렉트한다', async () => {
     // Given: 로그인된 사용자가 존재하는 상태
 
