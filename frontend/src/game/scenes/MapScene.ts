@@ -30,41 +30,49 @@ export class MapScene extends Phaser.Scene {
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
   private irisTransition!: IrisTransition;
+  private themeChangeTimer?: number;
+  private currentTheme: string = MapScene.getMapThemeByKstWeek();
 
   // Map Configuration
   // imagePath: 백엔드 API로 서빙 (권한 체크 적용)
-  private maps: MapConfig[] = [
-    {
-      image: "tiles1",
-      tilemap: "tilemap1",
-      imagePath: `${API_URL}/api/maps/0`,
-      tilemapPath: "/assets/tilemaps/desert_stage1.json",
-    },
-    {
-      image: "tiles2",
-      tilemap: "tilemap2",
-      imagePath: `${API_URL}/api/maps/1`,
-      tilemapPath: "/assets/tilemaps/desert_stage2.json",
-    },
-    {
-      image: "tiles3",
-      tilemap: "tilemap3",
-      imagePath: `${API_URL}/api/maps/2`,
-      tilemapPath: "/assets/tilemaps/desert_stage3.json",
-    },
-    {
-      image: "tiles4",
-      tilemap: "tilemap4",
-      imagePath: `${API_URL}/api/maps/3`,
-      tilemapPath: "/assets/tilemaps/desert_stage4.json",
-    },
-    {
-      image: "tiles5",
-      tilemap: "tilemap5",
-      imagePath: `${API_URL}/api/maps/4`,
-      tilemapPath: "/assets/tilemaps/desert_stage5.json",
-    },
-  ];
+  // tilemapPath: KST 주차 기반 테마 로테이션
+  private maps: MapConfig[] = MapScene.buildMaps();
+
+  /**
+   * KST 기준 ISO 주차 번호로 맵 테마 결정 (백엔드와 동일 로직)
+   */
+  private static getMapThemeByKstWeek(): string {
+    const kstTimeMs = Date.now() + 9 * 60 * 60 * 1000;
+    const kstDate = new Date(kstTimeMs);
+
+    const d = new Date(
+      Date.UTC(
+        kstDate.getUTCFullYear(),
+        kstDate.getUTCMonth(),
+        kstDate.getUTCDate(),
+      ),
+    );
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(
+      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+    );
+
+    const themes = ["desert", "city"];
+    return themes[weekNo % 2];
+  }
+
+  private static buildMaps(): MapConfig[] {
+    const theme = MapScene.getMapThemeByKstWeek();
+    return Array.from({ length: 5 }, (_, i) => ({
+      image: `tiles${i + 1}`,
+      tilemap: `tilemap${i + 1}`,
+      imagePath: `${API_URL}/api/maps/${i}`,
+      tilemapPath: `/assets/tilemaps/${theme}/${theme}_stage${i + 1}.json`,
+    }));
+  }
 
   constructor() {
     super({ key: "MogakcoScene" });
@@ -82,9 +90,9 @@ export class MapScene extends Phaser.Scene {
     });
 
     // Body Sprite Sheet
-    this.load.spritesheet("body", "/assets/body_v2.png", {
-      frameWidth: 125,
-      frameHeight: 125,
+    this.load.spritesheet("body", "/assets/body.png", {
+      frameWidth: 64,
+      frameHeight: 64,
     });
 
     // Default Face
@@ -210,6 +218,9 @@ export class MapScene extends Phaser.Scene {
     // 6. Iris Transition Setup
     this.irisTransition = new IrisTransition(this);
 
+    // 7. 테마 자동 전환 타이머 (다음 월요일 KST 00:00에 테마 리로드)
+    this.scheduleThemeChange();
+
     // 채널 전환 시작 이벤트 리스너 (React -> Phaser)
     const handleChannelTransition = (event: Event) => {
       const customEvent = event as CustomEvent;
@@ -298,8 +309,63 @@ export class MapScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    if (this.themeChangeTimer) {
+      window.clearTimeout(this.themeChangeTimer);
+    }
     this.cameraController?.destroy();
     this.events.off("shutdown", this.cleanup, this);
+  }
+
+  /**
+   * 다음 월요일 KST 00:00에 테마 전환을 예약
+   */
+  private scheduleThemeChange(): void {
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
+    // 다음 월요일 KST 00:00 계산
+    const daysUntilMonday = (8 - kstNow.getUTCDay()) % 7 || 7;
+    const nextMonday = new Date(
+      Date.UTC(
+        kstNow.getUTCFullYear(),
+        kstNow.getUTCMonth(),
+        kstNow.getUTCDate() + daysUntilMonday,
+      ),
+    );
+    // nextMonday는 KST 기준이므로 UTC로 변환: KST 00:00 = UTC 15:00 전날
+    const nextMondayUtcMs = nextMonday.getTime() - 9 * 60 * 60 * 1000;
+    const msUntilChange = nextMondayUtcMs - Date.now();
+
+    if (msUntilChange <= 0) {
+      // 이미 지남 — 테마 확인 후 다음 주 예약
+      this.applyThemeIfChanged();
+      this.themeChangeTimer = window.setTimeout(
+        () => this.scheduleThemeChange(),
+        1000,
+      );
+      return;
+    }
+
+    this.themeChangeTimer = window.setTimeout(() => {
+      this.applyThemeIfChanged();
+      // 다음 주 전환도 예약
+      this.scheduleThemeChange();
+    }, msUntilChange);
+  }
+
+  private applyThemeIfChanged(): void {
+    const newTheme = MapScene.getMapThemeByKstWeek();
+    if (newTheme !== this.currentTheme) {
+      this.currentTheme = newTheme;
+      this.maps = MapScene.buildMaps();
+      this.mapManager.updateMaps(this.maps);
+      this.mapManager.reloadCurrentMap(() => {
+        this.setupCollisions();
+        const { width, height } = this.mapManager.getMapSize();
+        this.cameraController.updateBounds(width, height);
+        this.socketManager.setWalls(this.mapManager.getWalls()!);
+        this.socketManager.setupCollisions();
+      });
+    }
   }
 
   private createAnimations() {
@@ -382,6 +448,18 @@ export class MapScene extends Phaser.Scene {
    * 맵 전환 공통 로직 (서버 map_switch/game_state 이벤트에서 호출)
    */
   private performMapSwitch(mapIndex: number) {
+    // 유효성 검사
+    if (mapIndex < 0 || mapIndex >= this.maps.length) {
+      console.warn(
+        `[MapScene] Invalid mapIndex from server: ${mapIndex}, using 0`,
+      );
+      mapIndex = 0;
+    }
+
+    // 테마가 바뀌었을 수 있으므로 maps 배열 재생성
+    this.maps = MapScene.buildMaps();
+    this.mapManager.updateMaps(this.maps);
+
     this.mapManager.switchToMap(mapIndex, () => {
       this.setupCollisions();
       const { width, height } = this.mapManager.getMapSize();
@@ -402,9 +480,106 @@ export class MapScene extends Phaser.Scene {
   }
 
   private setupCollisions() {
+    // 이전 collider 정리
+    if (this.wallCollider) {
+      this.physics.world.removeCollider(this.wallCollider);
+      this.wallCollider = undefined;
+    }
+    if (this.easterEggCollider) {
+      this.physics.world.removeCollider(this.easterEggCollider);
+      this.easterEggCollider = undefined;
+    }
+
     const walls = this.mapManager.getWalls();
     if (walls && this.player) {
-      this.physics.add.collider(this.player.getContainer(), walls);
+      this.wallCollider = this.physics.add.collider(
+        this.player.getContainer(),
+        walls,
+      );
+    }
+    this.setupEasterEggs();
+  }
+
+  private easterEggDisabled = false;
+  private wallCollider?: Phaser.Physics.Arcade.Collider;
+  private easterEggCollider?: Phaser.Physics.Arcade.Collider;
+
+  private setupEasterEggs() {
+    this.easterEggDisabled = false;
+
+    const easterEggGroup = this.mapManager.getEasterEggGroup();
+    if (!easterEggGroup || !this.player) return;
+
+    this.easterEggCollider = this.physics.add.overlap(
+      this.player.getContainer(),
+      easterEggGroup,
+      (_player, zone) => {
+        if (this.easterEggDisabled) return;
+
+        const gameObj = zone as Phaser.GameObjects.Rectangle;
+        const name = gameObj.getData("easterEggName") as string;
+        if (!name) return;
+
+        const zones = this.mapManager.getEasterEggs().get(name);
+        if (!zones || zones.length < 2) return;
+
+        const currentZone = { x: gameObj.x, y: gameObj.y };
+        const target = zones.find(
+          (z) =>
+            Math.abs(z.x - currentZone.x) > 1 ||
+            Math.abs(z.y - currentZone.y) > 1,
+        );
+        if (!target || !this.player) return;
+
+        // 텔레포트 실행 후 overlap 자체를 비활성화
+        this.player.setPosition(target.x, target.y);
+        this.easterEggDisabled = true;
+        this.easterEggCollider!.active = false;
+
+        // 다음 프레임부터 overlap 복원 체크 시작
+        this.time.delayedCall(500, () => {
+          this.checkEasterEggReactivate();
+        });
+      },
+    );
+  }
+
+  private checkEasterEggReactivate() {
+    if (!this.player || !this.easterEggCollider) return;
+
+    const easterEggGroup = this.mapManager.getEasterEggGroup();
+    if (!easterEggGroup) return;
+
+    const container = this.player.getContainer();
+    const body = container.body as Phaser.Physics.Arcade.Body;
+    const playerRect = new Phaser.Geom.Rectangle(
+      body.x,
+      body.y,
+      body.width,
+      body.height,
+    );
+
+    // 모든 easteregg zone과 겹치지 않는지 확인
+    const overlapsAny = easterEggGroup.getChildren().some((child) => {
+      const zone = child as Phaser.GameObjects.Rectangle;
+      const zoneRect = new Phaser.Geom.Rectangle(
+        zone.x - zone.width / 2,
+        zone.y - zone.height / 2,
+        zone.width,
+        zone.height,
+      );
+      return Phaser.Geom.Intersects.RectangleToRectangle(playerRect, zoneRect);
+    });
+
+    if (!overlapsAny) {
+      // 모든 포탈에서 벗어남 → 재활성화
+      this.easterEggDisabled = false;
+      this.easterEggCollider.active = true;
+    } else {
+      // 아직 포탈 위에 있음 → 다음 프레임에 다시 체크
+      this.time.delayedCall(50, () => {
+        this.checkEasterEggReactivate();
+      });
     }
   }
 
