@@ -26,7 +26,7 @@
 
 ## 상태 전이
 
-1. **방 입장**: `findOrCreate`로 당일 레코드 생성/조회
+1. **방 입장 (`joining`)**: `settleStaleSession`으로 미정산 세션을 먼저 정리한 뒤 `findOrCreate`로 당일 레코드 생성/조회
 2. **focusing**: `Player.lastFocusStartTime` 기록, `Player.focusingTaskId` 저장 (선택)
 3. **resting**: 집중 시간 누적 후 `players.last_focus_start_time`(V2) = `null`, `players.focusing_task_id` = `null`
 4. **disconnect**: `RESTING` 처리 시도 (예외는 로깅)
@@ -38,6 +38,15 @@ stateDiagram-v2
     FOCUSING --> RESTING: resting 이벤트
     FOCUSING --> RESTING: disconnect
 ```
+
+---
+
+## 재접속 stale 정산 정책 (Issue #456)
+
+- 적용 경로: `PlayerGateway.handleJoin` → `FocusTimeService.settleStaleSession`
+- stale 허용 최대 구간: `600초 (10분)`
+- 10분 초과 stale 세션은 `600초`만 누적 후 `players.last_focus_start_time`, `players.focusing_task_id`를 초기화
+- 정상 `focusing -> resting` 경로(`startResting`)에는 이 상한을 적용하지 않음
 
 ---
 
@@ -236,5 +245,6 @@ setInterval(() => seconds++, 1000);   // 1초마다 +1 증가
 ## 주의사항
 
 - 방 입장 전에 `focusing/resting`을 호출하면 에러가 발생할 수 있다.
+- `joining` 시 stale 정산은 최대 10분까지만 반영된다(과대 정산 방지 목적).
 - 조회 시 `startAt`, `endAt` UTC 범위를 기준으로 `created_at`(datetime) 필드를 사용한다.
 - 클라이언트 시계와 서버 시계가 다를 수 있으므로 시간 계산은 서버에서 수행한다.

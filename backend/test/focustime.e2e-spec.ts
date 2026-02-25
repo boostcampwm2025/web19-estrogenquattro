@@ -1,4 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
+import request from 'supertest';
 import { Socket } from 'socket.io-client';
 import { Repository } from 'typeorm';
 
@@ -8,6 +9,7 @@ import {
   DailyFocusTime,
   FocusStatus,
 } from '../src/focustime/entites/daily-focus-time.entity';
+import { PointType } from '../src/pointhistory/entities/point-history.entity';
 import { Player } from '../src/player/entites/player.entity';
 import { Task } from '../src/task/entites/task.entity';
 import {
@@ -22,6 +24,19 @@ import {
 } from './e2e-test-helpers';
 
 type SocketAck = { success: boolean; error?: string };
+type HistoryRank = { playerId: number; count: number };
+
+const isHistoryRank = (value: unknown): value is HistoryRank => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.playerId === 'number' &&
+    typeof candidate.count === 'number'
+  );
+};
 
 describe('FocusTime E2E (Socket)', () => {
   let context: TestAppContext;
@@ -36,7 +51,10 @@ describe('FocusTime E2E (Socket)', () => {
   let sockets: Socket[] = [];
 
   beforeAll(async () => {
-    context = await createTestApp({ includeFocusTimeGateway: true });
+    context = await createTestApp({
+      includeFocusTimeGateway: true,
+      includePointHistoryController: true,
+    });
     jwtService = context.jwtService;
     userStore = context.userStore;
     playerRepository = getRepository(context, Player);
@@ -90,14 +108,17 @@ describe('FocusTime E2E (Socket)', () => {
     }
   });
 
-  const createAuthedSocket = async (): Promise<Socket> => {
+  const createAuthCookie = (): string => {
     const token = jwtService.sign({
       sub: String(testSocialId),
       username: 'testuser',
       playerId: testPlayer.id,
     });
+    return `access_token=${token}`;
+  };
 
-    return createSocketClient(context.baseUrl, `access_token=${token}`);
+  const createAuthedSocket = async (): Promise<Socket> => {
+    return createSocketClient(context.baseUrl, createAuthCookie());
   };
 
   const connectAndJoin = async (
@@ -190,6 +211,33 @@ describe('FocusTime E2E (Socket)', () => {
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
     });
 
+    it('stale 세션이 10분을 넘으면 joined.focusTime이 600초만 반영된다', async () => {
+      // Given: 8시간 동안 stale된 집중 상태 + 기존 누적 10초
+      testPlayer.lastFocusStartTime = new Date(Date.now() - 8 * 60 * 60 * 1000);
+      await playerRepository.save(testPlayer);
+
+      await focusTimeRepository.save({
+        player: testPlayer,
+        totalFocusSeconds: 10,
+        createdAt: new Date(),
+        status: FocusStatus.FOCUSING,
+      });
+
+      clientSocket = await createAuthedSocket();
+
+      // When
+      const joinedResponse = await joinRoom(clientSocket, {
+        x: 100,
+        y: 200,
+        username: 'testuser',
+      });
+
+      // Then: stale 구간은 10분(600초)으로 클램프된다
+      expect(joinedResponse.focusTime.status).toBe('RESTING');
+      expect(joinedResponse.focusTime.totalFocusSeconds).toBe(610);
+      expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
+    });
+
     it('휴식 상태에서는 currentSessionSeconds가 0이다', async () => {
       // Given: 오늘 FocusTime 누적값은 있지만 플레이어 상태가 RESTING인 상태
       testSocialId = Math.floor(2_000_000 + Math.random() * 1_000_000_000);
@@ -226,6 +274,48 @@ describe('FocusTime E2E (Socket)', () => {
       expect(joinedResponse.focusTime.status).toBe('RESTING');
       expect(joinedResponse.focusTime.totalFocusSeconds).toBe(25);
       expect(joinedResponse.focusTime.currentSessionSeconds).toBe(0);
+    });
+  });
+
+  describe('history-ranks 연계', () => {
+    it('재접속 정산 후 주간 랭킹 합계와 일별 누적 합계가 일치한다', async () => {
+      // Given: stale 세션(2시간) - joined에서 10분으로 클램프되어 정산되어야 한다
+      testPlayer.lastFocusStartTime = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await playerRepository.save(testPlayer);
+      clientSocket = await createAuthedSocket();
+
+      const joinedResponse = await joinRoom(clientSocket, {
+        x: 100,
+        y: 200,
+        username: 'testuser',
+      });
+      expect(joinedResponse.focusTime.totalFocusSeconds).toBe(600);
+
+      const dailyRecords = await focusTimeRepository
+        .createQueryBuilder('ft')
+        .where('ft.player.id = :playerId', { playerId: testPlayer.id })
+        .getMany();
+      const dailySum = dailyRecords.reduce(
+        (sum, record) => sum + record.totalFocusSeconds,
+        0,
+      );
+
+      const weekendStartAt = new Date(
+        Date.now() - 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      // When: FOCUSED 랭킹 엔드포인트 조회
+      const response = await request(context.baseUrl)
+        .get('/api/history-ranks')
+        .query({ type: PointType.FOCUSED, weekendStartAt })
+        .set('Cookie', createAuthCookie());
+
+      // Then: 랭킹 count와 일별 누적 합산이 일치
+      expect(response.status).toBe(200);
+      const body: unknown = response.body;
+      const ranks = Array.isArray(body) ? body.filter(isHistoryRank) : [];
+      const myRank = ranks.find((rank) => rank.playerId === testPlayer.id);
+      expect(myRank?.count).toBe(dailySum);
     });
   });
 

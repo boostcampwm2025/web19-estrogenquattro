@@ -29,6 +29,9 @@ import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity
 import { GlobalState } from '../src/github/entities/global-state.entity';
 import { GithubPollService } from '../src/github/github.poll-service';
 import { ProgressGateway } from '../src/github/progress.gateway';
+import { PointHistoryController } from '../src/pointhistory/point-history.controller';
+import { PointHistoryService } from '../src/pointhistory/point-history.service';
+import { PointHistory } from '../src/pointhistory/entities/point-history.entity';
 import { PlayerController } from '../src/player/player.controller';
 import { PlayerGateway } from '../src/player/player.gateway';
 import { Player } from '../src/player/entites/player.entity';
@@ -52,6 +55,7 @@ export interface CreateTestAppOptions {
   githubGuardUser?: User;
   includeFocusTimeGateway?: boolean;
   includeTaskController?: boolean;
+  includePointHistoryController?: boolean;
 }
 
 export interface TestAppContext {
@@ -81,6 +85,9 @@ export async function createTestApp(
   if (options.includeTaskController) {
     controllers.push(TaskController);
   }
+  if (options.includePointHistoryController) {
+    controllers.push(PointHistoryController);
+  }
 
   const providers: Array<any> = [
     UserStore,
@@ -106,8 +113,11 @@ export async function createTestApp(
     providers.push(FocusTimeGateway);
   }
 
-  if (options.includeTaskController) {
+  if (options.includeTaskController || options.includePointHistoryController) {
     providers.push(TaskService);
+  }
+  if (options.includePointHistoryController) {
+    providers.push(PointHistoryService);
   }
 
   const builder: TestingModuleBuilder = Test.createTestingModule({
@@ -136,6 +146,7 @@ export async function createTestApp(
         Player,
         Task,
         DailyFocusTime,
+        PointHistory,
         Pet,
         UserPet,
         UserPetCodex,

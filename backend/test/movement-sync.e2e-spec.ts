@@ -13,6 +13,23 @@ import {
   waitForSocketEvent,
 } from './e2e-test-helpers';
 
+const BUFFER_SIZE = 12;
+const RIGHT_DIRECTION = 4;
+
+const createMovePacket = (
+  x: number,
+  y: number,
+  direction: number,
+  isMoving: boolean,
+): Buffer => {
+  const packet = Buffer.alloc(BUFFER_SIZE);
+  packet.writeFloatLE(x, 0);
+  packet.writeFloatLE(y, 4);
+  packet.writeUInt8(direction, 8);
+  packet.writeUInt8(isMoving ? 1 : 0, 9);
+  return packet;
+};
+
 describe('Movement Sync E2E', () => {
   let context: TestAppContext;
   let playerRepository: Repository<Player>;
@@ -68,31 +85,39 @@ describe('Movement Sync E2E', () => {
     const mover = await connectAndJoin(31001, 'move-sender', 'room-1');
     const observer = await connectAndJoin(31002, 'move-observer', 'room-1');
 
-    // When: 한 사용자가 moving 이벤트를 전송하면
-    const movedPromise = waitForSocketEvent<{
-      userId: string;
-      x: number;
-      y: number;
-      isMoving: boolean;
-      direction: 'up' | 'down' | 'left' | 'right';
-      timestamp: number;
-    }>(observer, 'moved');
+    // When: 바이너리 moving 패킷을 전송하면
+    const movedPromise = new Promise<{ userId: string; payload: Buffer }>(
+      (resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('moved event timeout'));
+        }, 5000);
 
-    mover.emit('moving', {
-      x: 444,
-      y: 555,
-      isMoving: true,
-      direction: 'right',
-      timestamp: Date.now(),
-    });
+        const onMoved = (userId: string, payload: Buffer) => {
+          cleanup();
+          resolve({ userId, payload });
+        };
 
-    // Then: 같은 방의 다른 사용자가 moved 이벤트를 수신한다
+        const cleanup = () => {
+          clearTimeout(timeout);
+          observer.off('moved', onMoved);
+        };
+
+        observer.on('moved', onMoved);
+      },
+    );
+
+    mover.emit('moving', createMovePacket(444, 555, RIGHT_DIRECTION, true));
+
+    // Then: 같은 방의 다른 사용자가 moved 이벤트(userId + payload)를 수신한다
     const moved = await movedPromise;
     expect(moved.userId).toBe(mover.id);
-    expect(moved.x).toBe(444);
-    expect(moved.y).toBe(555);
-    expect(moved.isMoving).toBe(true);
-    expect(moved.direction).toBe('right');
+    expect(Buffer.isBuffer(moved.payload)).toBe(true);
+    expect(moved.payload.length).toBe(BUFFER_SIZE);
+    expect(moved.payload.readFloatLE(0)).toBeCloseTo(444, 3);
+    expect(moved.payload.readFloatLE(4)).toBeCloseTo(555, 3);
+    expect(moved.payload.readUInt8(8)).toBe(RIGHT_DIRECTION);
+    expect(moved.payload.readUInt8(9)).toBe(1);
   });
 
   it('다른 방 사용자에게는 moved 이벤트가 전파되지 않는다', async () => {
@@ -104,15 +129,9 @@ describe('Movement Sync E2E', () => {
       'room-2',
     );
 
-    // When: room-1 사용자가 moving 이벤트를 전송하면
+    // When: room-1 사용자가 유효한 moving 패킷을 전송하면
     const noEventPromise = waitForNoSocketEvent(isolatedObserver, 'moved');
-    mover.emit('moving', {
-      x: 111,
-      y: 222,
-      isMoving: true,
-      direction: 'left',
-      timestamp: Date.now(),
-    });
+    mover.emit('moving', createMovePacket(111, 222, 3, true));
 
     // Then: room-2 사용자는 moved 이벤트를 수신하지 않는다
     await noEventPromise;
