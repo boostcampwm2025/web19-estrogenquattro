@@ -2,6 +2,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import type { AddressInfo } from "net";
 import { FOCUS_STATUS } from "../../src/stores/useFocusTimeStore";
+import customParser from "socket.io-msgpack-parser";
 
 type TestSocketServer = {
   url: string;
@@ -12,6 +13,7 @@ export const createTestSocketServer = async (): Promise<TestSocketServer> => {
   const httpServer = createServer();
   const io = new Server(httpServer, {
     cors: { origin: "*", credentials: true },
+    parser: customParser,
   });
 
   const players = new Map<

@@ -67,12 +67,12 @@ export default class RemotePlayer extends BasePlayer {
     return this.isFocusing;
   }
 
-  // 자원 해제 오버라이드
-  destroy() {
-    super.destroy();
-  }
+  private prevPos = { x: 0, y: 0 };
+  private targetPos = { x: 0, y: 0 };
+  private lastReceivedAt = 0;
+  private readonly TICK_INTERVAL = 100;
 
-  // 서버에서 받은 상태로 업데이트
+  // 서버에서 받은 상태로 업데이트 (10Hz 수신)
   updateState(state: {
     x: number;
     y: number;
@@ -84,10 +84,12 @@ export default class RemotePlayer extends BasePlayer {
       return;
     }
 
-    // 공통 update 호출 (마스크 동기화)
-    super.update();
+    // 새 위치 수신 시 보간 시작점 업데이트
+    this.prevPos = { x: this.container.x, y: this.container.y };
+    this.targetPos = { x: state.x, y: state.y };
+    this.lastReceivedAt = Date.now();
 
-    // 1. 위치 보정 (너무 멀어지면 강제 동기화)
+    // 위치 보정 (너무 멀어지면 강제 동기화)
     const dist = Phaser.Math.Distance.Between(
       this.container.x,
       this.container.y,
@@ -96,41 +98,49 @@ export default class RemotePlayer extends BasePlayer {
     );
     if (dist > 50) {
       this.container.setPosition(state.x, state.y);
+      this.prevPos = { x: state.x, y: state.y };
     }
 
-    // 부드러운 위치 보정을 위해 lerp 사용
-    this.container.x = Phaser.Math.Linear(this.container.x, state.x, 0.1);
-    this.container.y = Phaser.Math.Linear(this.container.y, state.y, 0.1);
-
-    // 2. 속도 동기화 (움직임 반영)
-    this.body.setVelocity(0); // 일단 정지
-
+    // 애니메이션 업데이트
     if (state.isMoving) {
-      // 방향 문자열 파싱해서 속도 적용
-      if (state.direction.includes("left")) {
-        this.body.setVelocityX(-this.speed);
-        this.playAnimation("walk-left");
-      }
-      if (state.direction.includes("right")) {
-        this.body.setVelocityX(this.speed);
+      if (state.direction.includes("left")) this.playAnimation("walk-left");
+      else if (state.direction.includes("right"))
         this.playAnimation("walk-right");
-      }
-      if (state.direction.includes("up")) {
-        this.body.setVelocityY(-this.speed);
-        this.playAnimation("walk-up");
-      }
-      if (state.direction.includes("down")) {
-        this.body.setVelocityY(this.speed);
+      else if (state.direction.includes("up")) this.playAnimation("walk-up");
+      else if (state.direction.includes("down"))
         this.playAnimation("walk-down");
-      }
     } else {
-      // 멈췄을 때
       this.stopAnimation();
-      // 멈췄을 때는 좌표 강제 동기화 (정확한 위치 안착)
-      this.container.setPosition(state.x, state.y);
     }
 
     // 펫 위치 업데이트
     this.updatePetPosition(state.direction);
+  }
+
+  update() {
+    // 공통 update 호출 (마스크 동기화)
+    super.update();
+
+    if (!this.body) return;
+    this.body.setVelocity(0); // 물리 속도 비활성화
+
+    // 수신된 위치로 시간 기반 보간 (Time-Based Interpolation)
+    if (this.lastReceivedAt > 0) {
+      const now = Date.now();
+      // TICK_INTERVAL 동안 prevPos에서 targetPos로 선형 보간
+      const elapsed = now - this.lastReceivedAt;
+      const t = Math.min(elapsed / this.TICK_INTERVAL, 1.0);
+
+      this.container.x = Phaser.Math.Linear(
+        this.prevPos.x,
+        this.targetPos.x,
+        t,
+      );
+      this.container.y = Phaser.Math.Linear(
+        this.prevPos.y,
+        this.targetPos.y,
+        t,
+      );
+    }
   }
 }

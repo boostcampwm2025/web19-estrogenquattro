@@ -18,6 +18,7 @@ import {
 } from "@/utils/textBytes";
 import { getErrorMessage } from "@/lib/errors/messages";
 import { mapTaskResToTask } from "@/app/_components/TasksMenu/utils/mappers";
+import { Analytics } from "@/lib/analytics";
 
 interface TasksStore {
   tasks: Task[];
@@ -134,6 +135,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
         const response = await taskApi.createTask(trimmedText);
         const newTask = mapTaskResToTask(response);
         set((state) => ({ tasks: [...state.tasks, newTask], error: null }));
+        Analytics.taskCreate();
       } catch (error) {
         devLogger.error("Failed to create task", { error });
         const errorCode = error instanceof ApiError ? error.code : undefined;
@@ -171,6 +173,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
           await taskApi.uncompleteTask(id);
         } else {
           await taskApi.completeTask(id);
+          Analytics.taskComplete();
         }
       } catch (error) {
         devLogger.error("Failed to toggle task", { id, error });
@@ -210,6 +213,7 @@ export const useTasksStore = create<TasksStore>((set, get) => {
 
       try {
         await taskApi.deleteTask(id);
+        Analytics.taskDelete();
       } catch (error) {
         devLogger.error("Failed to delete task", { id, error });
         const errorCode = error instanceof ApiError ? error.code : undefined;

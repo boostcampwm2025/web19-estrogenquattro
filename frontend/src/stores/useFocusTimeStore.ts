@@ -3,6 +3,7 @@ import i18next from "i18next";
 import { getSocket } from "@/lib/socket";
 import { getTodayStartTime } from "@/utils/timeFormat";
 import { normalizeFocusTaskName } from "@/utils/textBytes";
+import { Analytics } from "@/lib/analytics";
 
 export const FOCUS_STATUS = {
   FOCUSING: "FOCUSING",
@@ -118,6 +119,9 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
       error: null,
     });
 
+    // GA4: 포커스 시작 이벤트
+    Analytics.focusStart(taskName);
+
     // 소켓 이벤트 전송 (응답 callback 포함)
     socket.emit(
       "focusing",
@@ -168,6 +172,10 @@ export const useFocusTimeStore = create<FocusTimeStore>((set, get) => ({
 
     // 낙관적 업데이트 (현재 시간을 baseFocusSeconds에 반영)
     const currentFocusTime = prev.getFocusTime();
+
+    // GA4: 포커스 종료 이벤트 (경과 시간 포함)
+    Analytics.focusStop(currentFocusTime);
+
     set({
       status: FOCUS_STATUS.RESTING,
       isFocusTimerRunning: false,
