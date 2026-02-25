@@ -84,7 +84,6 @@ interface FocusTimeActions {
 ```
 
 > **Note:** 기존 `incrementFocusTime()` 방식에서 `getFocusTime()` 타임스탬프 기반으로 변경됨.
-> `startFocusing(taskName, taskId)`는 전송 전에 `taskName`을 trim하고 UTF-8 45 bytes 이내로 정규화한다.
 
 **낙관적 업데이트 흐름:**
 
@@ -155,10 +154,6 @@ interface TasksActions {
 - `toggleTask`: 완료 상태 토글
 - `deleteTask`: 목록에서 제거
 - `editTask`: 설명 수정 + 소켓 브로드캐스트
-
-**입력 제한 정책:**
-- `addTask`/`editTask`는 `description`을 trim 후 UTF-8 300 bytes 이하만 허용한다.
-- 집중 중 Task 수정 시 `focus_task_updating` payload의 `taskName`은 UTF-8 45 bytes 이내로 정규화해 전송한다.
 
 **중복 요청 방지:**
 

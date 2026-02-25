@@ -74,20 +74,6 @@ describe("Tasks API 통합", () => {
     expect(state.tasks[0].description).toBe("새 작업");
   });
 
-  it("UTF-8 300bytes 경계(Task 100자 한글)는 생성되고 301bytes는 차단된다", async () => {
-    await useTasksStore.getState().addTask("가".repeat(100)); // 300bytes
-
-    let state = useTasksStore.getState();
-    expect(state.tasks).toHaveLength(1);
-    expect(state.error).toBeNull();
-
-    await useTasksStore.getState().addTask("a".repeat(301)); // 301bytes
-
-    state = useTasksStore.getState();
-    expect(state.tasks).toHaveLength(1);
-    expect(state.error).toBe("Task는 UTF-8 기준 300 bytes 이하로 입력해주세요.");
-  });
-
   it("Task 생성에 실패하면 에러 메시지가 설정된다", async () => {
     server.use(
       http.post("*/api/tasks", () =>
@@ -225,17 +211,6 @@ describe("Tasks API 통합", () => {
     const state = useTasksStore.getState();
     expect(state.tasks[0].description).toBe("롤백 전");
     expect(state.error).toBe("Task 수정에 실패했습니다.");
-  });
-
-  it("Task 수정 시 300bytes 초과 입력은 차단되고 기존 값이 유지된다", async () => {
-    seedTaskStore([buildTaskEntity({ id: 61, description: "기존 Task" })]);
-    await useTasksStore.getState().fetchTasks();
-
-    await useTasksStore.getState().editTask(61, "a".repeat(301));
-
-    const state = useTasksStore.getState();
-    expect(state.tasks[0].description).toBe("기존 Task");
-    expect(state.error).toBe("Task는 UTF-8 기준 300 bytes 이하로 입력해주세요.");
   });
 
   it("Task 목록 조회에 실패하면 에러 상태가 설정된다", async () => {

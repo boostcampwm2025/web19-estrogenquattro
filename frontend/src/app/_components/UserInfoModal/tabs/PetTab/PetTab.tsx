@@ -8,7 +8,6 @@ import { useModalStore } from "@/stores/useModalStore";
 import { useAuthStore } from "@/stores/authStore";
 import { UserPet } from "@/lib/api/pet";
 import { useTranslation } from "react-i18next";
-import { Analytics } from "@/lib/analytics";
 
 export default function PetTab() {
   const { t } = useTranslation("ui");
@@ -138,13 +137,6 @@ export default function PetTab() {
     isDuplicate: boolean;
   }> => {
     const response = await gacha();
-
-    // GA4: 가챠 이벤트
-    Analytics.gachaPull(
-      response.userPet.pet.evolutionStage,
-      response.isDuplicate,
-    );
-
     return { pet: response.userPet.pet, isDuplicate: response.isDuplicate };
   }, [gacha]);
 
@@ -153,9 +145,6 @@ export default function PetTab() {
       setSelectedPetId(petId);
 
       if (!isOwner) return;
-
-      // GA4: 펫 장착 이벤트
-      Analytics.petEquip(petId);
 
       try {
         await equip(petId);

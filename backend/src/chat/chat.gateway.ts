@@ -9,7 +9,6 @@ import { Socket } from 'socket.io';
 import { RoomService } from '../room/room.service';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { CHAT_MAX_LENGTH } from './chat.constants';
-import { getUtf8ByteLength } from '../util/text-byte.util';
 
 interface ChatMessage {
   message: string;
@@ -46,10 +45,12 @@ export class ChatGateway {
       return;
     }
 
-    // 2. 내용 검증: 공백만 있거나 UTF-8 바이트 길이 초과
-    const messageBytes = getUtf8ByteLength(data.message);
-    if (data.message.trim().length === 0 || messageBytes > CHAT_MAX_LENGTH) {
-      this.logger.warn(`Invalid message: bytes=${messageBytes}`);
+    // 2. 내용 검증: 공백만 있거나 길이 초과 (길이는 원문 기준)
+    if (
+      data.message.trim().length === 0 ||
+      data.message.length > CHAT_MAX_LENGTH
+    ) {
+      this.logger.warn(`Invalid message: length=${data.message.length}`);
       return;
     }
 

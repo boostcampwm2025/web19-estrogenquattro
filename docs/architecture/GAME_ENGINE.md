@@ -199,7 +199,7 @@ export class RemotePlayer extends BasePlayer {
 
 - `setFocusState(isFocusing, options)`: 집중/휴식 상태 설정
 - 집중 중일 때 1초마다 경과 시간 UI 업데이트 (로컬 계산)
-- `options.taskName`: 현재 작업 중인 태스크 이름 (말풍선 표시, 최대 45 bytes UTF-8로 정규화)
+- `options.taskName`: 현재 작업 중인 태스크 이름 (말풍선 표시)
 - `options.totalFocusSeconds`: 누적 집중 시간 (초)
 - `options.currentSessionSeconds`: 현재 세션 경과 시간 (서버에서 계산하여 전달)
 
@@ -444,7 +444,7 @@ socket.on('map_switch', (data) => {
 
 socket.on('focused', (data) => {
   // RemotePlayer 집중 상태로 전환
-  // taskName(최대 45 bytes), totalFocusSeconds, currentSessionSeconds 반영
+  // taskName, totalFocusSeconds, currentSessionSeconds 반영
 });
 
 socket.on('rested', (data) => {

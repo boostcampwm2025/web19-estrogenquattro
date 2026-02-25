@@ -2,11 +2,6 @@ import * as Phaser from "phaser";
 import i18next from "i18next";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { MODAL_TYPES, useModalStore } from "@/stores/useModalStore";
-import {
-  MAX_FOCUS_TASK_NAME_LENGTH,
-  exceedsUtf8ByteLimit,
-  truncateToUtf8Bytes,
-} from "@/utils/textBytes";
 import Pet from "./Pet";
 import type { Direction } from "../types/direction";
 
@@ -411,9 +406,11 @@ export default class BasePlayer {
           { ns: "game" },
         );
     if (isFocusing && taskName) {
-      statusText = exceedsUtf8ByteLimit(taskName, MAX_FOCUS_TASK_NAME_LENGTH)
-        ? `${truncateToUtf8Bytes(taskName, MAX_FOCUS_TASK_NAME_LENGTH)}...`
-        : taskName;
+      const MAX_TASK_NAME_LENGTH = 15;
+      statusText =
+        taskName.length > MAX_TASK_NAME_LENGTH
+          ? taskName.slice(0, MAX_TASK_NAME_LENGTH) + "..."
+          : taskName;
     }
 
     // 작업 중: 초록 계열 / 휴식중: 빨강 계열

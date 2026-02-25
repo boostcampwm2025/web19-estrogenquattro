@@ -8,7 +8,6 @@ import {
   TaskNotFoundException,
   TaskNotOwnedException,
   TaskFocusingException,
-  TaskTooLongException,
 } from './exceptions/task.exceptions';
 import { Task } from './entites/task.entity';
 import { PlayerService } from '../player/player.service';
@@ -99,33 +98,6 @@ describe('TaskService', () => {
       expect(result.description).toBe('새로운 할 일');
       expect(result.isCompleted).toBe(false);
       expect(result.totalFocusSeconds).toBe(0);
-    });
-
-    it('300bytes Task 설명은 생성된다', async () => {
-      // Given
-      const description = 'a'.repeat(300);
-
-      // When
-      const result = await service.createTask({
-        playerId: testPlayer.id,
-        description,
-      });
-
-      // Then
-      expect(result.description).toBe(description);
-    });
-
-    it('300bytes를 초과한 Task 설명은 TaskTooLongException을 던진다', async () => {
-      // Given
-      const description = 'a'.repeat(301);
-
-      // When & Then
-      await expect(
-        service.createTask({
-          playerId: testPlayer.id,
-          description,
-        }),
-      ).rejects.toThrow(TaskTooLongException);
     });
 
     it('존재하지 않는 플레이어로 생성 시 NotFoundException을 던진다', async () => {
@@ -377,17 +349,6 @@ describe('TaskService', () => {
       await expect(
         service.updateTask(99999, '수정', testPlayer.id),
       ).rejects.toThrow(NotFoundException);
-    });
-
-    it('300bytes를 초과한 설명으로 수정 시 TaskTooLongException을 던진다', async () => {
-      // Given
-      const task = await createTestTask(testPlayer, '기존 설명');
-      const tooLongDescription = 'a'.repeat(301);
-
-      // When & Then
-      await expect(
-        service.updateTask(task.id, tooLongDescription, testPlayer.id),
-      ).rejects.toThrow(TaskTooLongException);
     });
   });
 

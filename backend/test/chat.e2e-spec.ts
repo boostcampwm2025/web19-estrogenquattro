@@ -81,7 +81,7 @@ describe('Chat E2E', () => {
     expect(chatted.message).toBe('테스트 메시지');
   });
 
-  it('공백 메시지와 90bytes 초과 메시지는 브로드캐스트되지 않는다', async () => {
+  it('공백 메시지와 길이 초과 메시지는 브로드캐스트되지 않는다', async () => {
     // Given: 같은 방(room-1)에 사용자 두 명이 접속한 상태
     const sender = await connectAndJoin(21003, 'chat-invalid-sender', 'room-1');
     const receiver = await connectAndJoin(
@@ -97,37 +97,12 @@ describe('Chat E2E', () => {
 
     // Then: chatted 이벤트가 수신되지 않는다
 
-    // When: 90bytes를 초과한 메시지를 전송하면
+    // When: 30자를 초과한 메시지를 전송하면
     const noLongMessage = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: 'a'.repeat(91) });
+    sender.emit('chatting', { message: 'a'.repeat(31) });
     await noLongMessage;
 
     // Then: chatted 이벤트가 수신되지 않는다
-  });
-
-  it('한글 30자(90bytes)는 허용되고 31자(93bytes)는 브로드캐스트되지 않는다', async () => {
-    // Given: 같은 방(room-1)에 사용자 두 명이 접속한 상태
-    const sender = await connectAndJoin(21007, 'chat-ko-sender', 'room-1');
-    const receiver = await connectAndJoin(21008, 'chat-ko-receiver', 'room-1');
-
-    // When: 한글 30자(90bytes) 메시지를 전송하면
-    const validMessage = '가'.repeat(30);
-    const chattedPromise = waitForSocketEvent<{ message: string }>(
-      receiver,
-      'chatted',
-    );
-    sender.emit('chatting', { message: validMessage });
-
-    // Then: 브로드캐스트된다
-    const chatted = await chattedPromise;
-    expect(chatted.message).toBe(validMessage);
-
-    // When: 한글 31자(93bytes)를 전송하면
-    const noLongMessage = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: '가'.repeat(31) });
-    await noLongMessage;
-
-    // Then: 브로드캐스트되지 않는다
   });
 
   it('다른 방 사용자에게는 chatted 이벤트가 전파되지 않는다', async () => {

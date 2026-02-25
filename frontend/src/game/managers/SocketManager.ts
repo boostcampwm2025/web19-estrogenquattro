@@ -13,11 +13,8 @@ import {
   type FocusTimeData,
 } from "../../stores/useFocusTimeStore";
 import { getTodayStartTime } from "@/utils/timeFormat";
-import { CHAT_MAX_LENGTH, exceedsUtf8ByteLimit } from "@/utils/textBytes";
 import { useRoomStore } from "../../stores/useRoomStore";
 import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
-import { decodeMoveData, encodeMoveData } from "../utils/moveProtocol";
-import { DIRECTION } from "../constants/direction";
 
 interface PlayerData {
   userId: string;
@@ -256,11 +253,19 @@ export default class SocketManager {
       this.addRemotePlayer(data);
     });
 
-    socket.on("moved", (userId: string, buffer: ArrayBuffer) => {
-      const remotePlayer = this.otherPlayers.get(userId);
-      if (remotePlayer && buffer instanceof ArrayBuffer) {
-        const moveData = decodeMoveData(buffer);
-        remotePlayer.updateState(moveData);
+    socket.on("moved", (data: PlayerData) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (
+        remotePlayer &&
+        data.isMoving !== undefined &&
+        data.direction !== undefined
+      ) {
+        remotePlayer.updateState({
+          x: data.x,
+          y: data.y,
+          isMoving: data.isMoving,
+          direction: data.direction,
+        });
       }
     });
 
@@ -622,13 +627,6 @@ export default class SocketManager {
   }
 
   sendChat(message: string): void {
-    if (message.trim().length === 0) {
-      return;
-    }
-    if (exceedsUtf8ByteLimit(message, CHAT_MAX_LENGTH)) {
-      return;
-    }
-
     const player = this.getPlayer();
     if (!player) return;
 
@@ -649,8 +647,13 @@ export default class SocketManager {
     const socket = getSocket();
     if (!socket) return;
 
-    const binaryPayload = encodeMoveData(x, y, DIRECTION.STOP, false);
-    socket.emit("moving", binaryPayload);
+    socket.emit("moving", {
+      x,
+      y,
+      isMoving: false,
+      direction: "down",
+      timestamp: Date.now(),
+    });
   }
 
   destroy(): void {

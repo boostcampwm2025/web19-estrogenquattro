@@ -16,7 +16,7 @@ export class Task {
   @JoinColumn({ name: 'player_id' })
   player: Player;
 
-  @Column({ type: 'varchar', length: 300, nullable: false })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   description: string;
 
   @Column({ type: 'int', name: 'total_focus_seconds', default: 0 })

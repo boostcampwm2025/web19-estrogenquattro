@@ -213,8 +213,8 @@ Player.focusingTaskId: number | null
 | `focused` | S→C | 집중 시작 알림 (브로드캐스트) |
 | `resting` | C→S | 휴식 시작 |
 | `rested` | S→C | 휴식 시작 알림 (브로드캐스트) |
-| `focus_task_updating` | C→S | Task 이름 변경 (taskName ≤ 45 bytes) |
-| `focus_task_updated` | S→C | Task 이름 변경 알림 (taskName ≤ 45 bytes) |
+| `focus_task_updating` | C→S | Task 이름 변경 |
+| `focus_task_updated` | S→C | Task 이름 변경 알림 |
 
 **시간 계산:**
 ```typescript
@@ -258,7 +258,7 @@ Task CRUD 및 완료 처리
 {
   id: number;
   player: Player;
-  description: string;           // UTF-8 300 bytes 제한
+  description: string;           // 100자 제한
   total_focus_seconds: number;
   completed_at: Date | null;     // 완료 시각
   created_at: Date;              // datetime

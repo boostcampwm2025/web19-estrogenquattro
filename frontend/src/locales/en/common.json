@@ -12,7 +12,7 @@
     "loginRequired": "Login required.",
     "taskFetchFailed": "Failed to load tasks.",
     "taskInputRequired": "Please enter task content.",
-    "taskTooLong": "Task must be 300 bytes or less (UTF-8).",
+    "taskTooLong": "Task must be 100 characters or less.",
     "taskCreateFailed": "Failed to create task.",
     "taskToggleFailed": "Failed to change task status.",
     "taskDeleteFailed": "Failed to delete task.",

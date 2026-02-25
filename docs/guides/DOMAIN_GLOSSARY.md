@@ -250,7 +250,7 @@ y = Phaser.Math.Linear(currentY, targetY, 0.2);
 
 플레이어가 설정한 할 일 항목
 
-- 설명은 UTF-8 기준 최대 300 bytes
+- 최대 100자 설명
 - 일별로 생성/관리
 - 집중 시간 누적 가능
 
@@ -259,7 +259,7 @@ y = Phaser.Math.Linear(currentY, targetY, 0.2);
 현재 집중하고 있는 작업
 
 - `task.isRunning = true`
-- 말풍선/포커스 payload 작업명은 UTF-8 기준 최대 45 bytes
+- 말풍선에 작업명 표시
 - 집중 시간이 해당 Task에 누적
 
 ---

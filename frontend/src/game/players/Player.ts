@@ -2,12 +2,15 @@ import { emitEvent } from "../../lib/socket";
 import BasePlayer from "./BasePlayer";
 import { DIRECTION } from "../constants/direction";
 import type { Direction } from "../types/direction";
-import { encodeMoveData } from "../utils/moveProtocol";
 
 export default class Player extends BasePlayer {
   private roomId: string;
-  private prevMoving: boolean = false;
-  private tickTimer: number = 0;
+
+  // 이전 프레임의 상태 저장용
+  private prevState: { isMoving: boolean; direction: Direction } = {
+    isMoving: false,
+    direction: DIRECTION.STOP,
+  };
 
   constructor(
     scene: Phaser.Scene,
@@ -71,7 +74,7 @@ export default class Player extends BasePlayer {
     // 실제 물리 적용
     this.body.setVelocity(velocityX, velocityY);
 
-    // 2. 이동 상태 판단
+    // 2. 상태 변화 감지 및 소켓 전송
     let isMoving = velocityX !== 0 || velocityY !== 0;
 
     // 이동 키를 눌렀어도 물리적으로 막혀있으면(blocked) 멈춘 것으로 처리
@@ -102,37 +105,32 @@ export default class Player extends BasePlayer {
       this.stopAnimation();
     }
 
-    // Fixed 10Hz Tick Rate (ZEP 스타일, 100ms 간격 전송)
-    // - 이동 중: 100ms마다 정확히 1번씩만 전송 (네트워크 대역폭 1/6로 감소)
-    // - 정지 시: 이동→정지 전환 시 즉시 1회 전송 후 중단
-    const now = Date.now();
-    const TICK_INTERVAL = 100; // 10Hz (100ms)
+    // 이전 상태와 비교 (State Change Detection)
+    if (
+      isMoving !== this.prevState.isMoving ||
+      currentDirection !== this.prevState.direction
+    ) {
+      const payload = {
+        roomId: this.roomId,
+        userId: this.id,
+        x: this.container.x,
+        y: this.container.y,
+        isMoving: isMoving,
+        direction: currentDirection,
+        timestamp: Date.now(),
+      };
 
-    if (isMoving) {
-      if (now - this.tickTimer >= TICK_INTERVAL) {
-        const binaryPayload = encodeMoveData(
-          this.container.x,
-          this.container.y,
-          currentDirection,
-          isMoving,
-        );
-        emitEvent("moving", binaryPayload);
-        this.tickTimer = now;
-      }
-    } else if (this.prevMoving) {
-      // 멈춘 순간에는 즉시 전송하여 정확한 목적지 상태 동기화
-      const binaryPayload = encodeMoveData(
-        this.container.x,
-        this.container.y,
-        currentDirection,
+      // 실제 소켓 전송
+      emitEvent("moving", payload);
+
+      // 펫 위치 업데이트
+      this.updatePetPosition(currentDirection);
+
+      // 상태 업데이트
+      this.prevState = {
         isMoving,
-      );
-      emitEvent("moving", binaryPayload);
+        direction: currentDirection,
+      };
     }
-
-    this.prevMoving = isMoving;
-
-    // 펫 위치 업데이트
-    this.updatePetPosition(currentDirection);
   }
 }

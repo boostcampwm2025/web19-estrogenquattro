@@ -11,6 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { User } from '../auth/user.interface';
+import { MoveReq } from './dto/move.dto';
 import { GithubPollService } from '../github/github.poll-service';
 import { ProgressGateway } from '../github/progress.gateway';
 import { RoomService } from '../room/room.service';
@@ -21,8 +22,6 @@ import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from '../task/entites/task.entity';
-import { MAX_FOCUS_TASK_NAME_LENGTH } from '../focustime/focustime.constants';
-import { truncateToUtf8Bytes } from '../util/text-byte.util';
 
 @WebSocketGateway()
 export class PlayerGateway
@@ -62,14 +61,6 @@ export class PlayerGateway
 
   // username -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
-
-  private normalizeFocusTaskName(taskName: string | null): string | null {
-    if (!taskName) {
-      return null;
-    }
-
-    return truncateToUtf8Bytes(taskName, MAX_FOCUS_TASK_NAME_LENGTH);
-  }
 
   afterInit() {
     // 1분마다 모든 연결된 소켓의 JWT 검증
@@ -248,7 +239,7 @@ export class PlayerGateway
         isFocusing: fs.isFocusing,
         lastFocusStartTime: fs.lastFocusStartTime,
         focusingTaskId: fs.focusingTaskId,
-        taskName: this.normalizeFocusTaskName(task?.description ?? null),
+        taskName: task?.description ?? null,
       });
     });
 
@@ -293,7 +284,7 @@ export class PlayerGateway
       const myTask = await this.taskRepository.findOne({
         where: { id: myFocusStatus.focusingTaskId },
       });
-      myTaskName = this.normalizeFocusTaskName(myTask?.description ?? null);
+      myTaskName = myTask?.description ?? null;
     }
 
     // 5. 남들이 볼 내 캐릭터 그리기 (focusTime 정보 포함)
@@ -345,27 +336,26 @@ export class PlayerGateway
   @SubscribeMessage('moving')
   handleMove(
     @MessageBody()
-    data: Buffer,
+    data: MoveReq,
     @ConnectedSocket() client: Socket,
   ) {
+    // 플레이어 위치 최신화
     const player = this.players.get(client.id);
+    if (player) {
+      player.x = data.x;
+      player.y = data.y;
+    }
     if (!player) return;
 
-    // 유효하지 않은 페이로드는 무시 (브로드캐스트 차단)
-    if (!Buffer.isBuffer(data) || data.length < 12) return;
-
-    const x = data.readFloatLE(0);
-    const y = data.readFloatLE(4);
-
-    // 디코딩된 좌표 유효성 검증 (NaN, Infinity, 맵 범위 초과 차단)
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    if (x < -1000 || x > 10000 || y < -1000 || y > 10000) return;
-
-    player.x = x;
-    player.y = y;
-
-    // 같은 방 사람들에게 userId + Binary 데이터 전송 (패스스루)
-    client.to(player.roomId).emit('moved', client.id, data);
+    // 같은 방 사람들에게만 이동 정보 전송
+    client.to(player.roomId).emit('moved', {
+      userId: client.id, // 항상 소켓 ID를 기준으로 브로드캐스트
+      x: data.x,
+      y: data.y,
+      isMoving: data.isMoving,
+      direction: data.direction,
+      timestamp: data.timestamp,
+    });
   }
 
   @SubscribeMessage('pet_equipping')

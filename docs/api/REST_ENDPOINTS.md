@@ -125,18 +125,12 @@ Cookie: access_token=<JWT>
 POST /api/tasks
 ```
 
-`description`은 UTF-8 기준 최대 300 bytes입니다.
-
 **Body:**
 ```json
 {
   "description": "오늘 할 일"
 }
 ```
-
-**Validation:**
-- 300 bytes 이하: 생성 성공
-- 300 bytes 초과: `400 Bad Request` + `code: "TASK_TOO_LONG"`
 
 **Response:**
 ```json
@@ -244,18 +238,12 @@ PATCH /api/tasks/uncompletion/:taskId
 PATCH /api/tasks/:taskId
 ```
 
-`description`은 UTF-8 기준 최대 300 bytes입니다.
-
 **Body:**
 ```json
 {
   "description": "수정된 할 일"
 }
 ```
-
-**Validation:**
-- 300 bytes 이하: 수정 성공
-- 300 bytes 초과: `400 Bad Request` + `code: "TASK_TOO_LONG"`
 
 **Response:**
 ```json

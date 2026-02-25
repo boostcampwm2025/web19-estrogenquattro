@@ -31,13 +31,3 @@ export class TaskFocusingException extends BaseBusinessException {
     );
   }
 }
-
-export class TaskTooLongException extends BaseBusinessException {
-  constructor() {
-    super(
-      ErrorCodes.TASK_TOO_LONG,
-      'Task description must be 300 bytes or less.',
-      HttpStatus.BAD_REQUEST,
-    );
-  }
-}

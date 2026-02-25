@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { ONBOARDING_STEPS } from "@/app/_components/OnboardingTour/onboardingSteps";
-import { Analytics } from "@/lib/analytics";
 
 const ONBOARDING_COMPLETED_KEY = "onboarding_completed";
 
@@ -41,7 +40,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   startOnboarding: () => {
     set({ isActive: true, currentStep: 0 });
-    Analytics.tutorialStart();
   },
 
   nextStep: () => {
@@ -73,8 +71,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   },
 
   skipOnboarding: () => {
-    const { currentStep, completeOnboarding } = get();
-    Analytics.tutorialSkip(currentStep);
+    const { completeOnboarding } = get();
     completeOnboarding();
   },
 
@@ -90,7 +87,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
     }
-    Analytics.tutorialComplete();
   },
 
   checkAndStartOnboarding: () => {
