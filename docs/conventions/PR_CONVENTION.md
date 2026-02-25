@@ -67,18 +67,66 @@
 
 ---
 
+## PR 본문 작성 안전 가이드 (CLI)
+
+백틱(`)이 포함된 PR 본문을 쉘 인자로 직접 넘기면, 쉘이 이를 **명령 치환**으로 해석해 명령이 깨질 수 있습니다.
+
+### 금지 패턴
+
+```bash
+# 백틱/특수문자 포함 시 깨질 수 있음
+gh pr create --title "..." --body "본문에 `code` 포함"
+```
+
+### 권장 패턴
+
+1. 본문은 먼저 파일로 작성한다. (`<<'EOF'` 사용)
+2. `gh pr create --body-file` 또는 `gh pr edit --body-file`만 사용한다.
+3. 생성/수정 직후 본문을 조회해 검증한다.
+
+```bash
+# 1) 본문 작성
+cat > /tmp/pr_body.md <<'EOF'
+## 🔗 관련 이슈
+- close: #123
+
+## ✅ 작업 내용
+- `code` 블록/백틱/특수문자가 있어도 안전하게 보존된다.
+EOF
+
+# 2) 생성
+gh pr create \
+  --repo boostcampwm2025/web19-estrogenquattro \
+  --base main \
+  --head <branch> \
+  --title "fix: ..." \
+  --body-file /tmp/pr_body.md
+
+# 3) 수정
+gh pr edit <pr_number> --body-file /tmp/pr_body.md
+
+# 4) 검증
+gh pr view <pr_number> --json body --jq .body | sed -n '1,80p'
+```
+
+---
+
 ## PR 본문 업데이트
 
 PR 본문을 CLI로 수정하려면 아래 명령어를 사용합니다:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{pr_number} -X PATCH -f body='새로운 본문 내용'
+gh pr edit {pr_number} --body-file /tmp/pr_body.md
 ```
 
 **예시:**
 
 ```bash
-gh api repos/boostcampwm2025/web19-estrogenquattro/pulls/22 -X PATCH -f body='## 작업 내용
+cat > /tmp/pr_body.md <<'EOF'
+## 작업 내용
 - 기능 A 추가
-- 버그 B 수정'
+- 버그 B 수정
+EOF
+
+gh pr edit 22 --body-file /tmp/pr_body.md
 ```
