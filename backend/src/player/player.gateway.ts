@@ -60,7 +60,7 @@ export class PlayerGateway
     }
   > = new Map();
 
-  // username -> socketId 매핑 (중복 접속 방지용)
+  // githubId -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
 
   private normalizeFocusTaskName(taskName: string | null): string | null {
@@ -122,9 +122,12 @@ export class PlayerGateway
       this.roomService.exit(client.id);
       this.roomService.removePlayer(player.roomId, player.playerId);
 
+      const userData = client.data as { user?: User };
+      const githubId = userData.user?.githubId;
+
       // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
-      if (this.userSockets.get(player.username) === client.id) {
-        this.userSockets.delete(player.username);
+      if (githubId && this.userSockets.get(githubId) === client.id) {
+        this.userSockets.delete(githubId);
       }
     }
     this.logger.log('Client disconnected', {
@@ -141,7 +144,7 @@ export class PlayerGateway
   ) {
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
-    const { username, accessToken, playerId } = userData.user;
+    const { githubId, username, accessToken, playerId } = userData.user;
 
     let roomId: string;
     try {
@@ -167,12 +170,13 @@ export class PlayerGateway
     // RoomService에 플레이어 등록
     this.roomService.addPlayer(roomId, playerId);
 
-    // 같은 username으로 이미 접속한 세션이 있으면 이전 세션 종료
-    const existingSocketId = this.userSockets.get(username);
+    // 같은 githubId로 이미 접속한 세션이 있으면 이전 세션 종료
+    const existingSocketId = this.userSockets.get(githubId);
     if (existingSocketId && existingSocketId !== client.id) {
       const existingSocket = this.server.sockets.sockets.get(existingSocketId);
       if (existingSocket) {
         this.logger.log('Disconnecting previous session', {
+          githubId,
           username,
           oldSocketId: existingSocketId,
           newSocketId: client.id,
@@ -184,8 +188,8 @@ export class PlayerGateway
       }
     }
 
-    // username -> socketId 매핑 저장
-    this.userSockets.set(username, client.id);
+    // githubId -> socketId 매핑 저장
+    this.userSockets.set(githubId, client.id);
 
     void client.join(roomId);
 
