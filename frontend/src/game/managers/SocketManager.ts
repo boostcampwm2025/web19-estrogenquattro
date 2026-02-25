@@ -13,6 +13,7 @@ import {
   type FocusTimeData,
 } from "../../stores/useFocusTimeStore";
 import { getTodayStartTime } from "@/utils/timeFormat";
+import { CHAT_MAX_LENGTH, exceedsUtf8ByteLimit } from "@/utils/textBytes";
 import { useRoomStore } from "../../stores/useRoomStore";
 import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
 import { decodeMoveData, encodeMoveData } from "../utils/moveProtocol";
@@ -621,6 +622,13 @@ export default class SocketManager {
   }
 
   sendChat(message: string): void {
+    if (message.trim().length === 0) {
+      return;
+    }
+    if (exceedsUtf8ByteLimit(message, CHAT_MAX_LENGTH)) {
+      return;
+    }
+
     const player = this.getPlayer();
     if (!player) return;
 

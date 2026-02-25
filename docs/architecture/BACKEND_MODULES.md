@@ -117,6 +117,8 @@ userSockets: Map<username, socketId>;   // 중복 접속 방지
 | `player_left` | S→C | 플레이어 퇴장 알림 |
 | `moving` | C→S | 위치 업데이트 |
 | `moved` | S→C | 다른 플레이어 이동 |
+| `music_status` | C→S | 음악 재생 상태 변경 |
+| `player_music_status` | S→C | 다른 플레이어 음악 상태 알림 |
 
 **중복 세션 처리:**
 ```mermaid
@@ -141,28 +143,35 @@ sequenceDiagram
 
 | 파일 | 역할 |
 |------|------|
-| `room.service.ts` | 방 배정 로직 |
+| `room.controller.ts` | 방 목록 조회/예약 API |
+| `room.service.ts` | 방 배정/예약/퇴장 로직 |
 
 **설정:**
 ```typescript
 capacity = 14;           // 방당 최대 인원
-initialRooms = 3;        // 초기 방 개수
+totalRooms = 5;          // room-1 ~ room-5 고정
 ```
 
 **주요 메서드:**
+
 | 메서드 | 설명 |
 |--------|------|
-| `randomJoin(socketId)` | 여유 있는 방에 랜덤 배정 |
+| `reserveRoom(playerId, roomId)` | 선택 입장용 예약 (30초 TTL) |
+| `joinRoom(socketId, roomId, playerId)` | 예약/직접 지정 방 입장 |
+| `randomJoin(socketId, playerId?)` | 랜덤 방 입장 |
 | `exit(socketId)` | 방 퇴장 |
 | `addPlayer(roomId, playerId)` | 플레이어 추가 |
 | `removePlayer(roomId, playerId)` | 플레이어 제거 |
 | `getPlayerIds(roomId)` | 방의 플레이어 ID 목록 |
+| `getAllRooms()` | 전체 방 상태 반환 |
 
 **방 상태 관리:**
 ```typescript
-rooms: Map<roomId, { size: number }>;
-roomPlayers: Map<roomId, Set<playerId>>;
-availableRooms: roomId[];  // O(1) 랜덤 선택용
+roomInfos: Map<roomId, { id, capacity, size }>;
+socketIdToRoomId: Map<socketId, roomId>;
+roomIdToPlayerIds: Map<roomId, Set<playerId>>;
+reservations: Map<playerId, Timeout>;
+reservedRooms: Map<playerId, roomId>;
 ```
 
 ---
@@ -183,11 +192,18 @@ availableRooms: roomId[];  // O(1) 랜덤 선택용
   id: number;
   player: Player;
   total_focus_seconds: number;
-  status: 'FOCUSING' | 'RESTING';
   created_at: Date;                // datetime
-  last_focus_start_time: Date;     // nullable
-  current_task_id: number;         // nullable
+  status: 'FOCUSING' | 'RESTING';  // V2에서 deprecated
+  last_focus_start_time: Date;     // V2에서 deprecated
+  current_task_id: number;         // V2에서 deprecated
 }
+```
+
+**V2 집중 상태 소스(실제 사용):**
+
+```typescript
+Player.lastFocusStartTime: Date | null   // null이면 RESTING
+Player.focusingTaskId: number | null
 ```
 
 **주요 이벤트:**
@@ -197,23 +213,23 @@ availableRooms: roomId[];  // O(1) 랜덤 선택용
 | `focused` | S→C | 집중 시작 알림 (브로드캐스트) |
 | `resting` | C→S | 휴식 시작 |
 | `rested` | S→C | 휴식 시작 알림 (브로드캐스트) |
-| `focus_task_updating` | C→S | Task 이름 변경 |
-| `focus_task_updated` | S→C | Task 이름 변경 알림 |
+| `focus_task_updating` | C→S | Task 이름 변경 (taskName ≤ 45 bytes) |
+| `focus_task_updated` | S→C | Task 이름 변경 알림 (taskName ≤ 45 bytes) |
 
 **시간 계산:**
 ```typescript
 // 집중 시작
 startFocusing(playerId, taskId?):
-  status = 'FOCUSING'
-  lastFocusStartTime = now()
-  currentTaskId = taskId
+  player.lastFocusStartTime = now()
+  player.focusingTaskId = taskId
 
 // 휴식 시작
 startResting(playerId):
-  elapsed = now() - lastFocusStartTime
-  totalFocusSeconds += elapsed
-  task.totalFocusSeconds += elapsed  // Task에도 누적
-  status = 'RESTING'
+  elapsed = now() - player.lastFocusStartTime
+  dailyFocusTime.totalFocusSeconds += elapsed
+  task.totalFocusSeconds += elapsed
+  player.lastFocusStartTime = null
+  player.focusingTaskId = null
 ```
 
 ---
@@ -230,7 +246,7 @@ Task CRUD 및 완료 처리
 **주요 엔드포인트:**
 | Method | Path | 설명 |
 |--------|------|------|
-| GET | `/api/tasks` | 목록 조회 (date 파라미터) |
+| GET | `/api/tasks/:playerId` | 목록 조회 (`isToday`,`startAt`,`endAt`) |
 | POST | `/api/tasks` | 생성 |
 | PATCH | `/api/tasks/:id` | 수정 |
 | DELETE | `/api/tasks/:id` | 삭제 |
@@ -242,7 +258,7 @@ Task CRUD 및 완료 처리
 {
   id: number;
   player: Player;
-  description: string;           // 100자 제한
+  description: string;           // UTF-8 300 bytes 제한
   total_focus_seconds: number;
   completed_at: Date | null;     // 완료 시각
   created_at: Date;              // datetime
@@ -257,17 +273,19 @@ GitHub 폴링 및 이벤트 관리
 
 | 파일 | 역할 |
 |------|------|
-| `github.gateway.ts` | 방별 상태 관리, 이벤트 브로드캐스트 |
-| `github.poll-service.ts` | GraphQL 폴링 스케줄링 |
+| `progress.gateway.ts` | 전역 상태(progress/mapIndex/contributions) 관리 |
+| `github.poll-service.ts` | GitHub REST Events 폴링 |
 | `github.service.ts` | 활동 기록 DB 관리 |
 | `github.controller.ts` | REST API |
+| `map.controller.ts` | 현재 맵 이미지 API 서빙 (`/api/maps/:index`) |
 
 **Gateway 상태:**
 ```typescript
-roomStates: Map<roomId, {
-  progress: number;                      // 0-99
+globalState: {
+  progress: number;
   contributions: Record<string, number>; // username -> points
-}>;
+  mapIndex: number;
+};
 ```
 
 **폴링 시스템:**
@@ -279,11 +297,8 @@ pollingSchedules: Map<username, {
   timeout: NodeJS.Timeout;
   username, accessToken, roomId, playerId;
   clientIds: Set<string>;  // 중복 폴링 방지
-}>;
-
-userBaselines: Map<username, {
-  lastCommitCount, lastPRCount;
-  isFirstPoll: boolean;
+  etag: string | null;
+  lastEventId: string | null;
 }>;
 ```
 
@@ -291,14 +306,14 @@ userBaselines: Map<username, {
 ```mermaid
 sequenceDiagram
     participant Poll as PollService
-    participant GW as GithubGateway
-    participant Room as 방 클라이언트들
+    participant GW as ProgressGateway
+    participant Room as 클라이언트들
 
     Poll->>Poll: pollGithubEvents()
-    Poll->>Poll: 기준점 대비 변경 감지
-    Poll->>GW: castGithubEventToRoom()
-    GW->>GW: progress 계산 (+commit*2, +pr*5)
-    GW->>Room: emit('github_event')
+    Poll->>GW: castProgressUpdate()
+    GW->>GW: progress/contributions/mapIndex 갱신
+    GW->>Room: emit('progress_update')
+    GW->>Room: 필요 시 emit('map_switch')
 ```
 
 ---
@@ -319,6 +334,7 @@ sequenceDiagram
 | GET | `/api/pets/inventory/:playerId` | 보유 펫 목록 |
 | GET | `/api/pets/codex/:playerId` | 도감 (수집한 펫 ID) |
 | POST | `/api/pets/gacha` | 가챠 |
+| POST | `/api/pets/gacha/refund` | 중복 가챠 환급 |
 | POST | `/api/pets/feed` | 먹이주기 |
 | POST | `/api/pets/evolve` | 진화 |
 
@@ -332,7 +348,7 @@ sequenceDiagram
 
 ### PointModule
 
-포인트 조회 (현재 읽기만 구현)
+포인트 적립/조회/랭킹
 
 | 파일 | 역할 |
 |------|------|
@@ -342,7 +358,8 @@ sequenceDiagram
 **주요 엔드포인트:**
 | Method | Path | 설명 |
 |--------|------|------|
-| GET | `/api/points` | 포인트 조회 |
+| GET | `/api/points` | 플레이어 포인트 기록 조회 |
+| GET | `/api/points/ranks` | 주간 포인트 랭킹 |
 
 **관련 모듈:**
 - `PointHistoryModule` - 포인트 히스토리 조회/저장
@@ -377,20 +394,20 @@ sequenceDiagram
 
 | 크론 표현식 | 설명 |
 |------------|------|
-| `0 0 15 * * *` | KST 자정 (UTC 15:00) Task/집중시간 정산 |
-| `0 0 15 * * 1` | 매주 월요일 KST 자정 시즌 리셋 |
+| `0 0 0 * * *` | 매일 KST 00:00 Task/집중시간 정산 (`Asia/Seoul`) |
+| `0 0 0 * * 1` | 매주 월요일 KST 00:00 시즌 리셋 (`Asia/Seoul`) |
 
 **정산 로직:**
 ```typescript
 // KST 자정에 실행
-@Cron('0 0 15 * * *')
+@Cron('0 0 0 * * *', { timeZone: 'Asia/Seoul' })
 async settleDaily() {
-  // 완료된 Task의 집중 시간으로 포인트 적립
-  // 전일 집중 시간 정산
+  // 전날(어제 KST) 범위 데이터 정산
+  // 일요일 자정 정산은 실시간 랭킹(progress) 반영 제외
 }
 
 // 매주 월요일 KST 자정에 실행
-@Cron('0 0 15 * * 1')
+@Cron('0 0 0 * * 1', { timeZone: 'Asia/Seoul' })
 async resetSeason() {
   // progress, contributions 초기화
   // map_index를 0으로 리셋
@@ -408,7 +425,7 @@ async resetSeason() {
 |------|------|
 | `config.module.ts` | ConfigModule 설정 |
 | `env.validation.ts` | 환경 변수 검증 |
-| `logger/` | Winston 로거 설정 |
+| `logger.winston.ts` | Winston + Axiom 로거 설정 |
 
 ---
 
@@ -462,8 +479,8 @@ export class FocusTimeService {
 ### Gateway 간 이벤트 전달
 
 ```typescript
-// PlayerGateway에서 GithubGateway 호출
-this.githubGateway.castGithubEventToRoom(event, roomId);
+// PlayerGateway에서 ProgressGateway 상태 참조
+const globalState = this.progressGateway.getGlobalState();
 ```
 
 ---

@@ -10,8 +10,11 @@ import {
   TaskNotFoundException,
   TaskNotOwnedException,
   TaskFocusingException,
+  TaskTooLongException,
 } from './exceptions/task.exceptions';
 import { HistoryRank } from '../pointhistory/point-history.service';
+import { MAX_TASK_TEXT_LENGTH } from './task.constants';
+import { exceedsUtf8ByteLimit } from '../util/text-byte.util';
 
 @Injectable()
 export class TaskService {
@@ -24,7 +27,14 @@ export class TaskService {
     private readonly dataSource: DataSource,
   ) {}
 
+  private validateDescriptionByteLength(description: string): void {
+    if (exceedsUtf8ByteLimit(description, MAX_TASK_TEXT_LENGTH)) {
+      throw new TaskTooLongException();
+    }
+  }
+
   async createTask(dto: CreateTaskReq): Promise<TaskRes> {
+    this.validateDescriptionByteLength(dto.description);
     const player = await this.playerService.findOneById(dto.playerId);
 
     const newTask = this.taskRepository.create({
@@ -118,6 +128,7 @@ export class TaskService {
     description: string,
     playerId: number,
   ): Promise<TaskRes> {
+    this.validateDescriptionByteLength(description);
     const task = await this.findOneById(taskId);
 
     if (task.player.id !== playerId) {

@@ -1,0 +1,50 @@
+version: 1
+objective: llm_context_delivery
+
+default_mode:
+  include_tiers:
+    - core
+  include_modules: []
+  exclude_paths:
+    - docs/plan/**
+    - docs/legacy/**
+  prefer_cards: true
+  fallback_to_full_docs: true
+
+resolution:
+  order:
+    - core
+    - module
+    - archive
+
+tiers:
+  core:
+    files:
+      - docs/README.md
+      - docs/context/core/PROJECT_CORE.md
+      - docs/architecture/OVERVIEW.md
+      - docs/guides/DOMAIN_GLOSSARY.md
+
+  module:
+    groups:
+      api:
+        triggers: [api, rest, endpoint, controller, dto]
+        files:
+          - docs/context/modules/API_REST_CARD.md
+          - docs/api/REST_ENDPOINTS.md
+      socket:
+        triggers: [socket, gateway, ws, event, emit, join, room]
+        files:
+          - docs/context/modules/SOCKET_EVENTS_CARD.md
+          - docs/api/SOCKET_EVENTS.md
+      github:
+        triggers: [github, polling, poll, etag, progress, contributions]
+        files:
+          - docs/context/modules/GITHUB_POLLING_CARD.md
+          - docs/api/GITHUB_POLLING.md
+
+  archive:
+    include_by_default: false
+    paths:
+      - docs/plan/**
+      - docs/legacy/**

@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import i18next from "i18next";
+import { CHAT_MAX_LENGTH, truncateToUtf8Bytes } from "@/utils/textBytes";
 
 export default class ChatManager {
   private scene: Phaser.Scene;
@@ -26,7 +27,12 @@ export default class ChatManager {
       ($: { chat: { placeholder: string } }) => $.chat.placeholder,
       { ns: "game" },
     );
-    input.maxLength = 30;
+    input.addEventListener("input", () => {
+      const normalized = truncateToUtf8Bytes(input.value, CHAT_MAX_LENGTH);
+      if (normalized !== input.value) {
+        input.value = normalized;
+      }
+    });
 
     document.body.appendChild(input);
     this.input = input;
@@ -43,8 +49,9 @@ export default class ChatManager {
       e.stopPropagation();
 
       if (e.key === "Enter") {
-        if (input.value.trim() !== "") {
-          this.sendMessage(input.value);
+        const normalized = truncateToUtf8Bytes(input.value, CHAT_MAX_LENGTH);
+        if (normalized.trim() !== "") {
+          this.sendMessage(normalized);
         }
         this.closeInput();
       } else if (e.key === "Escape") {

@@ -21,21 +21,28 @@
 | `GET /api/players/me` | 내 프로필 조회 | Planned | |
 | `PATCH /api/players/me` | 닉네임/대표펫 변경 | Planned | |
 | `GET /api/players/:id` | 공개 프로필 조회 | Planned | |
-| `GET /api/pets` | 펫 도감(마스터) | Planned | |
-| `GET /api/pets/me` | 보유 펫 목록/경험치 | Planned | |
+| `GET /api/pets/all` | 펫 도감(마스터) | Implemented | |
+| `GET /api/pets/inventory/:playerId` | 보유 펫 목록/경험치 | Implemented | |
+| `GET /api/pets/codex/:playerId` | 수집 도감 ID 목록 | Implemented | |
 | `PATCH /api/players/me` | 대표 펫 설정 | Optional | 본문 필드로 처리 |
-| `POST /api/pet-draws` | 펫 뽑기 | Optional | 기존 액션형 `POST /api/pets/draw` 대체 |
+| `POST /api/pets/gacha` | 펫 뽑기 | Implemented | |
+| `POST /api/pets/gacha/refund` | 중복 가챠 환급 | Implemented | |
+| `GET /api/tasks/:playerId?isToday&startAt&endAt` | 기간 Task 조회 | Implemented | |
 | `GET /api/tasks/daily-counts` | 일별 완료 Task 개수 | Planned | 히트맵 집계 |
+| `GET /api/focustime/:playerId?startAt&endAt` | 기간 FocusTime 합계 조회 | Implemented | |
 | `GET /api/focus-time?date=YYYY-MM-DD` | 일별 누적/상태 조회 | Planned | |
 | `GET /api/focus-time/summary?range=week` | 주간/월간 요약 | Planned | |
 | `POST /api/focus-time/sessions` | 집중 세션 시작 | Optional | 액션형 대체 |
 | `PATCH /api/focus-time/sessions/:id` | 집중 세션 종료 | Optional | 액션형 대체 |
-| `GET /api/github/activity?date=YYYY-MM-DD` | 일별 GitHub 활동 | Planned | |
+| `GET /api/github/events?playerId&startAt&endAt` | 기간 GitHub 활동 합계 | Implemented | |
+| `GET /api/github/users/:username` | GitHub 사용자 프로필 조회 | Implemented | |
+| `GET /api/github/users/:username/follow-status` | 팔로우 상태 확인 | Implemented | |
+| `PUT/DELETE /api/github/users/:username/follow` | 팔로우/언팔로우 | Implemented | |
 | `GET /api/stats/daily?date=YYYY-MM-DD` | 일일 통계 조회 | Planned | 프로필 통계 |
-| `GET /api/points?date=YYYY-MM-DD&aggregate=summary` | 일별 포인트 요약 | Planned | `/api/points/summary` 대체 |
-| `GET /api/point-history` | 포인트 히스토리 | Implemented | 아래 참조 |
-| `GET /api/rooms?status=active` | 활성 방 목록 | Optional | `/api/rooms/active` 대체 |
-| `GET /api/rooms/:id/state` | 방 상태 프리로드 | Optional | |
+| `GET /api/points?targetPlayerId&currentTime` | 포인트 기록 조회 | Implemented | |
+| `GET /api/points/ranks?weekendStartAt` | 주간 포인트 랭킹 | Implemented | |
+| `GET /api/rooms` | 방 목록 조회 | Implemented | |
+| `PATCH /api/rooms/:roomId` | 방 입장 예약 | Implemented | 30초 TTL |
 
 ---
 
@@ -118,12 +125,18 @@ Cookie: access_token=<JWT>
 POST /api/tasks
 ```
 
+`description`은 UTF-8 기준 최대 300 bytes입니다.
+
 **Body:**
 ```json
 {
   "description": "오늘 할 일"
 }
 ```
+
+**Validation:**
+- 300 bytes 이하: 생성 성공
+- 300 bytes 초과: `400 Bad Request` + `code: "TASK_TOO_LONG"`
 
 **Response:**
 ```json
@@ -141,10 +154,10 @@ POST /api/tasks
 ### 태스크 목록 조회
 
 ```
-GET /api/tasks?startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=YYYY-MM-DDTHH:mm:ss.sssZ
+GET /api/tasks/:playerId?isToday=true|false&startAt=YYYY-MM-DDTHH:mm:ss.sssZ&endAt=YYYY-MM-DDTHH:mm:ss.sssZ
 ```
 
-`startDate`, `endDate`는 UTC ISO 8601 형식의 시간 범위입니다. 프론트엔드에서 로컬 타임존의 하루 범위를 UTC로 변환하여 전송합니다.
+`isToday`, `startAt`, `endAt`은 필수 쿼리입니다. 프론트엔드에서 로컬 타임존의 하루 범위를 UTC로 변환해 전송합니다.
 
 **Response:**
 ```json
@@ -231,12 +244,18 @@ PATCH /api/tasks/uncompletion/:taskId
 PATCH /api/tasks/:taskId
 ```
 
+`description`은 UTF-8 기준 최대 300 bytes입니다.
+
 **Body:**
 ```json
 {
   "description": "수정된 할 일"
 }
 ```
+
+**Validation:**
+- 300 bytes 이하: 수정 성공
+- 300 bytes 초과: `400 Bad Request` + `code: "TASK_TOO_LONG"`
 
 **Response:**
 ```json
@@ -377,7 +396,7 @@ Cookie: access_token=<JWT>
 ### 펫 도감 조회
 
 ```
-GET /api/pets
+GET /api/pets/all
 ```
 
 **Response:**
@@ -402,7 +421,7 @@ GET /api/pets
 ### 보유 펫 조회
 
 ```
-GET /api/pets/me
+GET /api/pets/inventory/:playerId
 ```
 
 **Response:**
@@ -424,27 +443,37 @@ GET /api/pets/me
 ### 펫 뽑기
 
 ```
-POST /api/pet-draws
-```
-
-**Body:**
-```json
-{
-  "count": 1
-}
+POST /api/pets/gacha
 ```
 
 **Response:**
 ```json
 {
-  "draws": [
-    {
-      "userPetId": 10,
-      "petId": 1,
-      "petName": "Sample Pet",
-      "isNew": true
-    }
-  ]
+  "userPet": {
+    "id": 10,
+    "pet": {
+      "id": 1,
+      "name": "Sample Pet"
+    },
+    "exp": 0
+  },
+  "isDuplicate": false
+}
+```
+
+---
+
+### 중복 가챠 환급
+
+```
+POST /api/pets/gacha/refund
+```
+
+**Response:**
+```json
+{
+  "refundAmount": 50,
+  "totalPoint": 1234
 }
 ```
 
@@ -457,76 +486,18 @@ POST /api/pet-draws
 Cookie: access_token=<JWT>
 ```
 
-### 일별 포커스 조회
+### 기간별 포커스 합계 조회
 
 ```
-GET /api/focus-time?date=YYYY-MM-DD
+GET /api/focustime/:playerId?startAt=YYYY-MM-DDTHH:mm:ss.sssZ&endAt=YYYY-MM-DDTHH:mm:ss.sssZ
 ```
+
+`startAt`, `endAt`은 UTC ISO 8601 형식의 시간 범위입니다.
 
 **Response:**
 ```json
 {
-  "date": "2025-01-18",
-  "status": "FOCUSING",
-  "totalFocusSeconds": 120,
-  "lastFocusStartTime": "2025-01-18T10:30:00.000Z"
-}
-```
-
----
-
-### 포커스 요약 조회
-
-```
-GET /api/focus-time/summary?range=week
-```
-
-**Response:**
-```json
-{
-  "range": "week",
-  "totalFocusSeconds": 520,
-  "days": [
-    {
-      "date": "2025-01-12",
-      "totalFocusSeconds": 60
-    }
-  ]
-}
-```
-
----
-
-### 집중 세션 시작
-
-```
-POST /api/focus-time/sessions
-```
-
-**Response:**
-```json
-{
-  "sessionId": 10,
-  "status": "FOCUSING",
-  "totalFocusSeconds": 120,
-  "lastFocusStartTime": "2025-01-18T10:30:00.000Z"
-}
-```
-
----
-
-### 집중 세션 종료
-
-```
-PATCH /api/focus-time/sessions/:id
-```
-
-**Response:**
-```json
-{
-  "sessionId": 10,
-  "status": "RESTING",
-  "totalFocusSeconds": 130
+  "totalFocusSeconds": 120
 }
 ```
 
@@ -539,22 +510,76 @@ PATCH /api/focus-time/sessions/:id
 Cookie: access_token=<JWT>
 ```
 
-### 일별 GitHub 활동 조회
+### GitHub 활동 집계 조회
 
 ```
-GET /api/github/activity?date=YYYY-MM-DD
+GET /api/github/events?playerId=:playerId&startAt=:date&endAt=:date
+```
+
+`playerId`는 선택 파라미터이며, 생략 시 본인(`@PlayerId`) 기준으로 조회합니다.
+
+**Response:**
+```json
+{
+  "startAt": "2025-01-18T00:00:00.000Z",
+  "endAt": "2025-01-18T23:59:59.999Z",
+  "prCreated": 1,
+  "prReviewed": 2,
+  "committed": 3,
+  "issueOpened": 0
+}
+```
+
+---
+
+### GitHub 유저 정보 조회
+
+```
+GET /api/github/users/:username
 ```
 
 **Response:**
 ```json
 {
-  "date": "2025-01-18",
-  "activities": [
-    {
-      "type": "COMMITTED",
-      "count": 3
-    }
-  ]
+  "login": "octocat",
+  "id": 583231,
+  "avatar_url": "https://avatars.githubusercontent.com/u/583231?v=4",
+  "html_url": "https://github.com/octocat",
+  "followers": 100,
+  "following": 10,
+  "name": "The Octocat",
+  "bio": "GitHub mascot"
+}
+```
+
+---
+
+### 팔로우 상태 조회
+
+```
+GET /api/github/users/:username/follow-status
+```
+
+**Response:**
+```json
+{
+  "isFollowing": true
+}
+```
+
+---
+
+### 팔로우 / 언팔로우
+
+```
+PUT /api/github/users/:username/follow
+DELETE /api/github/users/:username/follow
+```
+
+**Response:**
+```json
+{
+  "success": true
 }
 ```
 
@@ -567,18 +592,41 @@ GET /api/github/activity?date=YYYY-MM-DD
 Cookie: access_token=<JWT>
 ```
 
-### 일별 포인트 요약
+### 포인트 이력 조회 (최근 1년)
 
 ```
-GET /api/points?date=YYYY-MM-DD&aggregate=summary
+GET /api/points?targetPlayerId=:playerId&currentTime=:date
 ```
 
 **Response:**
 ```json
-{
-  "date": "2025-01-18",
-  "amount": 120
-}
+[
+  {
+    "id": 1,
+    "amount": 150,
+    "createdAt": "2026-02-10T00:00:00.000Z"
+  }
+]
+```
+
+---
+
+### 주간 포인트 랭킹
+
+```
+GET /api/points/ranks?weekendStartAt=:date
+```
+
+**Response:**
+```json
+[
+  {
+    "playerId": 1,
+    "nickname": "octocat",
+    "totalPoints": 42,
+    "rank": 1
+  }
+]
 ```
 
 ---
@@ -586,10 +634,10 @@ GET /api/points?date=YYYY-MM-DD&aggregate=summary
 ### 포인트 히스토리
 
 ```
-GET /api/point-history?playerId=101&startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=YYYY-MM-DDTHH:mm:ss.sssZ
+GET /api/git-histories?targetPlayerId=101&startAt=YYYY-MM-DDTHH:mm:ss.sssZ&endAt=YYYY-MM-DDTHH:mm:ss.sssZ
 ```
 
-`playerId`는 필수 파라미터입니다. `startDate`, `endDate`는 UTC ISO 8601 형식의 시간 범위입니다.
+`targetPlayerId`, `startAt`, `endAt`은 필수 파라미터입니다.
 
 **Response:**
 ```json
@@ -598,15 +646,19 @@ GET /api/point-history?playerId=101&startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=Y
     "id": 1,
     "type": "COMMITTED",
     "amount": 2,
+    "repository": "owner/repo",
     "description": "feat: 새 기능 추가",
-    "createdAt": "2025-01-18T10:35:00.000Z"
+    "createdAt": "2025-01-18T10:35:00.000Z",
+    "activityAt": "2025-01-18T10:30:00.000Z"
   },
   {
     "id": 2,
     "type": "PR_OPEN",
     "amount": 2,
+    "repository": "owner/repo",
     "description": "로그인 기능 구현",
-    "createdAt": "2025-01-18T11:00:00.000Z"
+    "createdAt": "2025-01-18T11:00:00.000Z",
+    "activityAt": "2025-01-18T10:58:00.000Z"
   }
 ]
 ```
@@ -614,7 +666,9 @@ GET /api/point-history?playerId=101&startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=Y
 **필드 설명:**
 - `type`: 포인트 타입 (`COMMITTED`, `PR_OPEN`, `PR_MERGED`, `PR_REVIEWED`, `ISSUE_OPEN`, `TASK_COMPLETED`, `FOCUSED`)
 - `amount`: 획득 포인트
+- `repository`: 저장소명 (`owner/repo`)
 - `description`: 활동 상세 (커밋 메시지, PR/이슈 제목 등)
+- `activityAt`: 실제 GitHub 활동 발생 시각
 
 ---
 
@@ -625,43 +679,36 @@ GET /api/point-history?playerId=101&startDate=YYYY-MM-DDTHH:mm:ss.sssZ&endDate=Y
 Cookie: access_token=<JWT>
 ```
 
-### 활성 방 목록
+### 방 목록 조회
 
 ```
-GET /api/rooms?status=active
+GET /api/rooms
 ```
 
 **Response:**
 ```json
 {
-  "rooms": [
-    {
-      "id": "room-1",
-      "size": 5,
-      "capacity": 14
-    }
-  ]
+  "room-1": { "id": "room-1", "capacity": 14, "size": 3 },
+  "room-2": { "id": "room-2", "capacity": 14, "size": 9 },
+  "room-3": { "id": "room-3", "capacity": 14, "size": 0 },
+  "room-4": { "id": "room-4", "capacity": 14, "size": 0 },
+  "room-5": { "id": "room-5", "capacity": 14, "size": 0 }
 }
 ```
 
 ---
 
-### 방 상태 프리로드
+### 방 입장 예약
 
 ```
-GET /api/rooms/:id/state
+PATCH /api/rooms/:roomId
 ```
 
-**Response:**
-```json
-{
-  "roomId": "room-1",
-  "progress": 0.3,
-  "contributions": {
-    "octocat": 5
-  }
-}
-```
+선택한 방의 슬롯을 30초 동안 예약합니다. 이후 소켓 `joining`에서 같은 `roomId`로 입장하면 예약을 소비합니다.
+
+**Errors:**
+- 404: `ROOM_NOT_FOUND`
+- 400: `ROOM_FULL`
 
 ---
 
@@ -673,6 +720,8 @@ Cookie: access_token=<JWT>
 ```
 
 ### 주간 리더보드 조회
+
+**Status:** Planned
 
 ```
 GET /api/leaderboard
@@ -788,7 +837,8 @@ GET /api/history-ranks?type=:pointType&weekendStartAt=:date
   {
     "playerId": 1,
     "nickname": "octocat",
-    "totalAmount": 42
+    "count": 42,
+    "rank": 1
   }
 ]
 ```

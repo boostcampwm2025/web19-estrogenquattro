@@ -11,9 +11,81 @@ import { FocusTimeService } from './focustime.service';
 import { User } from '../auth/user.interface';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { FocusStatus } from './entites/daily-focus-time.entity';
+import { MAX_FOCUS_TASK_NAME_LENGTH } from './focustime.constants';
+import { exceedsUtf8ByteLimit } from '../util/text-byte.util';
 
 interface AuthenticatedSocket extends Socket {
   data: { user: User };
+}
+
+interface FocusingPayload {
+  taskName?: string;
+  taskId?: number;
+}
+
+function normalizeOptionalTaskName(value: unknown): string | undefined | null {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (exceedsUtf8ByteLimit(trimmed, MAX_FOCUS_TASK_NAME_LENGTH)) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function parseFocusingPayload(data: unknown): FocusingPayload | null {
+  if (data === undefined || data === null) {
+    return {};
+  }
+
+  if (typeof data !== 'object' || Array.isArray(data)) {
+    return null;
+  }
+
+  const payload = data as Record<string, unknown>;
+  const normalizedTaskName = normalizeOptionalTaskName(payload.taskName);
+  if (normalizedTaskName === null) {
+    return null;
+  }
+
+  const taskId = payload.taskId;
+  let normalizedTaskId: number | undefined;
+  if (taskId !== undefined) {
+    if (typeof taskId !== 'number' || Number.isNaN(taskId)) {
+      return null;
+    }
+    normalizedTaskId = taskId;
+  }
+
+  return {
+    taskName: normalizedTaskName,
+    taskId: normalizedTaskId,
+  };
+}
+
+function parseFocusTaskUpdatingPayload(data: unknown): string | null {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return null;
+  }
+
+  const payload = data as Record<string, unknown>;
+  const normalizedTaskName = normalizeOptionalTaskName(payload.taskName);
+  if (!normalizedTaskName) {
+    return null;
+  }
+
+  return normalizedTaskName;
 }
 
 @WebSocketGateway()
@@ -29,19 +101,28 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   async handleFocusing(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody()
-    data: { taskName?: string; taskId?: number },
+    data: unknown,
   ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
 
+    const parsedData = parseFocusingPayload(data);
+    if (!parsedData) {
+      this.logger.warn('Invalid focusing payload', {
+        method: 'handleFocusing',
+        socketId: client.id,
+      });
+      return { success: false, error: 'Invalid focusing payload' };
+    }
+
     const user = client.data.user;
     this.logger.debug(
-      `Received focusing event - data: ${JSON.stringify(data)}`,
+      `Received focusing event - data: ${JSON.stringify(parsedData)}`,
     );
 
     try {
       const player = await this.focusTimeService.startFocusing(
         user.playerId,
-        data?.taskId,
+        parsedData.taskId,
       );
 
       const rooms = Array.from(client.rooms);
@@ -64,7 +145,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
         lastFocusStartTime: player.lastFocusStartTime?.toISOString() ?? null,
         totalFocusSeconds: focusStatus.totalFocusSeconds,
         currentSessionSeconds,
-        taskName: data?.taskName,
+        taskName: parsedData.taskName,
       };
 
       if (roomId) {
@@ -75,7 +156,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
           method: 'handleFocusing',
           username: user.username,
           roomId,
-          taskName: data?.taskName ?? null,
+          taskName: parsedData.taskName ?? null,
         });
       } else {
         this.logger.warn('Focusing but no room', {
@@ -148,9 +229,18 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
   @SubscribeMessage('focus_task_updating')
   handleFocusTaskUpdating(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { taskName: string },
+    @MessageBody() data: unknown,
   ) {
     if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const taskName = parseFocusTaskUpdatingPayload(data);
+    if (!taskName) {
+      this.logger.warn('Invalid focus_task_updating payload', {
+        method: 'handleFocusTaskUpdating',
+        socketId: client.id,
+      });
+      return { success: false, error: 'Invalid focus_task_updating payload' };
+    }
 
     const user = client.data.user;
 
@@ -160,7 +250,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     const responseData = {
       userId: client.id,
       username: user.username,
-      taskName: data.taskName,
+      taskName,
     };
 
     if (roomId) {
@@ -170,7 +260,7 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
       this.logger.log('Focus task updated', {
         method: 'handleFocusTaskUpdating',
         username: user.username,
-        taskName: data.taskName,
+        taskName,
       });
     } else {
       this.logger.warn('focus_task_updating but no room', {

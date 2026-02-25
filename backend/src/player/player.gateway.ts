@@ -21,6 +21,8 @@ import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from '../task/entites/task.entity';
+import { MAX_FOCUS_TASK_NAME_LENGTH } from '../focustime/focustime.constants';
+import { truncateToUtf8Bytes } from '../util/text-byte.util';
 
 @WebSocketGateway()
 export class PlayerGateway
@@ -60,6 +62,14 @@ export class PlayerGateway
 
   // username -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
+
+  private normalizeFocusTaskName(taskName: string | null): string | null {
+    if (!taskName) {
+      return null;
+    }
+
+    return truncateToUtf8Bytes(taskName, MAX_FOCUS_TASK_NAME_LENGTH);
+  }
 
   afterInit() {
     // 1분마다 모든 연결된 소켓의 JWT 검증
@@ -238,7 +248,7 @@ export class PlayerGateway
         isFocusing: fs.isFocusing,
         lastFocusStartTime: fs.lastFocusStartTime,
         focusingTaskId: fs.focusingTaskId,
-        taskName: task?.description ?? null,
+        taskName: this.normalizeFocusTaskName(task?.description ?? null),
       });
     });
 
@@ -283,7 +293,7 @@ export class PlayerGateway
       const myTask = await this.taskRepository.findOne({
         where: { id: myFocusStatus.focusingTaskId },
       });
-      myTaskName = myTask?.description ?? null;
+      myTaskName = this.normalizeFocusTaskName(myTask?.description ?? null);
     }
 
     // 5. 남들이 볼 내 캐릭터 그리기 (focusTime 정보 포함)

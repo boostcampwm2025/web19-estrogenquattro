@@ -41,8 +41,8 @@ describe('ChatGateway', () => {
   });
 
   describe('handleMessage', () => {
-    it('30자 이하 메시지는 브로드캐스트된다', () => {
-      // Given: 30자 이하 메시지
+    it('90bytes 이하 메시지는 브로드캐스트된다', () => {
+      // Given: 90bytes 이하 메시지
       const message = 'a'.repeat(CHAT_MAX_LENGTH);
 
       // When: chatting 이벤트 처리
@@ -56,9 +56,35 @@ describe('ChatGateway', () => {
       });
     });
 
-    it('30자 초과 메시지는 무시된다', () => {
-      // Given: 31자 이상 메시지
+    it('90bytes 초과 메시지는 무시된다', () => {
+      // Given: 91bytes 이상 메시지
       const message = 'a'.repeat(CHAT_MAX_LENGTH + 1);
+
+      // When: chatting 이벤트 처리
+      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+
+      // Then: chatted 이벤트 브로드캐스트 안됨
+      expect(mockEmit).not.toHaveBeenCalled();
+    });
+
+    it('한글 30자(90bytes) 메시지는 브로드캐스트된다', () => {
+      // Given: 한글 30자 (UTF-8 90bytes)
+      const message = '가'.repeat(30);
+
+      // When: chatting 이벤트 처리
+      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+
+      // Then: chatted 이벤트 브로드캐스트
+      expect(mockSocket.to).toHaveBeenCalledWith('room-1');
+      expect(mockEmit).toHaveBeenCalledWith('chatted', {
+        userId: 'socket-1',
+        message,
+      });
+    });
+
+    it('한글 31자(93bytes) 메시지는 무시된다', () => {
+      // Given: 한글 31자 (UTF-8 93bytes)
+      const message = '가'.repeat(31);
 
       // When: chatting 이벤트 처리
       gateway.handleMessage({ message }, mockSocket as unknown as Socket);
