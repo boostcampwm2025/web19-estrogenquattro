@@ -27,8 +27,8 @@ export default function ProfileTab() {
 
   const isOwnProfile = !targetPlayerId || targetPlayerId === user?.playerId;
   const username = isOwnProfile
-    ? user?.username ?? targetUsername ?? ""
-    : targetUsername ?? user?.username ?? "";
+    ? (user?.username ?? targetUsername ?? "")
+    : (targetUsername ?? user?.username ?? "");
 
   const { user: githubUser } = useGithubUser(username);
   const { isFollowing, isLoading: isLoadingFollowStatus } = useFollowStatus(
