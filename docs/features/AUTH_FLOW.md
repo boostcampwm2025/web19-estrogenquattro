@@ -59,6 +59,7 @@ githubCallback(@Req() req: Request, @Res() res: Response) {
   const token = this.jwtService.sign({
     sub: user.githubId,
     username: user.username,
+    playerId: user.playerId,
   });
 
   // httpOnly 쿠키 설정
@@ -147,10 +148,11 @@ interface UserInfo {
 interface JwtPayload {
   sub: string;      // githubId
   username: string;
+  playerId: number;
 }
 ```
 
-> **Note:** `playerId`는 JWT에 포함되지 않음. 서버에서 `UserStore`를 통해 조회
+> **Note:** JWT의 `sub`는 불변 `githubId`를 사용하며, 인증/세션 식별 기준도 `githubId`다.
 
 ### JWT 설정
 
@@ -213,6 +215,11 @@ class UserStore {
   findByGithubId(githubId: string): User | undefined;
 }
 ```
+
+`findOrCreate` 동작:
+- 동일 `githubId` 재로그인 시 `accessToken`을 최신값으로 갱신
+- `username`, `avatarUrl`은 신규 값이 비정상(빈 문자열/공백)일 때 기존 저장값 유지
+- 유효한 신규 `username`, `avatarUrl`은 최신값으로 갱신
 
 > **Note:** 서버 재시작 시 UserStore 초기화됨. 사용자는 재로그인 필요.
 
