@@ -13,7 +13,7 @@ export class Guestbook {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'varchar', length: 200 })
   content: string;
 
   @ManyToOne(() => Player)

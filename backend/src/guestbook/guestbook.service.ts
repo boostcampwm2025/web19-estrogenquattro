@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +20,10 @@ export class GuestbookService {
   ) {}
 
   async create(playerId: number, content: string) {
+    if (!content || content.length > 200) {
+      throw new BadRequestException('방명록은 1~200자까지 작성 가능합니다');
+    }
+
     const player = await this.playerService.findOneById(playerId);
 
     const guestbook = this.guestbookRepository.create({
