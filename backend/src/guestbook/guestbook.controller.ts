@@ -20,10 +20,7 @@ export class GuestbookController {
   constructor(private readonly guestbookService: GuestbookService) {}
 
   @Post()
-  async create(
-    @PlayerId() playerId: number,
-    @Body() dto: CreateGuestbookDto,
-  ) {
+  async create(@PlayerId() playerId: number, @Body() dto: CreateGuestbookDto) {
     return this.guestbookService.create(playerId, dto.content);
   }
 
