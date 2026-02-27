@@ -279,7 +279,7 @@
     "placeholder": "버그나 오류 내용을 입력하세요...",
     "charCount": "{{current}}/{{max}}",
     "dropHere": "여기에 놓으세요!",
-    "attachHint": "클릭하거나 이미지/동영상을 드래그하여 첨부 ( {{current}} / {{max}} )",
+    "attachHint": "클릭하거나 이미지를 드래그하여 첨부 ( {{current}} / {{max}} )",
     "deleteAll": "전체 삭제",
     "deleteFile": "첨부 파일 {{index}} 삭제",
     "attachedImage": "첨부 이미지 {{index}}",

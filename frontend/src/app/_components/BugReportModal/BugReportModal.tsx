@@ -15,7 +15,6 @@ const MAX_ATTACHMENTS = 3;
 interface AttachedFile {
   file: File;
   preview: string;
-  type: "image" | "video";
 }
 
 export default function BugReportModal() {
@@ -53,12 +52,11 @@ export default function BugReportModal() {
       const newAttachments: AttachedFile[] = [];
 
       fileArray.slice(0, remaining).forEach((file) => {
-        if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        if (file.type.startsWith("image/")) {
           const preview = URL.createObjectURL(file);
           newAttachments.push({
             file,
             preview,
-            type: file.type.startsWith("image/") ? "image" : "video",
           });
         }
       });
@@ -193,8 +191,8 @@ export default function BugReportModal() {
               onClick={() => fileInputRef.current?.click()}
               className={`cursor-pointer ${PIXEL_BORDER} flex items-center justify-center gap-2 p-4 transition-colors ${
                 isDragOver
-                  ? "border-amber-500 bg-amber-100"
-                  : "border-dashed bg-white hover:bg-amber-50"
+                  ? "border-amber-500 bg-amber-300"
+                  : "border-dashed bg-white hover:bg-amber-200"
               }`}
             >
               {isDragOver ? (
@@ -213,7 +211,7 @@ export default function BugReportModal() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,video/*"
+                accept="image/*"
                 multiple
                 onChange={(e) => {
                   handleFiles(e.target.files);
@@ -245,27 +243,13 @@ export default function BugReportModal() {
                   key={index}
                   className={`group relative overflow-hidden ${PIXEL_BORDER} bg-white`}
                 >
-                  {attachment.type === "image" ? (
-                    <img
-                      src={attachment.preview}
-                      alt={t(($) => $.bugReport.attachedImage, {
-                        index: index + 1,
-                      })}
-                      className="h-24 w-full object-cover"
-                    />
-                  ) : (
-                    <video
-                      src={attachment.preview}
-                      className="h-24 w-full object-cover"
-                      muted
-                      playsInline
-                      onMouseEnter={(e) => e.currentTarget.play()}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      }}
-                    />
-                  )}
+                  <img
+                    src={attachment.preview}
+                    alt={t(($) => $.bugReport.attachedImage, {
+                      index: index + 1,
+                    })}
+                    className="h-24 w-full object-cover"
+                  />
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
