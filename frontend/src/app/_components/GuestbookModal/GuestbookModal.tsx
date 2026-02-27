@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
@@ -8,18 +8,17 @@ import { useTranslation } from "react-i18next";
 import { useInView } from "react-intersection-observer";
 import { ArrowUp } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { MOCK_GUESTBOOK_DATA } from "./mockData";
+import {
+  useGuestbookEntries,
+  useCreateGuestbook,
+  useDeleteGuestbook,
+} from "@/lib/api/hooks/useGuestbook";
 import GuestbookEntryCard from "./GuestbookEntryCard";
 import GuestbookInputForm from "./GuestbookInputForm";
-import type { GuestbookEntry } from "./types";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
-const PAGE_SIZE = 10;
 const MAX_MESSAGE_LENGTH = 200;
-
-// mock에서 현재 사용자 ID (실제 API 연동 시 제거)
-const MOCK_CURRENT_USER_ID = 101;
 
 export default function GuestbookModal() {
   const { t } = useTranslation("ui");
@@ -32,7 +31,7 @@ export default function GuestbookModal() {
   const isOpen = activeModal === MODAL_TYPES.GUESTBOOK;
 
   const user = useAuthStore((state) => state.user);
-  const currentUserId = user?.playerId ?? MOCK_CURRENT_USER_ID;
+  const currentPlayerId = user?.playerId;
 
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
@@ -40,67 +39,32 @@ export default function GuestbookModal() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [entries, setEntries] = useState<GuestbookEntry[]>([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // 모달 열릴 때 초기 데이터 로드
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (isOpen) {
-      const initial = MOCK_GUESTBOOK_DATA.slice(0, PAGE_SIZE);
-      setEntries(initial);
-      setPage(1);
-      setHasMore(initial.length === PAGE_SIZE);
-    } else {
-      setEntries([]);
-      setPage(0);
-      setHasMore(true);
-      setNewMessage("");
-    }
-  }, [isOpen]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  const { data, fetchNextPage, hasNextPage } = useGuestbookEntries(isOpen);
+  const createMutation = useCreateGuestbook();
+  const deleteMutation = useDeleteGuestbook();
 
-  const loadMore = useCallback(() => {
-    const start = page * PAGE_SIZE;
-    const next = MOCK_GUESTBOOK_DATA.slice(start, start + PAGE_SIZE);
-    if (next.length === 0) {
-      setHasMore(false);
-      return;
-    }
-    if (next.length < PAGE_SIZE) setHasMore(false);
-    setEntries((prev) => [...prev, ...next]);
-    setPage((p) => p + 1);
-  }, [page]);
+  const entries = data?.pages.flatMap((page) => page.items) ?? [];
 
   const { ref: bottomRef } = useInView({
     threshold: 0,
     onChange: (inView) => {
-      if (inView && hasMore) loadMore();
+      if (inView && hasNextPage) fetchNextPage();
     },
   });
 
   const handleSubmit = () => {
     const trimmed = newMessage.trim();
-    if (!trimmed) return;
-
-    const newEntry: GuestbookEntry = {
-      id: Date.now(),
-      authorId: currentUserId,
-      authorName: user?.username ?? "me",
-      avatarUrl: `https://avatars.githubusercontent.com/u/${currentUserId}?v=4`,
-      content: trimmed,
-      createdAt: new Date().toISOString(),
-    };
-
-    setEntries((prev) => [newEntry, ...prev]);
+    if (!trimmed || createMutation.isPending) return;
+    createMutation.mutate(trimmed);
     setNewMessage("");
   };
 
   const handleDelete = (entryId: number) => {
-    setEntries((prev) => prev.filter((e) => e.id !== entryId));
+    if (deleteMutation.isPending) return;
+    deleteMutation.mutate(entryId);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -136,6 +100,8 @@ export default function GuestbookModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="guestbook-title"
+        onKeyDown={stopPropagation}
+        onKeyUp={stopPropagation}
         className={`relative flex w-full max-w-[768px] flex-col ${PIXEL_BG} ${PIXEL_BORDER} p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
       >
         {/* 헤더 */}
@@ -160,10 +126,10 @@ export default function GuestbookModal() {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="retro-scrollbar max-h-80 space-y-1 overflow-y-auto pr-2"
+            className="retro-scrollbar max-h-80 min-h-16 space-y-1 overflow-y-auto pr-2"
           >
             {entries.length === 0 ? (
-              <div className="py-8 text-center text-sm text-amber-700">
+              <div className="flex min-h-16 items-center justify-center text-sm text-amber-700">
                 {t(($) => $.guestbook.empty)}
               </div>
             ) : (
@@ -171,12 +137,12 @@ export default function GuestbookModal() {
                 <GuestbookEntryCard
                   key={entry.id}
                   entry={entry}
-                  isMine={entry.authorId === currentUserId}
+                  isMine={entry.player.id === currentPlayerId}
                   onDelete={handleDelete}
                 />
               ))
             )}
-            {hasMore && (
+            {hasNextPage && (
               <div ref={bottomRef} className="py-2 text-center">
                 <span className="text-xs text-amber-500">...</span>
               </div>
@@ -185,9 +151,9 @@ export default function GuestbookModal() {
           {showScrollTop && (
             <button
               onClick={scrollToTop}
-              className={`absolute right-10 bottom-5 flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-amber-200 text-amber-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all hover:bg-amber-300 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none`}
+              className={`absolute top-5 right-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-amber-900 bg-amber-200 text-amber-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.35)] transition-all hover:bg-amber-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.35)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
             >
-              <ArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-[18px] w-[18px]" />
             </button>
           )}
         </div>
@@ -200,6 +166,11 @@ export default function GuestbookModal() {
           onSubmit={handleSubmit}
           onKeyDown={handleKeyDown}
           onKeyUp={stopPropagation}
+          errorMessage={
+            createMutation.isError
+              ? t(($) => $.guestbook.submitError)
+              : undefined
+          }
         />
       </div>
     </div>
