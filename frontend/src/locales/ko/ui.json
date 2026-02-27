@@ -265,6 +265,7 @@
     "delete": "삭제",
     "empty": "아직 작성된 글이 없습니다.",
     "deleteConfirm": "정말 삭제하시겠습니까?",
+    "submitError": "글을 등록하는 데 실패했습니다.",
     "time": {
       "justNow": "방금 전",
       "minutesAgo": "{{count}}분 전",
