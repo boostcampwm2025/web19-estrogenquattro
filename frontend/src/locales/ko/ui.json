@@ -283,6 +283,7 @@
     "deleteAll": "전체 삭제",
     "deleteFile": "첨부 파일 {{index}} 삭제",
     "attachedImage": "첨부 이미지 {{index}}",
-    "submit": "전송"
+    "submit": "전송",
+    "successToast": "버그가 정상적으로 접수되었습니다! 감사합니다!"
   }
 }

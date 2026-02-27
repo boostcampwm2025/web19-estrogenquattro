@@ -283,6 +283,7 @@
     "deleteAll": "Delete All",
     "deleteFile": "Delete attachment {{index}}",
     "attachedImage": "Attached image {{index}}",
-    "submit": "Submit"
+    "submit": "Submit",
+    "successToast": "Bug report submitted successfully! Thank you!"
   }
 }
