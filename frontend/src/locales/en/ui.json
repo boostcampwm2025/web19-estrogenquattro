@@ -256,6 +256,25 @@
       "noTrack": "no track playing"
     }
   },
+  "guestbook": {
+    "title": "Guestbook",
+    "openButton": "Open guestbook",
+    "closeModal": "Close guestbook modal",
+    "placeholder": "Leave a message...",
+    "submit": "Post",
+    "delete": "Delete",
+    "empty": "No messages yet.",
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "weeksAgo": "{{count}}w ago",
+      "monthsAgo": "{{count}}mo ago",
+      "yearsAgo": "{{count}}y ago"
+    }
+  },
   "channel": {
     "selectButton": "Select channel",
     "title": "Select Channel",

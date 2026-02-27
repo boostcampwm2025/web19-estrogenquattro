@@ -256,6 +256,25 @@
       "noTrack": "재생 중인 곡 없음"
     }
   },
+  "guestbook": {
+    "title": "방명록",
+    "openButton": "방명록 열기",
+    "closeModal": "방명록 모달 닫기",
+    "placeholder": "방명록에 글을 남겨보세요...",
+    "submit": "등록",
+    "delete": "삭제",
+    "empty": "아직 작성된 글이 없습니다.",
+    "deleteConfirm": "정말 삭제하시겠습니까?",
+    "time": {
+      "justNow": "방금 전",
+      "minutesAgo": "{{count}}분 전",
+      "hoursAgo": "{{count}}시간 전",
+      "daysAgo": "{{count}}일 전",
+      "weeksAgo": "{{count}}주 전",
+      "monthsAgo": "{{count}}달 전",
+      "yearsAgo": "{{count}}년 전"
+    }
+  },
   "channel": {
     "selectButton": "채널 선택",
     "title": "채널 선택",
