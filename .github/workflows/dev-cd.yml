@@ -38,16 +38,17 @@ jobs:
           NEXT_PUBLIC_SOCKET_URL: http://${{ secrets.DEV_HOST }}
         run: pnpm run build
 
-      - name: Sync built frontend to Backend Public Folder using Rsync
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.DEV_KEY }}
-          REMOTE_HOST: ${{ secrets.DEV_HOST }}
-          REMOTE_USER: ${{ secrets.DEV_USERNAME }}
-          # next.config.ts에 의해 ../backend/public 으로 결과물이 떨어지므로 아래 SOURCE 경로로 적용
-          SOURCE: "backend/public/"
-          TARGET: "/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/backend/public/"
-          SCRIPT_AFTER: ""
+      - name: Copy built frontend to Dev Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_KEY }}
+          port: 22
+          # backend/public 폴더 전체를 복사합니다.
+          source: "backend/public/*"
+          target: "/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/"
+          strip_components: 0
 
   deploy_backend:
     needs: build_frontend
@@ -72,7 +73,6 @@ jobs:
             git pull origin dev 
             
             cd backend
-            pnpm install
             pnpm run migration:generate || true
             pnpm run migration:run
             
