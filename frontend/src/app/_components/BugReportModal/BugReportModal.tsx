@@ -6,6 +6,7 @@ import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
 import { ImagePlus, Send, X, Upload, Trash2 } from "lucide-react";
 import { collectDiagnostics } from "@/lib/diagnostics";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -18,6 +19,7 @@ interface AttachedFile {
 }
 
 export default function BugReportModal() {
+  const { t } = useTranslation("ui");
   const { activeModal, closeModal } = useModalStore(
     useShallow((state) => ({
       activeModal: state.activeModal,
@@ -149,11 +151,11 @@ export default function BugReportModal() {
             id="bug-report-title"
             className="text-xl font-extrabold tracking-wider text-amber-900"
           >
-            버그 제보
+            {t(($) => $.bugReport.title)}
           </h2>
           <button
             onClick={handleModalClose}
-            aria-label="모달 닫기"
+            aria-label={t(($) => $.bugReport.closeModal)}
             className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
           >
             X
@@ -172,7 +174,7 @@ export default function BugReportModal() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder="버그나 오류 내용을 입력하세요..."
+              placeholder={t(($) => $.bugReport.placeholder)}
               maxLength={500}
               rows={5}
               className="w-full resize-none border-none bg-transparent p-3 text-sm text-amber-900 placeholder-amber-400 outline-none"
@@ -202,8 +204,11 @@ export default function BugReportModal() {
               )}
               <p className="text-center text-sm text-amber-700">
                 {isDragOver
-                  ? "여기에 놓으세요!"
-                  : `클릭하거나 이미지/동영상을 드래그하여 첨부 ( ${attachments.length} / ${MAX_ATTACHMENTS} )`}
+                  ? t(($) => $.bugReport.dropHere)
+                  : t(($) => $.bugReport.attachHint, {
+                      current: attachments.length,
+                      max: MAX_ATTACHMENTS,
+                    })}
               </p>
               <input
                 ref={fileInputRef}
@@ -227,7 +232,7 @@ export default function BugReportModal() {
                 className="flex cursor-pointer items-center gap-1 text-xs font-bold text-red-500 transition-colors hover:text-red-700"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                <span>전체 삭제</span>
+                <span>{t(($) => $.bugReport.deleteAll)}</span>
               </button>
             </div>
           )}
@@ -243,7 +248,9 @@ export default function BugReportModal() {
                   {attachment.type === "image" ? (
                     <img
                       src={attachment.preview}
-                      alt={`첨부 이미지 ${index + 1}`}
+                      alt={t(($) => $.bugReport.attachedImage, {
+                        index: index + 1,
+                      })}
                       className="h-24 w-full object-cover"
                     />
                   ) : (
@@ -265,7 +272,9 @@ export default function BugReportModal() {
                       removeAttachment(index);
                     }}
                     className="absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label={`첨부 파일 ${index + 1} 삭제`}
+                    aria-label={t(($) => $.bugReport.deleteFile, {
+                      index: index + 1,
+                    })}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -290,7 +299,7 @@ export default function BugReportModal() {
             }`}
           >
             <Send className="h-4 w-4" />
-            <span>전송</span>
+            <span>{t(($) => $.bugReport.submit)}</span>
           </button>
         </div>
       </div>

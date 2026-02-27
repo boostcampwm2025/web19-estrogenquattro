@@ -271,5 +271,18 @@
       "roomFull": "The channel is full.",
       "moveFailedAlert": "Failed to move channel."
     }
+  },
+  "bugReport": {
+    "button": "Report Bug",
+    "title": "Bug Report",
+    "closeModal": "Close bug report modal",
+    "placeholder": "Describe the bug or error...",
+    "charCount": "{{current}}/{{max}}",
+    "dropHere": "Drop here!",
+    "attachHint": "Click or drag images/videos to attach ( {{current}} / {{max}} )",
+    "deleteAll": "Delete All",
+    "deleteFile": "Delete attachment {{index}}",
+    "attachedImage": "Attached image {{index}}",
+    "submit": "Submit"
   }
 }
