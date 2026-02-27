@@ -110,7 +110,6 @@ export async function createTestApp(
     },
   ];
 
-
   if (options.includeTaskController || options.includePointHistoryController) {
     providers.push(TaskService);
   }
