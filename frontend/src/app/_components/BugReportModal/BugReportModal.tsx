@@ -167,15 +167,20 @@ export default function BugReportModal() {
           <div className="pointer-events-none absolute inset-0 opacity-5" />
 
           {/* 텍스트 입력 */}
-
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onKeyDown={(e) => e.stopPropagation()}
-            placeholder="버그나 오류 내용을 입력하세요..."
-            rows={5}
-            className={`w-full resize-none ${PIXEL_BORDER} bg-white p-3 text-sm text-amber-900 placeholder-amber-400 outline-none focus:ring-2 focus:ring-amber-500`}
-          />
+          <div className={`${PIXEL_BORDER} mb-3 bg-white`}>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="버그나 오류 내용을 입력하세요..."
+              maxLength={500}
+              rows={5}
+              className="w-full resize-none border-none bg-transparent p-3 text-sm text-amber-900 placeholder-amber-400 outline-none"
+            />
+            <div className="px-3 pb-2 text-right text-[11px] text-amber-500">
+              {description.length}/500
+            </div>
+          </div>
 
           {/* 파일 첨부 영역 */}
           {attachments.length < MAX_ATTACHMENTS && (
@@ -198,7 +203,7 @@ export default function BugReportModal() {
               <p className="text-center text-sm text-amber-700">
                 {isDragOver
                   ? "여기에 놓으세요!"
-                  : `클릭하거나 이미지/동영상을 드래그하여 첨부 (${attachments.length}/${MAX_ATTACHMENTS})`}
+                  : `클릭하거나 이미지/동영상을 드래그하여 첨부 ( ${attachments.length} / ${MAX_ATTACHMENTS} )`}
               </p>
               <input
                 ref={fileInputRef}
@@ -285,7 +290,7 @@ export default function BugReportModal() {
             }`}
           >
             <Send className="h-4 w-4" />
-            <span>제출하기</span>
+            <span>전송</span>
           </button>
         </div>
       </div>
