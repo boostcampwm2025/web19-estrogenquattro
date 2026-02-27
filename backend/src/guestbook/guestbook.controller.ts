@@ -1,0 +1,55 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
+import { GuestbookService, SortOrder } from './guestbook.service';
+import { CreateGuestbookDto } from './dto/create-guestbook.dto';
+import { PlayerId } from '../auth/player-id.decorator';
+import { JwtGuard } from '../auth/jwt.guard';
+
+@Controller('api/guestbooks')
+@UseGuards(JwtGuard)
+export class GuestbookController {
+  constructor(private readonly guestbookService: GuestbookService) {}
+
+  @Post()
+  async create(
+    @PlayerId() playerId: number,
+    @Body() dto: CreateGuestbookDto,
+  ) {
+    return this.guestbookService.create(playerId, dto.content);
+  }
+
+  @Get()
+  async findByCursor(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+    @Query('order') order?: string,
+  ) {
+    const parsedCursor = cursor ? parseInt(cursor) : undefined;
+    const parsedLimit = limit ? parseInt(limit) : 20;
+    const parsedOrder: SortOrder =
+      order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    return this.guestbookService.findByCursor(
+      parsedCursor,
+      parsedLimit,
+      parsedOrder,
+    );
+  }
+
+  @Delete(':id')
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @PlayerId() playerId: number,
+  ) {
+    await this.guestbookService.delete(id, playerId);
+  }
+}
