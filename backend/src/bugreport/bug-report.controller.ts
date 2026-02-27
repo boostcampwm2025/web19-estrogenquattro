@@ -21,7 +21,8 @@ export class BugReportController {
   async create(
     @PlayerId() playerId: number,
     @Body('content') content: string,
-    @UploadedFiles() images?: { buffer: Buffer; originalname: string; mimetype: string }[],
+    @UploadedFiles()
+    images?: { buffer: Buffer; originalname: string; mimetype: string }[],
   ) {
     return this.bugReportService.create(playerId, content, images);
   }
