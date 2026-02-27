@@ -25,11 +25,7 @@ export class BugReportService {
     this.webhookUrl = this.configService.get<string>('DISCORD_WEBHOOK_URL', '');
   }
 
-  async create(
-    playerId: number,
-    content: string,
-    images?: UploadedFile[],
-  ) {
+  async create(playerId: number, content: string, images?: UploadedFile[]) {
     const player = await this.playerService.findOneById(playerId);
 
     const bugReport = this.bugReportRepository.create({
