@@ -3,6 +3,7 @@ import BasePlayer from "./BasePlayer";
 import { DIRECTION } from "../constants/direction";
 import type { Direction } from "../types/direction";
 import { encodeMoveData } from "../utils/moveProtocol";
+import { useModalStore } from "../../stores/useModalStore";
 
 export default class Player extends BasePlayer {
   private roomId: string;
@@ -42,6 +43,12 @@ export default class Player extends BasePlayer {
     super.update();
 
     if (!this.body || !cursors) return;
+
+    // 모달이 열려있으면 이동 차단
+    if (useModalStore.getState().activeModal !== null) {
+      this.body.setVelocity(0, 0);
+      return;
+    }
 
     // 1. 현재 프레임의 이동 의도 파악
     let velocityX = 0;
