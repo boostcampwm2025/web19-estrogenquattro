@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "@/utils/timeFormat";
+import { getGithubAvatarUrl } from "@/utils/github";
 import type { GuestbookEntry } from "./types";
 
 interface GuestbookEntryCardProps {
@@ -15,24 +16,25 @@ export default function GuestbookEntryCard({
   onDelete,
 }: GuestbookEntryCardProps) {
   const { t } = useTranslation("ui");
+  const { nickname } = entry.player;
 
   return (
-    <div className="flex items-center gap-3 py-1">
+    <div className="flex items-center gap-3 border-b border-[#f5deb3]/50 py-1 last:border-b-0">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <img
-          src={entry.avatarUrl}
-          alt={entry.authorName}
+          src={getGithubAvatarUrl(nickname)}
+          alt={nickname}
           className="h-8 w-8 shrink-0 rounded-sm border-2 border-amber-900"
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <a
-              href={`https://github.com/${entry.authorName}`}
+              href={`https://github.com/${nickname}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-base font-bold text-amber-900 transition-colors hover:text-amber-700"
             >
-              {entry.authorName}
+              {nickname}
             </a>
             <span className="text-xs text-amber-500">
               {formatRelativeTime(entry.createdAt)}
@@ -47,7 +49,7 @@ export default function GuestbookEntryCard({
         <button
           onClick={() => onDelete(entry.id)}
           aria-label={t(($) => $.guestbook.delete)}
-          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center border-2 border-amber-900/50 bg-transparent text-amber-700 transition-all hover:bg-amber-100 hover:text-amber-900"
+          className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center bg-transparent text-amber-700 transition-all hover:bg-amber-100 hover:text-amber-900"
         >
           <Trash2 className="h-4 w-4" />
         </button>
