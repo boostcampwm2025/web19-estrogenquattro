@@ -18,7 +18,7 @@ export class GuestbookService {
     private readonly playerService: PlayerService,
   ) {}
 
-  async create(playerId: number, content: string): Promise<Guestbook> {
+  async create(playerId: number, content: string) {
     const player = await this.playerService.findOneById(playerId);
 
     const guestbook = this.guestbookRepository.create({
@@ -26,7 +26,11 @@ export class GuestbookService {
       player,
     });
 
-    return this.guestbookRepository.save(guestbook);
+    const saved = await this.guestbookRepository.save(guestbook);
+    return {
+      ...saved,
+      player: { id: player.id, nickname: player.nickname },
+    };
   }
 
   async findByCursor(
@@ -36,7 +40,8 @@ export class GuestbookService {
   ): Promise<{ items: Guestbook[]; nextCursor: number | null }> {
     const qb = this.guestbookRepository
       .createQueryBuilder('guestbook')
-      .leftJoinAndSelect('guestbook.player', 'player')
+      .leftJoin('guestbook.player', 'player')
+      .addSelect(['player.id', 'player.nickname'])
       .orderBy('guestbook.id', order)
       .take(limit + 1);
 
