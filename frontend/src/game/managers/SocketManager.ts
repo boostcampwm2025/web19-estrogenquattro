@@ -257,16 +257,18 @@ export default class SocketManager {
     });
 
     // 백그라운드 탭 복귀 시 연결이 끊겨있으면 재연결
-    this.visibilityHandler = () => {
-      if (
-        document.visibilityState === "visible" &&
-        !socket.connected &&
-        !this.isSessionReplaced
-      ) {
-        socket.connect();
-      }
-    };
-    document.addEventListener("visibilitychange", this.visibilityHandler);
+    if (typeof document !== "undefined") {
+      this.visibilityHandler = () => {
+        if (
+          document.visibilityState === "visible" &&
+          !socket.connected &&
+          !this.isSessionReplaced
+        ) {
+          socket.connect();
+        }
+      };
+      document.addEventListener("visibilitychange", this.visibilityHandler);
+    }
 
     socket.on("players_synced", (players: PlayerData[]) => {
       players.forEach((data) => {
