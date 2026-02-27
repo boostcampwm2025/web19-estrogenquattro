@@ -29,7 +29,7 @@ export class BugReportService {
     playerId: number,
     content: string,
     images?: UploadedFile[],
-  ): Promise<BugReport> {
+  ) {
     const player = await this.playerService.findOneById(playerId);
 
     const bugReport = this.bugReportRepository.create({
@@ -41,7 +41,10 @@ export class BugReportService {
 
     await this.sendToDiscord(player.nickname, content, images);
 
-    return saved;
+    return {
+      ...saved,
+      player: { id: player.id, nickname: player.nickname },
+    };
   }
 
   private async sendToDiscord(
