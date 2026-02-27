@@ -1,0 +1,80 @@
+name: Dev Server CD
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ "dev" ]
+
+jobs:
+  build_frontend:
+    # PR이 'merge' 형태로 닫혔을 때만 실행 (그냥 close하면 실행 안 함)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        env:
+          # next.config.ts에서 isProd 조건을 분기시킬 수 있도록 NODE_ENV 주입
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: http://${{ secrets.DEV_HOST }}
+          NEXT_PUBLIC_SOCKET_URL: http://${{ secrets.DEV_HOST }}
+        run: pnpm run build
+
+      - name: Sync built frontend to Backend Public Folder using Rsync
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEV_KEY }}
+          REMOTE_HOST: ${{ secrets.DEV_HOST }}
+          REMOTE_USER: ${{ secrets.DEV_USERNAME }}
+          # next.config.ts에 의해 ../backend/public 으로 결과물이 떨어지므로 아래 SOURCE 경로로 적용
+          SOURCE: "backend/public/"
+          TARGET: "/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/backend/public/"
+          SCRIPT_AFTER: ""
+
+  deploy_backend:
+    needs: build_frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dev Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_KEY }}
+          port: 22
+          script: |
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 24.13.1
+            export PNPM_HOME="$HOME/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
+            
+            cd web19-estrogenquattro
+            git pull origin dev 
+            
+            cd backend
+            pnpm install
+            pnpm run migration:generate || true
+            pnpm run migration:run
+            
+            cd ..
+            pnpm run deploy:dev
