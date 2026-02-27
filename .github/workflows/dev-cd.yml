@@ -33,13 +33,9 @@ jobs:
 
       - name: Install and Build Frontend
         working-directory: ./frontend
-        env:
-          NODE_ENV: production
-          NEXT_PUBLIC_API_URL: http://${{ secrets.DEV_HOST }}
-          NEXT_PUBLIC_SOCKET_URL: http://${{ secrets.DEV_HOST }}
         run: |
           pnpm install
-          pnpm run build
+          NODE_ENV=production NEXT_PUBLIC_API_URL=http://${{ secrets.DEV_HOST }} NEXT_PUBLIC_SOCKET_URL=http://${{ secrets.DEV_HOST }} pnpm run build
 
       - name: Copy build artifacts to Dev Server
         uses: appleboy/scp-action@master
