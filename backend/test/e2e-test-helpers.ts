@@ -100,6 +100,7 @@ export async function createTestApp(
     FocusTimeService,
     PlayerService,
     PlayerGateway,
+    FocusTimeGateway,
     ChatGateway,
     PetService,
     WriteLockService,
@@ -109,9 +110,6 @@ export async function createTestApp(
     },
   ];
 
-  if (options.includeFocusTimeGateway) {
-    providers.push(FocusTimeGateway);
-  }
 
   if (options.includeTaskController || options.includePointHistoryController) {
     providers.push(TaskService);
