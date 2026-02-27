@@ -62,7 +62,9 @@ const createFakeSocket = (): FakeSocket => {
     },
     emit: vi.fn(),
     disconnect: vi.fn(),
-    trigger: (event, data) => {
+    trigger(event, data) {
+      if (event === "disconnect") this.connected = false;
+      if (event === "connect") this.connected = true;
       handlers.get(event)?.forEach((handler) => handler(data));
     },
   };
@@ -426,15 +428,17 @@ describe("SocketManager 통합", () => {
   });
 
   it("disconnect 이벤트 발생 시 isDisconnected가 true로 설정된다", async () => {
+    vi.useFakeTimers();
     // Given: 연결된 상태, /auth/me가 200 응답 (JWT 유효, 서버 정상)
 
     // When: 네트워크 오류로 disconnect 이벤트 발생
     currentSocket.trigger("disconnect", "transport close");
 
-    // Then: async 핸들러 완료 대기 후 isDisconnected가 true로 설정됨
-    await vi.waitFor(() => {
-      expect(useConnectionStore.getState().isDisconnected).toBe(true);
-    });
+    // Then: async fetch 완료 대기 후 10초 딜레이 후 isDisconnected가 true
+    await vi.advanceTimersByTimeAsync(0); // fetch Promise flush
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(useConnectionStore.getState().isDisconnected).toBe(true);
+    vi.useRealTimers();
   });
 
   it("클라이언트가 의도적으로 연결을 끊으면 isDisconnected가 변경되지 않는다", () => {
@@ -460,17 +464,19 @@ describe("SocketManager 통합", () => {
   });
 
   it("connect 이벤트 발생 시 isDisconnected가 false로 설정된다", async () => {
+    vi.useFakeTimers();
     // Given: 연결이 끊어진 상태 (disconnect 발생)
     currentSocket.trigger("disconnect", "transport close");
-    await vi.waitFor(() => {
-      expect(useConnectionStore.getState().isDisconnected).toBe(true);
-    });
+    await vi.advanceTimersByTimeAsync(0); // fetch Promise flush
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(useConnectionStore.getState().isDisconnected).toBe(true);
 
     // When: 재연결 (connect 이벤트 발생)
     currentSocket.trigger("connect");
 
     // Then: isDisconnected가 false로 설정됨
     expect(useConnectionStore.getState().isDisconnected).toBe(false);
+    vi.useRealTimers();
   });
 
   it("session_replaced 이벤트 발생 시 showSessionEndedOverlay 콜백이 호출된다", () => {
