@@ -32,4 +32,7 @@ export const envValidationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
+
+  // Discord
+  DISCORD_WEBHOOK_URL: Joi.string().optional(),
 });
