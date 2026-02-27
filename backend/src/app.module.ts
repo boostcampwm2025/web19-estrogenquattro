@@ -22,6 +22,8 @@ import { PetModule } from './userpet/pet.module';
 import { PointModule } from './point/point.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { DatabaseModule } from './database/database.module';
+import { GuestbookModule } from './guestbook/guestbook.module';
+import { BugReportModule } from './bugreport/bug-report.module';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { DatabaseModule } from './database/database.module';
     PetModule,
     PointModule,
     SchedulerModule,
+    GuestbookModule,
+    BugReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
