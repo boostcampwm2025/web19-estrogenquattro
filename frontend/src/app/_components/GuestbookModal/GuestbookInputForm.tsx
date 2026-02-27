@@ -10,6 +10,7 @@ interface GuestbookInputFormProps {
   onSubmit: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onKeyUp: (e: React.KeyboardEvent) => void;
+  errorMessage?: string;
 }
 
 export default function GuestbookInputForm({
@@ -19,6 +20,7 @@ export default function GuestbookInputForm({
   onSubmit,
   onKeyDown,
   onKeyUp,
+  errorMessage,
 }: GuestbookInputFormProps) {
   const { t } = useTranslation("ui");
   const hasContent = value.trim().length > 0;
@@ -34,7 +36,11 @@ export default function GuestbookInputForm({
         className="retro-scrollbar w-full resize-none bg-transparent p-0 text-base text-amber-900 placeholder-amber-400 outline-none"
         rows={2}
         maxLength={maxLength}
+        autoFocus
       />
+      {errorMessage && (
+        <p className="mb-1 text-xs text-red-600">{errorMessage}</p>
+      )}
       <div className="flex items-end justify-between">
         <span className="text-sm text-amber-500">
           {value.length}/{maxLength}
@@ -42,13 +48,13 @@ export default function GuestbookInputForm({
         <button
           onClick={onSubmit}
           disabled={!hasContent}
-          className={`${PIXEL_BORDER} flex h-10 w-10 items-center justify-center font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] transition-all ${
+          className={`flex h-8 w-8 items-center justify-center border-2 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.25)] transition-all ${
             hasContent
               ? "cursor-pointer bg-amber-200 text-amber-900 hover:bg-amber-300 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
               : "cursor-not-allowed bg-gray-200 text-gray-400"
           }`}
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-4 w-4" />
         </button>
       </div>
     </div>
