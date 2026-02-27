@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { BugReportService } from './bug-report.service';
+import { CreateBugReportDto } from './dto/create-bug-report.dto';
 import { PlayerId } from '../auth/player-id.decorator';
 import { JwtGuard } from '../auth/jwt.guard';
 
@@ -20,10 +21,10 @@ export class BugReportController {
   @UseInterceptors(FilesInterceptor('images', 3))
   async create(
     @PlayerId() playerId: number,
-    @Body('content') content: string,
+    @Body() dto: CreateBugReportDto,
     @UploadedFiles()
     images?: { buffer: Buffer; originalname: string; mimetype: string }[],
   ) {
-    return this.bugReportService.create(playerId, content, images);
+    return this.bugReportService.create(playerId, dto, images);
   }
 }

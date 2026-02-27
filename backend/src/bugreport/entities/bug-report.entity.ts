@@ -13,8 +13,11 @@ export class BugReport {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'varchar', length: 500 })
   content: string;
+
+  @Column({ type: 'text', nullable: true })
+  diagnostics: string;
 
   @ManyToOne(() => Player)
   @JoinColumn({ name: 'player_id' })
