@@ -5,6 +5,7 @@ import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
 import { ImagePlus, Send, X, Upload, Trash2 } from "lucide-react";
+import { collectDiagnostics } from "@/lib/diagnostics";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -104,10 +105,14 @@ export default function BugReportModal() {
   const handleSubmit = useCallback(() => {
     if (!description.trim() && attachments.length === 0) return;
 
+    // 진단 정보 자동 수집
+    const diagnostics = collectDiagnostics();
+
     // TODO: 실제 API 연동 시 여기에 전송 로직 추가
     console.log("Bug report submitted:", {
       description,
       attachments: attachments.map((a) => a.file.name),
+      diagnostics,
     });
 
     // 초기화
