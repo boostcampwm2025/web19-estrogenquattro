@@ -429,16 +429,19 @@ describe("SocketManager 통합", () => {
 
   it("disconnect 이벤트 발생 시 isDisconnected가 true로 설정된다", async () => {
     vi.useFakeTimers();
-    // Given: 연결된 상태, /auth/me가 200 응답 (JWT 유효, 서버 정상)
+    try {
+      // Given: 연결된 상태, /auth/me가 200 응답 (JWT 유효, 서버 정상)
 
-    // When: 네트워크 오류로 disconnect 이벤트 발생
-    currentSocket.trigger("disconnect", "transport close");
+      // When: 네트워크 오류로 disconnect 이벤트 발생
+      currentSocket.trigger("disconnect", "transport close");
 
-    // Then: async fetch 완료 대기 후 10초 딜레이 후 isDisconnected가 true
-    await vi.advanceTimersByTimeAsync(0); // fetch Promise flush
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(useConnectionStore.getState().isDisconnected).toBe(true);
-    vi.useRealTimers();
+      // Then: async fetch 완료 대기 후 10초 딜레이 후 isDisconnected가 true
+      await vi.advanceTimersByTimeAsync(0); // fetch Promise flush
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(useConnectionStore.getState().isDisconnected).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("클라이언트가 의도적으로 연결을 끊으면 isDisconnected가 변경되지 않는다", () => {
