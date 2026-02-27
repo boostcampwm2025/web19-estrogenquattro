@@ -14,6 +14,6 @@
     "stop": "pm2 stop ecosystem.config.js",
     "restart": "pm2 reload ecosystem.config.js",
     "logs": "pm2 logs",
-    "deploy:dev": "pnpm install:backend && pnpm build:backend && pm2 delete all && pm2 start ecosystem.config.js --only backend"
+    "deploy:dev": "NODE_ENV=development pnpm install:backend && NODE_ENV=development pnpm build:backend && pm2 delete all && NODE_ENV=development pm2 start ecosystem.config.js --only backend"
   }
 }
