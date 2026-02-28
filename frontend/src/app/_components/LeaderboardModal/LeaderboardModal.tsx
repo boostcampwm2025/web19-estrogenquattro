@@ -44,7 +44,7 @@ export default function LeaderboardModal() {
   });
 
   const user = useAuthStore((state) => state.user);
-  const weekendStartAt = useMemo(() => getThisWeekMonday(), []);
+  const weekendStartAt = useMemo(() => getThisWeekMonday(), [isOpen]);
 
   // 리더보드 데이터 (모달이 열릴 때만 API 호출)
   const { ranks, isLoading } = useLeaderboard(
