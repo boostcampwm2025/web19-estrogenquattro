@@ -122,22 +122,26 @@ export function formatSelectedDate(date: Date): string {
 }
 
 /**
- * 이번 주 월요일 00:00:00 (로컬 타임존)을 UTC ISO8601로 반환
- * 리더보드 주간 랭킹 조회 시 사용
+ * 이번 주 월요일 00:00:00 (KST, UTC+9)을 UTC ISO8601로 반환
+ * 리더보드 주간 랭킹 조회 시 사용 (서버 시즌 리셋 기준과 동일하게 KST 고정)
  *
  * 예: 한국 시간 2026-01-29 (수요일) 기준 →
  *     이번주 월요일: 2026-01-27 00:00:00 KST → 2026-01-26T15:00:00.000Z (UTC)
  *
- * @returns 이번 주 월요일 로컬 자정의 UTC ISO8601 문자열
+ * @returns 이번 주 월요일 KST 자정의 UTC ISO8601 문자열
  */
 export function getThisWeekMonday(): string {
   const now = new Date();
-  const day = now.getDay(); // 0(일) ~ 6(토)
-  const diff = day === 0 ? -6 : 1 - day; // 월요일까지의 차이 (일요일이면 -6, 아니면 1-day)
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff);
-  monday.setHours(0, 0, 0, 0); // 로컬 타임존 기준 자정
-  return monday.toISOString(); // UTC로 변환
+  const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+  // KST 시각으로 변환하여 요일/날짜 계산
+  const kstNow = new Date(now.getTime() + KST_OFFSET_MS);
+  const day = kstNow.getUTCDay(); // 0(일) ~ 6(토) KST 기준
+  const diff = day === 0 ? -6 : 1 - day;
+  const kstMonday = new Date(kstNow);
+  kstMonday.setUTCDate(kstNow.getUTCDate() + diff);
+  kstMonday.setUTCHours(0, 0, 0, 0);
+  // KST 자정 → UTC로 역변환
+  return new Date(kstMonday.getTime() - KST_OFFSET_MS).toISOString();
 }
 
 /**
