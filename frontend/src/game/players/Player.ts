@@ -44,9 +44,19 @@ export default class Player extends BasePlayer {
 
     if (!this.body || !cursors) return;
 
-    // 모달이 열려있으면 이동 차단
+    // 모달이 열려있으면 이동 차단 (멈춘 상태로 원격 동기화 후 종료)
     if (useModalStore.getState().activeModal !== null) {
       this.body.setVelocity(0, 0);
+      if (this.prevMoving) {
+        const binaryPayload = encodeMoveData(
+          this.container.x,
+          this.container.y,
+          DIRECTION.STOP,
+          false,
+        );
+        emitEvent("moving", binaryPayload);
+        this.prevMoving = false;
+      }
       return;
     }
 
