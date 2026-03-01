@@ -169,8 +169,10 @@ export function formatRelativeTime(dateStr: string): string {
     )(key, { ns: "ui", ...opts });
 
   const now = Date.now();
-  const date = new Date(dateStr).getTime();
-  const diffSec = Math.floor((now - date) / 1000);
+  const timestamp = new Date(dateStr).getTime();
+  if (Number.isNaN(timestamp)) return t("guestbook.time.justNow");
+  const diffSec = Math.floor((now - timestamp) / 1000);
+  if (diffSec < 0) return t("guestbook.time.justNow");
 
   if (diffSec < 60) return t("guestbook.time.justNow");
   if (diffSec < 3600)
