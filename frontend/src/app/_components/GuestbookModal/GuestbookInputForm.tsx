@@ -46,8 +46,10 @@ export default function GuestbookInputForm({
           {value.length}/{maxLength}
         </span>
         <button
+          type="button"
           onClick={onSubmit}
           disabled={!hasContent}
+          aria-label={t(($) => $.guestbook.submit)}
           className={`flex h-8 w-8 items-center justify-center border-2 font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,0.25)] transition-all ${
             hasContent
               ? "cursor-pointer bg-amber-200 text-amber-900 hover:bg-amber-300 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"

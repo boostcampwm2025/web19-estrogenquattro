@@ -266,6 +266,7 @@
     "empty": "No messages yet.",
     "deleteConfirm": "Are you sure you want to delete this?",
     "submitError": "Failed to post the message.",
+    "scrollToTop": "Scroll to top",
     "time": {
       "justNow": "just now",
       "minutesAgo": "{{count}}m ago",

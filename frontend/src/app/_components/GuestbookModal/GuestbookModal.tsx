@@ -58,8 +58,9 @@ export default function GuestbookModal() {
   const handleSubmit = () => {
     const trimmed = newMessage.trim();
     if (!trimmed || createMutation.isPending) return;
-    createMutation.mutate(trimmed);
-    setNewMessage("");
+    createMutation.mutate(trimmed, {
+      onSuccess: () => setNewMessage(""),
+    });
   };
 
   const handleDelete = (entryId: number) => {
@@ -150,7 +151,9 @@ export default function GuestbookModal() {
           </div>
           {showScrollTop && (
             <button
+              type="button"
               onClick={scrollToTop}
+              aria-label={t(($) => $.guestbook.scrollToTop)}
               className={`absolute top-5 right-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-amber-900 bg-amber-200 text-amber-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.35)] transition-all hover:bg-amber-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.35)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
             >
               <ArrowUp className="h-[18px] w-[18px]" />
