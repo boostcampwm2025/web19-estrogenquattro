@@ -6,9 +6,11 @@ import FocusPanel from "./_components/FocusPanel";
 import LeaderboardModal from "./_components/LeaderboardModal";
 import ChannelSelectModal from "./_components/ChannelSelectModal";
 import BugReportModal from "./_components/BugReportModal";
+import BugReportButton from "./_components/BugReportButton";
+import GuestbookModal from "./_components/GuestbookModal/GuestbookModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import ChannelSelectButton from "./_components/ChannelSelectButton";
-import BugReportButton from "./_components/BugReportButton";
+import GuestbookButton from "./_components/GuestbookButton";
 import UserInfoButton from "./_components/UserInfoButton";
 import ProgressBar from "@/_components/ui/ProgressBar";
 import { OnboardingTour } from "./_components/OnboardingTour";
@@ -25,6 +27,7 @@ export default function Home() {
           <LeaderboardModal />
           <ChannelSelectModal />
           <BugReportModal />
+          <GuestbookModal />
           <OnboardingTour />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
@@ -39,9 +42,15 @@ export default function Home() {
           <div className="mb-8">
             <BugReportButton />
           </div>
+        <div className="absolute top-4 left-4 z-30 flex flex-col gap-4">
+          <UserInfoButton />
+          <LeaderboardButton />
+          <ChannelSelectButton />
+          <GuestbookButton />
         </div>
         <ConnectionLostOverlay />
       </div>
     </AuthGuard>
+    
   );
 }

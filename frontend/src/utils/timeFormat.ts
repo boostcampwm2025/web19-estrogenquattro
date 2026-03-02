@@ -151,3 +151,48 @@ export function getNextMonday(): string {
   thisMonday.setDate(thisMonday.getDate() + 7);
   return thisMonday.toISOString();
 }
+
+/**
+ * UTC ISO8601 날짜 문자열을 로컬 시간 기준 상대 시간으로 변환
+ * 예: "3분 전", "2시간 전", "5일 전"
+ *
+ * @param dateStr - UTC ISO8601 형식의 날짜 문자열 (서버 응답)
+ * @returns i18n 적용된 상대 시간 문자열
+ */
+export function formatRelativeTime(dateStr: string): string {
+  const t = (key: string, opts?: Record<string, unknown>) =>
+    (
+      i18next.t as unknown as (
+        k: string,
+        o: { ns: string } & Record<string, unknown>,
+      ) => string
+    )(key, { ns: "ui", ...opts });
+
+  const now = Date.now();
+  const timestamp = new Date(dateStr).getTime();
+  if (Number.isNaN(timestamp)) return t("guestbook.time.justNow");
+  const diffSec = Math.floor((now - timestamp) / 1000);
+  if (diffSec < 0) return t("guestbook.time.justNow");
+
+  if (diffSec < 60) return t("guestbook.time.justNow");
+  if (diffSec < 3600)
+    return t("guestbook.time.minutesAgo", { count: Math.floor(diffSec / 60) });
+  if (diffSec < 86400)
+    return t("guestbook.time.hoursAgo", {
+      count: Math.floor(diffSec / 3600),
+    });
+
+  const diffDays = Math.floor(diffSec / 86400);
+  if (diffDays < 7) return t("guestbook.time.daysAgo", { count: diffDays });
+  if (diffDays < 30)
+    return t("guestbook.time.weeksAgo", {
+      count: Math.floor(diffDays / 7),
+    });
+  if (diffDays < 365)
+    return t("guestbook.time.monthsAgo", {
+      count: Math.floor(diffDays / 30),
+    });
+  return t("guestbook.time.yearsAgo", {
+    count: Math.floor(diffDays / 365),
+  });
+}

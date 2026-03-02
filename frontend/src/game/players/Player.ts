@@ -3,6 +3,7 @@ import BasePlayer from "./BasePlayer";
 import { DIRECTION } from "../constants/direction";
 import type { Direction } from "../types/direction";
 import { encodeMoveData } from "../utils/moveProtocol";
+import { useModalStore } from "../../stores/useModalStore";
 
 export default class Player extends BasePlayer {
   private roomId: string;
@@ -42,6 +43,22 @@ export default class Player extends BasePlayer {
     super.update();
 
     if (!this.body || !cursors) return;
+
+    // 모달이 열려있으면 이동 차단 (멈춘 상태로 원격 동기화 후 종료)
+    if (useModalStore.getState().activeModal !== null) {
+      this.body.setVelocity(0, 0);
+      if (this.prevMoving) {
+        const binaryPayload = encodeMoveData(
+          this.container.x,
+          this.container.y,
+          DIRECTION.STOP,
+          false,
+        );
+        emitEvent("moving", binaryPayload);
+        this.prevMoving = false;
+      }
+      return;
+    }
 
     // 1. 현재 프레임의 이동 의도 파악
     let velocityX = 0;

@@ -15,6 +15,6 @@ import { AuthModule } from '../auth/auth.module';
   ],
   controllers: [FocustimeController],
   providers: [FocusTimeService, FocusTimeGateway],
-  exports: [FocusTimeService],
+  exports: [FocusTimeService, FocusTimeGateway],
 })
 export class FocusTimeModule {}
