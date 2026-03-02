@@ -17,6 +17,7 @@ import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { FocusTimeGateway } from '../focustime/focustime.gateway';
 import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -38,6 +39,7 @@ export class PlayerGateway
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
     private readonly focusTimeService: FocusTimeService,
+    private readonly focusTimeGateway: FocusTimeGateway,
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
   ) {}
@@ -197,8 +199,11 @@ export class PlayerGateway
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
 
-    // stale 세션 정리 (장기 미접속 후 재접속 시)
-    await this.focusTimeService.settleStaleSession(playerId);
+    // 유예 기간 내 재연결이면 세션 유지, 아니면 stale 정산
+    const wasInGracePeriod = this.focusTimeGateway.cancelGracePeriod(playerId);
+    if (!wasInGracePeriod) {
+      await this.focusTimeService.settleStaleSession(playerId);
+    }
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {

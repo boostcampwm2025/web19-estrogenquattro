@@ -66,6 +66,7 @@ export default class SocketManager {
   private isInitialized: boolean = false;
   private currentMapIndex: number = 0;
   private mapSwitchTimeout: ReturnType<typeof setTimeout> | null = null;
+  private disconnectOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // 아바타 로더 리스너 추적 (비동기 로드 중 destroy 버그 수정)
   private avatarLoaderListeners: Map<
@@ -77,6 +78,7 @@ export default class SocketManager {
     }>
   > = new Map();
   private avatarLoadingKeys: Set<string> = new Set();
+  private visibilityHandler: (() => void) | null = null;
 
   private getPlayer: () =>
     | {
@@ -162,7 +164,11 @@ export default class SocketManager {
     if (!socket) return;
 
     socket.on("connect", () => {
-      // 재연결 시 오버레이 숨김 및 플래그 리셋
+      // 재연결 성공 시 오버레이 타이머 취소 및 숨김
+      if (this.disconnectOverlayTimeout) {
+        clearTimeout(this.disconnectOverlayTimeout);
+        this.disconnectOverlayTimeout = null;
+      }
       useConnectionStore.getState().setDisconnected(false);
       this.isSessionReplaced = false;
 
@@ -219,8 +225,12 @@ export default class SocketManager {
         // 네트워크 에러 (서버 다운) - 연결 끊김 UI 표시로 진행
       }
 
-      // 서버 문제 → 연결 끊김 UI
-      useConnectionStore.getState().setDisconnected(true);
+      // 재연결 시도 중에는 오버레이를 바로 띄우지 않고 대기
+      this.disconnectOverlayTimeout = setTimeout(() => {
+        if (!socket.connected) {
+          useConnectionStore.getState().setDisconnected(true);
+        }
+      }, 10_000);
     });
 
     socket.on(
@@ -245,6 +255,20 @@ export default class SocketManager {
       socket.disconnect();
       callbacks.showSessionEndedOverlay();
     });
+
+    // 백그라운드 탭 복귀 시 연결이 끊겨있으면 재연결
+    if (typeof document !== "undefined") {
+      this.visibilityHandler = () => {
+        if (
+          document.visibilityState === "visible" &&
+          !socket.connected &&
+          !this.isSessionReplaced
+        ) {
+          socket.connect();
+        }
+      };
+      document.addEventListener("visibilitychange", this.visibilityHandler);
+    }
 
     socket.on("players_synced", (players: PlayerData[]) => {
       players.forEach((data) => {
@@ -655,6 +679,16 @@ export default class SocketManager {
 
   destroy(): void {
     this.clearMapSwitchTimeout();
+
+    if (this.disconnectOverlayTimeout) {
+      clearTimeout(this.disconnectOverlayTimeout);
+      this.disconnectOverlayTimeout = null;
+    }
+
+    if (this.visibilityHandler) {
+      document.removeEventListener("visibilitychange", this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
 
     // 모든 아바타 로더 리스너 정리
     this.avatarLoaderListeners.forEach((_, userId) => {
