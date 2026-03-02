@@ -38,19 +38,14 @@ export default function Home() {
             <UserInfoButton />
             <LeaderboardButton />
             <ChannelSelectButton />
+            <GuestbookButton />
           </div>
           <div className="mb-8">
             <BugReportButton />
           </div>
-        <div className="absolute top-4 left-4 z-30 flex flex-col gap-4">
-          <UserInfoButton />
-          <LeaderboardButton />
-          <ChannelSelectButton />
-          <GuestbookButton />
         </div>
         <ConnectionLostOverlay />
       </div>
     </AuthGuard>
-    
   );
 }
