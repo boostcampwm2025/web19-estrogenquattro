@@ -20,20 +20,25 @@ export default function Toast({
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
   const fadeOutTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));
 
     const timer = setTimeout(() => {
       setIsVisible(false);
-      fadeOutTimer.current = setTimeout(onClose, 300);
+      fadeOutTimer.current = setTimeout(() => onCloseRef.current(), 300);
     }, duration);
 
     return () => {
       clearTimeout(timer);
       clearTimeout(fadeOutTimer.current);
     };
-  }, [duration, onClose]);
+  }, [duration]);
 
   return (
     <div

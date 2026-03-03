@@ -79,7 +79,10 @@ export default function GuestbookModal() {
     createMutation.mutate(trimmed, {
       onSuccess: () => {
         setNewMessage("");
-        setToast({ message: t(($) => $.guestbook.submitSuccess), variant: "success" });
+        setToast({
+          message: t(($) => $.guestbook.submitSuccess),
+          variant: "success",
+        });
       },
       onError: (error) => {
         setToast({ message: getErrorMessage(error), variant: "error" });
@@ -91,7 +94,10 @@ export default function GuestbookModal() {
     if (deleteMutation.isPending) return;
     deleteMutation.mutate(entryId, {
       onError: () => {
-        setToast({ message: t(($) => $.guestbook.deleteError), variant: "error" });
+        setToast({
+          message: t(($) => $.guestbook.deleteError),
+          variant: "error",
+        });
       },
     });
   };
@@ -117,88 +123,8 @@ export default function GuestbookModal() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
-      onClick={handleBackdropClick}
-    >
-      <div
-        ref={contentRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="guestbook-title"
-        onKeyDown={stopPropagation}
-        onKeyUp={stopPropagation}
-        className={`relative flex w-full max-w-[768px] flex-col ${PIXEL_BG} ${PIXEL_BORDER} p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
-      >
-        {/* 헤더 */}
-        <div className="mb-4 flex items-center justify-between">
-          <h2
-            id="guestbook-title"
-            className="text-xl font-extrabold tracking-wider text-amber-900"
-          >
-            {t(($) => $.guestbook.title)}
-          </h2>
-          <button
-            onClick={handleClose}
-            aria-label={t(($) => $.guestbook.closeModal)}
-            className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
-          >
-            X
-          </button>
-        </div>
-
-        {/* 글 목록 (스크롤 영역) */}
-        <div className={`relative mb-4 ${PIXEL_BORDER} bg-white/50 p-3`}>
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="retro-scrollbar max-h-80 min-h-16 space-y-1 overflow-y-auto pr-2"
-          >
-            {entries.length === 0 ? (
-              <div className="flex min-h-16 items-center justify-center text-sm text-amber-700">
-                {t(($) => $.guestbook.empty)}
-              </div>
-            ) : (
-              entries.map((entry) => (
-                <GuestbookEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  isMine={entry.player.id === currentPlayerId}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-            {hasNextPage && (
-              <div ref={bottomRef} className="py-2 text-center">
-                <span className="text-xs text-amber-500">...</span>
-              </div>
-            )}
-          </div>
-          {showScrollTop && (
-            <button
-              type="button"
-              onClick={scrollToTop}
-              aria-label={t(($) => $.guestbook.scrollToTop)}
-              className={`absolute top-5 right-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-amber-900 bg-amber-200 text-amber-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.35)] transition-all hover:bg-amber-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.35)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
-            >
-              <ArrowUp className="h-[18px] w-[18px]" />
-            </button>
-          )}
-        </div>
-
-        {/* 글 작성 영역 */}
-        <GuestbookInputForm
-          value={newMessage}
-          maxLength={MAX_MESSAGE_LENGTH}
-          onChange={setNewMessage}
-          onSubmit={handleSubmit}
-          onKeyDown={handleKeyDown}
-          onKeyUp={stopPropagation}
-        />
-      </div>
+    <>
       {toast && (
         <Toast
           message={toast.message}
@@ -206,6 +132,88 @@ export default function GuestbookModal() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+      {!isOpen ? null : (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
+          onClick={handleBackdropClick}
+        >
+          <div
+            ref={contentRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guestbook-title"
+            onKeyDown={stopPropagation}
+            onKeyUp={stopPropagation}
+            className={`relative flex w-full max-w-[768px] flex-col ${PIXEL_BG} ${PIXEL_BORDER} p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]`}
+          >
+            {/* 헤더 */}
+            <div className="mb-4 flex items-center justify-between">
+              <h2
+                id="guestbook-title"
+                className="text-xl font-extrabold tracking-wider text-amber-900"
+              >
+                {t(($) => $.guestbook.title)}
+              </h2>
+              <button
+                onClick={handleClose}
+                aria-label={t(($) => $.guestbook.closeModal)}
+                className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+              >
+                X
+              </button>
+            </div>
+
+            {/* 글 목록 (스크롤 영역) */}
+            <div className={`relative mb-4 ${PIXEL_BORDER} bg-white/50 p-3`}>
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="retro-scrollbar max-h-80 min-h-16 space-y-1 overflow-y-auto pr-2"
+              >
+                {entries.length === 0 ? (
+                  <div className="flex min-h-16 items-center justify-center text-sm text-amber-700">
+                    {t(($) => $.guestbook.empty)}
+                  </div>
+                ) : (
+                  entries.map((entry) => (
+                    <GuestbookEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      isMine={entry.player.id === currentPlayerId}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
+                {hasNextPage && (
+                  <div ref={bottomRef} className="py-2 text-center">
+                    <span className="text-xs text-amber-500">...</span>
+                  </div>
+                )}
+              </div>
+              {showScrollTop && (
+                <button
+                  type="button"
+                  onClick={scrollToTop}
+                  aria-label={t(($) => $.guestbook.scrollToTop)}
+                  className={`absolute top-5 right-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-amber-900 bg-amber-200 text-amber-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.35)] transition-all hover:bg-amber-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.35)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
+                >
+                  <ArrowUp className="h-[18px] w-[18px]" />
+                </button>
+              )}
+            </div>
+
+            {/* 글 작성 영역 */}
+            <GuestbookInputForm
+              value={newMessage}
+              maxLength={MAX_MESSAGE_LENGTH}
+              onChange={setNewMessage}
+              onSubmit={handleSubmit}
+              onKeyDown={handleKeyDown}
+              onKeyUp={stopPropagation}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
