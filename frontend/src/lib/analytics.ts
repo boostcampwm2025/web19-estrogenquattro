@@ -21,15 +21,17 @@ export const Analytics = {
 
   /**
    * 유저 속성 설정 (language, member_type 등)
+   * dataLayer.push를 사용하여 gtag 로드 전에도 안전하게 큐잉
    */
   setUserProperties: (properties: Record<string, string>) => {
     if (isDev) {
       console.log("[GA4] Set user properties", properties);
     }
 
-    if (typeof window === "undefined" || !window.gtag) return;
+    if (typeof window === "undefined") return;
 
-    window.gtag("set", "user_properties", properties);
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(["set", "user_properties", properties]);
   },
 
   // ── Focus Timer ──
