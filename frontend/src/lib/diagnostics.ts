@@ -59,7 +59,7 @@ export function collectDiagnostics(): DiagnosticData {
     screenResolution: `${screen.width}x${screen.height}`,
     viewportSize: `${window.innerWidth}x${window.innerHeight}`,
     timestamp: new Date().toISOString(),
-    url: window.location.href,
+    url: `${window.location.origin}${window.location.pathname}`,
   };
 
   // 앱 상태 스냅샷 (Zustand getState()로 리액트 외부에서 접근)

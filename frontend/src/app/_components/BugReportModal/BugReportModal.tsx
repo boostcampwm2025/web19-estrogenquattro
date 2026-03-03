@@ -34,7 +34,9 @@ export default function BugReportModal() {
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
     onClose: () => {
-      attachments.forEach((a) => URL.revokeObjectURL(a.preview));
+      attachments.forEach((a) => {
+        URL.revokeObjectURL(a.preview);
+      });
       setDescription("");
       setAttachments([]);
       closeModal();
@@ -95,7 +97,9 @@ export default function BugReportModal() {
 
   const removeAllAttachments = useCallback(() => {
     setAttachments((prev) => {
-      prev.forEach((a) => URL.revokeObjectURL(a.preview));
+      prev.forEach((a) => {
+        URL.revokeObjectURL(a.preview);
+      });
       return [];
     });
   }, []);
@@ -135,7 +139,9 @@ export default function BugReportModal() {
       const formData = new FormData();
       formData.append("content", description.trim());
       formData.append("diagnostics", JSON.stringify(diagnostics));
-      attachments.forEach((a) => formData.append("images", a.file));
+      attachments.forEach((a) => {
+        formData.append("images", a.file);
+      });
 
       const response = await fetch(`${API_URL}/api/bug-reports`, {
         method: "POST",
@@ -148,7 +154,9 @@ export default function BugReportModal() {
       }
 
       // 초기화
-      attachments.forEach((a) => URL.revokeObjectURL(a.preview));
+      attachments.forEach((a) => {
+        URL.revokeObjectURL(a.preview);
+      });
       setDescription("");
       setAttachments([]);
       closeModal();

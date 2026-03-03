@@ -19,7 +19,7 @@ export default function Toast({
   onClose,
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const fadeOutTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const fadeOutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -36,12 +36,17 @@ export default function Toast({
 
     return () => {
       clearTimeout(timer);
-      clearTimeout(fadeOutTimer.current);
+      if (fadeOutTimer.current !== null) {
+        clearTimeout(fadeOutTimer.current);
+      }
     };
   }, [duration]);
 
   return (
     <div
+      role={variant === "error" ? "alert" : "status"}
+      aria-live={variant === "error" ? "assertive" : "polite"}
+      aria-atomic="true"
       className={`fixed bottom-8 left-1/2 z-[100] -translate-x-1/2 transition-all duration-300 ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
       }`}
