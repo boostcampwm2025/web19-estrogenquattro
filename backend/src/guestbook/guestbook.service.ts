@@ -101,7 +101,9 @@ export class GuestbookService {
     });
 
     if (existing) {
-      throw new BadRequestException('방명록은 하루에 한 번만 작성할 수 있습니다');
+      throw new BadRequestException(
+        '방명록은 하루에 한 번만 작성할 수 있습니다',
+      );
     }
   }
 }

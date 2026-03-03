@@ -32,6 +32,7 @@ export class BugReportService {
     dto: CreateBugReportDto,
     images?: UploadedFile[],
   ) {
+    this.validateImageSize(images);
     const { content, diagnostics } = dto;
 
     if (!content || content.length > 500) {
@@ -111,6 +112,17 @@ export class BugReportService {
       }
     } catch (error) {
       this.logger.error('Discord 웹훅 전송 실패', error);
+    }
+  }
+
+  private validateImageSize(images?: UploadedFile[]): void {
+    if (!images || images.length === 0) return;
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    for (const image of images) {
+      if (image.buffer.length > MAX_SIZE) {
+        throw new BadRequestException('이미지 1개당 5MB를 넘을 수 없습니다');
+      }
     }
   }
 }
