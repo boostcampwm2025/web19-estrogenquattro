@@ -5,9 +5,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Guestbook } from './entities/guestbook.entity';
 import { PlayerService } from '../player/player.service';
+import { getTodayKstRangeUtc } from '../util/date.util';
 
 export type SortOrder = 'ASC' | 'DESC';
 
@@ -25,6 +26,8 @@ export class GuestbookService {
     }
 
     const player = await this.playerService.findOneById(playerId);
+
+    await this.checkDailyLimit(playerId);
 
     const guestbook = this.guestbookRepository.create({
       content,
@@ -85,5 +88,20 @@ export class GuestbookService {
     }
 
     await this.guestbookRepository.remove(guestbook);
+  }
+
+  private async checkDailyLimit(playerId: number) {
+    const { start } = getTodayKstRangeUtc();
+
+    const existing = await this.guestbookRepository.findOne({
+      where: {
+        player: { id: playerId },
+        createdAt: MoreThanOrEqual(start),
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('방명록은 하루에 한 번만 작성할 수 있습니다');
+    }
   }
 }
