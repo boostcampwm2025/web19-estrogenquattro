@@ -94,7 +94,7 @@ socket.emit('joining', {
 
 **서버 동작:**
 1. `roomId`가 있으면 지정 방 입장 (`RoomService.joinRoom`), 없으면 랜덤 배정 (`RoomService.randomJoin`)
-2. 중복 접속 시 이전 세션 종료 (`session_replaced`)
+2. 동일 `githubId`로 이미 접속 중이면 이전 세션 종료 (`session_replaced`)
 3. 플레이어 정보 저장 및 방 플레이어 등록
 4. stale 세션 정산 (`settleStaleSession`, 최대 600초/10분 클램프)
 5. 기존 플레이어 목록 전송 (`players_synced`, 포커스 상태 포함)
@@ -644,6 +644,9 @@ socket.on('session_replaced', (data: {
   // 오버레이 표시
 });
 ```
+
+서버는 `username`이 아닌 `githubId` 기준으로 중복 세션을 판별한다.  
+따라서 GitHub username 변경 직후 재로그인해도 이전 세션이 일관되게 종료된다.
 
 ---
 
