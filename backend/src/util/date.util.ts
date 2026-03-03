@@ -39,3 +39,7 @@ export function getTodayKstRangeUtc(base: Date = new Date()): {
 
   return { start, end };
 }
+export function getTodayKstDateString(base: Date = new Date()): string {
+  const kst = new Date(base.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().split('T')[0];
+}
