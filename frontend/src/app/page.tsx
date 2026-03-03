@@ -5,6 +5,8 @@ import UserInfoModal from "./_components/UserInfoModal";
 import FocusPanel from "./_components/FocusPanel";
 import LeaderboardModal from "./_components/LeaderboardModal";
 import ChannelSelectModal from "./_components/ChannelSelectModal";
+import BugReportModal from "./_components/BugReportModal";
+import BugReportButton from "./_components/BugReportButton";
 import GuestbookModal from "./_components/GuestbookModal/GuestbookModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import ChannelSelectButton from "./_components/ChannelSelectButton";
@@ -24,17 +26,23 @@ export default function Home() {
           <UserInfoModal />
           <LeaderboardModal />
           <ChannelSelectModal />
+          <BugReportModal />
           <GuestbookModal />
           <OnboardingTour />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
         </div>
-        <div className="absolute top-4 left-4 z-30 flex flex-col gap-4">
-          <UserInfoButton />
-          <LeaderboardButton />
-          <ChannelSelectButton />
-          <GuestbookButton />
+        <div className="absolute top-4 bottom-4 left-4 z-30 flex flex-col justify-between">
+          <div className="flex flex-col gap-4">
+            <UserInfoButton />
+            <LeaderboardButton />
+            <ChannelSelectButton />
+            <GuestbookButton />
+          </div>
+          <div>
+            <BugReportButton />
+          </div>
         </div>
         <ConnectionLostOverlay />
       </div>

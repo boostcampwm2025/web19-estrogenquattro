@@ -13,7 +13,10 @@ export const getSocket = (): Socket => {
       parser: customParser,
       withCredentials: true,
       autoConnect: false,
-      reconnection: false,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 30000,
     });
   }
   return socket;

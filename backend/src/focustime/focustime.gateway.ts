@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -88,14 +88,36 @@ function parseFocusTaskUpdatingPayload(data: unknown): string | null {
   return normalizedTaskName;
 }
 
+const DISCONNECT_GRACE_MS = 60_000;
+
 @WebSocketGateway()
-export class FocusTimeGateway implements OnGatewayDisconnect {
+export class FocusTimeGateway implements OnGatewayDisconnect, OnModuleDestroy {
   private readonly logger = new Logger(FocusTimeGateway.name);
+  private readonly disconnectTimers: Map<number, NodeJS.Timeout> = new Map();
 
   constructor(
     private readonly focusTimeService: FocusTimeService,
     private readonly wsJwtGuard: WsJwtGuard,
   ) {}
+
+  onModuleDestroy() {
+    this.disconnectTimers.forEach((timer) => clearTimeout(timer));
+    this.disconnectTimers.clear();
+  }
+
+  cancelGracePeriod(playerId: number): boolean {
+    const timer = this.disconnectTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      this.disconnectTimers.delete(playerId);
+      this.logger.log('Grace period cancelled', {
+        method: 'cancelGracePeriod',
+        playerId,
+      });
+      return true;
+    }
+    return false;
+  }
 
   @SubscribeMessage('focusing')
   async handleFocusing(
@@ -273,27 +295,40 @@ export class FocusTimeGateway implements OnGatewayDisconnect {
     return { success: true, data: responseData };
   }
 
-  async handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
+  handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
     const user = client.data.user;
 
     if (!user) {
       return;
     }
 
-    try {
-      // player 기반 정산 (집중 중이 아니면 무시됨)
-      await this.focusTimeService.startResting(user.playerId);
-      this.logger.log('Disconnect set resting', {
-        method: 'handleDisconnect',
-        username: user.username,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Disconnect error', {
-        method: 'handleDisconnect',
-        username: user.username,
-        error: message,
-      });
-    }
+    this.logger.log('Disconnect grace period started', {
+      method: 'handleDisconnect',
+      username: user.username,
+      graceMs: DISCONNECT_GRACE_MS,
+    });
+
+    const timer = setTimeout(() => {
+      this.disconnectTimers.delete(user.playerId);
+      this.focusTimeService
+        .startResting(user.playerId)
+        .then(() => {
+          this.logger.log('Grace period expired - set resting', {
+            method: 'handleDisconnect',
+            username: user.username,
+          });
+        })
+        .catch((error: unknown) => {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          this.logger.error('Grace period resting error', {
+            method: 'handleDisconnect',
+            username: user.username,
+            error: message,
+          });
+        });
+    }, DISCONNECT_GRACE_MS);
+
+    this.disconnectTimers.set(user.playerId, timer);
   }
 }
