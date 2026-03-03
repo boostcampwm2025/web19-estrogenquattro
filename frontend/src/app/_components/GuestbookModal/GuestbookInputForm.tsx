@@ -10,7 +10,6 @@ interface GuestbookInputFormProps {
   onSubmit: () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onKeyUp: (e: React.KeyboardEvent) => void;
-  errorMessage?: string;
 }
 
 export default function GuestbookInputForm({
@@ -20,7 +19,6 @@ export default function GuestbookInputForm({
   onSubmit,
   onKeyDown,
   onKeyUp,
-  errorMessage,
 }: GuestbookInputFormProps) {
   const { t } = useTranslation("ui");
   const hasContent = value.trim().length > 0;
@@ -38,10 +36,7 @@ export default function GuestbookInputForm({
         maxLength={maxLength}
         autoFocus
       />
-      {errorMessage && (
-        <p className="mb-1 text-xs text-red-600">{errorMessage}</p>
-      )}
-      <div className="flex items-end justify-between">
+<div className="flex items-end justify-between">
         <span className="text-sm text-amber-500">
           {value.length}/{maxLength}
         </span>

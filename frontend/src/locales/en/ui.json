@@ -266,6 +266,10 @@
     "empty": "No messages yet.",
     "deleteConfirm": "Are you sure you want to delete this?",
     "submitError": "Failed to post the message.",
+    "submitSuccess": "Your message has been posted.",
+    "dailyLimitError": "You can only post once per day.",
+    "lengthError": "Message must be between 1 and 200 characters.",
+    "deleteError": "Failed to delete the message.",
     "scrollToTop": "Scroll to top",
     "time": {
       "justNow": "just now",

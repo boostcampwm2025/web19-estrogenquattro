@@ -15,6 +15,8 @@ import {
 } from "@/lib/api/hooks/useGuestbook";
 import GuestbookEntryCard from "./GuestbookEntryCard";
 import GuestbookInputForm from "./GuestbookInputForm";
+import Toast from "@/app/_components/Toast";
+import { ApiError } from "@/lib/api/client";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -41,6 +43,10 @@ export default function GuestbookModal() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: "success" | "error";
+  } | null>(null);
 
   const { data, fetchNextPage, hasNextPage } = useGuestbookEntries(isOpen);
   const createMutation = useCreateGuestbook();
@@ -55,17 +61,39 @@ export default function GuestbookModal() {
     },
   });
 
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof ApiError) {
+      if (error.message.includes("하루에 한 번")) {
+        return t(($) => $.guestbook.dailyLimitError);
+      }
+      if (error.message.includes("1~200자")) {
+        return t(($) => $.guestbook.lengthError);
+      }
+    }
+    return t(($) => $.guestbook.submitError);
+  };
+
   const handleSubmit = () => {
     const trimmed = newMessage.trim();
     if (!trimmed || createMutation.isPending) return;
     createMutation.mutate(trimmed, {
-      onSuccess: () => setNewMessage(""),
+      onSuccess: () => {
+        setNewMessage("");
+        setToast({ message: t(($) => $.guestbook.submitSuccess), variant: "success" });
+      },
+      onError: (error) => {
+        setToast({ message: getErrorMessage(error), variant: "error" });
+      },
     });
   };
 
   const handleDelete = (entryId: number) => {
     if (deleteMutation.isPending) return;
-    deleteMutation.mutate(entryId);
+    deleteMutation.mutate(entryId, {
+      onError: () => {
+        setToast({ message: t(($) => $.guestbook.deleteError), variant: "error" });
+      },
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -169,13 +197,15 @@ export default function GuestbookModal() {
           onSubmit={handleSubmit}
           onKeyDown={handleKeyDown}
           onKeyUp={stopPropagation}
-          errorMessage={
-            createMutation.isError
-              ? t(($) => $.guestbook.submitError)
-              : undefined
-          }
         />
       </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
