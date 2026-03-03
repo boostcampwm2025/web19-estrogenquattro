@@ -70,7 +70,7 @@ export function TaskItem({
             onChange={(e) => setEditText(e.target.value)}
             onKeyDown={(e) => {
               e.stopPropagation();
-              if (e.key === "Enter") handleEditSubmit(e);
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) handleEditSubmit(e);
               if (e.key === "Escape") handleEditCancel();
             }}
             className="h-8 w-full rounded-none border-2 border-amber-900 bg-white px-2 text-sm text-amber-900 disabled:cursor-not-allowed disabled:opacity-50"
