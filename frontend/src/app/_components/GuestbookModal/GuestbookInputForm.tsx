@@ -36,7 +36,7 @@ export default function GuestbookInputForm({
         maxLength={maxLength}
         autoFocus
       />
-<div className="flex items-end justify-between">
+      <div className="flex items-end justify-between">
         <span className="text-sm text-amber-500">
           {value.length}/{maxLength}
         </span>
