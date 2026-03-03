@@ -1,0 +1,75 @@
+name: Dev Server CD
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ "dev" ]
+
+jobs:
+  build_and_deploy:
+    # PR이 'merge' 형태로 닫혔을 때만 실행 (그냥 close하면 실행 안 함)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install and Build Backend
+        working-directory: ./backend
+        run: |
+          pnpm install
+          pnpm run build
+
+      - name: Install and Build Frontend
+        working-directory: ./frontend
+        run: |
+          pnpm install
+          NODE_ENV=production NEXT_PUBLIC_API_URL=http://${{ secrets.DEV_HOST }} NEXT_PUBLIC_SOCKET_URL=http://${{ secrets.DEV_HOST }} pnpm run build
+
+      - name: Copy build artifacts to Dev Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_KEY }}
+          port: 22
+          # backend/dist, backend/public, package.json 등을 전송합니다.
+          source: "backend/dist/*,backend/public/*,backend/package.json,backend/pnpm-lock.yaml,ecosystem.config.js,package.json"
+          target: "/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/"
+          strip_components: 0
+
+  restart_service:
+    needs: build_and_deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart Service via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_HOST }}
+          username: ${{ secrets.DEV_USERNAME }}
+          key: ${{ secrets.DEV_KEY }}
+          port: 22
+          script: |
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 24.13.1
+            export PNPM_HOME="$HOME/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
+            
+            cd web19-estrogenquattro/backend
+            pnpm install --prod
+            
+            cd ..
+            pnpm run deploy:dev

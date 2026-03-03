@@ -5,8 +5,10 @@ import UserInfoModal from "./_components/UserInfoModal";
 import FocusPanel from "./_components/FocusPanel";
 import LeaderboardModal from "./_components/LeaderboardModal";
 import ChannelSelectModal from "./_components/ChannelSelectModal";
+import GuestbookModal from "./_components/GuestbookModal/GuestbookModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import ChannelSelectButton from "./_components/ChannelSelectButton";
+import GuestbookButton from "./_components/GuestbookButton";
 import UserInfoButton from "./_components/UserInfoButton";
 import ProgressBar from "@/_components/ui/ProgressBar";
 import { OnboardingTour } from "./_components/OnboardingTour";
@@ -22,6 +24,7 @@ export default function Home() {
           <UserInfoModal />
           <LeaderboardModal />
           <ChannelSelectModal />
+          <GuestbookModal />
           <OnboardingTour />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
@@ -31,6 +34,7 @@ export default function Home() {
           <UserInfoButton />
           <LeaderboardButton />
           <ChannelSelectButton />
+          <GuestbookButton />
         </div>
         <ConnectionLostOverlay />
       </div>
