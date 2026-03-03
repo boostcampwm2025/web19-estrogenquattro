@@ -16,20 +16,31 @@ const logBuffer: LogEntry[] = [];
 
 let isInitialized = false;
 
+function sanitizeMessage(raw: string): string {
+  return raw
+    .replace(
+      /([?&](token|access_token|refresh_token|code)=)[^&\s]+/gi,
+      "$1[REDACTED]",
+    )
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]");
+}
+
 function addLog(level: LogEntry["level"], args: unknown[]) {
-  const message = args
-    .map((arg) => {
-      if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
-      if (typeof arg === "object") {
-        try {
-          return JSON.stringify(arg);
-        } catch {
-          return String(arg);
+  const message = sanitizeMessage(
+    args
+      .map((arg) => {
+        if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+        if (typeof arg === "object") {
+          try {
+            return JSON.stringify(arg);
+          } catch {
+            return String(arg);
+          }
         }
-      }
-      return String(arg);
-    })
-    .join(" ");
+        return String(arg);
+      })
+      .join(" "),
+  ).slice(0, 2000);
 
   logBuffer.push({
     level,
