@@ -3,7 +3,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { initLogBuffer } from "@/lib/logBuffer";
 import "@/i18n";
+
+// 앱 시작 시 콘솔 로그 수집 초기화 (모듈 로드 시 1회 실행)
+initLogBuffer();
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const { t, i18n, ready } = useTranslation("ui");
