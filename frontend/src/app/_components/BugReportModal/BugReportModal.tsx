@@ -13,6 +13,7 @@ import { API_URL } from "@/lib/api/client";
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
 const MAX_ATTACHMENTS = 3;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface AttachedFile {
   file: File;
@@ -40,33 +41,42 @@ export default function BugReportModal() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    // FileList는 live DOM 객체이므로 input value 리셋 시 비워짐
-    // 상태 업데이트 전에 미리 배열로 복사
     const fileArray = Array.from(files);
 
-    setAttachments((prev) => {
-      const remaining = MAX_ATTACHMENTS - prev.length;
-      if (remaining <= 0) return prev;
+    // 용량 초과 파일 체크를 state updater 밖에서 먼저 수행
+    const hasOversized = fileArray.some(
+      (file) => file.type.startsWith("image/") && file.size > MAX_FILE_SIZE,
+    );
 
-      const newAttachments: AttachedFile[] = [];
+    const validFiles = fileArray.filter(
+      (file) => file.type.startsWith("image/") && file.size <= MAX_FILE_SIZE,
+    );
 
-      fileArray.slice(0, remaining).forEach((file) => {
-        if (file.type.startsWith("image/")) {
-          const preview = URL.createObjectURL(file);
-          newAttachments.push({
+    if (validFiles.length > 0) {
+      setAttachments((prev) => {
+        const remaining = MAX_ATTACHMENTS - prev.length;
+        if (remaining <= 0) return prev;
+
+        return [
+          ...prev,
+          ...validFiles.slice(0, remaining).map((file) => ({
             file,
-            preview,
-          });
-        }
+            preview: URL.createObjectURL(file),
+          })),
+        ];
       });
+    }
 
-      return [...prev, ...newAttachments];
-    });
+    if (hasOversized) {
+      setFileSizeError(true);
+      setTimeout(() => setFileSizeError(false), 3000);
+    }
   }, []);
 
   const removeAttachment = useCallback((index: number) => {
@@ -219,24 +229,29 @@ export default function BugReportModal() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`cursor-pointer ${PIXEL_BORDER} flex items-center justify-center gap-2 p-4 transition-colors ${
+                className={`cursor-pointer ${PIXEL_BORDER} flex flex-col p-4 transition-colors ${
                   isDragOver
                     ? "border-amber-500 bg-amber-300"
                     : "border-dashed bg-white hover:bg-amber-200"
                 }`}
               >
-                {isDragOver ? (
-                  <Upload className="h-8 w-8 text-amber-600" />
-                ) : (
-                  <ImagePlus className="h-8 w-8 text-amber-400" />
-                )}
-                <p className="text-center text-sm text-amber-700">
-                  {isDragOver
-                    ? t(($) => $.bugReport.dropHere)
-                    : t(($) => $.bugReport.attachHint, {
-                        current: attachments.length,
-                        max: MAX_ATTACHMENTS,
-                      })}
+                <div className="flex items-center justify-center gap-2">
+                  {isDragOver ? (
+                    <Upload className="h-8 w-8 text-amber-600" />
+                  ) : (
+                    <ImagePlus className="h-8 w-8 text-amber-400" />
+                  )}
+                  <p className="text-center text-sm text-amber-700">
+                    {isDragOver
+                      ? t(($) => $.bugReport.dropHere)
+                      : t(($) => $.bugReport.attachHint, {
+                          current: attachments.length,
+                          max: MAX_ATTACHMENTS,
+                        })}
+                  </p>
+                </div>
+                <p className="text-center text-[11px] text-amber-500">
+                  {t(($) => $.bugReport.fileSizeLimit)}
                 </p>
                 <input
                   ref={fileInputRef}
@@ -250,6 +265,13 @@ export default function BugReportModal() {
                   className="hidden"
                 />
               </div>
+            )}
+
+            {/* 용량 초과 알림 */}
+            {fileSizeError && (
+              <p className="mt-2 text-center text-xs font-bold text-red-500">
+                {t(($) => $.bugReport.fileSizeError)}
+              </p>
             )}
 
             {/* 전체 삭제 버튼 */}

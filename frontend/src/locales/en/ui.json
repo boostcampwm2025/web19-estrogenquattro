@@ -305,6 +305,8 @@
     "deleteFile": "Delete attachment {{index}}",
     "attachedImage": "Attached image {{index}}",
     "submit": "Submit",
-    "successToast": "Bug report submitted successfully! Thank you!"
+    "successToast": "Bug report submitted successfully! Thank you!",
+    "fileSizeLimit": "Max 5MB per image",
+    "fileSizeError": "Images larger than 5MB cannot be attached."
   }
 }
