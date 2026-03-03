@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle } from "lucide-react";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
@@ -17,17 +17,20 @@ export default function Toast({
   onClose,
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const fadeOutTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    // 마운트 후 애니메이션 트리거
     requestAnimationFrame(() => setIsVisible(true));
 
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onClose, 300); // fade-out 후 제거
+      fadeOutTimer.current = setTimeout(onClose, 300);
     }, duration);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fadeOutTimer.current);
+    };
   }, [duration, onClose]);
 
   return (
