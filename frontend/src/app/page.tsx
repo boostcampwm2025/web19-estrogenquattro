@@ -33,14 +33,14 @@ export default function Home() {
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />
         </div>
-        <div className="absolute top-4 left-4 z-30 flex h-full flex-col justify-between">
+        <div className="absolute top-4 bottom-4 left-4 z-30 flex flex-col justify-between">
           <div className="flex flex-col gap-4">
             <UserInfoButton />
             <LeaderboardButton />
             <ChannelSelectButton />
             <GuestbookButton />
           </div>
-          <div className="mb-8">
+          <div>
             <BugReportButton />
           </div>
         </div>

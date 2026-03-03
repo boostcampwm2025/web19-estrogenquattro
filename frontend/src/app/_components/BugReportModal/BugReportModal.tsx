@@ -33,7 +33,12 @@ export default function BugReportModal() {
 
   const { contentRef, handleClose, handleBackdropClick } = useModalClose({
     isOpen,
-    onClose: closeModal,
+    onClose: () => {
+      attachments.forEach((a) => URL.revokeObjectURL(a.preview));
+      setDescription("");
+      setAttachments([]);
+      closeModal();
+    },
   });
 
   const [description, setDescription] = useState("");
@@ -41,6 +46,7 @@ export default function BugReportModal() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
   const [fileSizeError, setFileSizeError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,17 +155,13 @@ export default function BugReportModal() {
       setShowToast(true);
     } catch (error) {
       console.error("Bug report submission failed:", error);
+      setShowErrorToast(true);
     } finally {
       setIsSubmitting(false);
     }
   }, [description, attachments, closeModal, isSubmitting]);
 
-  const handleModalClose = useCallback(() => {
-    attachments.forEach((a) => URL.revokeObjectURL(a.preview));
-    setDescription("");
-    setAttachments([]);
-    handleClose();
-  }, [attachments, handleClose]);
+  const handleModalClose = handleClose;
 
   if (!isOpen) {
     return showToast ? (
@@ -172,6 +174,13 @@ export default function BugReportModal() {
 
   return (
     <>
+      {showErrorToast && (
+        <Toast
+          message={t(($) => $.bugReport.errorToast)}
+          variant="error"
+          onClose={() => setShowErrorToast(false)}
+        />
+      )}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-10"
         onClick={handleBackdropClick}
@@ -218,7 +227,10 @@ export default function BugReportModal() {
                 className="w-full resize-none border-none bg-transparent p-3 text-sm text-amber-900 placeholder-amber-400 outline-none"
               />
               <div className="px-3 pb-2 text-right text-[11px] text-amber-500">
-                {description.length}/500
+                {t(($) => $.bugReport.charCount, {
+                  current: description.length,
+                  max: 500,
+                })}
               </div>
             </div>
 

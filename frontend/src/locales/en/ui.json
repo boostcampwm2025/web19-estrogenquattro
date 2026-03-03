@@ -307,6 +307,7 @@
     "submit": "Submit",
     "successToast": "Bug report submitted successfully! Thank you!",
     "fileSizeLimit": "Max 5MB per image",
-    "fileSizeError": "Images larger than 5MB cannot be attached."
+    "fileSizeError": "Images larger than 5MB cannot be attached.",
+    "errorToast": "Submission failed. Please try again."
   }
 }

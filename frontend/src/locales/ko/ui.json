@@ -307,6 +307,7 @@
     "submit": "전송",
     "successToast": "버그가 정상적으로 접수되었습니다! 감사합니다!",
     "fileSizeLimit": "이미지 1개당 최대 5MB",
-    "fileSizeError": "5MB를 초과하는 이미지는 첨부할 수 없습니다."
+    "fileSizeError": "5MB를 초과하는 이미지는 첨부할 수 없습니다.",
+    "errorToast": "제출에 실패했습니다. 다시 시도해 주세요."
   }
 }
