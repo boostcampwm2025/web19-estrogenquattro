@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Guestbook } from './entities/guestbook.entity';
 import { PlayerService } from '../player/player.service';
+import { getTodayKstDateString } from '../util/date.util';
+import { QueryFailedError } from 'typeorm';
 
 export type SortOrder = 'ASC' | 'DESC';
 
@@ -25,17 +27,33 @@ export class GuestbookService {
     }
 
     const player = await this.playerService.findOneById(playerId);
+    const writeDate = getTodayKstDateString();
+
+    await this.checkDailyLimit(playerId, writeDate);
 
     const guestbook = this.guestbookRepository.create({
       content,
       player,
+      writeDate,
     });
 
-    const saved = await this.guestbookRepository.save(guestbook);
-    return {
-      ...saved,
-      player: { id: player.id, nickname: player.nickname },
-    };
+    try {
+      const saved = await this.guestbookRepository.save(guestbook);
+      return {
+        ...saved,
+        player: { id: player.id, nickname: player.nickname },
+      };
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        error.message.includes('UNIQUE')
+      ) {
+        throw new BadRequestException(
+          '방명록은 하루에 한 번만 작성할 수 있습니다',
+        );
+      }
+      throw error;
+    }
   }
 
   async findByCursor(
@@ -85,5 +103,20 @@ export class GuestbookService {
     }
 
     await this.guestbookRepository.remove(guestbook);
+  }
+
+  private async checkDailyLimit(playerId: number, writeDate: string) {
+    const existing = await this.guestbookRepository.findOne({
+      where: {
+        player: { id: playerId },
+        writeDate: writeDate,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        '방명록은 하루에 한 번만 작성할 수 있습니다',
+      );
+    }
   }
 }

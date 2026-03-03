@@ -20,7 +20,12 @@ describe("Tasks API 통합", () => {
       pendingTaskIds: [],
     });
     useAuthStore.setState({
-      user: { sub: "test-sub", username: "testuser", playerId: TEST_PLAYER_ID },
+      user: {
+        githubId: "test-github-id",
+        username: "testuser",
+        avatarUrl: "https://example.com/avatar.png",
+        playerId: TEST_PLAYER_ID,
+      },
       isAuthenticated: true,
       isLoading: false,
     });

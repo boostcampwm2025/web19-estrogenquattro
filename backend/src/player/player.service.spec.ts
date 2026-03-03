@@ -108,7 +108,7 @@ describe('PlayerService', () => {
   });
 
   describe('findOrCreateBySocialId', () => {
-    it('기존 플레이어가 있으면 해당 플레이어를 반환한다', async () => {
+    it('기존 플레이어가 있으면 닉네임을 최신값으로 갱신해 반환한다', async () => {
       // Given
       const existingPlayer = playerRepository.create({
         socialId: 11111,
@@ -122,8 +122,13 @@ describe('PlayerService', () => {
 
       // Then
       expect(result.id).toBe(existingPlayer.id);
-      expect(result.nickname).toBe('ExistingPlayer'); // 기존 닉네임 유지
+      expect(result.nickname).toBe('NewNickname');
       expect(result.totalPoint).toBe(200);
+
+      const updated = await playerRepository.findOne({
+        where: { socialId: 11111 },
+      });
+      expect(updated?.nickname).toBe('NewNickname');
     });
 
     it('기존 플레이어가 없으면 새 플레이어를 생성한다', async () => {
@@ -171,6 +176,9 @@ describe('PlayerService', () => {
       // Then
       const count = await playerRepository.count({ where: { socialId } });
       expect(count).toBe(1);
+
+      const player = await playerRepository.findOne({ where: { socialId } });
+      expect(player?.nickname).toBe('Third');
     });
 
     it('새 플레이어 생성 시 isNewbie는 true이다', async () => {

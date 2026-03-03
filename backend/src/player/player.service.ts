@@ -30,7 +30,13 @@ export class PlayerService {
     nickname: string,
   ): Promise<Player> {
     const existing = await this.findBySocialId(socialId);
-    if (existing) return existing;
+    if (existing) {
+      if (existing.nickname !== nickname) {
+        existing.nickname = nickname;
+        return this.playerRepository.save(existing);
+      }
+      return existing;
+    }
 
     const player = this.playerRepository.create({
       socialId,
