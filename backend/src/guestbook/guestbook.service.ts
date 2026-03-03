@@ -5,10 +5,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Guestbook } from './entities/guestbook.entity';
 import { PlayerService } from '../player/player.service';
-import { getTodayKstRangeUtc, getTodayKstDateString } from '../util/date.util';
+import { getTodayKstDateString } from '../util/date.util';
 import { QueryFailedError } from 'typeorm';
 
 export type SortOrder = 'ASC' | 'DESC';
