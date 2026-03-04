@@ -41,7 +41,7 @@ jobs:
           NODE_ENV=production NEXT_PUBLIC_API_URL=http://${{ secrets.DEV_HOST }} NEXT_PUBLIC_SOCKET_URL=http://${{ secrets.DEV_HOST }} pnpm run build
 
       - name: Copy build artifacts to Dev Server
-        uses: appleboy/scp-action@v1.0.0
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restart Service via SSH
-        uses: appleboy/ssh-action@v1.2.5
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
