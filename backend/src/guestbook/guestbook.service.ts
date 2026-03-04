@@ -22,7 +22,8 @@ export class GuestbookService {
   ) {}
 
   async create(playerId: number, content: string) {
-    if (!content || content.length > 200) {
+    const normalizedContent = content?.trim();
+    if (!normalizedContent || normalizedContent.length > 200) {
       throw new BadRequestException('방명록은 1~200자까지 작성 가능합니다');
     }
 
@@ -32,7 +33,7 @@ export class GuestbookService {
     await this.checkDailyLimit(playerId, writeDate);
 
     const guestbook = this.guestbookRepository.create({
-      content,
+      content: normalizedContent,
       player,
       writeDate,
     });
@@ -61,14 +62,15 @@ export class GuestbookService {
     limit: number = 20,
     order: SortOrder = 'DESC',
   ): Promise<{ items: Guestbook[]; nextCursor: number | null }> {
+    const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 50);
     const qb = this.guestbookRepository
       .createQueryBuilder('guestbook')
       .leftJoin('guestbook.player', 'player')
       .addSelect(['player.id', 'player.nickname'])
       .orderBy('guestbook.id', order)
-      .take(limit + 1);
+      .take(safeLimit + 1);
 
-    if (cursor) {
+    if (cursor !== undefined) {
       if (order === 'ASC') {
         qb.where('guestbook.id > :cursor', { cursor });
       } else {
@@ -78,12 +80,13 @@ export class GuestbookService {
 
     const items = await qb.getMany();
 
-    const hasNext = items.length > limit;
+    const hasNext = items.length > safeLimit;
     if (hasNext) {
       items.pop();
     }
 
-    const nextCursor = hasNext ? items[items.length - 1].id : null;
+    const nextCursor =
+      hasNext && items.length > 0 ? items[items.length - 1].id : null;
 
     return { items, nextCursor };
   }

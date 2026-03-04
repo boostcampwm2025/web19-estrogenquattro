@@ -16,6 +16,9 @@ const logBuffer: LogEntry[] = [];
 
 let isInitialized = false;
 
+const SENSITIVE_KEY_RE =
+  /(password|passwd|secret|authorization|cookie|set-cookie|token)/i;
+
 function sanitizeMessage(raw: string): string {
   return raw
     .replace(
@@ -25,22 +28,32 @@ function sanitizeMessage(raw: string): string {
     .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]");
 }
 
-function addLog(level: LogEntry["level"], args: unknown[]) {
-  const message = sanitizeMessage(
-    args
-      .map((arg) => {
-        if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
-        if (typeof arg === "object") {
-          try {
-            return JSON.stringify(arg);
-          } catch {
-            return String(arg);
-          }
+function toLogString(arg: unknown): string {
+  if (arg instanceof Error) return `${arg.name}: ${arg.message}`;
+  if (typeof arg === "object" && arg !== null) {
+    try {
+      const seen = new WeakSet<object>();
+      return JSON.stringify(arg, (key, value: unknown) => {
+        if (SENSITIVE_KEY_RE.test(key)) return "[REDACTED]";
+        if (typeof value === "string") return sanitizeMessage(value);
+        if (value && typeof value === "object") {
+          if (seen.has(value as object)) return "[Circular]";
+          seen.add(value as object);
         }
-        return String(arg);
-      })
-      .join(" "),
-  ).slice(0, 2000);
+        return value;
+      });
+    } catch {
+      return String(arg);
+    }
+  }
+  return String(arg);
+}
+
+function addLog(level: LogEntry["level"], args: unknown[]) {
+  const message = sanitizeMessage(args.map((arg) => toLogString(arg)).join(" ")).slice(
+    0,
+    2000,
+  );
 
   logBuffer.push({
     level,

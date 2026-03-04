@@ -48,7 +48,8 @@ export default function GuestbookModal() {
     variant: "success" | "error";
   } | null>(null);
 
-  const { data, fetchNextPage, hasNextPage } = useGuestbookEntries(isOpen);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useGuestbookEntries(isOpen);
   const createMutation = useCreateGuestbook();
   const deleteMutation = useDeleteGuestbook();
 
@@ -57,7 +58,9 @@ export default function GuestbookModal() {
   const { ref: bottomRef } = useInView({
     threshold: 0,
     onChange: (inView) => {
-      if (inView && hasNextPage) fetchNextPage();
+      if (inView && hasNextPage && !isFetchingNextPage) {
+        void fetchNextPage();
+      }
     },
   });
 

@@ -18,7 +18,14 @@ export class BugReportController {
   constructor(private readonly bugReportService: BugReportService) {}
 
   @Post()
-  @UseInterceptors(FilesInterceptor('images', 3))
+  @UseInterceptors(
+    FilesInterceptor('images', 3, {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        cb(null, file.mimetype.startsWith('image/'));
+      },
+    }),
+  )
   async create(
     @PlayerId() playerId: number,
     @Body() dto: CreateBugReportDto,

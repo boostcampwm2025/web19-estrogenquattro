@@ -308,6 +308,11 @@ export class FocusTimeGateway implements OnGatewayDisconnect, OnModuleDestroy {
       graceMs: DISCONNECT_GRACE_MS,
     });
 
+    const existingTimer = this.disconnectTimers.get(user.playerId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
     const timer = setTimeout(() => {
       this.disconnectTimers.delete(user.playerId);
       this.focusTimeService

@@ -30,8 +30,7 @@ import { BugReportModule } from './bugreport/bug-report.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
-        '.env.production',
-        '.env.development',
+        `.env.${process.env.NODE_ENV ?? 'development'}`,
         '.env.local',
         '.env',
       ],

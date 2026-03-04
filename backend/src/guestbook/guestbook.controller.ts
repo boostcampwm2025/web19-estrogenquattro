@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -30,8 +31,16 @@ export class GuestbookController {
     @Query('limit') limit?: string,
     @Query('order') order?: string,
   ) {
-    const parsedCursor = cursor ? parseInt(cursor) : undefined;
-    const parsedLimit = limit ? parseInt(limit) : 20;
+    const parsedCursor =
+      cursor !== undefined ? Number.parseInt(cursor, 10) : undefined;
+    if (cursor !== undefined && Number.isNaN(parsedCursor)) {
+      throw new BadRequestException('cursor는 정수여야 합니다');
+    }
+
+    const parsedLimit = limit !== undefined ? Number.parseInt(limit, 10) : 20;
+    if (Number.isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
+      throw new BadRequestException('limit은 1~50 범위의 정수여야 합니다');
+    }
     const parsedOrder: SortOrder =
       order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 

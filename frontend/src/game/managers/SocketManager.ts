@@ -226,6 +226,9 @@ export default class SocketManager {
       }
 
       // 재연결 시도 중에는 오버레이를 바로 띄우지 않고 대기
+      if (this.disconnectOverlayTimeout) {
+        clearTimeout(this.disconnectOverlayTimeout);
+      }
       this.disconnectOverlayTimeout = setTimeout(() => {
         if (!socket.connected) {
           useConnectionStore.getState().setDisconnected(true);

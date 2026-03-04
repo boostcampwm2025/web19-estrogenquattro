@@ -5,7 +5,9 @@ import { join } from 'path';
 const AppDataSource = new DataSource({
   type: 'sqlite',
   database: 'data/jandi.sqlite',
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize:
+    process.env.DB_SYNCHRONIZE === 'true' &&
+    process.env.NODE_ENV !== 'production',
   logging: false,
 
   entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],

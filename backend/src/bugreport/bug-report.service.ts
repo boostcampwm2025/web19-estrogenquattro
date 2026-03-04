@@ -49,7 +49,7 @@ export class BugReportService {
 
     const saved = await this.bugReportRepository.save(bugReport);
 
-    await this.sendToDiscord(player.nickname, content, diagnostics, images);
+    void this.sendToDiscord(player.nickname, content, diagnostics, images);
 
     return {
       ...saved,
@@ -63,6 +63,10 @@ export class BugReportService {
     diagnostics?: string,
     images?: UploadedFile[],
   ): Promise<void> {
+    if (!this.webhookUrl) {
+      return;
+    }
+
     try {
       const fields = [
         { name: '제보자', value: nickname, inline: true },
@@ -88,6 +92,7 @@ export class BugReportService {
         ],
       };
 
+      let response: Response;
       if (images && images.length > 0) {
         const formData = new FormData();
         images.forEach((image, index) => {
@@ -99,16 +104,21 @@ export class BugReportService {
         });
         formData.append('payload_json', JSON.stringify(payload));
 
-        await fetch(this.webhookUrl, {
+        response = await fetch(this.webhookUrl, {
           method: 'POST',
           body: formData,
         });
       } else {
-        await fetch(this.webhookUrl, {
+        response = await fetch(this.webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+      }
+
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`Discord webhook 실패: ${response.status} ${body}`);
       }
     } catch (error) {
       this.logger.error('Discord 웹훅 전송 실패', error);
