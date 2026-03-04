@@ -29,11 +29,7 @@ import { BugReportModule } from './bugreport/bug-report.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        `.env.${process.env.NODE_ENV ?? 'development'}`,
-        '.env.local',
-        '.env',
-      ],
+      envFilePath: ['.env.production', '.env.development', '.env.local', '.env'],
       validationSchema: envValidationSchema,
     }),
     WinstonModule.forRootAsync({
