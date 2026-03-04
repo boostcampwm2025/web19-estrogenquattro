@@ -50,10 +50,9 @@ function toLogString(arg: unknown): string {
 }
 
 function addLog(level: LogEntry["level"], args: unknown[]) {
-  const message = sanitizeMessage(args.map((arg) => toLogString(arg)).join(" ")).slice(
-    0,
-    2000,
-  );
+  const message = sanitizeMessage(
+    args.map((arg) => toLogString(arg)).join(" "),
+  ).slice(0, 2000);
 
   logBuffer.push({
     level,
