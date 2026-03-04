@@ -17,6 +17,7 @@ import { RoomService } from '../room/room.service';
 
 import { PlayerService } from './player.service';
 import { FocusTimeService } from '../focustime/focustime.service';
+import { FocusTimeGateway } from '../focustime/focustime.gateway';
 import { FocusStatus } from '../focustime/entites/daily-focus-time.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -38,6 +39,7 @@ export class PlayerGateway
     private readonly roomService: RoomService,
     private readonly playerService: PlayerService,
     private readonly focusTimeService: FocusTimeService,
+    private readonly focusTimeGateway: FocusTimeGateway,
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
   ) {}
@@ -60,7 +62,7 @@ export class PlayerGateway
     }
   > = new Map();
 
-  // username -> socketId 매핑 (중복 접속 방지용)
+  // githubId -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
 
   private normalizeFocusTaskName(taskName: string | null): string | null {
@@ -122,9 +124,12 @@ export class PlayerGateway
       this.roomService.exit(client.id);
       this.roomService.removePlayer(player.roomId, player.playerId);
 
+      const userData = client.data as { user?: User };
+      const githubId = userData.user?.githubId;
+
       // userSockets 매핑 제거 (현재 소켓이 해당 유저의 활성 소켓인 경우만)
-      if (this.userSockets.get(player.username) === client.id) {
-        this.userSockets.delete(player.username);
+      if (githubId && this.userSockets.get(githubId) === client.id) {
+        this.userSockets.delete(githubId);
       }
     }
     this.logger.log('Client disconnected', {
@@ -141,7 +146,7 @@ export class PlayerGateway
   ) {
     // client.data에서 OAuth 인증된 사용자 정보 추출
     const userData = client.data as { user: User };
-    const { username, accessToken, playerId } = userData.user;
+    const { githubId, username, accessToken, playerId } = userData.user;
 
     let roomId: string;
     try {
@@ -167,12 +172,13 @@ export class PlayerGateway
     // RoomService에 플레이어 등록
     this.roomService.addPlayer(roomId, playerId);
 
-    // 같은 username으로 이미 접속한 세션이 있으면 이전 세션 종료
-    const existingSocketId = this.userSockets.get(username);
+    // 같은 githubId로 이미 접속한 세션이 있으면 이전 세션 종료
+    const existingSocketId = this.userSockets.get(githubId);
     if (existingSocketId && existingSocketId !== client.id) {
       const existingSocket = this.server.sockets.sockets.get(existingSocketId);
       if (existingSocket) {
         this.logger.log('Disconnecting previous session', {
+          githubId,
           username,
           oldSocketId: existingSocketId,
           newSocketId: client.id,
@@ -184,8 +190,8 @@ export class PlayerGateway
       }
     }
 
-    // username -> socketId 매핑 저장
-    this.userSockets.set(username, client.id);
+    // githubId -> socketId 매핑 저장
+    this.userSockets.set(githubId, client.id);
 
     void client.join(roomId);
 
@@ -197,8 +203,11 @@ export class PlayerGateway
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
 
-    // stale 세션 정리 (장기 미접속 후 재접속 시)
-    await this.focusTimeService.settleStaleSession(playerId);
+    // 유예 기간 내 재연결이면 세션 유지, 아니면 stale 정산
+    const wasInGracePeriod = this.focusTimeGateway.cancelGracePeriod(playerId);
+    if (!wasInGracePeriod) {
+      await this.focusTimeService.settleStaleSession(playerId);
+    }
 
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {

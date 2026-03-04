@@ -256,6 +256,31 @@
       "noTrack": "no track playing"
     }
   },
+  "guestbook": {
+    "title": "Guestbook",
+    "openButton": "Open guestbook",
+    "closeModal": "Close guestbook modal",
+    "placeholder": "Leave a message...",
+    "submit": "Post",
+    "delete": "Delete",
+    "empty": "No messages yet.",
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "submitError": "Failed to post the message.",
+    "submitSuccess": "Your message has been posted.",
+    "dailyLimitError": "You can only post once per day.",
+    "lengthError": "Message must be between 1 and 200 characters.",
+    "deleteError": "Failed to delete the message.",
+    "scrollToTop": "Scroll to top",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "weeksAgo": "{{count}}w ago",
+      "monthsAgo": "{{count}}mo ago",
+      "yearsAgo": "{{count}}y ago"
+    }
+  },
   "channel": {
     "selectButton": "Select channel",
     "title": "Select Channel",
@@ -271,5 +296,22 @@
       "roomFull": "The channel is full.",
       "moveFailedAlert": "Failed to move channel."
     }
+  },
+  "bugReport": {
+    "button": "Report Bug",
+    "title": "Bug Report",
+    "closeModal": "Close bug report modal",
+    "placeholder": "Describe the bug or error...",
+    "charCount": "{{current}}/{{max}}",
+    "dropHere": "Drop here!",
+    "attachHint": "Click or drag images to attach ( {{current}} / {{max}} )",
+    "deleteAll": "Delete All",
+    "deleteFile": "Delete attachment {{index}}",
+    "attachedImage": "Attached image {{index}}",
+    "submit": "Submit",
+    "successToast": "Bug report submitted successfully! Thank you!",
+    "fileSizeLimit": "Max 5MB per image",
+    "fileSizeError": "Images larger than 5MB cannot be attached.",
+    "errorToast": "Submission failed. Please try again."
   }
 }

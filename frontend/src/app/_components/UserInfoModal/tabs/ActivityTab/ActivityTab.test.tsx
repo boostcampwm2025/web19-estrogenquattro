@@ -48,7 +48,7 @@ describe("ActivityTab", () => {
     vi.mocked(useAuthStore).mockImplementation((selector) => {
       const state = {
         user: { playerId: 1, username: "testuser" } as {
-          sub: string;
+          githubId: string;
           username: string;
           avatarUrl: string;
           playerId: number;

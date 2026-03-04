@@ -40,6 +40,17 @@ export default class ChatManager {
     this.scene.input.keyboard?.on("keydown-ENTER", () => {
       if (document.activeElement === input) return;
 
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLButtonElement ||
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement ||
+        active instanceof HTMLAnchorElement
+      ) {
+        return;
+      }
+
       input.style.display = "block";
       input.focus();
       this.scene.input.keyboard!.enabled = false;

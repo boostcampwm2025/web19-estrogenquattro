@@ -30,6 +30,8 @@ export class ConfiguredSocketIoAdapter extends IoAdapter {
       cors,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       parser: customParser,
+      pingInterval: 60_000,
+      pingTimeout: 120_000,
     }) as Server;
   }
 }

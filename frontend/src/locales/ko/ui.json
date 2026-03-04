@@ -256,6 +256,31 @@
       "noTrack": "재생 중인 곡 없음"
     }
   },
+  "guestbook": {
+    "title": "방명록",
+    "openButton": "방명록 열기",
+    "closeModal": "방명록 모달 닫기",
+    "placeholder": "방명록에 글을 남겨보세요...",
+    "submit": "등록",
+    "delete": "삭제",
+    "empty": "아직 작성된 글이 없습니다.",
+    "deleteConfirm": "정말 삭제하시겠습니까?",
+    "submitError": "글을 등록하는 데 실패했습니다.",
+    "submitSuccess": "방명록에 글을 남겼습니다.",
+    "dailyLimitError": "방명록은 하루에 한 번만 작성할 수 있습니다.",
+    "lengthError": "방명록은 1~200자까지 작성 가능합니다.",
+    "deleteError": "글을 삭제하는 데 실패했습니다.",
+    "scrollToTop": "맨 위로 이동",
+    "time": {
+      "justNow": "방금 전",
+      "minutesAgo": "{{count}}분 전",
+      "hoursAgo": "{{count}}시간 전",
+      "daysAgo": "{{count}}일 전",
+      "weeksAgo": "{{count}}주 전",
+      "monthsAgo": "{{count}}달 전",
+      "yearsAgo": "{{count}}년 전"
+    }
+  },
   "channel": {
     "selectButton": "채널 선택",
     "title": "채널 선택",
@@ -271,5 +296,22 @@
       "roomFull": "채널이 가득 찼습니다.",
       "moveFailedAlert": "채널 이동에 실패했습니다."
     }
+  },
+  "bugReport": {
+    "button": "버그 제보",
+    "title": "버그 제보",
+    "closeModal": "버그 제보 모달 닫기",
+    "placeholder": "버그나 오류 내용을 입력하세요...",
+    "charCount": "{{current}}/{{max}}",
+    "dropHere": "여기에 놓으세요!",
+    "attachHint": "클릭하거나 이미지를 드래그하여 첨부 ( {{current}} / {{max}} )",
+    "deleteAll": "전체 삭제",
+    "deleteFile": "첨부 파일 {{index}} 삭제",
+    "attachedImage": "첨부 이미지 {{index}}",
+    "submit": "전송",
+    "successToast": "버그가 정상적으로 접수되었습니다! 감사합니다!",
+    "fileSizeLimit": "이미지 1개당 최대 5MB",
+    "fileSizeError": "5MB를 초과하는 이미지는 첨부할 수 없습니다.",
+    "errorToast": "제출에 실패했습니다. 다시 시도해 주세요."
   }
 }

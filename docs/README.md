@@ -79,6 +79,7 @@ REST API 및 WebSocket 이벤트 명세
 | [BRANCH_STRATEGY.md](./conventions/BRANCH_STRATEGY.md) | 브랜치 전략 |
 | [COMMIT_CONVENTION.md](./conventions/COMMIT_CONVENTION.md) | 커밋 컨벤션 |
 | [PR_CONVENTION.md](./conventions/PR_CONVENTION.md) | PR 컨벤션 |
+| [CLI_SAFETY_CONVENTION.md](./conventions/CLI_SAFETY_CONVENTION.md) | CLI 실행 안전 컨벤션 |
 | [LOGGING_CONVENTION.md](./conventions/LOGGING_CONVENTION.md) | 로깅 컨벤션 |
 | [TEST_CONVENTION.md](./conventions/TEST_CONVENTION.md) | 테스트 컨벤션 |
 | [MARKDOWN_CONVENTION.md](./conventions/MARKDOWN_CONVENTION.md) | 마크다운 컨벤션 |

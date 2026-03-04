@@ -30,7 +30,7 @@ const mockModalStore = {
 };
 
 const mockUser = {
-  sub: "123",
+  githubId: "123",
   username: "testuser",
   avatarUrl: "https://example.com/avatar.png",
   playerId: 1,
