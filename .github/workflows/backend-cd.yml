@@ -10,11 +10,12 @@ jobs:
 
     steps:
     - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.2.5
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
+        fingerprint: ${{ secrets.HOST_FINGERPRINT }}
         port: 22
         script: |
           set -e
