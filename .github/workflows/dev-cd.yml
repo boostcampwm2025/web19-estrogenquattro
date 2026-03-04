@@ -1,14 +1,17 @@
+# Dev Server CD - CI/CD pipeline for development environment
 name: Dev Server CD
 
 on:
+  push:
+    branches: ['dev']
   pull_request:
     types: [closed]
-    branches: [ "dev" ]
+    branches: ['dev']
 
 jobs:
   build_and_deploy:
-    # PR이 'merge' 형태로 닫혔을 때만 실행 (그냥 close하면 실행 안 함)
-    if: github.event.pull_request.merged == true
+    # push 이벤트이거나, PR이 merge된 경우에만 실행
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -46,8 +49,8 @@ jobs:
           fingerprint: ${{ secrets.DEV_HOST_FINGERPRINT }}
           port: 22
           # backend/dist, backend/public, package.json 등을 전송합니다.
-          source: "backend/dist/*,backend/public/*,backend/package.json,backend/pnpm-lock.yaml,ecosystem.config.js,package.json"
-          target: "/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/"
+          source: 'backend/dist/*,backend/public/*,backend/package.json,backend/pnpm-lock.yaml,ecosystem.config.js,package.json'
+          target: '/home/${{ secrets.DEV_USERNAME }}/web19-estrogenquattro/'
           strip_components: 0
 
   restart_service:
@@ -69,9 +72,9 @@ jobs:
             nvm use 24.13.1
             export PNPM_HOME="$HOME/.local/share/pnpm"
             export PATH="$PNPM_HOME:$PATH"
-            
+
             cd web19-estrogenquattro/backend
             pnpm install --prod
-            
+
             cd ..
             pnpm run deploy:dev
