@@ -46,7 +46,6 @@ jobs:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_KEY }}
-          fingerprint: ${{ secrets.DEV_HOST_FINGERPRINT }}
           port: 22
           # backend/dist, backend/public, package.json 등을 전송합니다.
           source: 'backend/dist/*,backend/public/*,backend/package.json,backend/pnpm-lock.yaml,ecosystem.config.js,package.json'
@@ -63,7 +62,6 @@ jobs:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USERNAME }}
           key: ${{ secrets.DEV_KEY }}
-          fingerprint: ${{ secrets.DEV_HOST_FINGERPRINT }}
           port: 22
           script: |
             set -e
