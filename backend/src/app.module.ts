@@ -72,6 +72,23 @@ import { BugReportModule } from './bugreport/bug-report.module';
       ],
       serveStaticOptions: {
         extensions: ['html'],
+        setHeaders: (res, path) => {
+          if (path.endsWith('.html')) {
+            res.setHeader(
+              'Cache-Control',
+              'no-cache, no-store, must-revalidate',
+            );
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          } else if (path.includes('/_next/static/')) {
+            res.setHeader(
+              'Cache-Control',
+              'public, max-age=31536000, immutable',
+            );
+          } else {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
       },
     }),
     PlayerModule,
