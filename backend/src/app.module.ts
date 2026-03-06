@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ServerResponse } from 'http';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
@@ -72,7 +73,7 @@ import { BugReportModule } from './bugreport/bug-report.module';
       ],
       serveStaticOptions: {
         extensions: ['html'],
-        setHeaders: (res, path) => {
+        setHeaders: (res: ServerResponse, path: string) => {
           if (path.endsWith('.html')) {
             res.setHeader(
               'Cache-Control',
