@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ServerResponse } from 'http';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlayerModule } from './player/player.module';
@@ -72,6 +73,23 @@ import { BugReportModule } from './bugreport/bug-report.module';
       ],
       serveStaticOptions: {
         extensions: ['html'],
+        setHeaders: (res: ServerResponse, path: string) => {
+          if (path.endsWith('.html')) {
+            res.setHeader(
+              'Cache-Control',
+              'no-cache, no-store, must-revalidate',
+            );
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          } else if (path.includes('/_next/static/')) {
+            res.setHeader(
+              'Cache-Control',
+              'public, max-age=31536000, immutable',
+            );
+          } else {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
       },
     }),
     PlayerModule,
