@@ -43,8 +43,8 @@ export class MapController {
       ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
     );
 
-    const themes = ['desert', 'city'];
-    return themes[weekNo % 2];
+    const themes = ['city', 'desert', 'underwater_city'];
+    return themes[weekNo % themes.length];
   }
 
   /**

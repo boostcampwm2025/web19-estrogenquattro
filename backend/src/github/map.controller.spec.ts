@@ -48,28 +48,28 @@ describe('MapController', () => {
       jest.spyOn(Date, 'now').mockReturnValue(ms);
     };
 
-    it('should map to city for week 1 (odd week)', () => {
-      // 2026-01-01 KST is Thursday of week 1 → 1 % 2 = 1 → city
+    it('should map to desert for week 1', () => {
+      // 2026-01-01 KST is Thursday of week 1 → 1 % 3 = 1 → desert
       mockDateNow('2025-12-31T15:00:00Z'); // 2026-01-01 00:00:00 KST
-      expect(getMapTheme()).toBe('city');
-    });
-
-    it('should map to desert for week 2 (even week)', () => {
-      // 2026-01-08 KST is Thursday of week 2 → 2 % 2 = 0 → desert
-      mockDateNow('2026-01-07T15:00:00Z'); // 2026-01-08 00:00:00 KST
       expect(getMapTheme()).toBe('desert');
     });
 
-    it('should map to city for week 3 (odd week)', () => {
-      // 2026-01-15 KST is Thursday of week 3 → 3 % 2 = 1 → city
+    it('should map to underwater_city for week 2', () => {
+      // 2026-01-08 KST is Thursday of week 2 → 2 % 3 = 2 → underwater_city
+      mockDateNow('2026-01-07T15:00:00Z'); // 2026-01-08 00:00:00 KST
+      expect(getMapTheme()).toBe('underwater_city');
+    });
+
+    it('should map to city for week 3', () => {
+      // 2026-01-15 KST is Thursday of week 3 → 3 % 3 = 0 → city
       mockDateNow('2026-01-14T15:00:00Z'); // 2026-01-15 00:00:00 KST
       expect(getMapTheme()).toBe('city');
     });
 
-    it('should map to desert for week 8 (even week)', () => {
-      // 2026-02-20 KST → week 8 → 8 % 2 = 0 → desert
+    it('should map to underwater_city for week 8', () => {
+      // 2026-02-20 KST → week 8 → 8 % 3 = 2 → underwater_city
       mockDateNow('2026-02-20T08:29:56Z'); // 2026-02-20 17:29:56 KST
-      expect(getMapTheme()).toBe('desert');
+      expect(getMapTheme()).toBe('underwater_city');
     });
   });
 });
