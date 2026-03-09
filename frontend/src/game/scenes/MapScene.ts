@@ -441,6 +441,17 @@ export class MapScene extends Phaser.Scene {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
+
+      // 탭 전환 등 창이 포커스를 잃을 때 키 입력이 눌린 상태로 유지되는 버그 방지
+      const handleBlur = () => {
+        if (this.input.keyboard) {
+          this.input.keyboard.resetKeys();
+        }
+      };
+      window.addEventListener("blur", handleBlur);
+      this.events.once("destroy", () => {
+        window.removeEventListener("blur", handleBlur);
+      });
     }
   }
 
