@@ -3,9 +3,9 @@ import { JwtGuard } from '../auth/jwt.guard';
 import { AdminGuard } from './admin.guard';
 
 @Controller('api/admin')
+@UseGuards(JwtGuard, AdminGuard)
 export class AdminController {
   @Get('verification')
-  @UseGuards(JwtGuard, AdminGuard)
   verify() {
     return { isAdmin: true };
   }
