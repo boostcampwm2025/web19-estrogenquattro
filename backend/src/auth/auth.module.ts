@@ -8,6 +8,7 @@ import { GithubStrategy } from './github.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthController } from './auth.controller';
       inject: [ConfigService],
     }),
     forwardRef(() => PlayerModule),
+    AdminModule,
   ],
   controllers: [AuthController],
   providers: [UserStore, GithubStrategy, JwtStrategy, WsJwtGuard],

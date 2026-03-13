@@ -7,6 +7,7 @@ import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
 import { getFrontendUrls } from '../config/frontend-urls';
+import { AdminService } from '../admin/admin.service';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +16,7 @@ export class AuthController {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    private adminService: AdminService,
   ) {}
 
   @Get('github')
@@ -25,8 +27,16 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(GithubGuard)
-  githubCallback(@Req() req: Request, @Res() res: Response) {
+  async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
+
+    // 밴 여부 확인
+    const isBanned = await this.adminService.isBanned(user.playerId);
+    if (isBanned) {
+      const frontendUrls = getFrontendUrls(this.configService);
+      return res.redirect(`${frontendUrls[0]}`);
+    }
+
     this.logger.log('GitHub callback', {
       method: 'githubCallback',
       username: user.username,
