@@ -1,0 +1,91 @@
+name: Feature
+description: 기능 추가, 개선, 리팩터링 제안
+title: "feat: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        구현 전에 범위와 검증 기준을 먼저 고정합니다.
+        이 이슈 내용은 이후 `docs/plan/ISSUE_*_feat.md` 같은 작업 계획 문서의 초안으로 이어질 수 있어야 합니다.
+
+  - type: textarea
+    id: background
+    attributes:
+      label: 배경 / 문제
+      description: 왜 이 작업이 필요한지, 어떤 불편이나 한계가 있는지 적어주세요.
+      placeholder: |
+        예)
+        - 현재 채팅 길이 제한이 문자 수 기준이라 영어 입력 체감이 과하게 짧음
+        - 프론트/백엔드 정책이 분산되어 있어 검증 불일치 위험이 있음
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 목표
+      description: 이 작업이 끝나면 무엇이 가능해져야 하는지 적어주세요.
+      placeholder: |
+        예)
+        - [ ] 길이 제한 정책이 일관되게 적용된다
+        - [ ] 사용자 경험이 개선된다
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 범위
+      description: 포함할 내용과 제외할 내용을 함께 적어주세요.
+      placeholder: |
+        포함:
+        - API 입력 검증 수정
+        - 프론트 입력 제한 동기화
+
+        제외:
+        - UI 디자인 개편
+        - 무관한 도메인 로직 변경
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건 (Definition of Done)
+      description: 구현 완료를 판단할 기준을 체크리스트 형태로 적어주세요.
+      placeholder: |
+        - [ ] 코드 반영
+        - [ ] 관련 테스트 추가/수정
+        - [ ] 수동 검증 완료
+        - [ ] 관련 문서 동기화 완료
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_scenarios
+    attributes:
+      label: 테스트 시나리오
+      description: 자동화 테스트와 수동 테스트를 분리해서 적어주세요.
+      placeholder: |
+        자동화 테스트:
+        - [ ] 단위 테스트:
+        - [ ] 통합/E2E 테스트:
+
+        수동 테스트:
+        - [ ] 시나리오 1
+        - [ ] 시나리오 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      description: 관련 이슈, 문서, 로그, 스크린샷, 링크가 있으면 적어주세요.
+      placeholder: |
+        예)
+        - 관련 이슈: #
+        - 관련 문서:
+        - 참고 링크:
+    validations:
+      required: false
