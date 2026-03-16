@@ -10,6 +10,7 @@ import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
 import { CreateBanDto } from './dto/create-ban.dto';
 import { Player } from '../player/entites/player.entity';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class AdminService {
@@ -20,6 +21,8 @@ export class AdminService {
     private readonly adminRepository: Repository<Admin>,
     @InjectRepository(Ban)
     private readonly banRepository: Repository<Ban>,
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
   ) {}
 
   async validateAdmin(playerId: number): Promise<void> {
@@ -33,6 +36,26 @@ export class AdminService {
     }
 
     this.logger.debug('Admin validated', { playerId });
+  }
+
+  async getPlayers(search?: string) {
+    const where = search ? { nickname: Like(`%${search}%`) } : {};
+    const players = await this.playerRepository.find({
+      where,
+      select: ['id', 'nickname', 'socialId'],
+      order: { id: 'ASC' },
+    });
+
+    const bans = await this.banRepository.find({
+      relations: ['targetPlayer'],
+    });
+    const bannedPlayerIds = new Set(bans.map((b) => b.targetPlayer.id));
+
+    return players.map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      isBanned: bannedPlayerIds.has(p.id),
+    }));
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {

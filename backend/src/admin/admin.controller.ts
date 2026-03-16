@@ -5,6 +5,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -22,6 +23,11 @@ export class AdminController {
   @Get('verification')
   verify() {
     return { isAdmin: true };
+  }
+
+  @Get('players')
+  async getPlayers(@Query('search') search?: string) {
+    return this.adminService.getPlayers(search);
   }
 
   @Post('ban')
