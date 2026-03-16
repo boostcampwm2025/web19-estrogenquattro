@@ -5,6 +5,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForbiddenException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Admin } from './entities/admin.entity';
+import { Ban } from './entities/ban.entity';
+import { Player } from '../player/entites/player.entity';
+import { Pet } from '../userpet/entities/pet.entity';
+import { UserPet } from '../userpet/entities/user-pet.entity';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -17,10 +21,10 @@ describe('AdminService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Admin],
+          entities: [Admin, Ban, Player, Pet, UserPet],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Admin]),
+        TypeOrmModule.forFeature([Admin, Ban, Player]),
       ],
       providers: [AdminService],
     }).compile();

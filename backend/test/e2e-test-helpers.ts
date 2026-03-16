@@ -45,6 +45,9 @@ import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
 import { UserPetCodex } from '../src/userpet/entities/user-pet-codex.entity';
 import { PetService } from '../src/userpet/pet.service';
+import { AdminService } from '../src/admin/admin.service';
+import { Admin } from '../src/admin/entities/admin.entity';
+import { Ban } from '../src/admin/entities/ban.entity';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
 export const SOCKET_EVENT_TIMEOUT_MS = 5000;
@@ -103,6 +106,7 @@ export async function createTestApp(
     FocusTimeGateway,
     ChatGateway,
     PetService,
+    AdminService,
     WriteLockService,
     {
       provide: GithubPollService,
@@ -148,6 +152,8 @@ export async function createTestApp(
         UserPet,
         UserPetCodex,
         GlobalState,
+        Admin,
+        Ban,
       ]),
       PassportModule,
       JwtModule.register({
