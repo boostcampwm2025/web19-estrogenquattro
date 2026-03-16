@@ -31,10 +31,12 @@ export class AuthController {
     const user = req.user as User;
 
     // 밴 여부 확인
-    const isBanned = await this.adminService.isBanned(user.playerId);
+    const { isBanned, reason } = await this.adminService.getBan(user.playerId);
     if (isBanned) {
       const frontendUrls = getFrontendUrls(this.configService);
-      return res.redirect(`${frontendUrls[0]}`);
+      const params = new URLSearchParams({ banned: 'true' });
+      if (reason) params.set('reason', reason);
+      return res.redirect(`${frontendUrls[0]}/login?${params.toString()}`);
     }
 
     this.logger.log('GitHub callback', {

@@ -2,8 +2,6 @@
 
 export default function NotificationsManagementPage() {
   return (
-    <h2 className="text-xl font-bold text-retro-text-primary">
-      공지사항 관리
-    </h2>
+    <h2 className="text-retro-text-primary text-xl font-bold">공지사항 관리</h2>
   );
 }

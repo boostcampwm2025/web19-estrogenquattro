@@ -138,6 +138,20 @@ export class PlayerGateway
     });
   }
 
+  disconnectPlayer(playerId: number, reason: string | null): boolean {
+    for (const [socketId, player] of this.players.entries()) {
+      if (player.playerId === playerId) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.emit('banned', { reason });
+          socket.disconnect(true);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   @SubscribeMessage('joining')
   async handleJoin(
     @MessageBody()

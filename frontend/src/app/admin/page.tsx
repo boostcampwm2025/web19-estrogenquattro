@@ -36,11 +36,11 @@ export default function AdminEntryPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-retro-bg-primary">
+    <div className="bg-retro-bg-primary flex min-h-screen items-center justify-center">
       <button
         onClick={handleAdminAccess}
         disabled={isLoading}
-        className="cursor-pointer border-3 border-retro-border-darker bg-retro-button-bg px-8 py-4 text-lg font-bold text-retro-button-text shadow-retro-md transition-all hover:bg-retro-button-hover active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-retro-border-darker bg-retro-button-bg text-retro-button-text shadow-retro-md hover:bg-retro-button-hover cursor-pointer border-3 px-8 py-4 text-lg font-bold transition-all active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? "확인 중..." : "어드민 페이지 접속"}
       </button>

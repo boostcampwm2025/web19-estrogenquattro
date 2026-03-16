@@ -32,16 +32,16 @@ export default function AdminDashboardLayout({
 
   if (!isVerified) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-retro-bg-primary">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-retro-border-dark border-t-transparent" />
+      <div className="bg-retro-bg-primary flex min-h-screen items-center justify-center">
+        <div className="border-retro-border-dark h-10 w-10 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-retro-bg-primary">
-      <nav className="w-60 border-r-3 border-retro-border-darker bg-retro-bg-secondary p-4">
-        <h1 className="mb-6 text-lg font-bold text-retro-text-primary">
+    <div className="bg-retro-bg-primary flex min-h-screen">
+      <nav className="border-retro-border-darker bg-retro-bg-secondary w-60 border-r-3 p-4">
+        <h1 className="text-retro-text-primary mb-6 text-lg font-bold">
           관리자 대시보드
         </h1>
         <ul className="flex flex-col gap-1">

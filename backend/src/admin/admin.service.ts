@@ -49,12 +49,13 @@ export class AdminService {
     const bans = await this.banRepository.find({
       relations: ['targetPlayer'],
     });
-    const bannedPlayerIds = new Set(bans.map((b) => b.targetPlayer.id));
+    const banMap = new Map(bans.map((b) => [b.targetPlayer.id, b.reason]));
 
     return players.map((p) => ({
       id: p.id,
       nickname: p.nickname,
-      isBanned: bannedPlayerIds.has(p.id),
+      isBanned: banMap.has(p.id),
+      banReason: banMap.get(p.id) ?? null,
     }));
   }
 
@@ -72,11 +73,13 @@ export class AdminService {
     return this.banRepository.save(ban);
   }
 
-  async isBanned(playerId: number): Promise<boolean> {
+  async getBan(
+    playerId: number,
+  ): Promise<{ isBanned: boolean; reason: string | null }> {
     const ban = await this.banRepository.findOne({
       where: { targetPlayer: { id: playerId } as unknown as Player },
     });
-    return !!ban;
+    return { isBanned: !!ban, reason: ban?.reason ?? null };
   }
 
   async unban(playerId: number): Promise<void> {
