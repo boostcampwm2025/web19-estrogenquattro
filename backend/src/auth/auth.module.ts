@@ -21,7 +21,7 @@ import { AdminModule } from '../admin/admin.module';
       inject: [ConfigService],
     }),
     forwardRef(() => PlayerModule),
-    AdminModule,
+    forwardRef(() => AdminModule),
   ],
   controllers: [AuthController],
   providers: [UserStore, GithubStrategy, JwtStrategy, WsJwtGuard],

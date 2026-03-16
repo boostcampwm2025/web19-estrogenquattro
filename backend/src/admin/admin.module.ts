@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
@@ -8,7 +8,7 @@ import { AdminController } from './admin.controller';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin, Ban]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Admin, Ban]), forwardRef(() => AuthModule)],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],
   exports: [AdminService, AdminGuard],
