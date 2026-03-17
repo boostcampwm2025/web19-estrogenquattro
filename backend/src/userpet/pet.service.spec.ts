@@ -33,7 +33,9 @@ describe('PetService', () => {
       save: jest.fn(),
     };
     const dataSource = {
-      transaction: jest.fn().mockImplementation((callback) => callback(manager)),
+      transaction: jest
+        .fn()
+        .mockImplementation((callback) => callback(manager)),
     } as unknown as DataSource;
     const writeLock = {
       runExclusive: jest.fn().mockImplementation((callback) => callback()),
@@ -89,7 +91,9 @@ describe('PetService', () => {
     (manager.save as jest.Mock).mockResolvedValue(player);
     (manager.getRepository as jest.Mock).mockReturnValue(petRepo);
 
-    await expect(service.gacha(1)).rejects.toThrow(InternalServerErrorException);
+    await expect(service.gacha(1)).rejects.toThrow(
+      InternalServerErrorException,
+    );
   });
 
   it('중복 펫이면 더미 userPet과 duplicate 플래그를 반환한다', async () => {
@@ -207,7 +211,12 @@ describe('PetService', () => {
       playerId: 1,
       exp: 20,
       player: { id: 1 },
-      pet: { id: 10, species: 'cat', evolutionStage: 1, evolutionRequiredExp: 20 },
+      pet: {
+        id: 10,
+        species: 'cat',
+        evolutionStage: 1,
+        evolutionRequiredExp: 20,
+      },
     };
     const nextPet = { id: 11 };
     const petRepo = { findOne: jest.fn().mockResolvedValue(nextPet) };
@@ -218,7 +227,11 @@ describe('PetService', () => {
     (manager.getRepository as jest.Mock).mockImplementation((entity) => {
       if (entity === Pet) return petRepo;
       if (entity === UserPetCodex) {
-        return { create: jest.fn().mockReturnValue({ player: userPet.player, pet: nextPet }) };
+        return {
+          create: jest
+            .fn()
+            .mockReturnValue({ player: userPet.player, pet: nextPet }),
+        };
       }
       return null;
     });
@@ -280,9 +293,13 @@ describe('PetService', () => {
     await expect(service.equipPet(1, 1)).rejects.toThrow(BadRequestException);
 
     (petRepository.findOne as jest.Mock).mockResolvedValueOnce({ id: 1 });
-    (userPetCodexRepository.findOne as jest.Mock).mockResolvedValueOnce({ id: 2 });
+    (userPetCodexRepository.findOne as jest.Mock).mockResolvedValueOnce({
+      id: 2,
+    });
     await service.equipPet(1, 1);
-    expect(playerRepository.update).toHaveBeenCalledWith(1, { equippedPetId: 1 });
+    expect(playerRepository.update).toHaveBeenCalledWith(1, {
+      equippedPetId: 1,
+    });
 
     (userPetRepository.find as jest.Mock).mockResolvedValue([{ id: 1 }]);
     await expect(service.getInventory(1)).resolves.toEqual([{ id: 1 }]);

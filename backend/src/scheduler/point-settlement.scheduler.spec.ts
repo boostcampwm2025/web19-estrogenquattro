@@ -1,9 +1,6 @@
 import { PointSettlementScheduler } from './point-settlement.scheduler';
 import { PointType } from '../pointhistory/entities/point-history.entity';
-import {
-  ProgressGateway,
-  ProgressSource,
-} from '../github/progress.gateway';
+import { ProgressGateway, ProgressSource } from '../github/progress.gateway';
 import { PointService } from '../point/point.service';
 import { Repository } from 'typeorm';
 import { DailyFocusTime } from '../focustime/entites/daily-focus-time.entity';

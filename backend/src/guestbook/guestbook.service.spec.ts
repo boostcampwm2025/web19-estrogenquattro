@@ -31,7 +31,12 @@ describe('GuestbookService', () => {
   it('내용을 trim 후 저장하고 작성자 요약을 반환한다', async () => {
     const { service, guestbookRepository, playerService } = createService();
     const player = { id: 1, nickname: 'alice' };
-    const created = { id: 1, content: 'hello', player, writeDate: '2026-03-18' };
+    const created = {
+      id: 1,
+      content: 'hello',
+      player,
+      writeDate: '2026-03-18',
+    };
 
     (playerService.findOneById as jest.Mock).mockResolvedValue(player);
     (guestbookRepository.findOne as jest.Mock).mockResolvedValue(null);

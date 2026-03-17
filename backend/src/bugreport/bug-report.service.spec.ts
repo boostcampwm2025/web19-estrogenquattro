@@ -46,10 +46,16 @@ describe('BugReportService', () => {
     (bugReportRepository.save as jest.Mock).mockResolvedValue(created);
 
     const sendSpy = jest
-      .spyOn(service as unknown as { sendToDiscord: () => Promise<void> }, 'sendToDiscord')
+      .spyOn(
+        service as unknown as { sendToDiscord: () => Promise<void> },
+        'sendToDiscord',
+      )
       .mockResolvedValue(undefined);
 
-    const result = await service.create(1, { content: '버그', diagnostics: '{}' });
+    const result = await service.create(1, {
+      content: '버그',
+      diagnostics: '{}',
+    });
 
     expect(result.player).toEqual({ id: 1, nickname: 'alice' });
     expect(sendSpy).toHaveBeenCalled();
@@ -65,17 +71,13 @@ describe('BugReportService', () => {
       service.create(1, { content: 'a'.repeat(501), diagnostics: '' }),
     ).rejects.toThrow(BadRequestException);
     await expect(
-      service.create(
-        1,
-        { content: 'ok', diagnostics: '' },
-        [
-          {
-            buffer: Buffer.alloc(5 * 1024 * 1024 + 1),
-            originalname: 'big.png',
-            mimetype: 'image/png',
-          },
-        ],
-      ),
+      service.create(1, { content: 'ok', diagnostics: '' }, [
+        {
+          buffer: Buffer.alloc(5 * 1024 * 1024 + 1),
+          originalname: 'big.png',
+          mimetype: 'image/png',
+        },
+      ]),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -83,11 +85,11 @@ describe('BugReportService', () => {
     const { service } = createService('');
 
     await expect(
-      (service as unknown as { sendToDiscord: (...args: unknown[]) => Promise<void> }).sendToDiscord(
-        'alice',
-        '버그',
-        '{"ok":true}',
-      ),
+      (
+        service as unknown as {
+          sendToDiscord: (...args: unknown[]) => Promise<void>;
+        }
+      ).sendToDiscord('alice', '버그', '{"ok":true}'),
     ).resolves.toBeUndefined();
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -95,9 +97,11 @@ describe('BugReportService', () => {
   it('이미지가 없으면 JSON payload로 전송한다', async () => {
     const { service } = createService();
 
-    await (service as unknown as {
-      sendToDiscord: (...args: unknown[]) => Promise<void>;
-    }).sendToDiscord('alice', '버그', '{"ok":true}');
+    await (
+      service as unknown as {
+        sendToDiscord: (...args: unknown[]) => Promise<void>;
+      }
+    ).sendToDiscord('alice', '버그', '{"ok":true}');
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://discord.test/webhook',
@@ -111,9 +115,11 @@ describe('BugReportService', () => {
   it('이미지가 있으면 multipart form-data로 전송한다', async () => {
     const { service } = createService();
 
-    await (service as unknown as {
-      sendToDiscord: (...args: unknown[]) => Promise<void>;
-    }).sendToDiscord('alice', '버그', undefined, [
+    await (
+      service as unknown as {
+        sendToDiscord: (...args: unknown[]) => Promise<void>;
+      }
+    ).sendToDiscord('alice', '버그', undefined, [
       {
         buffer: Buffer.from('img'),
         originalname: 'a.png',

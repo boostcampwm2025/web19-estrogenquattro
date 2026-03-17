@@ -60,8 +60,12 @@ describe('GithubService', () => {
   it('기존 활동이 없으면 새 엔티티를 생성한다', async () => {
     const { service, dailyGithubActivityRepository } = createService();
     const created = { count: 1 };
-    (dailyGithubActivityRepository.findOne as jest.Mock).mockResolvedValue(null);
-    (dailyGithubActivityRepository.create as jest.Mock).mockReturnValue(created);
+    (dailyGithubActivityRepository.findOne as jest.Mock).mockResolvedValue(
+      null,
+    );
+    (dailyGithubActivityRepository.create as jest.Mock).mockReturnValue(
+      created,
+    );
 
     await service.incrementActivity(1, GithubActivityType.COMMITTED, 1);
 
