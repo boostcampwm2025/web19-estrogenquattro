@@ -10,3 +10,8 @@ AGENTS.md
 
 # Database
 backend/data/.DS_Store
+
+# Playwright
+frontend/playwright/.auth/
+frontend/playwright-report/
+frontend/test-results/
