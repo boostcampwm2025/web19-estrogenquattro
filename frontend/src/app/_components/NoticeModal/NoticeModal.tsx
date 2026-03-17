@@ -4,7 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
-import { Megaphone, Loader2, ArrowUp, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Megaphone,
+  Loader2,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import {
   getPublicNotifications,
   type NoticeItem,
@@ -22,7 +28,7 @@ export default function NoticeModal() {
       closeModal: state.closeModal,
     })),
   );
-  
+
   const { t } = useTranslation("ui");
 
   const isOpen = activeModal === MODAL_TYPES.NOTICE;
@@ -153,7 +159,7 @@ export default function NoticeModal() {
                             ) : (
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-900" />
                             )}
-                            <span className="break-words text-base font-bold leading-tight text-amber-900">
+                            <span className="text-base leading-tight font-bold break-words text-amber-900">
                               {notice.title}
                             </span>
                           </div>
