@@ -90,7 +90,7 @@ import { BugReportModule } from './bugreport/bug-report.module';
     }),
     PlayerModule,
     GithubModule,
-    AuthModule.register(),
+    AuthModule,
     ChatModule,
     RoomModule,
     TaskModule,

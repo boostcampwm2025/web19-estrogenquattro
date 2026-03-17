@@ -1,4 +1,4 @@
-import { DynamicModule, Module, forwardRef } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -10,6 +10,13 @@ import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
 import { AuthSessionService } from './auth-session.service';
 import { PlaywrightAuthController } from './playwright-auth.controller';
+import { loadEnvFilesOnce } from '../config/env-files';
+
+loadEnvFilesOnce();
+
+const isPlaywrightAuthControllerEnabled =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.PLAYWRIGHT_TEST_MODE === 'true';
 
 @Module({
   imports: [
@@ -23,7 +30,9 @@ import { PlaywrightAuthController } from './playwright-auth.controller';
     }),
     forwardRef(() => PlayerModule),
   ],
-  controllers: [],
+  controllers: isPlaywrightAuthControllerEnabled
+    ? [AuthController, PlaywrightAuthController]
+    : [AuthController],
   providers: [
     UserStore,
     GithubStrategy,
@@ -33,17 +42,4 @@ import { PlaywrightAuthController } from './playwright-auth.controller';
   ],
   exports: [UserStore, JwtModule, WsJwtGuard],
 })
-export class AuthModule {
-  static register(): DynamicModule {
-    const controllers =
-      process.env.NODE_ENV !== 'production' &&
-      process.env.PLAYWRIGHT_TEST_MODE === 'true'
-        ? [AuthController, PlaywrightAuthController]
-        : [AuthController];
-
-    return {
-      module: AuthModule,
-      controllers,
-    };
-  }
-}
+export class AuthModule {}
