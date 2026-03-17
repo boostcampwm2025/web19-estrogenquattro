@@ -46,6 +46,7 @@ FRONTEND_URL=http://localhost:3000
 ```
 
 > GitHub OAuth App 생성: Settings → Developer settings → OAuth Apps → New OAuth App
+>
 > - Homepage URL: `http://localhost:3000`
 > - Callback URL: `http://localhost:8080/auth/github/callback`
 
@@ -88,46 +89,65 @@ pnpm logs  # 로그 확인
 
 ### 루트 (package.json)
 
-| 스크립트 | 설명 |
-|---------|------|
+| 스크립트           | 설명                         |
+| ------------------ | ---------------------------- |
 | `pnpm install:all` | backend/frontend 의존성 설치 |
-| `pnpm build:all` | backend/frontend 빌드 |
-| `pnpm start` | PM2로 전체 실행 |
-| `pnpm logs` | PM2 로그 확인 |
+| `pnpm build:all`   | backend/frontend 빌드        |
+| `pnpm start`       | PM2로 전체 실행              |
+| `pnpm logs`        | PM2 로그 확인                |
 
 ### Backend (backend/package.json)
 
-| 스크립트 | 설명 |
-|---------|------|
-| `pnpm start:dev` | 개발 서버 (watch 모드) |
-| `pnpm build` | 프로덕션 빌드 |
-| `pnpm lint` | ESLint 검사 |
-| `pnpm lint:fix` | ESLint 자동 수정 |
-| `pnpm format` | Prettier 검사 |
-| `pnpm format:fix` | Prettier 자동 수정 |
-| `pnpm test` | Jest 테스트 |
-| `pnpm migration:run` | 마이그레이션 실행 |
-| `pnpm migration:generate` | 마이그레이션 생성 |
+| 스크립트                  | 설명                   |
+| ------------------------- | ---------------------- |
+| `pnpm start:dev`          | 개발 서버 (watch 모드) |
+| `pnpm build`              | 프로덕션 빌드          |
+| `pnpm lint`               | ESLint 검사            |
+| `pnpm lint:fix`           | ESLint 자동 수정       |
+| `pnpm format`             | Prettier 검사          |
+| `pnpm format:fix`         | Prettier 자동 수정     |
+| `pnpm test`               | Jest 테스트            |
+| `pnpm migration:run`      | 마이그레이션 실행      |
+| `pnpm migration:generate` | 마이그레이션 생성      |
 
 ### Frontend (frontend/package.json)
 
-| 스크립트 | 설명 |
-|---------|------|
-| `pnpm dev` | 개발 서버 |
-| `pnpm build` | 정적 빌드 (backend/public으로 출력) |
-| `pnpm lint` | ESLint 검사 |
-| `pnpm format` | Prettier 검사 |
-| `pnpm format:fix` | Prettier 자동 수정 |
-| `pnpm test` | Vitest 테스트 |
+| 스크립트          | 설명                                |
+| ----------------- | ----------------------------------- |
+| `pnpm dev`        | 개발 서버                           |
+| `pnpm build`      | 정적 빌드 (backend/public으로 출력) |
+| `pnpm lint`       | ESLint 검사                         |
+| `pnpm format`     | Prettier 검사                       |
+| `pnpm format:fix` | Prettier 자동 수정                  |
+| `pnpm test`       | Vitest 테스트                       |
 
 ---
 
 ## 개발 포트
 
-| 서비스 | 개발 포트 | 비고 |
-|--------|----------|------|
-| Frontend | 3000 | Next.js dev server |
-| Backend | 8080 | NestJS + Socket.io |
+| 서비스   | 개발 포트 | 비고               |
+| -------- | --------- | ------------------ |
+| Frontend | 3000      | Next.js dev server |
+| Backend  | 8080      | NestJS + Socket.io |
+
+### Playwright E2E hostname 규칙
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
+- `NEXT_PUBLIC_API_URL=http://localhost:8080`
+- `NEXT_PUBLIC_SOCKET_URL=http://localhost:8080`
+- `FRONTEND_URL=http://localhost:3000`
+
+`localhost` 와 `127.0.0.1` 를 섞으면 쿠키와 소켓 인증이 불안정해질 수 있으므로 Playwright 실행 시에는 반드시 `localhost` 로 통일
+
+### Playwright E2E 실행
+
+```bash
+cd frontend
+pnpm test:e2e
+```
+
+백엔드 테스트 인증 시드는 `PLAYWRIGHT_TEST_MODE=true` 와 `PLAYWRIGHT_E2E_SECRET` 이 활성화된 상태에서만 동작하며, Playwright 설정이 두 값을 자동으로 주입합니다.
 
 ---
 
