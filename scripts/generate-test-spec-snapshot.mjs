@@ -230,7 +230,10 @@ function normalizeRepoPath(filePath, platformKey) {
 }
 
 function isFrontendUnitTestFile(filePath) {
-  return /^frontend\/src\/.*\.test\.(ts|tsx)$/.test(filePath);
+  return (
+    /^frontend\/src\/.*\.test\.(ts|tsx)$/.test(filePath) ||
+    /^frontend\/test\/.*\.spec\.ts$/.test(filePath)
+  );
 }
 
 function isBackendUnitTestFile(filePath) {
