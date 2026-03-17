@@ -135,16 +135,17 @@ describe('Guestbook E2E', () => {
 
     // When: cursor 이후 ASC 조회
     const secondPage = await request(getHttpServer())
-      .get(
-        `/api/guestbooks?limit=2&order=ASC&cursor=${savedGuestbooks[0].id}`,
-      )
+      .get(`/api/guestbooks?limit=2&order=ASC&cursor=${savedGuestbooks[0].id}`)
       .set('Cookie', viewer.cookie)
       .expect(200);
     const secondPageBody = secondPage.body as GuestbookPageResponse;
 
     // Then
     expect(secondPageBody.items).toHaveLength(2);
-    expect(secondPageBody.items.map((item) => item.content)).toEqual(['B', 'C']);
+    expect(secondPageBody.items.map((item) => item.content)).toEqual([
+      'B',
+      'C',
+    ]);
     expect(secondPageBody.items[0].id).toBeLessThan(secondPageBody.items[1].id);
     expect(secondPageBody.nextCursor).toBeNull();
   });
