@@ -33,7 +33,8 @@ export const guestbookApi = {
     return fetchApi<GuestbookListRes>(`/api/guestbooks?${query}`);
   },
 
-  getReadState: () => fetchApi<GuestbookReadStateRes>("/api/guestbooks/read-state"),
+  getReadState: () =>
+    fetchApi<GuestbookReadStateRes>("/api/guestbooks/read-state"),
 
   markAsRead: () =>
     fetchApi<GuestbookReadStateRes>("/api/guestbooks/read", {

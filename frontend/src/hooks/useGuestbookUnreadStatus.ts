@@ -16,7 +16,11 @@ export function useGuestbookUnreadStatus() {
     hasUnread: playerId !== null && (readState?.hasUnread ?? false),
     latestEntryId,
     markAsRead: async () => {
-      if (playerId === null || latestEntryId === null || !readState?.hasUnread) {
+      if (
+        playerId === null ||
+        latestEntryId === null ||
+        !readState?.hasUnread
+      ) {
         return;
       }
 
