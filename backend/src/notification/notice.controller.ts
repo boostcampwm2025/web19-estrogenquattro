@@ -9,31 +9,40 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
-import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { JwtGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../admin/admin.guard';
 import { PlayerId } from '../auth/player-id.decorator';
+import { NoticeService } from './notice.service';
+import { NoticeGateway } from './notice.gateway';
 
-@Controller('api/notifications')
+@Controller('api/notices')
 @UseGuards(JwtGuard, AdminGuard)
-export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+export class NoticeController {
+  constructor(
+    private readonly noticeService: NoticeService,
+    private readonly noticeGateway: NoticeGateway,
+  ) {}
 
   @Post()
-  create(@PlayerId() authorId: number, @Body() dto: CreateNotificationDto) {
-    return this.notificationService.create(authorId, dto);
+  async create(
+    @PlayerId() authorId: number,
+    @Body() dto: CreateNotificationDto,
+  ) {
+    const notice = await this.noticeService.create(authorId, dto);
+    this.noticeGateway.broadcastNotice(notice);
+    return notice;
   }
 
   @Get()
   findAll() {
-    return this.notificationService.findAll();
+    return this.noticeService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationService.findOne(id);
+    return this.noticeService.findOne(id);
   }
 
   @Patch(':id')
@@ -41,11 +50,11 @@ export class NotificationController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateNotificationDto,
   ) {
-    return this.notificationService.update(id, dto);
+    return this.noticeService.update(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationService.remove(id);
+    return this.noticeService.remove(id);
   }
 }
