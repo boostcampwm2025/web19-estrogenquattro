@@ -27,7 +27,8 @@ export const seedGuestbookEntries = (entries: GuestbookEntry[]) => {
 export const guestbookHandlers = [
   http.get("*/api/guestbooks", ({ request }) => {
     const url = new URL(request.url);
-    const limit = Number(url.searchParams.get("limit") ?? "20");
+    const rawLimit = Number(url.searchParams.get("limit") ?? "20");
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 20;
     const cursorParam = url.searchParams.get("cursor");
     const order = (url.searchParams.get("order") ?? "DESC").toUpperCase();
 
@@ -44,7 +45,8 @@ export const guestbookHandlers = [
     }
 
     const items = filtered.slice(0, limit);
-    const nextCursor = filtered.length > limit ? items[items.length - 1].id : null;
+    const hasMore = filtered.length > items.length;
+    const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
 
     return HttpResponse.json({ items, nextCursor });
   }),
