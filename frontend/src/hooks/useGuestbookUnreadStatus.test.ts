@@ -88,10 +88,26 @@ describe("useGuestbookUnreadStatus", () => {
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
   });
 
-  it("unread가 없으면 markAsRead를 호출하지 않는다", async () => {
+  it("최신 방명록이 있으면 cached unread가 false여도 markAsRead를 호출한다", async () => {
     currentReadState = {
       latestEntryId: 10,
       lastReadEntryId: 10,
+      hasUnread: false,
+    };
+
+    const { result } = renderHook(() => useGuestbookUnreadStatus());
+
+    await act(async () => {
+      await result.current.markAsRead();
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it("최신 방명록이 없으면 markAsRead를 호출하지 않는다", async () => {
+    currentReadState = {
+      latestEntryId: null,
+      lastReadEntryId: 0,
       hasUnread: false,
     };
 

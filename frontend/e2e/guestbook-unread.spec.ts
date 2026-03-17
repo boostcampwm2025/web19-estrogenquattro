@@ -7,10 +7,7 @@ import {
   type Page,
   type StorageState,
 } from "@playwright/test";
-
-const backendUrl = "http://localhost:8080";
-const frontendUrl = "http://localhost:3000";
-const e2eSecret = "playwright-secret";
+import { backendUrl, e2eSecret, frontendUrl } from "./testEnv";
 
 async function createSession(
   socialId: number,
@@ -114,7 +111,7 @@ test("same-account unread state is shared across multiple browser sessions", asy
       (response) =>
         response.url() === `${backendUrl}/api/guestbooks/read` &&
         response.request().method() === "POST" &&
-        response.status() === 201,
+        response.status() === 200,
       {
         timeout: 15_000,
       },
@@ -127,7 +124,9 @@ test("same-account unread state is shared across multiple browser sessions", asy
   await expect
     .poll(
       () =>
-        firstReader.page.locator('[data-testid="guestbook-unread-badge"]').count(),
+        firstReader.page
+          .locator('[data-testid="guestbook-unread-badge"]')
+          .count(),
       {
         timeout: 10_000,
       },

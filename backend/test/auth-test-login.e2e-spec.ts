@@ -99,6 +99,19 @@ describe('Auth Test Login E2E', () => {
     expect(response.body.message).toBe('Invalid x-e2e-secret');
   });
 
+  it('잘못된 payload면 400을 반환한다', async () => {
+    context = await createPlaywrightContext();
+
+    await request(context.app.getHttpServer())
+      .post('/auth/test-login')
+      .set('x-e2e-secret', E2E_SECRET)
+      .send({
+        socialId: 0,
+        username: ' ',
+      })
+      .expect(400);
+  });
+
   it('PLAYWRIGHT_TEST_MODE가 비활성화되면 테스트 전용 로그인 엔드포인트가 숨겨진다', async () => {
     context = await createTestApp({
       configOverrides: {

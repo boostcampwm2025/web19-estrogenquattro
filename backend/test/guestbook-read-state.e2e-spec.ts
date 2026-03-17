@@ -58,7 +58,7 @@ describe('Guestbook Read State E2E', () => {
     const markedState = await request(app)
       .post('/api/guestbooks/read')
       .set('Cookie', reader.cookie)
-      .expect(201);
+      .expect(200);
 
     expect(markedState.body).toEqual({
       latestEntryId: firstEntry.id,

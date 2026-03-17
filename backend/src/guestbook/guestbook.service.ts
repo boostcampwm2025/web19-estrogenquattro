@@ -157,8 +157,10 @@ export class GuestbookService {
         : Math.max(currentLastReadEntryId, latestEntryId);
 
     if (player.lastReadGuestbookEntryId !== nextLastReadEntryId) {
-      player.lastReadGuestbookEntryId = nextLastReadEntryId;
-      await this.playerRepository.save(player);
+      await this.playerRepository.update(
+        { id: playerId },
+        { lastReadGuestbookEntryId: nextLastReadEntryId },
+      );
     }
 
     return {

@@ -30,7 +30,7 @@ export default function GuestbookButton() {
         <span
           data-testid="guestbook-unread-badge"
           aria-hidden="true"
-          className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full border-2 border-[#ffecb3] bg-red-500 shadow-[0_0_0_2px_rgba(120,16,16,0.2)]"
+          className="pointer-events-none absolute -top-1.5 -right-1.5 h-3.5 w-3.5 rounded-full border-2 border-[#ffecb3] bg-red-500 shadow-[0_0_0_2px_rgba(120,16,16,0.2)]"
         />
       ) : null}
     </button>
