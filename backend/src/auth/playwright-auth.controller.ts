@@ -8,9 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import {
-  AuthSessionService,
-} from './auth-session.service';
+import { AuthSessionService } from './auth-session.service';
 import type { PlaywrightTestLoginBody } from './auth-session.service';
 import type { UserInfo } from './user.interface';
 
