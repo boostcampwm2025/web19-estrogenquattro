@@ -182,7 +182,6 @@ function main() {
 
   const outputPath = path.resolve(process.cwd(), args.output);
   const gateOutputPath = path.resolve(process.cwd(), args["gate-output"]);
-
   const changedBackend = changedCoverage(currentBackend, changedFiles);
   const changedFrontend = changedCoverage(currentFrontend, changedFiles);
   const currentChangedMetrics = aggregateFiles([
@@ -237,6 +236,30 @@ function main() {
     }
   }
 
+  if (baselineChangedMetrics.lines.total > 0) {
+    const changedDelta = Number(
+      (currentChangedMetrics.lines.pct - baselineChangedMetrics.lines.pct).toFixed(2),
+    );
+    if (changedDelta < 0) {
+      gate.shouldFail = true;
+      gate.reasons.push(
+        `Changed files line coverage dropped by ${Math.abs(changedDelta).toFixed(2)}%`,
+      );
+    }
+  }
+
+  if (
+    currentChangedMetrics.lines.total > 0 &&
+    currentChangedMetrics.lines.pct < THRESHOLD
+  ) {
+    gate.shouldFail = true;
+    gate.reasons.push(
+      `Changed files line coverage is below ${THRESHOLD}% (${formatPct(
+        currentChangedMetrics.lines,
+      )})`,
+    );
+  }
+
   const lines = [
     "<!-- integration-coverage-report -->",
     "## 통합 테스트 스펙 스냅샷",
@@ -260,6 +283,15 @@ function main() {
     lines.push(...warnings);
   }
 
+  lines.push("");
+  lines.push("### 변경 파일 요약");
+  lines.push("");
+  lines.push(
+    `- 프론트엔드 변경 파일: ${changedFrontend.fileCount}개, ${changedFrontend.fileCount > 0 ? formatPct(changedFrontend.metrics.lines) : "n/a"}`,
+  );
+  lines.push(
+    `- 백엔드 변경 파일: ${changedBackend.fileCount}개, ${changedBackend.fileCount > 0 ? formatPct(changedBackend.metrics.lines) : "n/a"}`,
+  );
   lines.push("");
   lines.push("### 스펙 스냅샷");
   lines.push("");

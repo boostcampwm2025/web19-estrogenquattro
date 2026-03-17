@@ -12,7 +12,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
 import { io, Socket } from 'socket.io-client';
-import { EntityTarget, Repository } from 'typeorm';
+import { DataSource, EntityTarget, Repository } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
 import { GithubGuard } from '../src/auth/github.guard';
@@ -208,12 +208,30 @@ export async function createTestApp(
 
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
+  const dataSource = moduleRef.get(DataSource);
 
   app.use(cookieParser());
   app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.init();
   await app.listen(0);
+
+  const originalClose = app.close.bind(app) as () => Promise<void>;
+  let closed = false;
+  app.close = async () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+
+    await originalClose();
+
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
+
+    await moduleRef.close();
+  };
 
   const httpServer = app.getHttpServer() as { address(): { port: number } };
   const baseUrl = `http://127.0.0.1:${httpServer.address().port}`;

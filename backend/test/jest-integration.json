@@ -12,7 +12,6 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "testTimeout": 30000,
-  "forceExit": true,
   "coverageDirectory": "<rootDir>/coverage/integration/backend",
   "collectCoverageFrom": [
     "src/**/*.controller.ts",

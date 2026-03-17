@@ -140,6 +140,52 @@ function deriveTestFeatureLabel(relativePath) {
   return humanizeToken(stem);
 }
 
+function inferTestDomain(relativePath, platform) {
+  const stem = path
+    .basename(toPosix(relativePath))
+    .replace(/\.e2e-spec\.ts$/, "")
+    .replace(/\.spec\.ts$/, "")
+    .replace(/\.test\.tsx?$/, "")
+    .toLowerCase();
+
+  if (platform === "backend") {
+    if (/(auth|session)/.test(stem)) return { key: "auth", label: "인증" };
+    if (/chat/.test(stem)) return { key: "chat", label: "채팅" };
+    if (/(focus|focustime)/.test(stem)) return { key: "focus", label: "집중" };
+    if (/(movement|room|socket|onboarding)/.test(stem)) {
+      return { key: "room-player", label: "방/플레이어" };
+    }
+    if (/(progress|github)/.test(stem)) return { key: "github", label: "깃허브 활동" };
+    if (/guestbook/.test(stem)) return { key: "guestbook", label: "게스트북" };
+    if (/(point|history)/.test(stem)) {
+      return { key: "point-history", label: "포인트/기록" };
+    }
+    if (/task/.test(stem)) return { key: "task", label: "태스크" };
+    if (/(pet|gacha)/.test(stem)) return { key: "pet", label: "펫" };
+  }
+
+  if (platform === "frontend") {
+    if (/(auth|session)/.test(stem)) return { key: "auth", label: "인증" };
+    if (/(focus|focustime)/.test(stem)) return { key: "focus", label: "집중" };
+    if (/(socket|room|movement)/.test(stem)) {
+      return { key: "room-player", label: "방/플레이어" };
+    }
+    if (/onboarding/.test(stem)) return { key: "onboarding", label: "온보딩" };
+    if (/guestbook/.test(stem)) return { key: "guestbook", label: "게스트북" };
+    if (/(leaderboard|profile|rank|follow)/.test(stem)) {
+      return { key: "profile-ranking", label: "프로필/랭킹" };
+    }
+    if (/(point|history)/.test(stem)) {
+      return { key: "point-history", label: "포인트/기록" };
+    }
+    if (/(progress|github)/.test(stem)) return { key: "github", label: "깃허브 활동" };
+    if (/task/.test(stem)) return { key: "task", label: "태스크" };
+    if (/(pet|gacha)/.test(stem)) return { key: "pet", label: "펫" };
+  }
+
+  return { key: "misc", label: "공통 인프라" };
+}
+
 function matchDomain(relativePath, platform) {
   const mappings = platform === "backend" ? BACKEND_DOMAINS : FRONTEND_DOMAINS;
   const match = mappings.find(([pattern]) => pattern.test(relativePath));
@@ -163,14 +209,7 @@ export function classifyTest(platform, relativePath) {
   const explicitMappings =
     platform === "backend" ? BACKEND_TEST_DOMAINS : FRONTEND_TEST_DOMAINS;
   const explicitMatch = explicitMappings.find(([pattern]) => pattern.test(relativePath));
-  const domain =
-    explicitMatch?.[1] ??
-    matchDomain(
-      relativePath
-        .replace(/^backend\/test\//, "backend/src/")
-        .replace(/^frontend\/test\/integration\//, "frontend/src/"),
-      platform,
-    );
+  const domain = explicitMatch?.[1] ?? inferTestDomain(relativePath, platform);
   return {
     platform,
     platformLabel: PLATFORM_LABELS[platform],
