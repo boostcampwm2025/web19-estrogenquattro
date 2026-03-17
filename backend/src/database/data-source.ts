@@ -1,6 +1,9 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+import { loadEnvFilesOnce } from '../config/env-files';
+
+loadEnvFilesOnce();
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
