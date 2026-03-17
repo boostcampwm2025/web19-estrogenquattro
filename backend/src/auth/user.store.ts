@@ -18,6 +18,10 @@ export class UserStore {
     return user;
   }
 
+  clear(): void {
+    this.users.clear();
+  }
+
   findOrCreate(user: User): User {
     const existingUser = this.findByGithubId(user.githubId);
     if (existingUser) {
