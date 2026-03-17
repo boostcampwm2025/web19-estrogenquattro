@@ -88,6 +88,8 @@ export class MapController {
       throw new NotFoundException('Map file not found');
     }
 
-    res.sendFile(filePath);
+    res.sendFile(filePath, {
+      dotfiles: 'allow',
+    });
   }
 }
