@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
-import { Megaphone, Loader2, ArrowUp } from "lucide-react";
+import { Megaphone, Loader2, ArrowUp, ChevronDown, ChevronRight } from "lucide-react";
 import {
   getPublicNotifications,
   type NoticeItem,
 } from "@/lib/api/notification";
+import MarkdownRenderer from "@/app/_components/MarkdownRenderer";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -140,31 +141,29 @@ export default function NoticeModal() {
                       {/* 공지 헤더 */}
                       <button
                         onClick={() => toggleExpand(notice.id)}
-                        className="flex w-full cursor-pointer items-center gap-3 py-1 text-left"
+                        className="flex w-full cursor-pointer items-center px-1 py-2 text-left transition-colors hover:bg-amber-100/50"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-amber-900">
+                        <div className="flex min-w-0 flex-1 items-start justify-between">
+                          <div className="flex flex-1 items-start gap-2 pr-4">
+                            {expandedId === notice.id ? (
+                              <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-amber-900" />
+                            ) : (
+                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-900" />
+                            )}
+                            <span className="break-words text-base font-bold leading-tight text-amber-900">
                               {notice.title}
                             </span>
-                            <span className="shrink-0 text-xs text-amber-500">
-                              {formatDate(notice.createdAt)}
-                            </span>
                           </div>
-                          {notice.author?.nickname && (
-                            <p className="mt-0.5 text-xs text-amber-600">
-                              by {notice.author.nickname}
-                            </p>
-                          )}
+                          <span className="shrink-0 pt-0.5 text-xs text-amber-500">
+                            {formatDate(notice.createdAt)}
+                          </span>
                         </div>
                       </button>
 
                       {/* 공지 내용 (펼침) */}
                       {expandedId === notice.id && (
                         <div className="mt-1 mb-1 rounded bg-amber-50/80 px-3 py-2">
-                          <p className="whitespace-pre-wrap text-sm leading-relaxed text-amber-800">
-                            {notice.content}
-                          </p>
+                          <MarkdownRenderer content={notice.content} />
                         </div>
                       )}
                     </div>
