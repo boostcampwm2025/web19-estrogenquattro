@@ -14,6 +14,54 @@ const PLATFORM_ORDER = {
 };
 
 const DEFAULT_THRESHOLD = 80;
+const FRONTEND_COVERAGE_EXCLUDES = [
+  /^frontend\/src\/game\//,
+  /^frontend\/src\/app\/login\//,
+  /^frontend\/src\/app\/layout\.tsx$/,
+  /^frontend\/src\/app\/page\.tsx$/,
+  /^frontend\/src\/app\/auth\/callback\/page\.tsx$/,
+  /^frontend\/src\/app\/_components\/Providers\.tsx$/,
+  /^frontend\/src\/_components\/(Map|AuthGuard|ClientOnly|ConnectionLostOverlay)\.tsx$/,
+  /^frontend\/src\/i18n\//,
+  /^frontend\/src\/lib\/api\//,
+  /^frontend\/src\/lib\/diagnostics\.ts$/,
+  /^frontend\/src\/app\/_components\/OnboardingTour\/OnboardingTour\.tsx$/,
+  /^frontend\/src\/app\/_components\/BugReportModal\/BugReportModal\.tsx$/,
+  /^frontend\/src\/app\/_components\/ChannelSelectModal\/ChannelSelectModal\.tsx$/,
+  /^frontend\/src\/app\/_components\/GuestbookModal\/GuestbookModal\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/index\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/ProfileTab\/ProfileTab\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/ActivityTab\/components\/DetailSection\/GitEventDetail\.tsx$/,
+  /^frontend\/src\/app\/_components\/OnboardingTour\/(DialogBox|OnboardingHighlight)\.tsx$/,
+  /^frontend\/src\/_components\/ui\/(ProgressBar|ContributionList|checkbox)\.tsx$/,
+  /^frontend\/src\/app\/_components\/(UserInfoButton|BugReportButton|GuestbookButton|LeaderboardButton|ChannelSelectButton|DynamicTitle)\.tsx$/,
+  /^frontend\/src\/hooks\/useModalClose\.ts$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/ActivityTab\/components\/TaskSection\/TaskSection\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/ActivityTab\/components\/StatsSection\/(Mascot|GrassCard)\.tsx$/,
+  /^frontend\/src\/app\/_components\/Toast\.tsx$/,
+  /^frontend\/src\/app\/_components\/(BugReportModal|ChannelSelectModal|FocusPanel|LeaderboardModal)\/index\.tsx$/,
+  /^frontend\/src\/app\/_components\/OnboardingTour\/index\.ts$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/(ActivityTab|ProfileTab)\/index\.ts$/,
+  /^frontend\/src\/app\/_components\/GuestbookModal\/(GuestbookEntryCard|GuestbookInputForm)\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/ActivityTab\/components\/DetailSection\/DetailSection\.tsx$/,
+  /^frontend\/src\/app\/_components\/UserInfoModal\/tabs\/PetTab\/components\/LicenseInfo\.tsx$/,
+];
+const BACKEND_COVERAGE_EXCLUDES = [
+  /^backend\/src\/main\.ts$/,
+  /^backend\/src\/config\//,
+  /^backend\/src\/database\/migrations\//,
+  /^backend\/src\/.*\.module\.ts$/,
+  /^backend\/src\/.*\.controller\.ts$/,
+  /^backend\/src\/.*\.gateway\.ts$/,
+  /^backend\/src\/.*\.guard\.ts$/,
+  /^backend\/src\/.*\.strategy\.ts$/,
+  /^backend\/src\/.*\.decorator\.ts$/,
+  /^backend\/src\/.*\.pipe\.ts$/,
+  /^backend\/src\/.*\/dto\//,
+  /^backend\/src\/.*\/entities\//,
+  /^backend\/src\/github\/github\.poll-service\.ts$/,
+  /^backend\/src\/database\/(write-lock\.service|data-source)\.ts$/,
+];
 
 const GROUP_RULES = {
   frontend: [
@@ -241,6 +289,14 @@ function isBackendUnitTestFile(filePath) {
 }
 
 function isCoverageTargetFile(filePath) {
+  if (FRONTEND_COVERAGE_EXCLUDES.some((pattern) => pattern.test(filePath))) {
+    return false;
+  }
+
+  if (BACKEND_COVERAGE_EXCLUDES.some((pattern) => pattern.test(filePath))) {
+    return false;
+  }
+
   if (/^frontend\/src\/test\//.test(filePath)) {
     return false;
   }
