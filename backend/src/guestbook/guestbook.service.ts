@@ -10,14 +10,23 @@ import { Guestbook } from './entities/guestbook.entity';
 import { PlayerService } from '../player/player.service';
 import { getTodayKstDateString } from '../util/date.util';
 import { QueryFailedError } from 'typeorm';
+import { Player } from '../player/entites/player.entity';
 
 export type SortOrder = 'ASC' | 'DESC';
+
+export interface GuestbookReadState {
+  latestEntryId: number | null;
+  lastReadEntryId: number;
+  hasUnread: boolean;
+}
 
 @Injectable()
 export class GuestbookService {
   constructor(
     @InjectRepository(Guestbook)
     private readonly guestbookRepository: Repository<Guestbook>,
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
     private readonly playerService: PlayerService,
   ) {}
 
@@ -108,6 +117,57 @@ export class GuestbookService {
     await this.guestbookRepository.remove(guestbook);
   }
 
+  async getReadState(playerId: number): Promise<GuestbookReadState> {
+    const player = await this.playerRepository.findOne({
+      where: { id: playerId },
+      select: {
+        id: true,
+        lastReadGuestbookEntryId: true,
+      },
+    });
+
+    if (!player) {
+      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    }
+
+    const latestEntryId = await this.getLatestEntryId();
+    const lastReadEntryId = player.lastReadGuestbookEntryId ?? 0;
+
+    return {
+      latestEntryId,
+      lastReadEntryId,
+      hasUnread: latestEntryId !== null && latestEntryId > lastReadEntryId,
+    };
+  }
+
+  async markAsRead(playerId: number): Promise<GuestbookReadState> {
+    const player = await this.playerRepository.findOne({
+      where: { id: playerId },
+    });
+
+    if (!player) {
+      throw new NotFoundException(`Player with ID ${playerId} not found`);
+    }
+
+    const latestEntryId = await this.getLatestEntryId();
+    const currentLastReadEntryId = player.lastReadGuestbookEntryId ?? 0;
+    const nextLastReadEntryId =
+      latestEntryId === null
+        ? currentLastReadEntryId
+        : Math.max(currentLastReadEntryId, latestEntryId);
+
+    if (player.lastReadGuestbookEntryId !== nextLastReadEntryId) {
+      player.lastReadGuestbookEntryId = nextLastReadEntryId;
+      await this.playerRepository.save(player);
+    }
+
+    return {
+      latestEntryId,
+      lastReadEntryId: nextLastReadEntryId,
+      hasUnread: latestEntryId !== null && latestEntryId > nextLastReadEntryId,
+    };
+  }
+
   private async checkDailyLimit(playerId: number, writeDate: string) {
     const existing = await this.guestbookRepository.findOne({
       where: {
@@ -121,5 +181,16 @@ export class GuestbookService {
         '방명록은 하루에 한 번만 작성할 수 있습니다',
       );
     }
+  }
+
+  private async getLatestEntryId(): Promise<number | null> {
+    const latestEntry = await this.guestbookRepository
+      .createQueryBuilder('guestbook')
+      .select('guestbook.id', 'id')
+      .orderBy('guestbook.id', 'DESC')
+      .limit(1)
+      .getRawOne<{ id: number }>();
+
+    return latestEntry?.id ?? null;
   }
 }

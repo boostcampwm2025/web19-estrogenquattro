@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useModalStore, MODAL_TYPES } from "@/stores/useModalStore";
 import { useModalClose } from "@/hooks/useModalClose";
 import { useShallow } from "zustand/react/shallow";
@@ -17,7 +17,6 @@ import GuestbookEntryCard from "./GuestbookEntryCard";
 import GuestbookInputForm from "./GuestbookInputForm";
 import Toast from "@/app/_components/Toast";
 import { ApiError } from "@/lib/api/client";
-import { markGuestbookEntryAsRead } from "@/lib/guestbookUnread";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -55,19 +54,6 @@ export default function GuestbookModal() {
   const deleteMutation = useDeleteGuestbook();
 
   const entries = data?.pages.flatMap((page) => page.items) ?? [];
-  const newestVisibleEntryId = entries[0]?.id ?? null;
-
-  useEffect(() => {
-    if (
-      !isOpen ||
-      currentPlayerId === undefined ||
-      newestVisibleEntryId === null
-    ) {
-      return;
-    }
-
-    markGuestbookEntryAsRead(currentPlayerId, newestVisibleEntryId);
-  }, [currentPlayerId, isOpen, newestVisibleEntryId]);
 
   const { ref: bottomRef } = useInView({
     threshold: 0,

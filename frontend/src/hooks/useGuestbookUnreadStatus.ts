@@ -1,49 +1,26 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { useAuthStore } from "@/stores/authStore";
-import { useGuestbookLatestEntry } from "@/lib/api/hooks/useGuestbook";
 import {
-  getLastReadGuestbookEntryId,
-  hasUnreadGuestbookEntries,
-  markGuestbookEntryAsRead,
-  subscribeGuestbookReadMarker,
-} from "@/lib/guestbookUnread";
+  useGuestbookReadState,
+  useMarkGuestbookAsRead,
+} from "@/lib/api/hooks/useGuestbook";
 
 export function useGuestbookUnreadStatus() {
   const playerId = useAuthStore((state) => state.user?.playerId ?? null);
-  const lastReadEntryId = useSyncExternalStore(
-    (onStoreChange) => {
-      if (playerId === null) {
-        return () => {};
-      }
-
-      return subscribeGuestbookReadMarker(playerId, onStoreChange);
-    },
-    () => {
-      if (playerId === null) {
-        return 0;
-      }
-
-      return getLastReadGuestbookEntryId(playerId);
-    },
-    () => 0,
-  );
-
-  const { data: latestEntry } = useGuestbookLatestEntry(playerId !== null);
-  const latestEntryId = latestEntry?.id ?? null;
+  const { data: readState } = useGuestbookReadState(playerId !== null);
+  const markAsReadMutation = useMarkGuestbookAsRead();
+  const latestEntryId = readState?.latestEntryId ?? null;
 
   return {
-    hasUnread:
-      playerId !== null &&
-      hasUnreadGuestbookEntries(latestEntryId, lastReadEntryId),
+    hasUnread: playerId !== null && (readState?.hasUnread ?? false),
     latestEntryId,
-    markAsRead: () => {
-      if (playerId === null || latestEntryId === null) {
+    markAsRead: async () => {
+      if (playerId === null || latestEntryId === null || !readState?.hasUnread) {
         return;
       }
 
-      markGuestbookEntryAsRead(playerId, latestEntryId);
+      await markAsReadMutation.mutateAsync();
     },
   };
 }

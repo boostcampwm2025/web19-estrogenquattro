@@ -25,6 +25,16 @@ export class GuestbookController {
     return this.guestbookService.create(playerId, dto.content);
   }
 
+  @Post('read')
+  async markAsRead(@PlayerId() playerId: number) {
+    return this.guestbookService.markAsRead(playerId);
+  }
+
+  @Get('read-state')
+  async getReadState(@PlayerId() playerId: number) {
+    return this.guestbookService.getReadState(playerId);
+  }
+
   @Get()
   async findByCursor(
     @Query('cursor') cursor?: string,

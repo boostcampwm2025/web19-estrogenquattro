@@ -49,6 +49,6 @@ export const queryKeys = {
   guestbook: {
     all: ["guestbook"] as const,
     list: () => [...queryKeys.guestbook.all, "list"] as const,
-    latest: () => [...queryKeys.guestbook.all, "latest"] as const,
+    readState: () => [...queryKeys.guestbook.all, "read-state"] as const,
   },
 };

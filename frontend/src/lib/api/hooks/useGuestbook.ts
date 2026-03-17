@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { guestbookApi } from "../guestbook";
+import { guestbookApi, type GuestbookReadStateRes } from "../guestbook";
 import { queryKeys } from "./queryKeys";
 
 const PAGE_SIZE = 20;
@@ -21,16 +21,54 @@ export function useGuestbookEntries(enabled: boolean) {
   });
 }
 
-export function useGuestbookLatestEntry(enabled: boolean) {
+export function useGuestbookReadState(enabled: boolean) {
   return useQuery({
-    queryKey: queryKeys.guestbook.latest(),
-    queryFn: async () => {
-      const page = await guestbookApi.getEntries(undefined, 1);
-      return page.items[0] ?? null;
-    },
+    queryKey: queryKeys.guestbook.readState(),
+    queryFn: () => guestbookApi.getReadState(),
     enabled,
-    staleTime: 15 * 1000,
-    refetchInterval: 30 * 1000,
+    staleTime: 5 * 1000,
+    refetchInterval: 10 * 1000,
+  });
+}
+
+export function useMarkGuestbookAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => guestbookApi.markAsRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.guestbook.readState(),
+      });
+
+      const previousState = queryClient.getQueryData<GuestbookReadStateRes>(
+        queryKeys.guestbook.readState(),
+      );
+
+      if (previousState?.latestEntryId !== null) {
+        queryClient.setQueryData<GuestbookReadStateRes>(
+          queryKeys.guestbook.readState(),
+          {
+            latestEntryId: previousState.latestEntryId,
+            lastReadEntryId: previousState.latestEntryId,
+            hasUnread: false,
+          },
+        );
+      }
+
+      return { previousState };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousState) {
+        queryClient.setQueryData(
+          queryKeys.guestbook.readState(),
+          context.previousState,
+        );
+      }
+    },
+    onSuccess: (state) => {
+      queryClient.setQueryData(queryKeys.guestbook.readState(), state);
+    },
   });
 }
 
