@@ -63,6 +63,7 @@ describe("simple stores", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("connection, room, contribution store state를 갱신한다", () => {
