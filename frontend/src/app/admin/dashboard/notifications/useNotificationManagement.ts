@@ -14,6 +14,10 @@ export function useNotificationManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // 페이지네이션
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   // 새 공지 작성 폼
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -38,6 +42,7 @@ export function useNotificationManagement() {
     try {
       const data = await getNotifications();
       setNotifications(data);
+      setCurrentPage(1);
     } catch {
       setToast({
         message: "공지사항을 불러올 수 없습니다.",
@@ -108,8 +113,22 @@ export function useNotificationManagement() {
     }
   };
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(notifications.length / ITEMS_PER_PAGE),
+  );
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedNotifications = notifications.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE,
+  );
+
   return {
     notifications,
+    paginatedNotifications,
+    currentPage,
+    totalPages,
+    setCurrentPage,
     isLoading,
     isProcessing,
     newTitle,

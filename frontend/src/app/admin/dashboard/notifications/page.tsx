@@ -1,11 +1,16 @@
 "use client";
 
 import Toast from "@/app/_components/Toast";
+import MarkdownEditor from "@/app/_components/MarkdownEditor";
 import { useNotificationManagement } from "./useNotificationManagement";
 
 export default function NotificationsManagementPage() {
   const {
     notifications,
+    paginatedNotifications,
+    currentPage,
+    totalPages,
+    setCurrentPage,
     isLoading,
     isProcessing,
     newTitle,
@@ -29,16 +34,14 @@ export default function NotificationsManagementPage() {
   } = useNotificationManagement();
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl">
       <h2 className="text-retro-text-primary mb-6 text-xl font-bold">
         공지사항 관리
       </h2>
 
       {/* 새 공지 작성 */}
-      <div className="border-retro-border-darker bg-retro-bg-secondary mb-6 max-w-2xl border-3 p-4">
-        <h3 className="text-retro-text-primary mb-3 font-bold">
-          새 공지 작성
-        </h3>
+      <div className="border-retro-border-darker bg-retro-bg-secondary mb-6 max-w-4xl border-3 p-4">
+        <h3 className="text-retro-text-primary mb-3 font-bold">새 공지 작성</h3>
         <input
           type="text"
           value={newTitle}
@@ -47,12 +50,11 @@ export default function NotificationsManagementPage() {
           maxLength={200}
           className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
         />
-        <textarea
-          value={newContent}
-          onChange={(e) => setNewContent(e.target.value)}
-          placeholder="내용"
-          rows={5}
-          className="border-retro-border-darker text-retro-text-primary mb-3 w-full resize-none border-3 bg-white px-3 py-2 outline-none"
+        <MarkdownEditor
+          content={newContent}
+          onChange={setNewContent}
+          placeholder="내용을 입력하세요 (# 제목, **굵게**, *기울임* 등 마크다운 자동 변환)"
+          className="border-retro-border-darker mb-3 border-3 bg-white"
         />
         <div className="flex justify-end">
           <button
@@ -96,7 +98,7 @@ export default function NotificationsManagementPage() {
             </tr>
           </thead>
           <tbody>
-            {notifications.map((notification) => (
+            {paginatedNotifications.map((notification) => (
               <tr
                 key={notification.id}
                 className="border-retro-border-light border-b"
@@ -111,7 +113,13 @@ export default function NotificationsManagementPage() {
                   {notification.author?.nickname || "-"}
                 </td>
                 <td className="text-retro-text-secondary px-4 py-2 text-sm">
-                  {new Date(notification.createdAt).toLocaleDateString("ko-KR")}
+                  {new Date(notification.createdAt).toLocaleString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td className="px-4 py-2 text-center">
                   <div className="flex justify-center gap-2">
@@ -135,6 +143,29 @@ export default function NotificationsManagementPage() {
         </table>
       )}
 
+      {/* 페이지네이션 컨트롤 */}
+      {!isLoading && notifications.length > 0 && (
+        <div className="mt-6 mb-8 flex items-center justify-center gap-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="border-retro-border-darker bg-retro-bg-secondary text-retro-text-primary hover:bg-retro-hover-bg cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            이전
+          </button>
+          <span className="text-retro-text-primary font-bold">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="border-retro-border-darker bg-retro-bg-secondary text-retro-text-primary hover:bg-retro-hover-bg cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            다음
+          </button>
+        </div>
+      )}
+
       {/* 수정 모달 */}
       {editTarget && (
         <div
@@ -142,7 +173,7 @@ export default function NotificationsManagementPage() {
           onClick={() => setEditTarget(null)}
         >
           <div
-            className="border-retro-border-darker bg-retro-bg-primary shadow-retro-xl w-full max-w-lg border-3 p-6"
+            className="border-retro-border-darker bg-retro-bg-primary shadow-retro-xl w-full max-w-4xl border-3 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-retro-text-primary mb-4 text-lg font-bold">
@@ -156,12 +187,11 @@ export default function NotificationsManagementPage() {
               maxLength={200}
               className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
             />
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              placeholder="내용"
-              rows={6}
-              className="border-retro-border-darker text-retro-text-primary mb-4 w-full resize-none border-3 bg-white px-3 py-2 outline-none"
+            <MarkdownEditor
+              content={editContent}
+              onChange={setEditContent}
+              placeholder="내용을 입력하세요 (마크다운 자동 변환)"
+              className="border-retro-border-darker mb-4 border-3 bg-white"
             />
             <div className="flex justify-end gap-3">
               <button
