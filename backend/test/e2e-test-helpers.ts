@@ -15,9 +15,11 @@ import { io, Socket } from 'socket.io-client';
 import { EntityTarget, Repository } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
+import { AuthSessionService } from '../src/auth/auth-session.service';
 import { GithubGuard } from '../src/auth/github.guard';
 import { JwtGuard } from '../src/auth/jwt.guard';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
+import { PlaywrightAuthController } from '../src/auth/playwright-auth.controller';
 import { User } from '../src/auth/user.interface';
 import { UserStore } from '../src/auth/user.store';
 import { WsJwtGuard } from '../src/auth/ws-jwt.guard';
@@ -81,6 +83,7 @@ export async function createTestApp(
 
   const controllers: Array<any> = [
     AuthController,
+    PlaywrightAuthController,
     PlayerController,
     PetController,
   ];
@@ -93,6 +96,7 @@ export async function createTestApp(
 
   const providers: Array<any> = [
     UserStore,
+    AuthSessionService,
     JwtStrategy,
     JwtGuard,
     GithubGuard,

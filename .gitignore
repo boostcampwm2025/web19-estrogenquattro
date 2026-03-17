@@ -10,6 +10,7 @@ AGENTS.md
 
 # Database
 backend/data/.DS_Store
+backend/data/*.playwright.sqlite
 
 # Playwright
 frontend/playwright/.auth/

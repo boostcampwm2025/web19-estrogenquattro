@@ -4,6 +4,7 @@ import {
   backendBaseUrl,
   e2eSecret,
   frontendBaseUrl,
+  playwrightDbPath,
 } from "./playwright/constants";
 
 function getPort(url: string): string {
@@ -44,7 +45,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `pnpm start:playwright -- --port ${backendPort}`,
+      command: `rm -f '${playwrightDbPath}' && pnpm start:playwright`,
       cwd: "../backend",
       url: `${backendBaseUrl}/health`,
       reuseExistingServer: false,
@@ -61,19 +62,21 @@ export default defineConfig({
         JWT_SECRET:
           process.env.JWT_SECRET ??
           "playwright-jwt-secret-key-must-be-at-least-32",
+        DB_PATH: playwrightDbPath,
         DB_SYNCHRONIZE: "true",
         PLAYWRIGHT_TEST_MODE: "true",
         PLAYWRIGHT_E2E_SECRET: e2eSecret,
       },
     },
     {
-      command: `pnpm exec next dev --webpack --port ${frontendPort}`,
+      command: "pnpm dev",
       cwd: ".",
       url: `${frontendBaseUrl}/login`,
       reuseExistingServer: false,
       timeout: 120_000,
       env: {
         ...process.env,
+        PORT: frontendPort,
         NEXT_PUBLIC_API_URL: backendBaseUrl,
         NEXT_PUBLIC_SOCKET_URL: backendBaseUrl,
       },

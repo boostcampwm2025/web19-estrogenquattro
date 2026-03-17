@@ -14,6 +14,7 @@ export const envValidationSchema = Joi.object({
   GITHUB_CALLBACK_URL: Joi.string().default(
     'http://localhost:8080/auth/github/callback',
   ),
+  DB_PATH: Joi.string().optional(),
   PLAYWRIGHT_TEST_MODE: Joi.string().valid('true', 'false').default('false'),
   PLAYWRIGHT_E2E_SECRET: Joi.string().when('PLAYWRIGHT_TEST_MODE', {
     is: 'true',

@@ -15,6 +15,9 @@ test("인증 상태에서 게임 캔버스와 소켓 연결이 안정적으로 �
 }) => {
   await page.goto("/");
 
+  await expect(page.locator("#channel-select-button")).toHaveText(/CH\.\d+/, {
+    timeout: 15_000,
+  });
   await expect(page.locator("#game-container canvas")).toBeVisible({
     timeout: 15_000,
   });
@@ -24,5 +27,6 @@ test("인증 상태에서 게임 캔버스와 소켓 연결이 안정적으로 �
   await expect(
     page.getByText(/Connection to server lost|서버와의 연결이 끊어졌습니다\./),
   ).toHaveCount(0);
+  await expect(page.locator("#channel-select-button")).toHaveText(/CH\.\d+/);
   await expect(page).not.toHaveURL(/\/login\/?$/);
 });
