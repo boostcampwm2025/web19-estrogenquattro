@@ -14,6 +14,26 @@ import {
   seedAuthenticatedPlayer,
 } from './e2e-test-helpers';
 
+type PointResponse = {
+  amount: number;
+};
+
+type PointRankResponse = {
+  playerId: number;
+  totalPoints: number;
+  rank: number;
+};
+
+type HistoryRankResponse = {
+  playerId: number;
+  count: number;
+  rank: number;
+};
+
+type GitHistoryResponse = {
+  description: string;
+};
+
 describe('Point/History API E2E', () => {
   let context: TestAppContext;
   let playerRepository: Repository<Player>;
@@ -85,10 +105,11 @@ describe('Point/History API E2E', () => {
       )
       .set('Cookie', viewer.cookie)
       .expect(200);
+    const body = response.body as PointResponse[];
 
     // Then
-    expect(response.body).toHaveLength(1);
-    expect(response.body[0].amount).toBe(10);
+    expect(body).toHaveLength(1);
+    expect(body[0].amount).toBe(10);
   });
 
   it('주간 랭킹과 활동 히스토리 랭킹을 반환한다', async () => {
@@ -166,14 +187,16 @@ describe('Point/History API E2E', () => {
       )
       .set('Cookie', viewer.cookie)
       .expect(200);
+    const pointRanksBody = pointRanks.body as PointRankResponse[];
+    const historyRanksBody = historyRanks.body as HistoryRankResponse[];
 
     // Then
-    expect(pointRanks.body[0]).toMatchObject({
+    expect(pointRanksBody[0]).toMatchObject({
       playerId: first.player.id,
       totalPoints: 20,
       rank: 1,
     });
-    expect(historyRanks.body[0]).toMatchObject({
+    expect(historyRanksBody[0]).toMatchObject({
       playerId: first.player.id,
       count: 2,
       rank: 1,
@@ -234,9 +257,10 @@ describe('Point/History API E2E', () => {
       )
       .set('Cookie', viewer.cookie)
       .expect(200);
+    const body = response.body as GitHistoryResponse[];
 
     // Then
-    expect(response.body).toHaveLength(1);
-    expect(response.body[0].description).toBe('in-range');
+    expect(body).toHaveLength(1);
+    expect(body[0].description).toBe('in-range');
   });
 });

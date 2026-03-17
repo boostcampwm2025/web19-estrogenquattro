@@ -10,6 +10,23 @@ import {
   seedAuthenticatedPlayer,
 } from './e2e-test-helpers';
 
+type GuestbookItemResponse = {
+  id: number;
+  content: string;
+  player: {
+    nickname: string;
+  };
+};
+
+type GuestbookPageResponse = {
+  items: GuestbookItemResponse[];
+  nextCursor: number | null;
+};
+
+type ErrorResponse = {
+  message: string | string[];
+};
+
 describe('Guestbook E2E', () => {
   let context: TestAppContext;
   let playerRepository: Repository<Player>;
@@ -46,10 +63,11 @@ describe('Guestbook E2E', () => {
       .set('Cookie', seeded.cookie)
       .send({ content: '  첫 방명록입니다  ' })
       .expect(201);
+    const createdBody = created.body as GuestbookItemResponse;
 
     // Then
-    expect(created.body.content).toBe('첫 방명록입니다');
-    expect(created.body.player.nickname).toBe('guestbook-writer');
+    expect(createdBody.content).toBe('첫 방명록입니다');
+    expect(createdBody.player.nickname).toBe('guestbook-writer');
 
     // When: 같은 날 재작성
     const duplicated = await request(getHttpServer())
@@ -57,9 +75,10 @@ describe('Guestbook E2E', () => {
       .set('Cookie', seeded.cookie)
       .send({ content: '두 번째 방명록' })
       .expect(400);
+    const duplicatedBody = duplicated.body as ErrorResponse;
 
     // Then
-    expect(String(duplicated.body.message)).toContain(
+    expect(String(duplicatedBody.message)).toContain(
       '방명록은 하루에 한 번만 작성할 수 있습니다',
     );
   });
@@ -106,23 +125,25 @@ describe('Guestbook E2E', () => {
       .get('/api/guestbooks?limit=2&order=DESC')
       .set('Cookie', viewer.cookie)
       .expect(200);
+    const firstPageBody = firstPage.body as GuestbookPageResponse;
 
     // Then
-    expect(firstPage.body.items).toHaveLength(2);
-    expect(firstPage.body.items[0].content).toBe('C');
-    expect(firstPage.body.items[1].content).toBe('B');
-    expect(firstPage.body.nextCursor).toBe(firstPage.body.items[1].id);
+    expect(firstPageBody.items).toHaveLength(2);
+    expect(firstPageBody.items[0].content).toBe('C');
+    expect(firstPageBody.items[1].content).toBe('B');
+    expect(firstPageBody.nextCursor).toBe(firstPageBody.items[1].id);
 
     // When: cursor 이후 ASC 조회
     const secondPage = await request(getHttpServer())
       .get(
-        `/api/guestbooks?limit=2&order=ASC&cursor=${firstPage.body.items[0].id}`,
+        `/api/guestbooks?limit=2&order=ASC&cursor=${firstPageBody.items[0].id}`,
       )
       .set('Cookie', viewer.cookie)
       .expect(200);
+    const secondPageBody = secondPage.body as GuestbookPageResponse;
 
     // Then
-    expect(Array.isArray(secondPage.body.items)).toBe(true);
+    expect(Array.isArray(secondPageBody.items)).toBe(true);
   });
 
   it('본인이 작성한 방명록만 삭제할 수 있다', async () => {
@@ -146,9 +167,10 @@ describe('Guestbook E2E', () => {
       .delete(`/api/guestbooks/${saved.id}`)
       .set('Cookie', other.cookie)
       .expect(403);
+    const forbiddenBody = forbidden.body as ErrorResponse;
 
     // Then
-    expect(String(forbidden.body.message)).toContain(
+    expect(String(forbiddenBody.message)).toContain(
       '본인이 작성한 방명록만 삭제할 수 있습니다',
     );
 

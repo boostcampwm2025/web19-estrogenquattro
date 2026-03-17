@@ -10,6 +10,18 @@ import {
   seedAuthenticatedPlayer,
 } from './e2e-test-helpers';
 
+type BugReportResponse = {
+  content: string;
+  diagnostics: string;
+  player: {
+    nickname: string;
+  };
+};
+
+type ErrorResponse = {
+  message: string | string[];
+};
+
 describe('BugReport E2E', () => {
   let context: TestAppContext;
   let playerRepository: Repository<Player>;
@@ -48,11 +60,12 @@ describe('BugReport E2E', () => {
       .field('content', '지도 전환 후 간헐적으로 캐릭터가 사라집니다')
       .field('diagnostics', '{"roomId":"room-1"}')
       .expect(201);
+    const body = response.body as BugReportResponse;
 
     // Then
-    expect(response.body.content).toContain('캐릭터가 사라집니다');
-    expect(response.body.diagnostics).toBe('{"roomId":"room-1"}');
-    expect(response.body.player.nickname).toBe('버그제보자');
+    expect(body.content).toContain('캐릭터가 사라집니다');
+    expect(body.diagnostics).toBe('{"roomId":"room-1"}');
+    expect(body.player.nickname).toBe('버그제보자');
     expect(await bugReportRepository.count()).toBe(1);
   });
 
@@ -69,9 +82,10 @@ describe('BugReport E2E', () => {
       .set('Cookie', seeded.cookie)
       .field('content', 'a'.repeat(501))
       .expect(400);
+    const body = response.body as ErrorResponse;
 
     // Then
-    expect(String(response.body.message)).toContain(
+    expect(String(body.message)).toContain(
       '제보 내용은 1~500자까지 작성 가능합니다',
     );
   });
