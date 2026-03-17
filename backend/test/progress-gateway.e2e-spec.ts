@@ -42,7 +42,7 @@ describe('ProgressGateway integration branches', () => {
           }
         : savedState,
     );
-    mockRepository.save.mockImplementation(async (state) => state);
+    mockRepository.save.mockImplementation((state) => Promise.resolve(state));
 
     module = await Test.createTestingModule({
       providers: [
@@ -101,7 +101,7 @@ describe('ProgressGateway integration branches', () => {
   it('초기화 중 조회가 실패해도 기본 상태를 유지한다', async () => {
     jest.clearAllMocks();
     mockRepository.findOne.mockRejectedValueOnce(new Error('init failed'));
-    mockRepository.save.mockImplementation(async (state) => state);
+    mockRepository.save.mockImplementation((state) => Promise.resolve(state));
 
     module = await Test.createTestingModule({
       providers: [
