@@ -9,7 +9,6 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
-  BadRequestException,
 } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -53,10 +52,7 @@ export class NoticeController {
   }
 
   @Get()
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.noticeService.findByPage(page, limit);
   }
 

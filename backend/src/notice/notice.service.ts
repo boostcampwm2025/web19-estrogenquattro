@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -18,10 +23,7 @@ export class NoticeService {
     private readonly noticeReadRepository: Repository<NoticeRead>,
   ) {}
 
-  async create(
-    authorId: number,
-    dto: CreateNotificationDto,
-  ): Promise<Notice> {
+  async create(authorId: number, dto: CreateNotificationDto): Promise<Notice> {
     const notification = this.notificationRepository.create({
       ...dto,
       author: { id: authorId } as unknown as Player,
@@ -32,7 +34,12 @@ export class NoticeService {
   async findByPage(
     pageStr?: string,
     limitStr?: string,
-  ): Promise<{ items: Notice[]; totalCount: number; currentPage: number; totalPages: number }> {
+  ): Promise<{
+    items: Notice[];
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+  }> {
     const page = pageStr !== undefined ? Number.parseInt(pageStr, 10) : 1;
     if (pageStr !== undefined && (Number.isNaN(page) || page < 1)) {
       throw new BadRequestException('page는 1 이상의 정수여야 합니다');
@@ -130,4 +137,3 @@ export class NoticeService {
     return latestNotice;
   }
 }
-

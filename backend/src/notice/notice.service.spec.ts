@@ -1,15 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository } from 'typeorm';
 import { NoticeService } from './notice.service';
 import { Notice } from './entities/notice.entity';
 import { NoticeRead } from './entities/notice-read.entity';
 
 describe('NoticeService', () => {
   let service: NoticeService;
-  let noticeRepository: Repository<Notice>;
-  let noticeReadRepository: Repository<NoticeRead>;
 
   const mockNoticeRepository = {
     create: jest.fn(),
@@ -42,8 +39,6 @@ describe('NoticeService', () => {
     }).compile();
 
     service = module.get<NoticeService>(NoticeService);
-    noticeRepository = module.get<Repository<Notice>>(getRepositoryToken(Notice));
-    noticeReadRepository = module.get<Repository<NoticeRead>>(getRepositoryToken(NoticeRead));
   });
 
   afterEach(() => {
@@ -58,7 +53,11 @@ describe('NoticeService', () => {
     it('should create and save a new notice', async () => {
       const dto = { title: 'Test Title', content: 'Test Content' };
       const authorId = 1;
-      const createdNotice = { id: 1, ...dto, author: { id: authorId } } as any;
+      const createdNotice = {
+        id: 1,
+        ...dto,
+        author: { id: authorId },
+      } as unknown as Notice;
 
       mockNoticeRepository.create.mockReturnValue(createdNotice);
       mockNoticeRepository.save.mockResolvedValue(createdNotice);
@@ -82,13 +81,17 @@ describe('NoticeService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[{ id: 2 }, { id: 1 }], 5]),
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([[{ id: 2 }, { id: 1 }], 5]),
       };
       mockNoticeRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findByPage(undefined, undefined);
 
-      expect(mockNoticeRepository.createQueryBuilder).toHaveBeenCalledWith('notice');
+      expect(mockNoticeRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'notice',
+      );
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       expect(result.items).toHaveLength(2);
@@ -120,14 +123,24 @@ describe('NoticeService', () => {
     });
 
     it('should throw BadRequestException for invalid page', async () => {
-      await expect(service.findByPage('0')).rejects.toThrow(BadRequestException);
-      await expect(service.findByPage('abc')).rejects.toThrow(BadRequestException);
+      await expect(service.findByPage('0')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.findByPage('abc')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException for invalid limit', async () => {
-      await expect(service.findByPage('1', '0')).rejects.toThrow(BadRequestException);
-      await expect(service.findByPage('1', '51')).rejects.toThrow(BadRequestException);
-      await expect(service.findByPage('1', 'xyz')).rejects.toThrow(BadRequestException);
+      await expect(service.findByPage('1', '0')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.findByPage('1', '51')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.findByPage('1', 'xyz')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -153,8 +166,11 @@ describe('NoticeService', () => {
   describe('markAsRead', () => {
     it('should save a read record if not exists', async () => {
       mockNoticeReadRepository.findOne.mockResolvedValue(null);
-      mockNoticeReadRepository.create.mockReturnValue({ notice: { id: 1 }, player: { id: 2 } });
-      
+      mockNoticeReadRepository.create.mockReturnValue({
+        notice: { id: 1 },
+        player: { id: 2 },
+      });
+
       await service.markAsRead(1, 2);
 
       expect(mockNoticeReadRepository.findOne).toHaveBeenCalledWith({
@@ -169,7 +185,7 @@ describe('NoticeService', () => {
 
     it('should not save if read record already exists', async () => {
       mockNoticeReadRepository.findOne.mockResolvedValue({ id: 1 });
-      
+
       await service.markAsRead(1, 2);
 
       expect(mockNoticeReadRepository.create).not.toHaveBeenCalled();

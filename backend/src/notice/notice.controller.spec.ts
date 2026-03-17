@@ -4,14 +4,11 @@ import { NoticeService } from './notice.service';
 import { NoticeGateway } from './notice.gateway';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { BadRequestException } from '@nestjs/common';
 import { JwtGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../admin/admin.guard';
 
 describe('NoticeController', () => {
   let controller: NoticeController;
-  let noticeService: NoticeService;
-  let noticeGateway: NoticeGateway;
 
   const mockNoticeService = {
     create: jest.fn(),
@@ -42,8 +39,6 @@ describe('NoticeController', () => {
       .compile();
 
     controller = module.get<NoticeController>(NoticeController);
-    noticeService = module.get<NoticeService>(NoticeService);
-    noticeGateway = module.get<NoticeGateway>(NoticeGateway);
   });
 
   afterEach(() => {
@@ -63,24 +58,39 @@ describe('NoticeController', () => {
       const result = await controller.create(1, dto);
 
       expect(mockNoticeService.create).toHaveBeenCalledWith(1, dto);
-      expect(mockNoticeGateway.broadcastNotice).toHaveBeenCalledWith(createdNotice);
+      expect(mockNoticeGateway.broadcastNotice).toHaveBeenCalledWith(
+        createdNotice,
+      );
       expect(result).toEqual(createdNotice);
     });
   });
 
   describe('findAll (findByPage)', () => {
     it('should call findByPage with undefined page and limit if undefined is passed', async () => {
-      const mockResult = { items: [], totalCount: 0, currentPage: 1, totalPages: 0 };
+      const mockResult = {
+        items: [],
+        totalCount: 0,
+        currentPage: 1,
+        totalPages: 0,
+      };
       mockNoticeService.findByPage.mockResolvedValue(mockResult);
 
       const result = await controller.findAll(undefined, undefined);
 
-      expect(mockNoticeService.findByPage).toHaveBeenCalledWith(undefined, undefined);
+      expect(mockNoticeService.findByPage).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(mockResult);
     });
 
     it('should call findByPage with string page and limit', async () => {
-      mockNoticeService.findByPage.mockResolvedValue({ items: [], totalCount: 0, currentPage: 1, totalPages: 0 });
+      mockNoticeService.findByPage.mockResolvedValue({
+        items: [],
+        totalCount: 0,
+        currentPage: 1,
+        totalPages: 0,
+      });
 
       await controller.findAll('2', '10');
 
