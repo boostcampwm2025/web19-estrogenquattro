@@ -149,6 +149,7 @@ jobs:
             --gate-output .artifacts/gate.json
 
       - name: Upsert PR comment
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: actions/github-script@v7
         with:
           script: |
