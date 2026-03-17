@@ -6,6 +6,7 @@ import { GithubGuard } from './github.guard';
 import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import type { UserInfo } from './user.interface';
+import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { getFrontendUrls } from '../config/frontend-urls';
 
 @Controller('auth')
@@ -15,6 +16,7 @@ export class AuthController {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
+    private authProfileSyncService: AuthProfileSyncService,
   ) {}
 
   @Get('github')
@@ -67,8 +69,11 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtGuard)
-  me(@Req() req: Request) {
-    const { githubId, username, avatarUrl, playerId } = req.user as User;
+  async me(@Req() req: Request) {
+    const syncedUser = await this.authProfileSyncService.syncCurrentUser(
+      req.user as User,
+    );
+    const { githubId, username, avatarUrl, playerId } = syncedUser;
     const userInfo: UserInfo = { githubId, username, avatarUrl, playerId };
     this.logger.log('GET /auth/me', {
       method: 'me',

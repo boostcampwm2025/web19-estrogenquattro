@@ -15,6 +15,7 @@ import { io, Socket } from 'socket.io-client';
 import { EntityTarget, Repository } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
+import { AuthProfileSyncService } from '../src/auth/auth-profile-sync.service';
 import { GithubGuard } from '../src/auth/github.guard';
 import { JwtGuard } from '../src/auth/jwt.guard';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
@@ -91,6 +92,7 @@ export async function createTestApp(
 
   const providers: Array<any> = [
     UserStore,
+    AuthProfileSyncService,
     JwtStrategy,
     JwtGuard,
     GithubGuard,

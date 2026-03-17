@@ -8,6 +8,7 @@ import { GithubStrategy } from './github.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
+import { AuthProfileSyncService } from './auth-profile-sync.service';
 
 @Module({
   imports: [
@@ -22,7 +23,13 @@ import { AuthController } from './auth.controller';
     forwardRef(() => PlayerModule),
   ],
   controllers: [AuthController],
-  providers: [UserStore, GithubStrategy, JwtStrategy, WsJwtGuard],
+  providers: [
+    UserStore,
+    GithubStrategy,
+    JwtStrategy,
+    WsJwtGuard,
+    AuthProfileSyncService,
+  ],
   exports: [UserStore, JwtModule, WsJwtGuard],
 })
 export class AuthModule {}
