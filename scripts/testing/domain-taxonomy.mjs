@@ -90,19 +90,26 @@ export function toRepoRelativePath(filePath, repoRoot = process.cwd()) {
 function humanizeToken(token) {
   return token
     .replace(/\.[^.]+$/, "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[-_.]/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function deriveFileFeatureLabel(relativePath) {
+  const pathLower = toPosix(relativePath).toLowerCase();
   const filename = path.basename(relativePath);
-  if (filename.includes("socket-manager")) return "소켓 매니저";
-  if (filename.includes("socket")) return "소켓";
-  if (filename.includes("store")) return "스토어";
-  if (filename.endsWith(".controller.ts")) return "컨트롤러";
-  if (filename.endsWith(".gateway.ts")) return "게이트웨이";
-  if (filename.endsWith(".service.ts")) return "서비스";
-  if (filename.includes("api")) return "API";
+  const filenameLower = filename.toLowerCase();
+
+  if (pathLower.includes("/game/managers/socketmanager.ts")) return "소켓 매니저";
+  if (filenameLower.includes("socket-manager")) return "소켓 매니저";
+  if (pathLower.includes("/lib/socket.ts") || filenameLower.includes("socket")) {
+    return "소켓";
+  }
+  if (pathLower.includes("/stores/") || filenameLower.includes("store")) return "스토어";
+  if (pathLower.includes("/lib/api/") || pathLower.includes("/api/")) return "API";
+  if (filenameLower.endsWith(".controller.ts")) return "컨트롤러";
+  if (filenameLower.endsWith(".gateway.ts")) return "게이트웨이";
+  if (filenameLower.endsWith(".service.ts")) return "서비스";
   return humanizeToken(filename.replace(/\.tsx?$/, ""));
 }
 

@@ -1,5 +1,9 @@
 name: Integration Coverage PR
 
+concurrency:
+  group: integration-coverage-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     paths:
@@ -135,7 +139,7 @@ jobs:
 
       - name: Collect changed files
         run: |
-          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" > .artifacts/changed-files.txt
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > .artifacts/changed-files.txt
 
       - name: Render integration comment
         run: |
