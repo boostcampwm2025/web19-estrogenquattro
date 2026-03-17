@@ -44,13 +44,14 @@ export function useMarkGuestbookAsRead() {
       const previousState = queryClient.getQueryData<GuestbookReadStateRes>(
         queryKeys.guestbook.readState(),
       );
+      const latestEntryId = previousState?.latestEntryId ?? null;
 
-      if (previousState?.latestEntryId !== null) {
+      if (latestEntryId !== null) {
         queryClient.setQueryData<GuestbookReadStateRes>(
           queryKeys.guestbook.readState(),
           {
-            latestEntryId: previousState.latestEntryId,
-            lastReadEntryId: previousState.latestEntryId,
+            latestEntryId,
+            lastReadEntryId: latestEntryId,
             hasUnread: false,
           },
         );
