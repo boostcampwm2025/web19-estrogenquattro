@@ -26,7 +26,7 @@ import { DatabaseModule } from './database/database.module';
 import { GuestbookModule } from './guestbook/guestbook.module';
 import { BugReportModule } from './bugreport/bug-report.module';
 import { AdminModule } from './admin/admin.module';
-import { NotificationModule } from './notification/notice.module';
+import { NotificationModule } from './notice/notice.module';
 
 @Module({
   imports: [
