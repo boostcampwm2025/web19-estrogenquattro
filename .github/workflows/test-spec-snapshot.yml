@@ -43,7 +43,7 @@ jobs:
       - name: Collect changed files
         run: |
           mkdir -p .reports
-          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" > .reports/changed-files.txt
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > .reports/changed-files.txt
 
       - name: Run frontend unit coverage report
         id: frontend_tests
@@ -122,9 +122,22 @@ jobs:
           }
 
           if (summary.changedFilesCoverage.belowThreshold) {
-            failures.push(
-              `변경 파일 커버리지가 ${summary.threshold}% 미만입니다. (${summary.changedFilesCoverage.pct.toFixed(1)}%)`,
-            );
+            if (summary.changedFilesCoverage.missingCoverage) {
+              const missingFiles = summary.changedFilesCoverage.missingFiles
+                .slice(0, 5)
+                .join(", ");
+              const suffix =
+                summary.changedFilesCoverage.missingFiles.length > 5
+                  ? " ..."
+                  : "";
+              failures.push(
+                `변경 파일 중 커버리지 결과가 없는 파일이 있습니다. (${missingFiles}${suffix})`,
+              );
+            } else {
+              failures.push(
+                `변경 파일 커버리지가 ${summary.threshold}% 미만입니다. (${summary.changedFilesCoverage.pct.toFixed(1)}%)`,
+              );
+            }
           }
 
           if (failures.length > 0) {

@@ -411,10 +411,12 @@ function aggregateChangedFilesCoverage(changedFiles, coverageEntries) {
   let covered = 0;
   let total = 0;
   let matchedFiles = 0;
+  const missingFiles = [];
 
   for (const filePath of relevantFiles) {
     const entry = coverageByFile.get(normalizePath(filePath));
     if (!entry) {
+      missingFiles.push(filePath);
       continue;
     }
     covered += entry.covered;
@@ -423,8 +425,9 @@ function aggregateChangedFilesCoverage(changedFiles, coverageEntries) {
   }
 
   return {
-    hasRelevantFiles: relevantFiles.length > 0 && matchedFiles > 0,
+    hasRelevantFiles: relevantFiles.length > 0,
     matchedFiles,
+    missingFiles,
     covered,
     total,
     pct: total === 0 ? null : (covered / total) * 100,
@@ -539,13 +542,23 @@ function renderTestStatus(platformReports) {
 }
 
 function renderCoverageSummary(frontendReport, backendReport, changedFilesCoverage, threshold) {
-  const changedCoverageValue = changedFilesCoverage.hasRelevantFiles
-    ? formatPct(changedFilesCoverage.pct)
-    : "대상 없음";
+  let changedCoverageValue = "대상 없음";
 
-  const changedCoverageStatus = changedFilesCoverage.hasRelevantFiles
-    ? formatStatus(changedFilesCoverage.pct, threshold)
-    : "ℹ️ 대상 없음";
+  if (changedFilesCoverage.hasRelevantFiles) {
+    changedCoverageValue =
+      changedFilesCoverage.missingFiles.length > 0
+        ? "미측정 파일 포함"
+        : formatPct(changedFilesCoverage.pct);
+  }
+
+  let changedCoverageStatus = "ℹ️ 대상 없음";
+
+  if (changedFilesCoverage.hasRelevantFiles) {
+    changedCoverageStatus =
+      changedFilesCoverage.missingFiles.length > 0
+        ? `🚨 **미측정 파일 ${changedFilesCoverage.missingFiles.length}개**`
+        : formatStatus(changedFilesCoverage.pct, threshold);
+  }
 
   return [
     "### 전체 커버리지 요약",
@@ -582,6 +595,24 @@ function renderCoverageAlerts(groups, threshold) {
       `- \`${group.platformLabel} / ${group.domain} / ${group.feature}\` — \`${formatPct(group.coveragePct)}\``,
     );
   }
+  lines.push("");
+  return lines;
+}
+
+function renderChangedFileAlerts(changedFilesCoverage) {
+  const lines = [];
+
+  if (changedFilesCoverage.missingFiles.length === 0) {
+    return lines;
+  }
+
+  lines.push("### 변경 파일 측정 경고", "");
+  lines.push("🚨 **커버리지 결과가 없는 변경 파일**");
+
+  for (const filePath of changedFilesCoverage.missingFiles) {
+    lines.push(`- \`${filePath}\``);
+  }
+
   lines.push("");
   return lines;
 }
@@ -698,6 +729,7 @@ const markdownLines = [
     changedFilesCoverage,
     threshold,
   ),
+  ...renderChangedFileAlerts(changedFilesCoverage),
   ...renderCoverageAlerts(snapshotGroups, threshold),
   ...renderSpecSnapshot(snapshotGroups, threshold),
   "<sub>이 스냅샷은 이번 PR에서 통과한 테스트만 기준으로 생성됩니다. 실패하거나 skip된 테스트는 제외됩니다.</sub>",
@@ -721,11 +753,14 @@ const summary = {
   changedFilesCoverage: {
     hasRelevantFiles: changedFilesCoverage.hasRelevantFiles,
     matchedFiles: changedFilesCoverage.matchedFiles,
+    missingFiles: changedFilesCoverage.missingFiles,
+    missingCoverage: changedFilesCoverage.missingFiles.length > 0,
     pct: changedFilesCoverage.pct,
     belowThreshold:
-      changedFilesCoverage.hasRelevantFiles &&
-      changedFilesCoverage.pct !== null &&
-      changedFilesCoverage.pct < threshold,
+      (changedFilesCoverage.hasRelevantFiles &&
+        changedFilesCoverage.pct !== null &&
+        changedFilesCoverage.pct < threshold) ||
+      changedFilesCoverage.missingFiles.length > 0,
   },
   warningGroups: snapshotGroups
     .filter((group) => group.coveragePct !== null && group.coveragePct < threshold)
