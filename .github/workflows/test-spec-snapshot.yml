@@ -43,7 +43,7 @@ jobs:
       - name: Collect changed files
         run: |
           mkdir -p .reports
-          git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > .reports/changed-files.txt
+          git diff --name-only --diff-filter=ACMRT "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > .reports/changed-files.txt
 
       - name: Run frontend unit coverage report
         id: frontend_tests
