@@ -6,6 +6,7 @@ export const MODAL_TYPES = {
   CHANNEL_SELECT: "channelSelect",
   BUG_REPORT: "bugReport",
   GUESTBOOK: "guestbook",
+  NOTICE: "notice",
 } as const;
 
 export type ModalType = (typeof MODAL_TYPES)[keyof typeof MODAL_TYPES] | null;
