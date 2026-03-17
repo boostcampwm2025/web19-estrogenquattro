@@ -102,17 +102,27 @@ body:
       required: true
 
   - type: textarea
-    id: test_scenarios
+    id: completion_tests
     attributes:
-      label: 테스트 시나리오
-      description: 재현 검증과 회귀 검증을 분리해서 적어주세요.
+      label: 완수 테스트
+      description: 이 버그가 해결됐다고 판단할 핵심 검증 시나리오를 적어주세요.
       placeholder: |
-        재현 검증:
-        - [ ] 기존 재현 절차로 더 이상 발생하지 않음
+        예)
+        - [ ] 기존 재현 절차로 더 이상 문제가 발생하지 않음
+        - [ ] 기대 동작이 실제 결과와 일치함
+        - [ ] 수정 후 로그/응답/화면 상태가 정상임
+    validations:
+      required: true
 
-        회귀 검증:
-        - [ ] 정상 시나리오가 깨지지 않음
-        - [ ] 인접 기능 영향 없음
-        - [ ] 자동화 테스트 추가/수정 완료
+  - type: textarea
+    id: regression_tests
+    attributes:
+      label: 회귀 테스트
+      description: 수정 과정에서 주변 기능이 깨지지 않았음을 어떻게 확인할지 적어주세요.
+      placeholder: |
+        예)
+        - [ ] 정상 시나리오가 계속 동작함
+        - [ ] 인접 기능 영향이 없음
+        - [ ] 자동화 테스트를 추가/보강함
     validations:
       required: true

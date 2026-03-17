@@ -62,18 +62,28 @@ body:
       required: true
 
   - type: textarea
-    id: test_scenarios
+    id: completion_tests
     attributes:
-      label: 테스트 시나리오
-      description: 자동화 테스트와 수동 테스트를 분리해서 적어주세요.
+      label: 완수 테스트
+      description: 이 작업이 끝났다고 판단할 핵심 검증 시나리오를 적어주세요.
       placeholder: |
-        자동화 테스트:
-        - [ ] 단위 테스트:
-        - [ ] 통합/E2E 테스트:
+        예)
+        - [ ] 기능의 핵심 사용자 흐름이 정상 동작한다
+        - [ ] API/소켓/화면 결과가 요구사항과 일치한다
+        - [ ] 자동화 테스트 또는 수동 검증 결과가 남는다
+    validations:
+      required: true
 
-        수동 테스트:
-        - [ ] 시나리오 1
-        - [ ] 시나리오 2
+  - type: textarea
+    id: regression_tests
+    attributes:
+      label: 회귀 테스트
+      description: 이번 변경으로 기존 기능이 깨지지 않았음을 어떻게 확인할지 적어주세요.
+      placeholder: |
+        예)
+        - [ ] 인접 기능의 기존 시나리오가 그대로 동작한다
+        - [ ] 실패 케이스/경계값 테스트를 보강한다
+        - [ ] 기존 테스트 스위트가 계속 통과한다
     validations:
       required: true
 
