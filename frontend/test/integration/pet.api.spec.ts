@@ -40,7 +40,7 @@ describe("Pet API 통합", () => {
     seedAllPets([stage1, stage2]);
     seedPlayer(buildPlayerEntity({ id: TEST_PLAYER_ID, totalPoint: 500 }));
     seedInventory(TEST_PLAYER_ID, [
-      buildUserPetEntity({ id: 10, pet: stage1, exp: 20 }),
+      buildUserPetEntity({ id: 10, pet: stage1, exp: 10 }),
     ]);
     seedCodex(TEST_PLAYER_ID, [1]);
   });
@@ -67,7 +67,7 @@ describe("Pet API 통합", () => {
     const fed = await petApi.feed(10);
     const evolved = await petApi.evolve(10);
 
-    expect(fed.exp).toBeGreaterThanOrEqual(10);
+    expect(fed.exp).toBeGreaterThan(10);
     expect(evolved.pet.evolutionStage).toBe(2);
   });
 });

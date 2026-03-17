@@ -131,20 +131,28 @@ export async function createTestApp(
     },
   ];
 
+  const pushProviderOnce = (...tokens: Array<any>) => {
+    for (const token of tokens) {
+      if (!providers.includes(token)) {
+        providers.push(token);
+      }
+    }
+  };
+
   if (options.includeTaskController || options.includePointHistoryController) {
-    providers.push(TaskService);
+    pushProviderOnce(TaskService);
   }
   if (options.includePointHistoryController) {
-    providers.push(PointHistoryService);
+    pushProviderOnce(PointHistoryService);
   }
   if (options.includePointController) {
-    providers.push(PointHistoryService, PointService, TaskService);
+    pushProviderOnce(PointHistoryService, PointService, TaskService);
   }
   if (options.includeGuestbookController) {
-    providers.push(GuestbookService);
+    pushProviderOnce(GuestbookService);
   }
   if (options.includeBugReportController) {
-    providers.push(BugReportService);
+    pushProviderOnce(BugReportService);
   }
 
   const builder: TestingModuleBuilder = Test.createTestingModule({

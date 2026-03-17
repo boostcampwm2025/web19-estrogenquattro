@@ -102,7 +102,7 @@ describe('Guestbook E2E', () => {
       username: 'writer-c',
     });
 
-    await guestbookRepository.save([
+    const savedGuestbooks = await guestbookRepository.save([
       {
         content: 'A',
         writeDate: '2026-03-17',
@@ -136,14 +136,17 @@ describe('Guestbook E2E', () => {
     // When: cursor 이후 ASC 조회
     const secondPage = await request(getHttpServer())
       .get(
-        `/api/guestbooks?limit=2&order=ASC&cursor=${firstPageBody.items[0].id}`,
+        `/api/guestbooks?limit=2&order=ASC&cursor=${savedGuestbooks[0].id}`,
       )
       .set('Cookie', viewer.cookie)
       .expect(200);
     const secondPageBody = secondPage.body as GuestbookPageResponse;
 
     // Then
-    expect(Array.isArray(secondPageBody.items)).toBe(true);
+    expect(secondPageBody.items).toHaveLength(2);
+    expect(secondPageBody.items.map((item) => item.content)).toEqual(['B', 'C']);
+    expect(secondPageBody.items[0].id).toBeLessThan(secondPageBody.items[1].id);
+    expect(secondPageBody.nextCursor).toBeNull();
   });
 
   it('본인이 작성한 방명록만 삭제할 수 있다', async () => {
