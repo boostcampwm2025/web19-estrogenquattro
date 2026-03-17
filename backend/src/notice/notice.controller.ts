@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -18,7 +20,7 @@ import { NoticeService } from './notice.service';
 import { NoticeGateway } from './notice.gateway';
 
 @Controller('api/notices')
-@UseGuards(JwtGuard, AdminGuard)
+@UseGuards(JwtGuard)
 export class NoticeController {
   constructor(
     private readonly noticeService: NoticeService,
@@ -26,6 +28,7 @@ export class NoticeController {
   ) {}
 
   @Post()
+  @UseGuards(AdminGuard)
   async create(
     @PlayerId() authorId: number,
     @Body() dto: CreateNotificationDto,
@@ -35,26 +38,45 @@ export class NoticeController {
     return notice;
   }
 
+  @Get('new')
+  async checkNewNotice(@PlayerId() playerId: number) {
+    const notice = await this.noticeService.getLatestUnreadNotice(playerId);
+    return notice ? notice : {};
+  }
+
+  @Post(':id/marking')
+  markAsRead(
+    @Param('id', ParseIntPipe) noticeId: number,
+    @PlayerId() playerId: number,
+  ) {
+    return this.noticeService.markAsRead(noticeId, playerId);
+  }
+
   @Get()
-  findAll() {
-    return this.noticeService.findAll();
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.noticeService.findByPage(page, limit);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.noticeService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) noticeId: number) {
+    return this.noticeService.findOne(noticeId);
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) noticeId: number,
     @Body() dto: UpdateNotificationDto,
   ) {
-    return this.noticeService.update(id, dto);
+    return this.noticeService.update(noticeId, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.noticeService.remove(id);
+  @UseGuards(AdminGuard)
+  remove(@Param('id', ParseIntPipe) noticeId: number) {
+    return this.noticeService.remove(noticeId);
   }
 }
