@@ -74,7 +74,9 @@ describe("simple stores", () => {
     expect(useConnectionStore.getState().isDisconnected).toBe(true);
     expect(useRoomStore.getState().roomId).toBe("room-1");
     expect(useRoomStore.getState().pendingRoomId).toBe("room-2");
-    expect(useContributionStore.getState().contributions).toEqual({ alice: 10 });
+    expect(useContributionStore.getState().contributions).toEqual({
+      alice: 10,
+    });
 
     useContributionStore.getState().reset();
     expect(useContributionStore.getState().contributions).toEqual({});

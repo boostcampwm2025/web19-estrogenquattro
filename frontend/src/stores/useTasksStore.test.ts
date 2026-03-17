@@ -94,7 +94,11 @@ describe("useTasksStore local actions", () => {
     await useTasksStore.getState().fetchTasks();
     expect(apiMocks.getTasks).not.toHaveBeenCalled();
 
-    useAuthStore.setState({ isLoading: false, user: null, isAuthenticated: false });
+    useAuthStore.setState({
+      isLoading: false,
+      user: null,
+      isAuthenticated: false,
+    });
     await useTasksStore.getState().fetchTasks();
 
     expect(useTasksStore.getState().tasks).toEqual([]);
@@ -121,7 +125,9 @@ describe("useTasksStore local actions", () => {
     });
 
     expect(
-      useTasksStore.getState().getTaskDisplayTime(useTasksStore.getState().tasks[0]),
+      useTasksStore
+        .getState()
+        .getTaskDisplayTime(useTasksStore.getState().tasks[0]),
     ).toBe(34);
 
     useTasksStore.getState().toggleTaskTimer(2);
@@ -181,9 +187,12 @@ describe("useTasksStore local actions", () => {
     await useTasksStore.getState().editTask(11, "수정된 작업");
 
     expect(apiMocks.updateTask).toHaveBeenCalledWith(11, "수정된 작업");
-    expect(socketMocks.socket.emit).toHaveBeenCalledWith("focus_task_updating", {
-      taskName: "수정된 작업",
-    });
+    expect(socketMocks.socket.emit).toHaveBeenCalledWith(
+      "focus_task_updating",
+      {
+        taskName: "수정된 작업",
+      },
+    );
     expect(useTasksStore.getState().tasks[0].description).toBe("수정된 작업");
   });
 });

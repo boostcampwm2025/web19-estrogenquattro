@@ -33,9 +33,7 @@ export default defineConfig({
       "test/integration/focustime-store.spec.ts",
       "test/integration/socket-manager.spec.ts",
     ],
-    environmentMatchGlobs: [
-      ["src/**/*.test.{ts,tsx}", "jsdom"],
-    ],
+    environmentMatchGlobs: [["src/**/*.test.{ts,tsx}", "jsdom"]],
     coverage: {
       reporter: ["json-summary", "lcov", "text-summary"],
       reportsDirectory: "./coverage",
