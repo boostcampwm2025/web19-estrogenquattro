@@ -12,6 +12,10 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage --coverage.reporter=html",
+    "test:unit": "vitest run --config vitest.unit.config.mts",
+    "test:unit:watch": "vitest --config vitest.unit.config.mts --watch",
+    "test:unit:coverage": "vitest run --config vitest.unit.config.mts --coverage",
+    "test:unit:report": "mkdir -p test-results && vitest run --config vitest.unit.config.mts --coverage --reporter=json --outputFile=test-results/unit-tests.json",
     "generate-silhouettes": "tsx scripts/generate-silhouettes.ts"
   },
   "dependencies": {
