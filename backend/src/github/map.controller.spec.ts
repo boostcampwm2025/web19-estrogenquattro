@@ -76,13 +76,14 @@ describe('MapController', () => {
 
   describe('getMap', () => {
     it('sendFile 호출 시 dotfiles allow 옵션을 사용한다', () => {
+      const sendFile = jest.fn();
       const res = {
-        sendFile: jest.fn(),
+        sendFile,
       } as unknown as Response;
 
       controller.getMap(0, res);
 
-      expect(res.sendFile).toHaveBeenCalledWith(
+      expect(sendFile).toHaveBeenCalledWith(
         expect.stringContaining('stage1.webp'),
         expect.objectContaining({ dotfiles: 'allow' }),
       );
