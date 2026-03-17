@@ -9,6 +9,7 @@ export class NoticeGateway {
 
   broadcastNotice(notice: Notice) {
     this.server.emit('noticed', {
+      noticeId: notice.id,
       title: notice.title,
       content: notice.content,
       createdAt: notice.createdAt,
