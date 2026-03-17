@@ -10,6 +10,7 @@ import {
   type NoticeItem,
 } from "@/lib/api/notification";
 import MarkdownRenderer from "@/app/_components/MarkdownRenderer";
+import { useTranslation } from "react-i18next";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -21,6 +22,8 @@ export default function NoticeModal() {
       closeModal: state.closeModal,
     })),
   );
+  
+  const { t } = useTranslation("ui");
 
   const isOpen = activeModal === MODAL_TYPES.NOTICE;
 
@@ -105,12 +108,12 @@ export default function NoticeModal() {
                   id="notice-modal-title"
                   className="text-xl font-extrabold tracking-wider text-amber-900"
                 >
-                  공지사항
+                  {t(($) => $.notice.title)}
                 </h2>
               </div>
               <button
                 onClick={handleClose}
-                aria-label="닫기"
+                aria-label={t(($) => $.notice.closeModal)}
                 className={`flex h-8 w-8 cursor-pointer items-center justify-center ${PIXEL_BORDER} bg-red-400 leading-none font-bold text-white shadow-[2px_2px_0px_0px_rgba(30,30,30,0.3)] hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
               >
                 X
@@ -130,7 +133,7 @@ export default function NoticeModal() {
                   </div>
                 ) : notices.length === 0 ? (
                   <div className="flex min-h-16 items-center justify-center text-sm text-amber-700">
-                    등록된 공지사항이 없습니다.
+                    {t(($) => $.notice.empty)}
                   </div>
                 ) : (
                   notices.map((notice) => (
@@ -174,7 +177,7 @@ export default function NoticeModal() {
                 <button
                   type="button"
                   onClick={scrollToTop}
-                  aria-label="맨 위로 스크롤"
+                  aria-label={t(($) => $.notice.scrollToTop)}
                   className="absolute top-5 right-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-amber-900 bg-amber-200 text-amber-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.35)] transition-all hover:bg-amber-300 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.35)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                 >
                   <ArrowUp className="h-[18px] w-[18px]" />

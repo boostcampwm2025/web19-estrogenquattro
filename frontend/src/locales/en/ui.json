@@ -313,5 +313,12 @@
     "fileSizeLimit": "Max 5MB per image",
     "fileSizeError": "Images larger than 5MB cannot be attached.",
     "errorToast": "Submission failed. Please try again."
+  },
+  "notice": {
+    "title": "Notice",
+    "closeModal": "Close",
+    "empty": "No registered notices.",
+    "button": "Notice",
+    "scrollToTop": "Scroll to top"
   }
 }
