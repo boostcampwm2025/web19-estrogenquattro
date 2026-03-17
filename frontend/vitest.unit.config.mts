@@ -26,7 +26,13 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["./test/setup.ts", "./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}", "test/unit/**/*.spec.ts"],
+    include: [
+      "src/**/*.test.{ts,tsx}",
+      "test/unit/**/*.spec.ts",
+      "test/integration/tasks.api.spec.ts",
+      "test/integration/focustime-store.spec.ts",
+      "test/integration/socket-manager.spec.ts",
+    ],
     environmentMatchGlobs: [
       ["src/**/*.test.{ts,tsx}", "jsdom"],
     ],

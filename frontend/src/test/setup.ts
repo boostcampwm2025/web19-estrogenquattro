@@ -37,13 +37,28 @@ function createStorageMock() {
   };
 }
 
-const storage =
-  typeof window !== "undefined" &&
-  typeof window.localStorage?.getItem === "function" &&
-  typeof window.localStorage?.setItem === "function" &&
-  typeof window.localStorage?.clear === "function"
-    ? window.localStorage
-    : createStorageMock();
+function resolveStorage() {
+  if (typeof window === "undefined") {
+    return createStorageMock();
+  }
+
+  try {
+    const candidate = window.localStorage;
+    if (
+      typeof candidate?.getItem === "function" &&
+      typeof candidate?.setItem === "function" &&
+      typeof candidate?.clear === "function"
+    ) {
+      return candidate;
+    }
+  } catch {
+    return createStorageMock();
+  }
+
+  return createStorageMock();
+}
+
+const storage = resolveStorage();
 
 Object.defineProperty(globalThis, "localStorage", {
   configurable: true,

@@ -242,6 +242,10 @@ function isCoverageTargetFile(filePath) {
     return false;
   }
 
+  if (/^backend\/src\/test\//.test(filePath)) {
+    return false;
+  }
+
   if (isFrontendUnitTestFile(filePath) || isBackendUnitTestFile(filePath)) {
     return false;
   }
@@ -489,21 +493,41 @@ function formatPct(value) {
   return `${value.toFixed(1)}%`;
 }
 
-function formatStatus(pct, threshold) {
+function formatThresholdLabel(threshold) {
+  return `${threshold}%`;
+}
+
+function getCoverageState(pct, threshold) {
   if (pct === null || Number.isNaN(pct)) {
+    return "unknown";
+  }
+
+  if (pct < threshold) {
+    return "warning";
+  }
+
+  return "pass";
+}
+
+function formatStatus(pct, threshold) {
+  const coverageState = getCoverageState(pct, threshold);
+
+  if (coverageState === "unknown") {
     return "⚠️ 측정 실패";
   }
-  if (pct < threshold) {
-    return "🚨 **80% 미만**";
+
+  if (coverageState === "warning") {
+    return `🚨 **${formatThresholdLabel(threshold)} 미만**`;
   }
+
   return "✅ 통과";
 }
 
 function sortGroups(groups, threshold) {
   return [...groups].sort((left, right) => {
-    const leftWarning = left.coveragePct !== null && left.coveragePct < threshold ? 0 : 1;
+    const leftWarning = getCoverageState(left.coveragePct, threshold) === "pass" ? 1 : 0;
     const rightWarning =
-      right.coveragePct !== null && right.coveragePct < threshold ? 0 : 1;
+      getCoverageState(right.coveragePct, threshold) === "pass" ? 1 : 0;
 
     return (
       leftWarning - rightWarning ||
@@ -574,7 +598,7 @@ function renderCoverageSummary(frontendReport, backendReport, changedFilesCovera
 
 function renderCoverageAlerts(groups, threshold) {
   const warningGroups = groups.filter(
-    (group) => group.coveragePct !== null && group.coveragePct < threshold,
+    (group) => getCoverageState(group.coveragePct, threshold) !== "pass",
   );
 
   const lines = ["### 커버리지 경고", ""];
@@ -585,11 +609,14 @@ function renderCoverageAlerts(groups, threshold) {
   }
 
   if (warningGroups.length === 0) {
-    lines.push("✅ 모든 도메인이 `80% 이상`입니다.", "");
+    lines.push(
+      `✅ 모든 도메인이 \`${formatThresholdLabel(threshold)} 이상\`입니다.`,
+      "",
+    );
     return lines;
   }
 
-  lines.push("🚨 **80% 미만 도메인/기능**");
+  lines.push(`🚨 **${formatThresholdLabel(threshold)} 미만/측정 실패 도메인·기능**`);
   for (const group of warningGroups) {
     lines.push(
       `- \`${group.platformLabel} / ${group.domain} / ${group.feature}\` — \`${formatPct(group.coveragePct)}\``,
@@ -618,11 +645,14 @@ function renderChangedFileAlerts(changedFilesCoverage) {
 }
 
 function renderGroup(group, threshold) {
-  const isWarning = group.coveragePct !== null && group.coveragePct < threshold;
-  const openTag = isWarning ? " open" : "";
-  const status = isWarning
-    ? "🚨 <strong>경고: 80% 미만</strong>"
-    : "✅ 통과";
+  const coverageState = getCoverageState(group.coveragePct, threshold);
+  const openTag = coverageState === "pass" ? "" : " open";
+  const status =
+    coverageState === "unknown"
+      ? "⚠️ <strong>측정 실패</strong>"
+      : coverageState === "warning"
+        ? `🚨 <strong>경고: ${formatThresholdLabel(threshold)} 미만</strong>`
+        : "✅ 통과";
   const lines = [
     `<details${openTag}>`,
     `<summary><strong>${group.domain} / ${group.feature}</strong> — <code>${formatPct(group.coveragePct)}</code> — ${status}</summary>`,
