@@ -37,9 +37,13 @@ describe('Auth Flow E2E', () => {
   });
 
   beforeEach(async () => {
-    getAuthenticatedMock = jest.fn().mockRejectedValue(new Error('not configured'));
+    getAuthenticatedMock = jest
+      .fn()
+      .mockRejectedValue(new Error('not configured'));
     (
-      Octokit as typeof Octokit & { getAuthenticatedMock: typeof getAuthenticatedMock }
+      Octokit as typeof Octokit & {
+        getAuthenticatedMock: typeof getAuthenticatedMock;
+      }
     ).getAuthenticatedMock = getAuthenticatedMock;
 
     await playerRepository.clear();

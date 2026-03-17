@@ -36,11 +36,14 @@ export class AuthProfileSyncService {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn('Failed to sync latest GitHub profile, using cached user', {
-        method: 'syncCurrentUser',
-        githubId: user.githubId,
-        error: message,
-      });
+      this.logger.warn(
+        'Failed to sync latest GitHub profile, using cached user',
+        {
+          method: 'syncCurrentUser',
+          githubId: user.githubId,
+          error: message,
+        },
+      );
       return user;
     }
   }
