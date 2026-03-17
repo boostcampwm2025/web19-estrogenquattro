@@ -52,19 +52,27 @@ const FRONTEND_DOMAINS = [
 
 const BACKEND_TEST_DOMAINS = [
   [/backend\/test\/auth-flow\.e2e-spec\.ts$/, { key: "auth", label: "인증" }],
+  [/backend\/test\/bug-report\.e2e-spec\.ts$/, { key: "bugreport", label: "버그 리포트" }],
   [/backend\/test\/session-replacement\.e2e-spec\.ts$/, { key: "auth", label: "인증" }],
   [/backend\/test\/chat\.e2e-spec\.ts$/, { key: "chat", label: "채팅" }],
   [/backend\/test\/focustime\.e2e-spec\.ts$/, { key: "focus", label: "집중" }],
+  [/backend\/test\/guestbook\.e2e-spec\.ts$/, { key: "guestbook", label: "게스트북" }],
   [/backend\/test\/movement-sync\.e2e-spec\.ts$/, { key: "room-player", label: "방/플레이어" }],
   [/backend\/test\/onboarding\.e2e-spec\.ts$/, { key: "room-player", label: "방/플레이어" }],
   [/backend\/test\/pet-system\.e2e-spec\.ts$/, { key: "pet", label: "펫" }],
+  [/backend\/test\/point-history\.e2e-spec\.ts$/, { key: "point-history", label: "포인트/기록" }],
   [/backend\/test\/progress-season\.e2e-spec\.ts$/, { key: "github", label: "깃허브 활동" }],
   [/backend\/test\/task\.e2e-spec\.ts$/, { key: "task", label: "태스크" }],
 ];
 
 const FRONTEND_TEST_DOMAINS = [
+  [/frontend\/test\/integration\/auth-store\.spec\.ts$/, { key: "auth", label: "인증" }],
   [/frontend\/test\/integration\/focus\.socket\.spec\.ts$/, { key: "focus", label: "집중" }],
   [/frontend\/test\/integration\/focustime-store\.spec\.ts$/, { key: "focus", label: "집중" }],
+  [/frontend\/test\/integration\/guestbook\.api\.spec\.ts$/, { key: "guestbook", label: "게스트북" }],
+  [/frontend\/test\/integration\/leaderboard\.hook\.spec\.ts$/, { key: "profile-ranking", label: "프로필/랭킹" }],
+  [/frontend\/test\/integration\/onboarding-store\.spec\.ts$/, { key: "onboarding", label: "온보딩" }],
+  [/frontend\/test\/integration\/pet\.api\.spec\.ts$/, { key: "pet", label: "펫" }],
   [/frontend\/test\/integration\/socket-manager\.spec\.ts$/, { key: "room-player", label: "방/플레이어" }],
   [/frontend\/test\/integration\/tasks\.api\.spec\.ts$/, { key: "task", label: "태스크" }],
 ];

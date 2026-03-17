@@ -21,6 +21,9 @@ import { JwtStrategy } from '../src/auth/jwt.strategy';
 import { User } from '../src/auth/user.interface';
 import { UserStore } from '../src/auth/user.store';
 import { WsJwtGuard } from '../src/auth/ws-jwt.guard';
+import { BugReportController } from '../src/bugreport/bug-report.controller';
+import { BugReportService } from '../src/bugreport/bug-report.service';
+import { BugReport } from '../src/bugreport/entities/bug-report.entity';
 import { ChatGateway } from '../src/chat/chat.gateway';
 import { WriteLockService } from '../src/database/write-lock.service';
 import { FocusTimeGateway } from '../src/focustime/focustime.gateway';
@@ -29,6 +32,12 @@ import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity
 import { GlobalState } from '../src/github/entities/global-state.entity';
 import { GithubPollService } from '../src/github/github.poll-service';
 import { ProgressGateway } from '../src/github/progress.gateway';
+import { GuestbookController } from '../src/guestbook/guestbook.controller';
+import { GuestbookService } from '../src/guestbook/guestbook.service';
+import { Guestbook } from '../src/guestbook/entities/guestbook.entity';
+import { DailyPoint } from '../src/point/entities/daily-point.entity';
+import { PointController } from '../src/point/point.controller';
+import { PointService } from '../src/point/point.service';
 import { PointHistoryController } from '../src/pointhistory/point-history.controller';
 import { PointHistoryService } from '../src/pointhistory/point-history.service';
 import { PointHistory } from '../src/pointhistory/entities/point-history.entity';
@@ -56,6 +65,9 @@ export interface CreateTestAppOptions {
   includeFocusTimeGateway?: boolean;
   includeTaskController?: boolean;
   includePointHistoryController?: boolean;
+  includePointController?: boolean;
+  includeGuestbookController?: boolean;
+  includeBugReportController?: boolean;
 }
 
 export interface TestAppContext {
@@ -88,6 +100,15 @@ export async function createTestApp(
   if (options.includePointHistoryController) {
     controllers.push(PointHistoryController);
   }
+  if (options.includePointController) {
+    controllers.push(PointController);
+  }
+  if (options.includeGuestbookController) {
+    controllers.push(GuestbookController);
+  }
+  if (options.includeBugReportController) {
+    controllers.push(BugReportController);
+  }
 
   const providers: Array<any> = [
     UserStore,
@@ -115,6 +136,15 @@ export async function createTestApp(
   }
   if (options.includePointHistoryController) {
     providers.push(PointHistoryService);
+  }
+  if (options.includePointController) {
+    providers.push(PointHistoryService, PointService, TaskService);
+  }
+  if (options.includeGuestbookController) {
+    providers.push(GuestbookService);
+  }
+  if (options.includeBugReportController) {
+    providers.push(BugReportService);
   }
 
   const builder: TestingModuleBuilder = Test.createTestingModule({
@@ -144,10 +174,13 @@ export async function createTestApp(
         Task,
         DailyFocusTime,
         PointHistory,
+        DailyPoint,
         Pet,
         UserPet,
         UserPetCodex,
         GlobalState,
+        Guestbook,
+        BugReport,
       ]),
       PassportModule,
       JwtModule.register({
