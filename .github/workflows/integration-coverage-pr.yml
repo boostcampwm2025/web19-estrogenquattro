@@ -127,7 +127,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p .artifacts/baseline
-          RUN_ID=$(gh run list --workflow integration-coverage-baseline.yml --branch main --json databaseId,conclusion --jq 'map(select(.conclusion=="success")) | .[0].databaseId')
+          RUN_ID=$(gh run list --workflow integration-coverage-baseline.yml --branch main --json databaseId,conclusion --jq 'map(select(.conclusion=="success")) | .[0].databaseId' 2>/dev/null || true)
           if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
             gh run download "$RUN_ID" -n backend-integration-report -D .artifacts/baseline/backend || true
             gh run download "$RUN_ID" -n frontend-integration-report -D .artifacts/baseline/frontend || true
