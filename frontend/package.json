@@ -17,6 +17,11 @@
   "dependencies": {
     "@next/third-parties": "^16.1.6",
     "@tanstack/react-query": "^5.90.12",
+    "@tiptap/core": "^2.27.2",
+    "@tiptap/extension-placeholder": "^2.27.2",
+    "@tiptap/pm": "^2.27.2",
+    "@tiptap/react": "^2.27.2",
+    "@tiptap/starter-kit": "^2.27.2",
     "clsx": "^2.1.1",
     "i18next": "^25.8.4",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -33,6 +38,7 @@
     "socket.io-client": "^4.8.1",
     "socket.io-msgpack-parser": "^3.0.2",
     "tailwind-merge": "^3.4.0",
+    "tiptap-markdown": "^0.8.10",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
