@@ -1,0 +1,128 @@
+name: Bug
+description: 버그 제보, 회귀 이슈, 운영 장애 기록
+title: "fix: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        버그 이슈는 "무엇을 만들까"보다 "무엇이 어떻게 잘못됐는가"를 먼저 고정해야 합니다.
+        재현 경로와 회귀 검증 조건이 빠지면 수정 품질을 담보하기 어렵습니다.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제 현상
+      description: 현재 어떤 문제가 발생하는지 한 문단으로 요약해주세요.
+      placeholder: |
+        예)
+        주간 리더보드 집중시간이 일별 누적시간 합산보다 크게 표시됨
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 재현 절차
+      description: 가능한 한 안정적으로 재현되는 순서를 적어주세요.
+      placeholder: |
+        1. 사용자가 집중 시작
+        2. 네트워크 단절 또는 서버 재시작
+        3. 일정 시간 후 재접속
+        4. 집중시간이 과대 집계됨
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      description: 원래 어떻게 동작해야 하는지 적어주세요.
+      placeholder: |
+        예)
+        재접속 시 실제 참여 시간만 반영되어야 한다
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+      description: 현재는 어떻게 동작하는지 적어주세요.
+      placeholder: |
+        예)
+        disconnect 정산이 누락된 뒤 재접속 시 과도한 시간이 누적된다
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 영향 범위
+      description: 사용자 영향, 빈도, 심각도, 환경 조건을 함께 적어주세요.
+      placeholder: |
+        사용자 영향:
+        - 랭킹 신뢰도 저하
+
+        빈도:
+        - 특정 네트워크 단절 상황에서 재현
+
+        심각도:
+        - 중간 / 높음
+
+        환경/조건:
+        - 재접속, 서버 재시작, disconnect 누락
+    validations:
+      required: true
+
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: 관련 정보 / 추정 원인
+      description: 로그, 스크린샷, 관련 이슈/PR, 의심되는 코드 경로를 적어주세요.
+      placeholder: |
+        예)
+        - 관련 이슈: #
+        - 관련 PR: #
+        - 로그:
+        - 의심 경로: backend/src/.../service.ts
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 조건 (Definition of Done)
+      description: 수정 완료를 판단할 기준을 체크리스트 형태로 적어주세요.
+      placeholder: |
+        - [ ] 재현 경로에서 문제 재발 없음
+        - [ ] 회귀 테스트 추가 또는 보강
+        - [ ] 정상 시나리오 회귀 없음
+        - [ ] 관련 문서/운영 메모 동기화 완료
+    validations:
+      required: true
+
+  - type: textarea
+    id: completion_tests
+    attributes:
+      label: 완수 테스트
+      description: 이 버그가 해결됐다고 판단할 핵심 검증 시나리오를 적어주세요.
+      placeholder: |
+        예)
+        - [ ] 기존 재현 절차로 더 이상 문제가 발생하지 않음
+        - [ ] 기대 동작이 실제 결과와 일치함
+        - [ ] 수정 후 로그/응답/화면 상태가 정상임
+    validations:
+      required: true
+
+  - type: textarea
+    id: regression_tests
+    attributes:
+      label: 회귀 테스트
+      description: 수정 과정에서 주변 기능이 깨지지 않았음을 어떻게 확인할지 적어주세요.
+      placeholder: |
+        예)
+        - [ ] 정상 시나리오가 계속 동작함
+        - [ ] 인접 기능 영향이 없음
+        - [ ] 자동화 테스트를 추가/보강함
+    validations:
+      required: true
