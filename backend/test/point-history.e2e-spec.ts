@@ -3,7 +3,10 @@ import { Repository } from 'typeorm';
 
 import { Player } from '../src/player/entites/player.entity';
 import { DailyPoint } from '../src/point/entities/daily-point.entity';
-import { PointHistory, PointType } from '../src/pointhistory/entities/point-history.entity';
+import {
+  PointHistory,
+  PointType,
+} from '../src/pointhistory/entities/point-history.entity';
 import {
   TestAppContext,
   createTestApp,

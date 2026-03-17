@@ -115,7 +115,9 @@ describe('Guestbook E2E', () => {
 
     // When: cursor 이후 ASC 조회
     const secondPage = await request(getHttpServer())
-      .get(`/api/guestbooks?limit=2&order=ASC&cursor=${firstPage.body.items[0].id}`)
+      .get(
+        `/api/guestbooks?limit=2&order=ASC&cursor=${firstPage.body.items[0].id}`,
+      )
       .set('Cookie', viewer.cookie)
       .expect(200);
 
@@ -157,6 +159,8 @@ describe('Guestbook E2E', () => {
       .expect(200);
 
     // Then
-    expect(await guestbookRepository.findOne({ where: { id: saved.id } })).toBeNull();
+    expect(
+      await guestbookRepository.findOne({ where: { id: saved.id } }),
+    ).toBeNull();
   });
 });
