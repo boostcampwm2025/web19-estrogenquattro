@@ -59,6 +59,16 @@ describe("useGuestbookUnreadStatus", () => {
     expect(result.current.latestEntryId).toBeNull();
   });
 
+  it("read-state가 아직 없어도 markAsRead를 호출한다", async () => {
+    const { result } = renderHook(() => useGuestbookUnreadStatus());
+
+    await act(async () => {
+      await result.current.markAsRead();
+    });
+
+    expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+  });
+
   it("서버 read-state에 unread가 있으면 배지를 표시한다", () => {
     currentReadState = {
       latestEntryId: 10,
@@ -104,13 +114,10 @@ describe("useGuestbookUnreadStatus", () => {
     expect(mockMutateAsync).toHaveBeenCalledTimes(1);
   });
 
-  it("최신 방명록이 없으면 markAsRead를 호출하지 않는다", async () => {
-    currentReadState = {
-      latestEntryId: null,
-      lastReadEntryId: 0,
-      hasUnread: false,
-    };
-
+  it("player가 없으면 markAsRead를 호출하지 않는다", async () => {
+    vi.mocked(authStoreModule.useAuthStore).mockImplementation((selector) =>
+      selector({ user: null } as never),
+    );
     const { result } = renderHook(() => useGuestbookUnreadStatus());
 
     await act(async () => {
