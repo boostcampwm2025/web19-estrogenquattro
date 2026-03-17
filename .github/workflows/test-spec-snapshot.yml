@@ -1,0 +1,134 @@
+name: Test Spec Snapshot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-spec-snapshot.yml"
+      - "scripts/generate-test-spec-snapshot.mjs"
+      - "frontend/**"
+      - "backend/**"
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Collect changed files
+        run: |
+          mkdir -p .reports
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" > .reports/changed-files.txt
+
+      - name: Run frontend unit coverage report
+        id: frontend_tests
+        continue-on-error: true
+        working-directory: frontend
+        run: pnpm test:unit:report
+
+      - name: Run backend unit coverage report
+        id: backend_tests
+        continue-on-error: true
+        working-directory: backend
+        run: pnpm test:unit:report
+
+      - name: Generate test spec snapshot
+        if: always()
+        run: |
+          pnpm test-spec:snapshot \
+            --frontend-summary frontend/coverage/coverage-summary.json \
+            --frontend-results frontend/test-results/unit-tests.json \
+            --backend-summary backend/coverage/coverage-summary.json \
+            --backend-results backend/test-results/unit-tests.json \
+            --changed-files-file .reports/changed-files.txt \
+            --output-file .reports/test-spec-snapshot.md \
+            --summary-file .reports/test-spec-snapshot-summary.json
+
+      - name: Publish job summary
+        if: always()
+        run: cat .reports/test-spec-snapshot.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update sticky PR comment
+        if: always() && github.event.pull_request.head.repo.fork == false
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: test-spec-snapshot
+          path: .reports/test-spec-snapshot.md
+
+      - name: Enforce unit test and changed-file coverage gate
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const summaryPath = ".reports/test-spec-snapshot-summary.json";
+          if (!fs.existsSync(summaryPath)) {
+            console.error("스냅샷 요약 파일이 생성되지 않았습니다.");
+            process.exit(1);
+          }
+
+          const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+          const failures = [];
+
+          if (!summary.frontend.success) {
+            failures.push("프론트엔드 단위 테스트가 실패했습니다.");
+          }
+
+          if (!summary.backend.success) {
+            failures.push("백엔드 단위 테스트가 실패했습니다.");
+          }
+
+          if (
+            summary.frontend.totalCoveragePct !== null &&
+            summary.frontend.totalCoveragePct < summary.threshold
+          ) {
+            failures.push(
+              `프론트엔드 전체 커버리지가 ${summary.threshold}% 미만입니다. (${summary.frontend.totalCoveragePct.toFixed(1)}%)`,
+            );
+          }
+
+          if (
+            summary.backend.totalCoveragePct !== null &&
+            summary.backend.totalCoveragePct < summary.threshold
+          ) {
+            failures.push(
+              `백엔드 전체 커버리지가 ${summary.threshold}% 미만입니다. (${summary.backend.totalCoveragePct.toFixed(1)}%)`,
+            );
+          }
+
+          if (summary.changedFilesCoverage.belowThreshold) {
+            failures.push(
+              `변경 파일 커버리지가 ${summary.threshold}% 미만입니다. (${summary.changedFilesCoverage.pct.toFixed(1)}%)`,
+            );
+          }
+
+          if (failures.length > 0) {
+            console.error(failures.join("\n"));
+            process.exit(1);
+          }
+          NODE
