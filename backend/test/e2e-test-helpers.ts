@@ -56,6 +56,7 @@ export interface CreateTestAppOptions {
   includeFocusTimeGateway?: boolean;
   includeTaskController?: boolean;
   includePointHistoryController?: boolean;
+  configOverrides?: Record<string, string | number | boolean>;
 }
 
 export interface TestAppContext {
@@ -71,6 +72,7 @@ export async function createTestApp(
 ): Promise<TestAppContext> {
   const database = options.database ?? ':memory:';
   const dropSchema = options.dropSchema ?? true;
+  const configOverrides = options.configOverrides ?? {};
 
   const githubPollServiceMock = {
     subscribeGithubEvent: jest.fn(),
@@ -129,6 +131,9 @@ export async function createTestApp(
             GITHUB_CLIENT_SECRET: 'test-client-secret',
             GITHUB_CALLBACK_URL: 'http://localhost:8080/auth/github/callback',
             FRONTEND_URL: 'http://localhost:3000',
+            PLAYWRIGHT_TEST_MODE: 'false',
+            PLAYWRIGHT_E2E_SECRET: 'playwright-e2e-secret',
+            ...configOverrides,
           }),
         ],
       }),
