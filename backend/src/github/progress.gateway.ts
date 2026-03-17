@@ -142,11 +142,14 @@ export class ProgressGateway implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  onModuleDestroy() {
-    if (this.persistTimer) {
-      clearTimeout(this.persistTimer);
-      this.persistTimer = null;
+  async onModuleDestroy() {
+    if (!this.persistTimer) {
+      return;
     }
+
+    clearTimeout(this.persistTimer);
+    this.persistTimer = null;
+    await this.persistState();
   }
 
   /**
@@ -158,6 +161,7 @@ export class ProgressGateway implements OnModuleInit, OnModuleDestroy {
     }
 
     this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
       void this.persistState();
     }, this.PERSIST_DEBOUNCE_MS);
   }
