@@ -57,6 +57,21 @@ export default class Player extends BasePlayer {
         emitEvent("moving", binaryPayload);
         this.prevMoving = false;
       }
+
+      // 모달이 열린 동안 발생하는 keyup 이벤트를 놓쳐 키가 계속 눌린 것으로 인식되는 버그 방지
+      if (cursors) {
+        cursors.left.reset();
+        cursors.right.reset();
+        cursors.up.reset();
+        cursors.down.reset();
+      }
+      if (wasdKeys) {
+        wasdKeys.W.reset();
+        wasdKeys.A.reset();
+        wasdKeys.S.reset();
+        wasdKeys.D.reset();
+      }
+
       return;
     }
 

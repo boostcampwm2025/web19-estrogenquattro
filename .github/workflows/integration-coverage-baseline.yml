@@ -1,0 +1,96 @@
+name: Integration Coverage Baseline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/integration-coverage-baseline.yml"
+      - "scripts/testing/**"
+      - "backend/**"
+      - "frontend/**"
+
+jobs:
+  backend-baseline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run backend integration coverage
+        working-directory: backend
+        run: |
+          pnpm exec jest --config ./test/jest-integration.json --runInBand --coverage --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile coverage/integration/backend/test-results.json
+
+      - name: Build backend integration report
+        run: |
+          node scripts/testing/create-integration-report.mjs \
+            --platform backend \
+            --coverage backend/coverage/integration/backend/coverage-summary.json \
+            --results backend/coverage/integration/backend/test-results.json \
+            --output .artifacts/backend/integration-report.json
+
+      - name: Upload backend integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-report
+          path: .artifacts/backend/integration-report.json
+
+  frontend-baseline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend integration coverage
+        working-directory: frontend
+        run: |
+          pnpm exec vitest run --config ./vitest.integration.config.mts --reporter=json --outputFile coverage/integration/frontend/test-results.json
+
+      - name: Build frontend integration report
+        run: |
+          node scripts/testing/create-integration-report.mjs \
+            --platform frontend \
+            --coverage frontend/coverage/integration/frontend/coverage-summary.json \
+            --results frontend/coverage/integration/frontend/test-results.json \
+            --output .artifacts/frontend/integration-report.json
+
+      - name: Upload frontend integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-integration-report
+          path: .artifacts/frontend/integration-report.json

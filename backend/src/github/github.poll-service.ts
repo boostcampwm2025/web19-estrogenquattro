@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ProgressGateway, ProgressSource } from './progress.gateway';
 import { GithubService } from './github.service';
 import { GithubActivityType } from './entities/daily-github-activity.entity';
@@ -136,7 +136,7 @@ export function isPrResponse(data: unknown): data is PrResponse {
 }
 
 @Injectable()
-export class GithubPollService {
+export class GithubPollService implements OnModuleDestroy {
   private readonly logger = new Logger(GithubPollService.name);
 
   constructor(
@@ -147,6 +147,13 @@ export class GithubPollService {
 
   // username -> PollingSchedule (username 기준으로 중복 방지)
   private readonly pollingSchedules = new Map<string, PollingSchedule>();
+
+  onModuleDestroy() {
+    for (const schedule of this.pollingSchedules.values()) {
+      clearTimeout(schedule.timeout);
+    }
+    this.pollingSchedules.clear();
+  }
 
   subscribeGithubEvent(
     connectedAt: Date,
