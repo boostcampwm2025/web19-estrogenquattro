@@ -116,9 +116,7 @@ test("same-account unread state is shared across multiple browser sessions", asy
         timeout: 15_000,
       },
     ),
-    firstReader.page.locator("#guestbook-button").evaluate((element) => {
-      (element as HTMLButtonElement).click();
-    }),
+    firstReader.page.locator("#guestbook-button").click(),
   ]);
   await firstReader.page.reload({ waitUntil: "networkidle" });
   await expect
