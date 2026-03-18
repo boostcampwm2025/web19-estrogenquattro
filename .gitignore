@@ -10,3 +10,12 @@ AGENTS.md
 
 # Database
 backend/data/.DS_Store
+
+# Test outputs
+frontend/coverage/
+backend/coverage/
+frontend/test-results/
+backend/test-results/
+frontend/.tmp-*.json
+backend/.tmp-*.json
+.reports/
