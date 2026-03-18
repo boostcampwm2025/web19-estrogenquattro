@@ -55,7 +55,9 @@ describe('AdminService', () => {
 
     it('admins 테이블에 playerId가 없으면 ForbiddenException을 던진다', async () => {
       mockAdminRepository.findOne.mockResolvedValue(null);
-      await expect(service.validateAdmin(99999)).rejects.toThrow(ForbiddenException);
+      await expect(service.validateAdmin(99999)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -63,8 +65,13 @@ describe('AdminService', () => {
   describe('ban', () => {
     it('should save and return a new ban record', async () => {
       const mockBanDto = { targetPlayerId: 2, reason: 'test', duration: null };
-      const createdBan = { id: 1, ...mockBanDto, bannedBy: { id: 1 }, targetPlayer: { id: 2 } };
-      
+      const createdBan = {
+        id: 1,
+        ...mockBanDto,
+        bannedBy: { id: 1 },
+        targetPlayer: { id: 2 },
+      };
+
       mockBanRepository.create.mockReturnValue(createdBan);
       mockBanRepository.save.mockResolvedValue(createdBan);
 

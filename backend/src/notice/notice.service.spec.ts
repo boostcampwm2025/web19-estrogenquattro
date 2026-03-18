@@ -51,11 +51,17 @@ describe('NoticeService', () => {
 
   describe('create', () => {
     it('should create and save a new notice', async () => {
-      const dto = { title: 'Test Title', content: 'Test Content' };
+      const dto = {
+        ko: { title: '테스트 제목', content: '테스트 내용' },
+        en: { title: 'Test Title', content: 'Test Content' },
+      };
       const authorId = 1;
       const createdNotice = {
         id: 1,
-        ...dto,
+        titleKo: dto.ko.title,
+        contentKo: dto.ko.content,
+        titleEn: dto.en.title,
+        contentEn: dto.en.content,
         author: { id: authorId },
       } as unknown as Notice;
 
@@ -65,7 +71,10 @@ describe('NoticeService', () => {
       const result = await service.create(authorId, dto);
 
       expect(mockNoticeRepository.create).toHaveBeenCalledWith({
-        ...dto,
+        titleKo: dto.ko.title,
+        contentKo: dto.ko.content,
+        titleEn: dto.en.title,
+        contentEn: dto.en.content,
         author: { id: authorId },
       });
       expect(mockNoticeRepository.save).toHaveBeenCalledWith(createdNotice);

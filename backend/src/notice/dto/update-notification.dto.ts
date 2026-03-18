@@ -1,6 +1,6 @@
-import { CreateNotificationDto } from './create-notification.dto';
+import { KoreanNotice, EnglishNotice } from './create-notification.dto';
 
-export class UpdateNotificationDto implements Partial<CreateNotificationDto> {
-  title?: string;
-  content?: string;
+export class UpdateNotificationDto {
+  ko?: Partial<KoreanNotice>;
+  en?: Partial<EnglishNotice>;
 }

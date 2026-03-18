@@ -51,7 +51,10 @@ describe('NoticeController', () => {
 
   describe('create', () => {
     it('should create and broadcast a notice', async () => {
-      const dto: CreateNotificationDto = { title: 'Test', content: 'Content' };
+      const dto: CreateNotificationDto = {
+        ko: { title: '테스트', content: '내용' },
+        en: { title: 'Test', content: 'Content' },
+      };
       const createdNotice = { id: 1, ...dto, author: { id: 1 } };
       mockNoticeService.create.mockResolvedValue(createdNotice);
 
@@ -132,7 +135,7 @@ describe('NoticeController', () => {
 
   describe('update', () => {
     it('should call service.update', async () => {
-      const dto: UpdateNotificationDto = { title: 'Updated' };
+      const dto: UpdateNotificationDto = { ko: { title: '수정됨' } };
       await controller.update(1, dto);
       expect(mockNoticeService.update).toHaveBeenCalledWith(1, dto);
     });

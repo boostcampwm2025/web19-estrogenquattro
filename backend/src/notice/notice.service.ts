@@ -25,7 +25,10 @@ export class NoticeService {
 
   async create(authorId: number, dto: CreateNotificationDto): Promise<Notice> {
     const notification = this.notificationRepository.create({
-      ...dto,
+      titleKo: dto.ko.title,
+      contentKo: dto.ko.content,
+      titleEn: dto.en.title,
+      contentEn: dto.en.content,
       author: { id: authorId } as unknown as Player,
     });
     return this.notificationRepository.save(notification);
@@ -84,7 +87,16 @@ export class NoticeService {
 
   async update(id: number, dto: UpdateNotificationDto): Promise<Notice> {
     const notification = await this.findOne(id);
-    Object.assign(notification, dto);
+
+    if (dto.ko) {
+      if (dto.ko.title !== undefined) notification.titleKo = dto.ko.title;
+      if (dto.ko.content !== undefined) notification.contentKo = dto.ko.content;
+    }
+    if (dto.en) {
+      if (dto.en.title !== undefined) notification.titleEn = dto.en.title;
+      if (dto.en.content !== undefined) notification.contentEn = dto.en.content;
+    }
+
     return this.notificationRepository.save(notification);
   }
 
