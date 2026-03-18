@@ -1,6 +1,7 @@
 import type { LeaderboardPlayer } from "./types";
 import { getRankTextColor, getRankDisplay, formatSecondsToHMS } from "./utils";
 import { POINT_TYPES, type PointType } from "@/lib/api";
+import { getGithubProfileUrl } from "@/utils/github";
 
 interface PlayerRowProps {
   player: LeaderboardPlayer;
@@ -17,6 +18,10 @@ export default function PlayerRow({
 }: PlayerRowProps) {
   const rankTextColor = getRankTextColor(player.rank);
   const rankDisplay = getRankDisplay(player.rank);
+  const trimmedUsername = player.username.trim();
+  const githubProfileUrl = trimmedUsername
+    ? getGithubProfileUrl(trimmedUsername)
+    : null;
 
   // 집중 시간 탭일 때는 시간 형식으로 표시
   const displayValue =
@@ -53,9 +58,20 @@ export default function PlayerRow({
           </div>
         )}
       </div>
-      <span className="text-center font-medium text-amber-900">
-        {player.username}
-      </span>
+      {githubProfileUrl ? (
+        <a
+          href={githubProfileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center font-medium text-amber-900 underline-offset-2 transition-colors hover:text-amber-700 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-amber-700 focus-visible:outline-offset-2"
+        >
+          {trimmedUsername}
+        </a>
+      ) : (
+        <span className="text-center font-medium text-amber-900">
+          {player.username}
+        </span>
+      )}
       <span className="text-center font-bold text-amber-900">
         {displayValue}
       </span>

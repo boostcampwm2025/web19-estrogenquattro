@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import PlayerRow from "./PlayerRow";
 import { POINT_TYPES } from "@/lib/api";
+import { getGithubProfileUrl } from "@/utils/github";
 import type { LeaderboardPlayer } from "./types";
 
 const mockPlayer: LeaderboardPlayer = {
@@ -17,6 +18,31 @@ describe("PlayerRow", () => {
     render(<PlayerRow player={mockPlayer} />);
 
     expect(screen.getByText("testuser")).toBeInTheDocument();
+  });
+
+  it("플레이어 이름은 GitHub 프로필 링크로 렌더링된다", () => {
+    render(<PlayerRow player={mockPlayer} />);
+
+    const link = screen.getByRole("link", { name: "testuser" });
+    expect(link).toHaveAttribute("href", getGithubProfileUrl("testuser"));
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("프로필 이미지와 점수는 링크가 아니다", () => {
+    render(<PlayerRow player={mockPlayer} />);
+
+    expect(screen.getByAltText("testuser").closest("a")).toBeNull();
+    expect(screen.getByText("100").closest("a")).toBeNull();
+  });
+
+  it("사용자명이 비어 있으면 링크 없이 텍스트만 렌더링된다", () => {
+    render(<PlayerRow player={{ ...mockPlayer, username: "   " }} />);
+
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => element?.textContent === "   "),
+    ).toBeInTheDocument();
   });
 
   it("1~3등은 No.N 형식으로 표시한다", () => {
