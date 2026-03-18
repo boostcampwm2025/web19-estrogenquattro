@@ -8,6 +8,15 @@ import { GithubStrategy } from './github.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
+import { AuthSessionService } from './auth-session.service';
+import { PlaywrightAuthController } from './playwright-auth.controller';
+import { loadEnvFilesOnce } from '../config/env-files';
+
+loadEnvFilesOnce();
+
+const isPlaywrightAuthControllerEnabled =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.PLAYWRIGHT_TEST_MODE === 'true';
 
 @Module({
   imports: [
@@ -21,8 +30,16 @@ import { AuthController } from './auth.controller';
     }),
     forwardRef(() => PlayerModule),
   ],
-  controllers: [AuthController],
-  providers: [UserStore, GithubStrategy, JwtStrategy, WsJwtGuard],
+  controllers: isPlaywrightAuthControllerEnabled
+    ? [AuthController, PlaywrightAuthController]
+    : [AuthController],
+  providers: [
+    UserStore,
+    GithubStrategy,
+    JwtStrategy,
+    WsJwtGuard,
+    AuthSessionService,
+  ],
   exports: [UserStore, JwtModule, WsJwtGuard],
 })
 export class AuthModule {}
