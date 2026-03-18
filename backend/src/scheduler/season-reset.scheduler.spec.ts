@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { SeasonResetScheduler } from './season-reset.scheduler';
 import { ProgressGateway } from '../github/progress.gateway';
 

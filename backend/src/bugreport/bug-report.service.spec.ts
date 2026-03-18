@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -32,7 +33,7 @@ describe('BugReportService', () => {
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      text: async () => '',
+      text: () => Promise.resolve(''),
     }) as unknown as typeof fetch;
   });
 

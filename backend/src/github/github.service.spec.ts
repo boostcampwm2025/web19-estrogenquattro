@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Repository } from 'typeorm';
 import { GithubService } from './github.service';
 import {

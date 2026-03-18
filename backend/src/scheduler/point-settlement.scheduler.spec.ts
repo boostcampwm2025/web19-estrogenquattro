@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { PointSettlementScheduler } from './point-settlement.scheduler';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { ProgressGateway, ProgressSource } from '../github/progress.gateway';
