@@ -44,6 +44,9 @@ import { PetController } from '../src/userpet/pet.controller';
 import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
 import { UserPetCodex } from '../src/userpet/entities/user-pet-codex.entity';
+import { AdminService } from '../src/admin/admin.service';
+import { Admin } from '../src/admin/entities/admin.entity';
+import { Ban } from '../src/admin/entities/ban.entity';
 import { PetService } from '../src/userpet/pet.service';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
@@ -104,6 +107,7 @@ export async function createTestApp(
     ChatGateway,
     PetService,
     WriteLockService,
+    AdminService,
     {
       provide: GithubPollService,
       useValue: githubPollServiceMock,
@@ -148,6 +152,8 @@ export async function createTestApp(
         UserPet,
         UserPetCodex,
         GlobalState,
+        Admin,
+        Ban,
       ]),
       PassportModule,
       JwtModule.register({
@@ -198,7 +204,9 @@ export function getRepository<T>(
   context: TestAppContext,
   entity: EntityTarget<T>,
 ): Repository<T> {
-  return context.moduleRef.get<Repository<T>>(getRepositoryToken(entity));
+  return context.moduleRef.get<Repository<T>>(
+    getRepositoryToken(entity as any),
+  );
 }
 
 export interface SeedAuthenticatedPlayerOptions {
