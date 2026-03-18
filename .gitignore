@@ -10,3 +10,9 @@ AGENTS.md
 
 # Database
 backend/data/.DS_Store
+
+# Coverage artifacts
+backend/coverage/
+backend/test/coverage/
+frontend/coverage/
+.artifacts/
