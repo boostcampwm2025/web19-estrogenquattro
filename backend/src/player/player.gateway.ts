@@ -65,6 +65,9 @@ export class PlayerGateway
   // githubId -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
 
+  // playerId -> socketId 매핑 (빠른 역방향 조회용)
+  private playerSockets: Map<number, string> = new Map();
+
   private normalizeFocusTaskName(taskName: string | null): string | null {
     if (!taskName) {
       return null;
@@ -119,6 +122,10 @@ export class PlayerGateway
     const player = this.players.get(client.id);
     if (player) {
       this.players.delete(client.id);
+      // playerSockets 매핑 제거 (현재 소켓이 해당 플레이어의 활성 소켓인 경우만)
+      if (this.playerSockets.get(player.playerId) === client.id) {
+        this.playerSockets.delete(player.playerId);
+      }
       this.server.to(player.roomId).emit('player_left', { userId: client.id });
       this.githubService.unsubscribeGithubEvent(client.id);
       this.roomService.exit(client.id);
@@ -138,18 +145,14 @@ export class PlayerGateway
     });
   }
 
-  disconnectPlayer(playerId: number, reason: string | null): boolean {
-    for (const [socketId, player] of this.players.entries()) {
-      if (player.playerId === playerId) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.emit('banned', { reason });
-          socket.disconnect(true);
-          return true;
-        }
-      }
+  disconnectPlayer(playerId: number, reason: string | null): void {
+    const socketId = this.playerSockets.get(playerId);
+    if (!socketId) return;
+    const socket = this.server.sockets.sockets.get(socketId);
+    if (socket) {
+      socket.emit('banned', { reason });
+      socket.disconnect(true);
     }
-    return false;
   }
 
   @SubscribeMessage('joining')
@@ -206,6 +209,8 @@ export class PlayerGateway
 
     // githubId -> socketId 매핑 저장
     this.userSockets.set(githubId, client.id);
+    // playerId -> socketId 매핑 저장
+    this.playerSockets.set(playerId, client.id);
 
     void client.join(roomId);
 

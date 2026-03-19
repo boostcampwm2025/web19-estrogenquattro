@@ -26,7 +26,13 @@ export default function AdminDashboardLayout({
 
   useEffect(() => {
     verifyAdmin()
-      .then(() => setIsVerified(true))
+      .then(({ isAdmin }) => {
+        if (isAdmin) {
+          setIsVerified(true);
+          return;
+        }
+        router.replace("/admin");
+      })
       .catch(() => router.replace("/admin"));
   }, [router]);
 

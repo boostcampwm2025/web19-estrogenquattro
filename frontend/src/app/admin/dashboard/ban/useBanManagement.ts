@@ -38,8 +38,9 @@ export function useBanManagement() {
         variant: "error",
       });
     } finally {
-      if (requestId !== latestRequestId.current) return;
-      setIsLoading(false);
+      if (requestId === latestRequestId.current) {
+        setIsLoading(false);
+      }
     }
   };
 

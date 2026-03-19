@@ -39,7 +39,7 @@ export class AdminService {
   }
 
   async getPlayers(search?: string) {
-    const where = search ? { nickname: Like(`%${search}%`) } : {};
+    const where = search ? { nickname: Like(`${search}%`) } : {};
     const players = await this.playerRepository.find({
       where,
       select: ['id', 'nickname', 'socialId'],
