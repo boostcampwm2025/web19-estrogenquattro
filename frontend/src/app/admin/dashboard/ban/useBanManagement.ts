@@ -21,28 +21,35 @@ export function useBanManagement() {
     variant: "success" | "error";
   } | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRequestId = useRef(0);
+  const isFirstFetch = useRef(true);
 
   const fetchPlayers = async (query?: string) => {
+    const requestId = ++latestRequestId.current;
     setIsLoading(true);
     try {
       const data = await getPlayers(query);
+      if (requestId !== latestRequestId.current) return;
       setPlayers(data);
     } catch {
+      if (requestId !== latestRequestId.current) return;
       setToast({
         message: "유저 목록을 불러올 수 없습니다.",
         variant: "error",
       });
     } finally {
+      if (requestId !== latestRequestId.current) return;
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPlayers();
-  }, []);
-
-  useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    if (isFirstFetch.current) {
+      isFirstFetch.current = false;
+      fetchPlayers(undefined);
+      return;
+    }
     debounceTimer.current = setTimeout(() => {
       fetchPlayers(search || undefined);
     }, 300);

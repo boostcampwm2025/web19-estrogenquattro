@@ -14,9 +14,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const isBanned = searchParams.get("banned") === "true";
-  const [banInfo, setBanInfo] = useState<{ reason: string | null } | null>(
-    isBanned ? { reason: searchParams.get("reason") } : null,
-  );
+  const reason = searchParams.get("reason");
+  const [dismissed, setDismissed] = useState(false);
+  const banInfo = !dismissed && isBanned ? { reason } : null;
 
   const handleGitHubLogin = () => {
     Analytics.loginClick();
@@ -30,7 +30,7 @@ export default function LoginPage() {
       <EvolutionSection />
       <DemoSection />
       {banInfo && (
-        <BannedModal reason={banInfo.reason} onClose={() => setBanInfo(null)} />
+        <BannedModal reason={banInfo.reason} onClose={() => setDismissed(true)} />
       )}
     </div>
   );

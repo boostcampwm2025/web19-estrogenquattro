@@ -28,7 +28,11 @@ export default function BanManagementPage() {
 
       {/* 검색 */}
       <div className="mb-4 max-w-md">
+        <label htmlFor="ban-search" className="sr-only">
+          닉네임으로 검색
+        </label>
         <input
+          id="ban-search"
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -116,8 +120,11 @@ export default function BanManagementPage() {
           <div
             className="border-retro-border-darker bg-retro-bg-primary shadow-retro-xl w-80 border-3 p-6"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ban-confirm-title"
           >
-            <p className="text-retro-text-primary mb-4 text-lg font-bold">
+            <p id="ban-confirm-title" className="text-retro-text-primary mb-4 text-lg font-bold">
               {confirmTarget.nickname}을(를){" "}
               {confirmTarget.isBanned ? "밴 해제" : "밴"}하시겠습니까?
             </p>
