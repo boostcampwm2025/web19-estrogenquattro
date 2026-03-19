@@ -139,17 +139,16 @@ export class PlayerGateway
   }
 
   disconnectPlayer(playerId: number, reason: string | null): boolean {
-    for (const [socketId, player] of this.players.entries()) {
-      if (player.playerId === playerId) {
-        const socket = this.server.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.emit('banned', { reason });
-          socket.disconnect(true);
-          return true;
-        }
+    let found = false;
+    for (const [, socket] of this.server.sockets.sockets) {
+      const userData = socket.data as { user?: User };
+      if (userData.user?.playerId === playerId) {
+        socket.emit('banned', { reason });
+        socket.disconnect(true);
+        found = true;
       }
     }
-    return false;
+    return found;
   }
 
   @SubscribeMessage('joining')

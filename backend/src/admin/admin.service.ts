@@ -77,6 +77,16 @@ export class AdminService {
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
+    const player = await this.playerRepository.findOne({
+      where: { id: dto.targetPlayerId },
+    });
+
+    if (!player) {
+      throw new NotFoundException(
+        `Player with ID ${dto.targetPlayerId} not found`,
+      );
+    }
+
     const existing = await this.banRepository.findOne({
       where: { targetPlayer: { id: dto.targetPlayerId } as unknown as Player },
     });
