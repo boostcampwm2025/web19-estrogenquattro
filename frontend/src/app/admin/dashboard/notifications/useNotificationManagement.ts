@@ -16,16 +16,21 @@ export function useNotificationManagement() {
 
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPagesState, setTotalPagesState] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
   // 새 공지 작성 폼
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
+  const [newTitleKo, setNewTitleKo] = useState("");
+  const [newContentKo, setNewContentKo] = useState("");
+  const [newTitleEn, setNewTitleEn] = useState("");
+  const [newContentEn, setNewContentEn] = useState("");
 
   // 수정 모달
   const [editTarget, setEditTarget] = useState<AdminNotification | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
+  const [editTitleKo, setEditTitleKo] = useState("");
+  const [editContentKo, setEditContentKo] = useState("");
+  const [editTitleEn, setEditTitleEn] = useState("");
+  const [editContentEn, setEditContentEn] = useState("");
 
   // 삭제 확인 모달
   const [deleteTarget, setDeleteTarget] = useState<AdminNotification | null>(
@@ -37,12 +42,12 @@ export function useNotificationManagement() {
     variant: "success" | "error";
   } | null>(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page: number = currentPage) => {
     setIsLoading(true);
     try {
-      const data = await getNotifications();
-      setNotifications(data);
-      setCurrentPage(1);
+      const data = await getNotifications(page, ITEMS_PER_PAGE);
+      setNotifications(data.items);
+      setTotalPagesState(data.totalPages);
     } catch {
       setToast({
         message: "공지사항을 불러올 수 없습니다.",
@@ -54,16 +59,23 @@ export function useNotificationManagement() {
   };
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    fetchNotifications(currentPage);
+  }, [currentPage]);
 
   const handleCreate = async () => {
-    if (!newTitle.trim() || !newContent.trim()) return;
+    if (!newTitleKo.trim() || !newContentKo.trim() || !newTitleEn.trim() || !newContentEn.trim()) return;
     setIsProcessing(true);
     try {
-      await createNotification(newTitle.trim(), newContent.trim());
-      setNewTitle("");
-      setNewContent("");
+      await createNotification(
+        newTitleKo.trim(),
+        newContentKo.trim(),
+        newTitleEn.trim(),
+        newContentEn.trim()
+      );
+      setNewTitleKo("");
+      setNewContentKo("");
+      setNewTitleEn("");
+      setNewContentEn("");
       setToast({ message: "공지사항을 작성했습니다.", variant: "success" });
       await fetchNotifications();
     } catch {
@@ -75,18 +87,22 @@ export function useNotificationManagement() {
 
   const openEdit = (notification: AdminNotification) => {
     setEditTarget(notification);
-    setEditTitle(notification.title);
-    setEditContent(notification.content);
+    setEditTitleKo(notification.titleKo || "");
+    setEditContentKo(notification.contentKo || "");
+    setEditTitleEn(notification.titleEn || "");
+    setEditContentEn(notification.contentEn || "");
   };
 
   const handleUpdate = async () => {
-    if (!editTarget || !editTitle.trim() || !editContent.trim()) return;
+    if (!editTarget || !editTitleKo.trim() || !editContentKo.trim() || !editTitleEn.trim() || !editContentEn.trim()) return;
     setIsProcessing(true);
     try {
       await updateNotification(
         editTarget.id,
-        editTitle.trim(),
-        editContent.trim(),
+        editTitleKo.trim(),
+        editContentKo.trim(),
+        editTitleEn.trim(),
+        editContentEn.trim()
       );
       setEditTarget(null);
       setToast({ message: "공지사항을 수정했습니다.", variant: "success" });
@@ -113,34 +129,27 @@ export function useNotificationManagement() {
     }
   };
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(notifications.length / ITEMS_PER_PAGE),
-  );
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedNotifications = notifications.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE,
-  );
+  const totalPages = Math.max(1, totalPagesState);
+  const paginatedNotifications = notifications;
 
   return {
-    notifications,
+    notifications, // Note: now represents the paginated list, kept for compatibility if needed.
     paginatedNotifications,
     currentPage,
     totalPages,
     setCurrentPage,
     isLoading,
     isProcessing,
-    newTitle,
-    setNewTitle,
-    newContent,
-    setNewContent,
+    newTitleKo, setNewTitleKo,
+    newContentKo, setNewContentKo,
+    newTitleEn, setNewTitleEn,
+    newContentEn, setNewContentEn,
     handleCreate,
     editTarget,
-    editTitle,
-    setEditTitle,
-    editContent,
-    setEditContent,
+    editTitleKo, setEditTitleKo,
+    editContentKo, setEditContentKo,
+    editTitleEn, setEditTitleEn,
+    editContentEn, setEditContentEn,
     openEdit,
     handleUpdate,
     setEditTarget,

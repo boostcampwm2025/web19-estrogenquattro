@@ -13,16 +13,16 @@ export default function NotificationsManagementPage() {
     setCurrentPage,
     isLoading,
     isProcessing,
-    newTitle,
-    setNewTitle,
-    newContent,
-    setNewContent,
+    newTitleKo, setNewTitleKo,
+    newContentKo, setNewContentKo,
+    newTitleEn, setNewTitleEn,
+    newContentEn, setNewContentEn,
     handleCreate,
     editTarget,
-    editTitle,
-    setEditTitle,
-    editContent,
-    setEditContent,
+    editTitleKo, setEditTitleKo,
+    editContentKo, setEditContentKo,
+    editTitleEn, setEditTitleEn,
+    editContentEn, setEditContentEn,
     openEdit,
     handleUpdate,
     setEditTarget,
@@ -44,22 +44,36 @@ export default function NotificationsManagementPage() {
         <h3 className="text-retro-text-primary mb-3 font-bold">새 공지 작성</h3>
         <input
           type="text"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="제목"
+          value={newTitleKo}
+          onChange={(e) => setNewTitleKo(e.target.value)}
+          placeholder="제목 (한국어)"
           maxLength={200}
           className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
         />
         <MarkdownEditor
-          content={newContent}
-          onChange={setNewContent}
-          placeholder="내용을 입력하세요 (# 제목, **굵게**, *기울임* 등 마크다운 자동 변환)"
+          content={newContentKo}
+          onChange={setNewContentKo}
+          placeholder="한국어 내용을 입력하세요 (마크다운 자동 변환)"
+          className="border-retro-border-darker mb-3 border-3 bg-white"
+        />
+        <input
+          type="text"
+          value={newTitleEn}
+          onChange={(e) => setNewTitleEn(e.target.value)}
+          placeholder="Title (English)"
+          maxLength={200}
+          className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
+        />
+        <MarkdownEditor
+          content={newContentEn}
+          onChange={setNewContentEn}
+          placeholder="Enter English content (Markdown autoconvert)"
           className="border-retro-border-darker mb-3 border-3 bg-white"
         />
         <div className="flex justify-end">
           <button
             onClick={handleCreate}
-            disabled={isProcessing || !newTitle.trim() || !newContent.trim()}
+            disabled={isProcessing || !newTitleKo.trim() || !newContentKo.trim() || !newTitleEn.trim() || !newContentEn.trim()}
             className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isProcessing ? "작성 중..." : "작성"}
@@ -107,7 +121,7 @@ export default function NotificationsManagementPage() {
                   {notification.id}
                 </td>
                 <td className="text-retro-text-primary px-4 py-2">
-                  {notification.title}
+                  {notification.titleKo}
                 </td>
                 <td className="text-retro-text-primary px-4 py-2">
                   {notification.author?.nickname || "-"}
@@ -181,16 +195,30 @@ export default function NotificationsManagementPage() {
             </h3>
             <input
               type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="제목"
+              value={editTitleKo}
+              onChange={(e) => setEditTitleKo(e.target.value)}
+              placeholder="제목 (한국어)"
               maxLength={200}
               className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
             />
             <MarkdownEditor
-              content={editContent}
-              onChange={setEditContent}
-              placeholder="내용을 입력하세요 (마크다운 자동 변환)"
+              content={editContentKo}
+              onChange={setEditContentKo}
+              placeholder="한국어 내용을 입력하세요 (마크다운 자동 변환)"
+              className="border-retro-border-darker mb-4 border-3 bg-white"
+            />
+            <input
+              type="text"
+              value={editTitleEn}
+              onChange={(e) => setEditTitleEn(e.target.value)}
+              placeholder="Title (English)"
+              maxLength={200}
+              className="border-retro-border-darker text-retro-text-primary mb-3 w-full border-3 bg-white px-3 py-2 outline-none"
+            />
+            <MarkdownEditor
+              content={editContentEn}
+              onChange={setEditContentEn}
+              placeholder="Enter English content"
               className="border-retro-border-darker mb-4 border-3 bg-white"
             />
             <div className="flex justify-end gap-3">
@@ -204,7 +232,7 @@ export default function NotificationsManagementPage() {
               <button
                 onClick={handleUpdate}
                 disabled={
-                  isProcessing || !editTitle.trim() || !editContent.trim()
+                  isProcessing || !editTitleKo.trim() || !editContentKo.trim() || !editTitleEn.trim() || !editContentEn.trim()
                 }
                 className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -226,7 +254,7 @@ export default function NotificationsManagementPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-retro-text-primary mb-4 text-lg font-bold">
-              &quot;{deleteTarget.title}&quot;을(를) 삭제하시겠습니까?
+              &quot;{deleteTarget.titleKo}&quot;을(를) 삭제하시겠습니까?
             </p>
             <div className="flex justify-end gap-3">
               <button
