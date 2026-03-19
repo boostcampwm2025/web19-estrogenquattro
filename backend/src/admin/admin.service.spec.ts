@@ -97,17 +97,17 @@ describe('AdminService', () => {
     });
   });
 
-  describe('isBanned', () => {
-    it('should return true if ban exists', async () => {
-      mockBanRepository.findOne.mockResolvedValue({ id: 1 });
-      const result = await service.isBanned(2);
-      expect(result).toBe(true);
+  describe('getBan', () => {
+    it('should return isBanned true if ban exists', async () => {
+      mockBanRepository.findOne.mockResolvedValue({ id: 1, reason: '욕설' });
+      const result = await service.getBan(2);
+      expect(result).toEqual({ isBanned: true, reason: '욕설' });
     });
 
-    it('should return false if ban does not exist', async () => {
+    it('should return isBanned false if ban does not exist', async () => {
       mockBanRepository.findOne.mockResolvedValue(null);
-      const result = await service.isBanned(99);
-      expect(result).toBe(false);
+      const result = await service.getBan(99);
+      expect(result).toEqual({ isBanned: false, reason: null });
     });
   });
 });
