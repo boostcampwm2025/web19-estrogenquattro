@@ -177,6 +177,41 @@ pnpm test        # 감시 모드 (기본값, 개발 중 사용)
 > **주의:** `pnpm test`는 기본적으로 watch 모드로 실행됩니다.
 > 한 번만 실행하고 종료하려면 `--run` 옵션을 사용하세요.
 
+### 통합 커버리지 범위
+
+프론트엔드 통합 테스트 커버리지는 전체 UI가 아니라 **상태/네트워크 경계 레이어**를 기준으로 측정합니다.
+
+- 포함: `src/stores/**`
+- 포함: `src/lib/api/**`
+- 포함: `src/lib/socket.ts`
+- 포함: `src/game/managers/SocketManager.ts`
+- 제외: page/layout, 단순 presentational component, 디자인 시스템성 UI 조각
+
+실행 명령:
+
+```bash
+cd frontend
+pnpm exec vitest run --config ./vitest.integration.config.mts --reporter=json --outputFile coverage/integration/frontend/test-results.json
+```
+
+---
+
+## 백엔드 통합 커버리지
+
+백엔드 통합 테스트 커버리지는 Nest 앱의 **종단 흐름 책임 코드** 위주로 측정합니다.
+
+- 포함: `src/**/*.controller.ts`
+- 포함: `src/**/*.gateway.ts`
+- 포함: `src/**/*.service.ts`
+- 제외: `*.module.ts`, DTO, entity, constants, pure util, test setup
+
+실행 명령:
+
+```bash
+cd backend
+pnpm exec jest --config ./test/jest-integration.json --runInBand --coverage --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile coverage/integration/backend/test-results.json
+```
+
 ### MSW 핸들러
 
 `frontend/test/mocks/handlers/` 디렉터리에 API 모킹 핸들러를 정의합니다.
