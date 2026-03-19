@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import HeroSection from "./_components/HeroSection";
 import EvolutionSection from "./_components/EvolutionSection";
@@ -11,7 +11,7 @@ import { Analytics } from "@/lib/analytics";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const isBanned = searchParams.get("banned") === "true";
   const [banInfo, setBanInfo] = useState<{ reason: string | null } | null>(
@@ -33,5 +33,19 @@ export default function LoginPage() {
         <BannedModal reason={banInfo.reason} onClose={() => setBanInfo(null)} />
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return (
+    <Suspense fallback={null}>
+      {mounted ? <LoginContent /> : null}
+    </Suspense>
   );
 }
