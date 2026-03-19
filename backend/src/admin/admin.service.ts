@@ -10,7 +10,6 @@ import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
 import { CreateBanDto } from './dto/create-ban.dto';
 import { Player } from '../player/entites/player.entity';
-import { Like } from 'typeorm';
 
 @Injectable()
 export class AdminService {
@@ -38,24 +37,34 @@ export class AdminService {
     this.logger.debug('Admin validated', { playerId });
   }
 
+  private escapeLike(value: string): string {
+    return value.replace(/[%_]/g, '\\$&');
+  }
+
   async getPlayers(search?: string) {
-    const where = search ? { nickname: Like(`%${search}%`) } : {};
-    const players = await this.playerRepository.find({
-      where,
-      select: ['id', 'nickname', 'socialId'],
-      order: { id: 'ASC' },
-    });
+    const query = this.playerRepository
+      .createQueryBuilder('player')
+      .select(['player.id', 'player.nickname', 'player.socialId', 'ban.reason'])
+      .leftJoin('bans', 'ban', 'ban.target_player_id = player.id')
+      .orderBy('player.id', 'ASC');
 
-    const bans = await this.banRepository.find({
-      relations: ['targetPlayer'],
-    });
-    const banMap = new Map(bans.map((b) => [b.targetPlayer.id, b.reason]));
+    if (search) {
+      query.where('player.nickname LIKE :search', {
+        search: `${this.escapeLike(search)}%`,
+      });
+    }
 
-    return players.map((p) => ({
-      id: p.id,
-      nickname: p.nickname,
-      isBanned: banMap.has(p.id),
-      banReason: banMap.get(p.id) ?? null,
+    const rows = await query.getRawMany<{
+      player_id: number;
+      player_nickname: string;
+      ban_reason: string | null;
+    }>();
+
+    return rows.map((r) => ({
+      id: r.player_id,
+      nickname: r.player_nickname,
+      isBanned: r.ban_reason !== null,
+      banReason: r.ban_reason ?? null,
     }));
   }
 

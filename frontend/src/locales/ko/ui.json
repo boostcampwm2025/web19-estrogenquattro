@@ -320,5 +320,8 @@
     "empty": "등록된 공지사항이 없습니다.",
     "button": "공지사항",
     "scrollToTop": "맨 위로 이동"
+  },
+  "noticePopup": {
+    "dismiss": "확인"
   }
 }

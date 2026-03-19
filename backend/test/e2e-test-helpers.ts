@@ -48,9 +48,6 @@ import { AdminService } from '../src/admin/admin.service';
 import { Admin } from '../src/admin/entities/admin.entity';
 import { Ban } from '../src/admin/entities/ban.entity';
 import { PetService } from '../src/userpet/pet.service';
-import { AdminService } from '../src/admin/admin.service';
-import { Admin } from '../src/admin/entities/admin.entity';
-import { Ban } from '../src/admin/entities/ban.entity';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
 export const SOCKET_EVENT_TIMEOUT_MS = 5000;
@@ -111,7 +108,6 @@ export async function createTestApp(
     PetService,
     AdminService,
     WriteLockService,
-    AdminService,
     {
       provide: GithubPollService,
       useValue: githubPollServiceMock,

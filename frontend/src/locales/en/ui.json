@@ -320,5 +320,8 @@
     "empty": "No registered notices.",
     "button": "Notice",
     "scrollToTop": "Scroll to top"
+  },
+  "noticePopup": {
+    "dismiss": "OK"
   }
 }
