@@ -92,8 +92,8 @@ export class PlayerGateway
     }
   }
 
-  handleConnection(client: Socket) {
-    const isValid = this.wsJwtGuard.verifyClient(client);
+  async handleConnection(client: Socket) {
+    const isValid = await this.wsJwtGuard.verifyClient(client);
 
     if (!isValid) {
       this.logger.warn('Connection rejected (unauthorized)', {

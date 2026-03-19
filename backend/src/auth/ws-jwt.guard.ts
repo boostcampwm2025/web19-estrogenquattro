@@ -9,6 +9,7 @@ import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { UserStore } from './user.store';
 import { JwtPayload } from './jwt.strategy';
+import { AdminService } from '../admin/admin.service';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -17,6 +18,7 @@ export class WsJwtGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private userStore: UserStore,
+    private adminService: AdminService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -35,7 +37,7 @@ export class WsJwtGuard implements CanActivate {
    * Socket.io handshake 시 JWT 검증
    * handleConnection에서 호출하여 사용
    */
-  verifyClient(client: Socket): boolean {
+  async verifyClient(client: Socket): Promise<boolean> {
     try {
       const token = this.extractToken(client);
 
@@ -47,6 +49,15 @@ export class WsJwtGuard implements CanActivate {
       const user = this.userStore.findByGithubId(payload.sub);
 
       if (!user) {
+        return false;
+      }
+
+      // 밴 여부 확인
+      const { isBanned, reason } = await this.adminService.getBan(
+        user.playerId,
+      );
+      if (isBanned) {
+        client.emit('banned', { reason });
         return false;
       }
 

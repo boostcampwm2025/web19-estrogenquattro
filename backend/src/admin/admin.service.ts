@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -69,6 +70,16 @@ export class AdminService {
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
+    const existing = await this.banRepository.findOne({
+      where: { targetPlayer: { id: dto.targetPlayerId } as unknown as Player },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        `Player with ID ${dto.targetPlayerId} is already banned`,
+      );
+    }
+
     const ban = this.banRepository.create({
       ...dto,
       targetPlayer: { id: dto.targetPlayerId } as unknown as Player,
