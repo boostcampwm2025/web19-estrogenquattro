@@ -30,7 +30,10 @@ function LoginContent() {
       <EvolutionSection />
       <DemoSection />
       {banInfo && (
-        <BannedModal reason={banInfo.reason} onClose={() => setDismissed(true)} />
+        <BannedModal
+          reason={banInfo.reason}
+          onClose={() => setDismissed(true)}
+        />
       )}
     </div>
   );

@@ -124,7 +124,10 @@ export default function BanManagementPage() {
             aria-modal="true"
             aria-labelledby="ban-confirm-title"
           >
-            <p id="ban-confirm-title" className="text-retro-text-primary mb-4 text-lg font-bold">
+            <p
+              id="ban-confirm-title"
+              className="text-retro-text-primary mb-4 text-lg font-bold"
+            >
               {confirmTarget.nickname}을(를){" "}
               {confirmTarget.isBanned ? "밴 해제" : "밴"}하시겠습니까?
             </p>

@@ -43,7 +43,10 @@ export default function BannedModal({ reason, onClose }: BannedModalProps) {
       >
         <div className="mb-3 flex items-center gap-3">
           <ShieldBan className="h-6 w-6 text-red-600" />
-          <h2 id="banned-modal-title" className="text-lg font-bold tracking-wide text-red-900">
+          <h2
+            id="banned-modal-title"
+            className="text-lg font-bold tracking-wide text-red-900"
+          >
             계정이 정지되었습니다
           </h2>
         </div>
