@@ -9,16 +9,22 @@ import {
 } from 'typeorm';
 import { Player } from '../../player/entites/player.entity';
 
-@Entity('notifications')
-export class Notification {
+@Entity('notice')
+export class Notice {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 200 })
-  title: string;
+  @Column({ type: 'varchar', length: 200, name: 'title_ko' })
+  titleKo: string;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'text', name: 'content_ko' })
+  contentKo: string;
+
+  @Column({ type: 'varchar', length: 200, name: 'title_en' })
+  titleEn: string;
+
+  @Column({ type: 'text', name: 'content_en' })
+  contentEn: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
