@@ -52,6 +52,9 @@ export class WsJwtGuard implements CanActivate {
         return false;
       }
 
+      // Socket에 사용자 정보 저장 (밴 체크 전에 세팅하여 race condition 방지)
+      client.data = { user };
+
       // 밴 여부 확인
       const { isBanned, reason } = await this.adminService.getBan(
         user.playerId,
@@ -60,9 +63,6 @@ export class WsJwtGuard implements CanActivate {
         client.emit('banned', { reason });
         return false;
       }
-
-      // Socket에 사용자 정보 저장
-      client.data = { user };
 
       return true;
     } catch (error) {

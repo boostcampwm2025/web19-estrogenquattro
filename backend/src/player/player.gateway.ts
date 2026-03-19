@@ -159,7 +159,13 @@ export class PlayerGateway
     @ConnectedSocket() client: Socket,
   ) {
     // client.data에서 OAuth 인증된 사용자 정보 추출
-    const userData = client.data as { user: User };
+    const userData = client.data as { user?: User };
+    if (!userData.user) {
+      this.logger.warn('User data not set, rejecting join', {
+        clientId: client.id,
+      });
+      return;
+    }
     const { githubId, username, accessToken, playerId } = userData.user;
 
     let roomId: string;
