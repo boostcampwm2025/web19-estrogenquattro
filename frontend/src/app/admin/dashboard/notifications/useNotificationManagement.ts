@@ -48,6 +48,9 @@ export function useNotificationManagement() {
       const data = await getNotifications(page, ITEMS_PER_PAGE);
       setNotifications(data.items);
       setTotalPagesState(data.totalPages);
+      if (page > data.totalPages && data.totalPages > 0) {
+        setCurrentPage(data.totalPages);
+      }
     } catch {
       setToast({
         message: "공지사항을 불러올 수 없습니다.",
@@ -60,6 +63,7 @@ export function useNotificationManagement() {
 
   useEffect(() => {
     fetchNotifications(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   const handleCreate = async () => {

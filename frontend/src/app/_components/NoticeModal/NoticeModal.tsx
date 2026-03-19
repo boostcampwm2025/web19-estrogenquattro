@@ -43,7 +43,7 @@ export default function NoticeModal() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const [page, setPage] = useState(1);
+  const [, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 

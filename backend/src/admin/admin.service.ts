@@ -45,7 +45,13 @@ export class AdminService {
   async getPlayers(search?: string) {
     const query = this.playerRepository
       .createQueryBuilder('player')
-      .select(['player.id', 'player.nickname', 'player.socialId', 'ban.reason'])
+      .select([
+        'player.id',
+        'player.nickname',
+        'player.socialId',
+        'ban.target_player_id',
+        'ban.reason',
+      ])
       .leftJoin('bans', 'ban', 'ban.target_player_id = player.id')
       .orderBy('player.id', 'ASC');
 
@@ -58,13 +64,14 @@ export class AdminService {
     const rows = await query.getRawMany<{
       player_id: number;
       player_nickname: string;
+      ban_target_player_id: number | null;
       ban_reason: string | null;
     }>();
 
     return rows.map((r) => ({
       id: r.player_id,
       nickname: r.player_nickname,
-      isBanned: r.ban_reason !== null,
+      isBanned: r.ban_target_player_id !== null,
       banReason: r.ban_reason ?? null,
     }));
   }

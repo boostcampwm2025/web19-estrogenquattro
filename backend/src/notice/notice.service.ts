@@ -123,7 +123,7 @@ export class NoticeService {
     });
 
     await this.noticeReadRepository.save(record);
-    this.logger.log('Notice Readed', { noticeId, playerId });
+    this.logger.log('Notice marked as read', { noticeId, playerId });
   }
 
   async getLatestUnreadNotice(playerId: number): Promise<Notice | null> {
