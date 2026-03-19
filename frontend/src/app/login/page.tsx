@@ -44,8 +44,6 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <Suspense fallback={null}>
-      {mounted ? <LoginContent /> : null}
-    </Suspense>
+    <Suspense fallback={null}>{mounted ? <LoginContent /> : null}</Suspense>
   );
 }

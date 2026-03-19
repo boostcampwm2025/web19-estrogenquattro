@@ -13,16 +13,24 @@ export default function NotificationsManagementPage() {
     setCurrentPage,
     isLoading,
     isProcessing,
-    newTitleKo, setNewTitleKo,
-    newContentKo, setNewContentKo,
-    newTitleEn, setNewTitleEn,
-    newContentEn, setNewContentEn,
+    newTitleKo,
+    setNewTitleKo,
+    newContentKo,
+    setNewContentKo,
+    newTitleEn,
+    setNewTitleEn,
+    newContentEn,
+    setNewContentEn,
     handleCreate,
     editTarget,
-    editTitleKo, setEditTitleKo,
-    editContentKo, setEditContentKo,
-    editTitleEn, setEditTitleEn,
-    editContentEn, setEditContentEn,
+    editTitleKo,
+    setEditTitleKo,
+    editContentKo,
+    setEditContentKo,
+    editTitleEn,
+    setEditTitleEn,
+    editContentEn,
+    setEditContentEn,
     openEdit,
     handleUpdate,
     setEditTarget,
@@ -73,7 +81,13 @@ export default function NotificationsManagementPage() {
         <div className="flex justify-end">
           <button
             onClick={handleCreate}
-            disabled={isProcessing || !newTitleKo.trim() || !newContentKo.trim() || !newTitleEn.trim() || !newContentEn.trim()}
+            disabled={
+              isProcessing ||
+              !newTitleKo.trim() ||
+              !newContentKo.trim() ||
+              !newTitleEn.trim() ||
+              !newContentEn.trim()
+            }
             className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isProcessing ? "작성 중..." : "작성"}
@@ -232,7 +246,11 @@ export default function NotificationsManagementPage() {
               <button
                 onClick={handleUpdate}
                 disabled={
-                  isProcessing || !editTitleKo.trim() || !editContentKo.trim() || !editTitleEn.trim() || !editContentEn.trim()
+                  isProcessing ||
+                  !editTitleKo.trim() ||
+                  !editContentKo.trim() ||
+                  !editTitleEn.trim() ||
+                  !editContentEn.trim()
                 }
                 className="border-retro-border-darker bg-retro-button-bg text-retro-button-text hover:bg-retro-button-hover cursor-pointer border-3 px-4 py-2 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >

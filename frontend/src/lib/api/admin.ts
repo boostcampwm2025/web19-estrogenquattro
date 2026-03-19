@@ -51,8 +51,13 @@ export interface AdminNotificationPaginationResponse {
 }
 
 // Notification CRUD (admin-only)
-export async function getNotifications(page: number = 1, limit: number = 10): Promise<AdminNotificationPaginationResponse> {
-  return fetchApi<AdminNotificationPaginationResponse>(`/api/notices?page=${page}&limit=${limit}`);
+export async function getNotifications(
+  page: number = 1,
+  limit: number = 10,
+): Promise<AdminNotificationPaginationResponse> {
+  return fetchApi<AdminNotificationPaginationResponse>(
+    `/api/notices?page=${page}&limit=${limit}`,
+  );
 }
 
 export async function createNotification(
@@ -65,7 +70,7 @@ export async function createNotification(
     method: "POST",
     body: JSON.stringify({
       ko: { title: titleKo, content: contentKo },
-      en: { title: titleEn, content: contentEn }
+      en: { title: titleEn, content: contentEn },
     }),
   });
 }
@@ -81,7 +86,7 @@ export async function updateNotification(
     method: "PATCH",
     body: JSON.stringify({
       ko: { title: titleKo, content: contentKo },
-      en: { title: titleEn, content: contentEn }
+      en: { title: titleEn, content: contentEn },
     }),
   });
 }

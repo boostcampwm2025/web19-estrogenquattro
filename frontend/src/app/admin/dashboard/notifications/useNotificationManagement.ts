@@ -63,14 +63,20 @@ export function useNotificationManagement() {
   }, [currentPage]);
 
   const handleCreate = async () => {
-    if (!newTitleKo.trim() || !newContentKo.trim() || !newTitleEn.trim() || !newContentEn.trim()) return;
+    if (
+      !newTitleKo.trim() ||
+      !newContentKo.trim() ||
+      !newTitleEn.trim() ||
+      !newContentEn.trim()
+    )
+      return;
     setIsProcessing(true);
     try {
       await createNotification(
         newTitleKo.trim(),
         newContentKo.trim(),
         newTitleEn.trim(),
-        newContentEn.trim()
+        newContentEn.trim(),
       );
       setNewTitleKo("");
       setNewContentKo("");
@@ -94,7 +100,14 @@ export function useNotificationManagement() {
   };
 
   const handleUpdate = async () => {
-    if (!editTarget || !editTitleKo.trim() || !editContentKo.trim() || !editTitleEn.trim() || !editContentEn.trim()) return;
+    if (
+      !editTarget ||
+      !editTitleKo.trim() ||
+      !editContentKo.trim() ||
+      !editTitleEn.trim() ||
+      !editContentEn.trim()
+    )
+      return;
     setIsProcessing(true);
     try {
       await updateNotification(
@@ -102,7 +115,7 @@ export function useNotificationManagement() {
         editTitleKo.trim(),
         editContentKo.trim(),
         editTitleEn.trim(),
-        editContentEn.trim()
+        editContentEn.trim(),
       );
       setEditTarget(null);
       setToast({ message: "공지사항을 수정했습니다.", variant: "success" });
@@ -140,16 +153,24 @@ export function useNotificationManagement() {
     setCurrentPage,
     isLoading,
     isProcessing,
-    newTitleKo, setNewTitleKo,
-    newContentKo, setNewContentKo,
-    newTitleEn, setNewTitleEn,
-    newContentEn, setNewContentEn,
+    newTitleKo,
+    setNewTitleKo,
+    newContentKo,
+    setNewContentKo,
+    newTitleEn,
+    setNewTitleEn,
+    newContentEn,
+    setNewContentEn,
     handleCreate,
     editTarget,
-    editTitleKo, setEditTitleKo,
-    editContentKo, setEditContentKo,
-    editTitleEn, setEditTitleEn,
-    editContentEn, setEditContentEn,
+    editTitleKo,
+    setEditTitleKo,
+    editContentKo,
+    setEditContentKo,
+    editTitleEn,
+    setEditTitleEn,
+    editContentEn,
+    setEditContentEn,
     openEdit,
     handleUpdate,
     setEditTarget,
