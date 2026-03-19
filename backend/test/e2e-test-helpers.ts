@@ -106,6 +106,7 @@ export async function createTestApp(
     FocusTimeGateway,
     ChatGateway,
     PetService,
+    AdminService,
     WriteLockService,
     AdminService,
     {
@@ -205,6 +206,7 @@ export function getRepository<T>(
   entity: EntityTarget<T>,
 ): Repository<T> {
   return context.moduleRef.get<Repository<T>>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     getRepositoryToken(entity as any),
   );
 }

@@ -4,6 +4,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
+import { Player } from '../player/entites/player.entity';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -19,6 +20,11 @@ describe('AdminService', () => {
     create: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
+    find: jest.fn(),
+  };
+
+  const mockPlayerRepository = {
+    find: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -32,6 +38,10 @@ describe('AdminService', () => {
         {
           provide: getRepositoryToken(Ban),
           useValue: mockBanRepository,
+        },
+        {
+          provide: getRepositoryToken(Player),
+          useValue: mockPlayerRepository,
         },
       ],
     }).compile();
@@ -97,17 +107,17 @@ describe('AdminService', () => {
     });
   });
 
-  describe('isBanned', () => {
-    it('should return true if ban exists', async () => {
-      mockBanRepository.findOne.mockResolvedValue({ id: 1 });
-      const result = await service.isBanned(2);
-      expect(result).toBe(true);
+  describe('getBan', () => {
+    it('should return isBanned true if ban exists', async () => {
+      mockBanRepository.findOne.mockResolvedValue({ id: 1, reason: 'test' });
+      const result = await service.getBan(2);
+      expect(result).toEqual({ isBanned: true, reason: 'test' });
     });
 
-    it('should return false if ban does not exist', async () => {
+    it('should return isBanned false if ban does not exist', async () => {
       mockBanRepository.findOne.mockResolvedValue(null);
-      const result = await service.isBanned(99);
-      expect(result).toBe(false);
+      const result = await service.getBan(99);
+      expect(result).toEqual({ isBanned: false, reason: null });
     });
   });
 });

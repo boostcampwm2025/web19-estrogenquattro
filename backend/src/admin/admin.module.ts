@@ -6,11 +6,14 @@ import { AdminService } from './admin.service';
 import { AdminGuard } from './admin.guard';
 import { AdminController } from './admin.controller';
 import { AuthModule } from '../auth/auth.module';
+import { Player } from '../player/entites/player.entity';
+import { PlayerModule } from '../player/player.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Admin, Ban]),
+    TypeOrmModule.forFeature([Admin, Ban, Player]),
     forwardRef(() => AuthModule),
+    forwardRef(() => PlayerModule),
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],
