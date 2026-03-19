@@ -12,11 +12,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  getPublicNotifications,
+  getNotices,
   type NoticeItem,
-} from "@/lib/api/notification";
+} from "@/lib/api/notice";
 import MarkdownRenderer from "@/app/_components/MarkdownRenderer";
 import { useTranslation } from "react-i18next";
+import { useInView } from "react-intersection-observer";
 
 const PIXEL_BORDER = "border-3 border-amber-900";
 const PIXEL_BG = "bg-[#ffecb3]";
@@ -29,7 +30,8 @@ export default function NoticeModal() {
     })),
   );
 
-  const { t } = useTranslation("ui");
+  const { t, i18n } = useTranslation("ui");
+  const isEnglish = i18n.language?.startsWith("en");
 
   const isOpen = activeModal === MODAL_TYPES.NOTICE;
 
@@ -44,33 +46,71 @@ export default function NoticeModal() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const fetchNotices = useCallback(async () => {
-    setIsLoading(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const fetchNotices = useCallback(async (pageNum: number = 1) => {
+    if (pageNum === 1) setIsLoading(true);
+    else setIsLoadingMore(true);
     try {
-      const data = await getPublicNotifications();
-      setNotices(data);
+      const data = await getNotices(pageNum, 10);
+      if (pageNum === 1) {
+        setNotices(data.items);
+        if (data.items.length > 0) {
+          setExpandedId((prev) => prev !== null ? prev : data.items[0].id);
+        }
+      } else {
+        setNotices((prev) => {
+          const newItems = data.items.filter((item) => !prev.some((p) => p.id === item.id));
+          return [...prev, ...newItems];
+        });
+      }
+      setHasNextPage(data.currentPage < data.totalPages);
     } catch (error) {
       console.error("Failed to fetch notices:", error);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      fetchNotices();
+      setPage(1);
+      fetchNotices(1);
       setExpandedId(null);
       setShowScrollTop(false);
     }
   }, [isOpen, fetchNotices]);
 
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasNextPage) {
+      setPage((prev) => {
+        const nextPage = prev + 1;
+        fetchNotices(nextPage);
+        return nextPage;
+      });
+    }
+  };
+
   const toggleExpand = (id: number) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
+  const { ref: bottomRef } = useInView({
+    threshold: 0,
+    onChange: (inView) => {
+      if (inView && hasNextPage && !isLoadingMore) {
+        handleLoadMore();
+      }
+    },
+  });
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
+    const locale = isEnglish ? "en-US" : "ko-KR";
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -160,7 +200,7 @@ export default function NoticeModal() {
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-900" />
                             )}
                             <span className="text-base leading-tight font-bold break-words text-amber-900">
-                              {notice.title}
+                              {isEnglish ? notice.titleEn : notice.titleKo}
                             </span>
                           </div>
                           <span className="shrink-0 pt-0.5 text-xs text-amber-500">
@@ -172,11 +212,20 @@ export default function NoticeModal() {
                       {/* 공지 내용 (펼침) */}
                       {expandedId === notice.id && (
                         <div className="mt-1 mb-1 rounded bg-amber-50/80 px-3 py-2">
-                          <MarkdownRenderer content={notice.content} />
+                          <MarkdownRenderer content={isEnglish ? notice.contentEn : notice.contentKo} />
                         </div>
                       )}
                     </div>
                   ))
+                )}
+                {hasNextPage && !isLoading && (
+                  <div ref={bottomRef} className="py-2 text-center">
+                    {isLoadingMore ? (
+                      <span className="text-xs text-amber-500">로딩 중...</span>
+                    ) : (
+                      <span className="text-xs text-amber-500">...</span>
+                    )}
+                  </div>
                 )}
               </div>
               {showScrollTop && (
