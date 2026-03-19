@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import HeroSection from "./_components/HeroSection";
 import EvolutionSection from "./_components/EvolutionSection";
@@ -11,7 +11,7 @@ import { Analytics } from "@/lib/analytics";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const isBanned = searchParams.get("banned") === "true";
   const reason = searchParams.get("reason");
@@ -33,5 +33,13 @@ export default function LoginPage() {
         <BannedModal reason={banInfo.reason} onClose={() => setDismissed(true)} />
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }
