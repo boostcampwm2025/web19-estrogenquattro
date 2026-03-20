@@ -135,7 +135,10 @@ describe('NoticeController', () => {
 
   describe('update', () => {
     it('should call service.update', async () => {
-      const dto: UpdateNoticeDto = { ko: { title: '수정됨' }, en: { title: 'Updated' } };
+      const dto: UpdateNoticeDto = {
+        ko: { title: '수정됨' },
+        en: { title: 'Updated' },
+      };
       await controller.update(1, dto);
       expect(mockNoticeService.update).toHaveBeenCalledWith(1, dto);
     });

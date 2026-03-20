@@ -11,6 +11,7 @@ import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
+import { io, Socket } from 'socket.io-client';
 import { EntityTarget, Repository, ObjectLiteral } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
