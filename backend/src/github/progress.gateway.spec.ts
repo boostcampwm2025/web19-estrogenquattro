@@ -252,6 +252,35 @@ describe('ProgressGateway', () => {
       );
     });
 
+    it('종료 시 debounce 대기 중인 상태를 즉시 저장한다', async () => {
+      gateway.addProgress('testuser', ProgressSource.TASK, 2);
+
+      expect(mockGlobalStateRepository.save).not.toHaveBeenCalled();
+
+      await gateway.onModuleDestroy();
+
+      expect(mockGlobalStateRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          progress: ACTIVITY_POINT_MAP[PointType.TASK_COMPLETED] * 2,
+          contributions: JSON.stringify({
+            testuser: ACTIVITY_POINT_MAP[PointType.TASK_COMPLETED] * 2,
+          }),
+          mapIndex: 0,
+        }),
+      );
+    });
+
+    it('이미 저장이 실행된 뒤 종료되면 중복 저장하지 않는다', async () => {
+      gateway.addProgress('testuser', ProgressSource.TASK, 1);
+      jest.advanceTimersByTime(1000);
+
+      expect(mockGlobalStateRepository.save).toHaveBeenCalledTimes(1);
+
+      await gateway.onModuleDestroy();
+
+      expect(mockGlobalStateRepository.save).toHaveBeenCalledTimes(1);
+    });
+
     it('복원 시 contributions가 포인트 값으로 설정된다', async () => {
       // Given: DB에 포인트 기반 contributions 저장
       mockGlobalStateRepository.findOne.mockResolvedValue({

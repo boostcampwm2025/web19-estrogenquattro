@@ -9,6 +9,15 @@ import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
 import { AuthProfileSyncService } from './auth-profile-sync.service';
+import { AuthSessionService } from './auth-session.service';
+import { PlaywrightAuthController } from './playwright-auth.controller';
+import { loadEnvFilesOnce } from '../config/env-files';
+
+loadEnvFilesOnce();
+
+const isPlaywrightAuthControllerEnabled =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.PLAYWRIGHT_TEST_MODE === 'true';
 
 @Module({
   imports: [
@@ -22,12 +31,15 @@ import { AuthProfileSyncService } from './auth-profile-sync.service';
     }),
     forwardRef(() => PlayerModule),
   ],
-  controllers: [AuthController],
+  controllers: isPlaywrightAuthControllerEnabled
+    ? [AuthController, PlaywrightAuthController]
+    : [AuthController],
   providers: [
     UserStore,
     GithubStrategy,
     JwtStrategy,
     WsJwtGuard,
+    AuthSessionService,
     AuthProfileSyncService,
   ],
   exports: [UserStore, JwtModule, WsJwtGuard],

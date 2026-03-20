@@ -1,0 +1,191 @@
+name: Integration Coverage PR
+
+concurrency:
+  group: integration-coverage-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/integration-coverage-pr.yml"
+      - ".github/workflows/integration-coverage-baseline.yml"
+      - "scripts/testing/**"
+      - "backend/**"
+      - "frontend/**"
+
+jobs:
+  backend-integration-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run backend integration coverage
+        working-directory: backend
+        run: |
+          pnpm exec jest --config ./test/jest-integration.json --runInBand --coverage --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile coverage/integration/backend/test-results.json
+
+      - name: Build backend integration report
+        run: |
+          node scripts/testing/create-integration-report.mjs \
+            --platform backend \
+            --coverage backend/coverage/integration/backend/coverage-summary.json \
+            --results backend/coverage/integration/backend/test-results.json \
+            --output .artifacts/backend/integration-report.json
+
+      - name: Upload backend integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-report
+          path: .artifacts/backend/integration-report.json
+
+  frontend-integration-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend integration coverage
+        working-directory: frontend
+        run: |
+          pnpm exec vitest run --config ./vitest.integration.config.mts --reporter=json --outputFile coverage/integration/frontend/test-results.json
+
+      - name: Build frontend integration report
+        run: |
+          node scripts/testing/create-integration-report.mjs \
+            --platform frontend \
+            --coverage frontend/coverage/integration/frontend/coverage-summary.json \
+            --results frontend/coverage/integration/frontend/test-results.json \
+            --output .artifacts/frontend/integration-report.json
+
+      - name: Upload frontend integration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-integration-report
+          path: .artifacts/frontend/integration-report.json
+
+  coverage-comment:
+    runs-on: ubuntu-latest
+    needs:
+      - backend-integration-coverage
+      - frontend-integration-coverage
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download current backend report
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-integration-report
+          path: .artifacts/current/backend
+
+      - name: Download current frontend report
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-integration-report
+          path: .artifacts/current/frontend
+
+      - name: Download baseline reports from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .artifacts/baseline
+          RUN_ID=$(gh run list --workflow integration-coverage-baseline.yml --branch main --json databaseId,conclusion --jq 'map(select(.conclusion=="success")) | .[0].databaseId' 2>/dev/null || true)
+          if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+            gh run download "$RUN_ID" -n backend-integration-report -D .artifacts/baseline/backend || true
+            gh run download "$RUN_ID" -n frontend-integration-report -D .artifacts/baseline/frontend || true
+          fi
+
+      - name: Collect changed files
+        run: |
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > .artifacts/changed-files.txt
+
+      - name: Render integration comment
+        run: |
+          node scripts/testing/render-integration-comment.mjs \
+            --current-backend .artifacts/current/backend/integration-report.json \
+            --current-frontend .artifacts/current/frontend/integration-report.json \
+            --baseline-backend .artifacts/baseline/backend/integration-report.json \
+            --baseline-frontend .artifacts/baseline/frontend/integration-report.json \
+            --changed-files .artifacts/changed-files.txt \
+            --output .artifacts/comment.md \
+            --gate-output .artifacts/gate.json
+
+      - name: Upsert PR comment
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- integration-coverage-report -->";
+            const body = fs.readFileSync(".artifacts/comment.md", "utf8");
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Fail on coverage regression
+        run: |
+          node -e 'const fs = require("node:fs"); const gate = JSON.parse(fs.readFileSync(".artifacts/gate.json", "utf8")); if (gate.shouldFail) { console.error(gate.reasons.join("\n")); process.exit(1); }'

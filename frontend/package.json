@@ -12,6 +12,8 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage --coverage.reporter=html",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "generate-silhouettes": "tsx scripts/generate-silhouettes.ts"
   },
   "dependencies": {
@@ -36,6 +38,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
