@@ -29,7 +29,7 @@ export class AuthController {
   async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
 
-    const isBanned = await this.adminService.isBanned(user.playerId);
+    const isBanned = this.adminService.isBanned(user.playerId);
     const reason = isBanned
       ? (await this.adminService.getBan(user.playerId)).reason
       : null;

@@ -26,7 +26,9 @@ describe('NoticeService', () => {
   };
 
   const mockWriteLockService = {
-    runExclusive: jest.fn().mockImplementation((cb) => cb()),
+    runExclusive: jest
+      .fn()
+      .mockImplementation((cb: () => Promise<any>) => cb()),
   };
 
   beforeEach(async () => {

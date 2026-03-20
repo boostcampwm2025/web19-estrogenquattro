@@ -63,7 +63,7 @@ export class AdminService {
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
-    const existingBan = await this.isBanned(dto.targetPlayerId);
+    const existingBan = this.isBanned(dto.targetPlayerId);
     if (existingBan) {
       throw new ConflictException('이미 밴된 사용자입니다');
     }
@@ -94,7 +94,7 @@ export class AdminService {
     return { isBanned: !!ban, reason: ban?.reason ?? null };
   }
 
-  async isBanned(playerId: number): Promise<boolean> {
+  isBanned(playerId: number): boolean {
     return this.banCacheService.isBanned(playerId);
   }
 
