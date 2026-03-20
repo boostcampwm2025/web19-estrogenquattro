@@ -63,7 +63,7 @@ export default function PlayerRow({
           href={githubProfileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-center font-medium text-amber-900 underline-offset-2 transition-colors hover:text-amber-700 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-amber-700 focus-visible:outline-offset-2"
+          className="block text-center font-medium text-amber-900 underline-offset-2 transition-colors hover:text-amber-700 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
           {trimmedUsername}
         </a>
