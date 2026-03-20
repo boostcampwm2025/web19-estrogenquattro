@@ -1,6 +1,14 @@
 export class Octokit {
+  static getAuthenticatedMock: () => Promise<{
+    data: {
+      login: string;
+      avatar_url: string;
+    };
+  }> = () => Promise.reject(new Error('not configured'));
+
   rest = {
     users: {
+      getAuthenticated: () => Octokit.getAuthenticatedMock(),
       getByUsername: () =>
         Promise.resolve({
           data: {
