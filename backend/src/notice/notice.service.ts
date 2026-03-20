@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { CreateNoticeDto } from './dto/create-notification.dto';
+import { UpdateNoticeDto } from './dto/update-notification.dto';
 import { Player } from '../player/entites/player.entity';
 import { Notice } from './entities/notice.entity';
 import { NoticeRead } from './entities/notice-read.entity';
@@ -18,20 +18,21 @@ export class NoticeService {
 
   constructor(
     @InjectRepository(Notice)
-    private readonly notificationRepository: Repository<Notice>,
+    
+    private readonly noticeRepository: Repository<Notice>,
     @InjectRepository(NoticeRead)
     private readonly noticeReadRepository: Repository<NoticeRead>,
   ) {}
 
-  async create(authorId: number, dto: CreateNotificationDto): Promise<Notice> {
-    const notification = this.notificationRepository.create({
+  async create(authorId: number, dto: CreateNoticeDto): Promise<Notice> {
+    const notice = this.noticeRepository.create({
       titleKo: dto.ko.title,
       contentKo: dto.ko.content,
       titleEn: dto.en.title,
       contentEn: dto.en.content,
       author: { id: authorId } as unknown as Player,
     });
-    return this.notificationRepository.save(notification);
+    return this.noticeRepository.save(notice);
   }
 
   async findByPage(
@@ -55,7 +56,7 @@ export class NoticeService {
 
     const skip = (page - 1) * limit;
 
-    const [items, totalCount] = await this.notificationRepository
+    const [items, totalCount] = await this.noticeRepository
       .createQueryBuilder('notice')
       .leftJoin('notice.author', 'author')
       .addSelect(['author.id', 'author.nickname'])
@@ -75,35 +76,35 @@ export class NoticeService {
   }
 
   async findOne(id: number): Promise<Notice> {
-    const notification = await this.notificationRepository.findOne({
+    const notice = await this.noticeRepository.findOne({
       where: { id },
       relations: ['author'],
     });
-    if (!notification) {
-      throw new NotFoundException(`Notification with ID ${id} not found`);
+    if (!notice) {
+      throw new NotFoundException(`Notice with ID ${id} not found`);
     }
-    return notification;
+    return notice;
   }
 
-  async update(id: number, dto: UpdateNotificationDto): Promise<Notice> {
-    const notification = await this.findOne(id);
+  async update(id: number, dto: UpdateNoticeDto): Promise<Notice> {
+    const notice = await this.findOne(id);
 
     if (dto.ko) {
-      if (dto.ko.title !== undefined) notification.titleKo = dto.ko.title;
-      if (dto.ko.content !== undefined) notification.contentKo = dto.ko.content;
+      if (dto.ko.title !== undefined) notice.titleKo = dto.ko.title;
+      if (dto.ko.content !== undefined) notice.contentKo = dto.ko.content;
     }
     if (dto.en) {
-      if (dto.en.title !== undefined) notification.titleEn = dto.en.title;
-      if (dto.en.content !== undefined) notification.contentEn = dto.en.content;
+      if (dto.en.title !== undefined) notice.titleEn = dto.en.title;
+      if (dto.en.content !== undefined) notice.contentEn = dto.en.content;
     }
 
-    return this.notificationRepository.save(notification);
+    return this.noticeRepository.save(notice);
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.notificationRepository.delete(id);
+    const result = await this.noticeRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Notification with ID ${id} not found`);
+      throw new NotFoundException(`Notice with ID ${id} not found`);
     }
   }
 
@@ -127,7 +128,7 @@ export class NoticeService {
   }
 
   async getLatestUnreadNotice(playerId: number): Promise<Notice | null> {
-    const latestNotice = await this.notificationRepository.findOne({
+    const latestNotice = await this.noticeRepository.findOne({
       order: { createdAt: 'DESC' },
     });
 
