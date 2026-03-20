@@ -13,7 +13,7 @@ export class NoticeRead {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Notice)
+  @ManyToOne(() => Notice, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'notice_id' })
   notice: Notice;
 
