@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import { GithubGuard } from './github.guard';
 import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
+import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { getFrontendUrls } from '../config/frontend-urls';
 import { AuthSessionService } from './auth-session.service';
 
@@ -14,6 +15,7 @@ export class AuthController {
   constructor(
     private readonly configService: ConfigService,
     private readonly authSessionService: AuthSessionService,
+    private readonly authProfileSyncService: AuthProfileSyncService,
   ) {}
 
   @Get('github')
@@ -49,8 +51,11 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtGuard)
-  me(@Req() req: Request) {
-    const userInfo = this.authSessionService.toUserInfo(req.user as User);
+  async me(@Req() req: Request) {
+    const syncedUser = await this.authProfileSyncService.syncCurrentUser(
+      req.user as User,
+    );
+    const userInfo = this.authSessionService.toUserInfo(syncedUser);
     this.logger.log('GET /auth/me', {
       method: 'me',
       username: userInfo.username,
