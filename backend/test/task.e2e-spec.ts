@@ -16,6 +16,10 @@ interface TaskBody {
   isCompleted?: boolean;
 }
 
+interface TaskListBody {
+  tasks: TaskBody[];
+}
+
 interface ErrorBody {
   code: string;
 }
@@ -139,9 +143,10 @@ describe('Task E2E', () => {
       })
       .set('Cookie', seeded.cookie)
       .expect(200);
+    const todayTasksBody = todayTasks.body as TaskListBody;
 
-    expect(todayTasks.body.tasks).toHaveLength(1);
-    expect(todayTasks.body.tasks[0]).toMatchObject({
+    expect(todayTasksBody.tasks).toHaveLength(1);
+    expect(todayTasksBody.tasks[0]).toMatchObject({
       id: createdBody.id,
       description: 'Task Flow',
       isCompleted: false,
@@ -163,8 +168,9 @@ describe('Task E2E', () => {
       })
       .set('Cookie', seeded.cookie)
       .expect(200);
-    expect(historyTasks.body.tasks).toHaveLength(1);
-    expect(historyTasks.body.tasks[0].id).toBe(createdBody.id);
+    const historyTasksBody = historyTasks.body as TaskListBody;
+    expect(historyTasksBody.tasks).toHaveLength(1);
+    expect(historyTasksBody.tasks[0].id).toBe(createdBody.id);
 
     const uncompleted = await request(getHttpServer())
       .patch(`/api/tasks/uncompletion/${createdBody.id}`)
