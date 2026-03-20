@@ -23,6 +23,6 @@ import { PetModule } from '../userpet/pet.module';
   ],
   controllers: [PlayerController],
   providers: [PlayerGateway, PlayerService],
-  exports: [TypeOrmModule, PlayerService],
+  exports: [TypeOrmModule, PlayerService, PlayerGateway],
 })
 export class PlayerModule {}

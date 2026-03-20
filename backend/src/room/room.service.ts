@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import {
   RoomFullException,
   RoomNotFoundException,
@@ -11,7 +11,7 @@ export type RoomInfo = {
 };
 
 @Injectable()
-export class RoomService {
+export class RoomService implements OnModuleDestroy {
   private readonly logger = new Logger(RoomService.name);
 
   private readonly capacity = 14;
@@ -26,6 +26,14 @@ export class RoomService {
 
   constructor() {
     this.initializeRooms();
+  }
+
+  onModuleDestroy() {
+    for (const timeout of this.reservations.values()) {
+      clearTimeout(timeout);
+    }
+    this.reservations.clear();
+    this.reservedRooms.clear();
   }
 
   private initializeRooms() {

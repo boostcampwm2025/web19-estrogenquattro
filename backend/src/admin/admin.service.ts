@@ -12,6 +12,7 @@ import { Ban } from './entities/ban.entity';
 import { CreateBanDto } from './dto/create-ban.dto';
 import { Player } from '../player/entites/player.entity';
 import { BanCacheService } from './ban-cache.service';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class AdminService {
@@ -23,6 +24,8 @@ export class AdminService {
     @InjectRepository(Ban)
     private readonly banRepository: Repository<Ban>,
     private readonly banCacheService: BanCacheService,
+    @InjectRepository(Player)
+    private readonly playerRepository: Repository<Player>,
   ) {}
 
   async validateAdmin(playerId: number): Promise<void> {
@@ -36,6 +39,27 @@ export class AdminService {
     }
 
     this.logger.debug('Admin validated', { playerId });
+  }
+
+  async getPlayers(search?: string) {
+    const where = search ? { nickname: Like(`${search}%`) } : {};
+    const players = await this.playerRepository.find({
+      where,
+      select: ['id', 'nickname', 'socialId'],
+      order: { id: 'ASC' },
+    });
+
+    const bans = await this.banRepository.find({
+      relations: ['targetPlayer'],
+    });
+    const banMap = new Map(bans.map((b) => [b.targetPlayer.id, b.reason]));
+
+    return players.map((p) => ({
+      id: p.id,
+      nickname: p.nickname,
+      isBanned: banMap.has(p.id),
+      banReason: banMap.get(p.id) ?? null,
+    }));
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
@@ -61,11 +85,17 @@ export class AdminService {
     return savedBan;
   }
 
-  async isBanned(playerId: number): Promise<boolean> {
+  async getBan(
+    playerId: number,
+  ): Promise<{ isBanned: boolean; reason: string | null }> {
     const ban = await this.banRepository.findOne({
       where: { targetPlayer: { id: playerId } as unknown as Player },
     });
-    return !!ban;
+    return { isBanned: !!ban, reason: ban?.reason ?? null };
+  }
+
+  async isBanned(playerId: number): Promise<boolean> {
+    return this.banCacheService.isBanned(playerId);
   }
 
   async unban(playerId: number): Promise<void> {

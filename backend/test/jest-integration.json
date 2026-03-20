@@ -1,0 +1,24 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "roots": ["<rootDir>/test"],
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "setupFiles": ["<rootDir>/test/setup-env.ts"],
+  "moduleNameMapper": {
+    "^octokit$": "<rootDir>/test/mocks/octokit.mock.ts"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testTimeout": 30000,
+  "coverageDirectory": "<rootDir>/coverage/integration/backend",
+  "collectCoverageFrom": [
+    "src/**/*.controller.ts",
+    "src/**/*.gateway.ts",
+    "src/**/*.service.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.integration.spec.ts",
+    "!src/**/*.module.ts"
+  ]
+}

@@ -1,6 +1,6 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { OnModuleInit, Logger } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ACTIVITY_POINT_MAP } from '../point/point.service';
@@ -62,7 +62,7 @@ const MAX_MAP_INDEX = 4; // 마지막 맵 인덱스
 const MAP_PROGRESS_THRESHOLDS = [200, 300, 400, 500, 500];
 
 @WebSocketGateway()
-export class ProgressGateway implements OnModuleInit {
+export class ProgressGateway implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ProgressGateway.name);
 
   @WebSocketServer()
@@ -142,6 +142,16 @@ export class ProgressGateway implements OnModuleInit {
     }
   }
 
+  async onModuleDestroy() {
+    if (!this.persistTimer) {
+      return;
+    }
+
+    clearTimeout(this.persistTimer);
+    this.persistTimer = null;
+    await this.persistState();
+  }
+
   /**
    * 상태 변경 시 DB 저장 예약 (debounce 적용)
    */
@@ -151,6 +161,7 @@ export class ProgressGateway implements OnModuleInit {
     }
 
     this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
       void this.persistState();
     }, this.PERSIST_DEBOUNCE_MS);
   }

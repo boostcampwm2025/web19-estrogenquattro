@@ -1,22 +1,21 @@
 import { Controller, Get, Logger, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import type { Request, Response } from 'express';
 import { GithubGuard } from './github.guard';
 import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
-import type { UserInfo } from './user.interface';
 import { getFrontendUrls } from '../config/frontend-urls';
 import { AdminService } from '../admin/admin.service';
+import { AuthSessionService } from './auth-session.service';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private adminService: AdminService,
+    private readonly configService: ConfigService,
+    private readonly adminService: AdminService,
+    private readonly authSessionService: AuthSessionService,
   ) {}
 
   @Get('github')
@@ -31,13 +30,16 @@ export class AuthController {
     const user = req.user as User;
 
     const isBanned = await this.adminService.isBanned(user.playerId);
+    const reason = isBanned ? (await this.adminService.getBan(user.playerId)).reason : null;
     if (isBanned) {
       this.logger.warn('Banned user attempted login', {
         playerId: user.playerId,
       });
       res.clearCookie('access_token');
       const frontendUrls = getFrontendUrls(this.configService);
-      return res.redirect(`${frontendUrls[0]}`);
+      const params = new URLSearchParams({ banned: 'true' });
+      if (reason) params.set('reason', reason);
+      return res.redirect(`${frontendUrls[0]}/login?${params.toString()}`);
     }
 
     this.logger.log('GitHub callback', {
@@ -45,29 +47,12 @@ export class AuthController {
       username: user.username,
     });
 
-    const token = this.jwtService.sign({
-      sub: user.githubId,
-      username: user.username,
-      playerId: user.playerId,
-    });
     this.logger.log('JWT token generated', {
       method: 'githubCallback',
       username: user.username,
     });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: false, // HTTPS 사용 시 true로 변경
-      sameSite: 'lax' as const,
-      maxAge: 24 * 60 * 60 * 1000, // 1일
-      path: '/',
-    };
-    this.logger.log('Setting cookie', {
-      method: 'githubCallback',
-      options: cookieOptions,
-    });
-
-    res.cookie('access_token', token, cookieOptions);
+    this.authSessionService.setAccessTokenCookie(res, user);
 
     const frontendUrls = getFrontendUrls(this.configService);
     const frontendUrl = frontendUrls[0];
@@ -81,8 +66,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtGuard)
   me(@Req() req: Request) {
-    const { githubId, username, avatarUrl, playerId } = req.user as User;
-    const userInfo: UserInfo = { githubId, username, avatarUrl, playerId };
+    const userInfo = this.authSessionService.toUserInfo(req.user as User);
     this.logger.log('GET /auth/me', {
       method: 'me',
       username: userInfo.username,
