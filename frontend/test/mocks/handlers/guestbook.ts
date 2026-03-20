@@ -35,10 +35,10 @@ export const seedGuestbookEntries = (entries: GuestbookEntry[]) => {
   guestbookEntries = [...entries];
   nextGuestbookId =
     entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
-  guestbookReadState.latestEntryId = entries.reduce(
-    (max, entry) => Math.max(max, entry.id),
-    0,
-  );
+  guestbookReadState.latestEntryId =
+    entries.length > 0
+      ? entries.reduce((max, entry) => Math.max(max, entry.id), 0)
+      : null;
 };
 
 export const setGuestbookReadState = (state: GuestbookReadStateRes) => {
@@ -110,10 +110,11 @@ export const guestbookHandlers = [
       (max, entry) => Math.max(max, entry.id),
       0,
     );
+    const latestOrNull = latestEntryId || null;
 
     guestbookReadState = {
-      latestEntryId: latestEntryId || null,
-      lastReadEntryId: latestEntryId,
+      latestEntryId: latestOrNull,
+      lastReadEntryId: latestOrNull ?? 0,
       hasUnread: false,
     };
 

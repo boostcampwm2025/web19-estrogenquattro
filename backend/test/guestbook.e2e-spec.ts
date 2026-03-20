@@ -23,6 +23,12 @@ type GuestbookPageResponse = {
   nextCursor: number | null;
 };
 
+type GuestbookReadStateResponse = {
+  latestEntryId: number | null;
+  lastReadEntryId: number;
+  hasUnread: boolean;
+};
+
 type ErrorResponse = {
   message: string | string[];
 };
@@ -99,11 +105,13 @@ describe('Guestbook E2E', () => {
       .get('/api/guestbooks/read-state')
       .set('Cookie', seeded.cookie)
       .expect(200);
+    const createdBody = created.body as GuestbookItemResponse;
+    const readStateBody = readState.body as GuestbookReadStateResponse;
 
-    expect(created.body.id).toBeGreaterThan(0);
-    expect(readState.body).toEqual({
-      latestEntryId: created.body.id,
-      lastReadEntryId: created.body.id,
+    expect(createdBody.id).toBeGreaterThan(0);
+    expect(readStateBody).toEqual({
+      latestEntryId: createdBody.id,
+      lastReadEntryId: createdBody.id,
       hasUnread: false,
     });
   });
