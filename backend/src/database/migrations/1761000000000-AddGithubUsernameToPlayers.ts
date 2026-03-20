@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddGithubUsernameToPlayers1761000000000
