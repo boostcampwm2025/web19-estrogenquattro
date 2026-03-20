@@ -16,8 +16,10 @@ describe('Guestbook Read State E2E', () => {
   beforeEach(async () => {
     context = await createTestApp({
       includeGuestbookController: true,
-      playwrightTestMode: true,
-      playwrightTestSecret: 'playwright-secret',
+      configOverrides: {
+        PLAYWRIGHT_TEST_MODE: 'true',
+        PLAYWRIGHT_E2E_SECRET: 'playwright-secret',
+      },
     });
   });
 
@@ -73,7 +75,7 @@ describe('Guestbook Read State E2E', () => {
         socialId: 20001,
         username: 'reader-user',
       })
-      .expect(201);
+      .expect(200);
 
     const nextCookie = (
       reloginResponse.headers['set-cookie'] as string[] | undefined

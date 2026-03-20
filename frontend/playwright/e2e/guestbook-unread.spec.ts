@@ -7,13 +7,17 @@ import {
   type Page,
   type StorageState,
 } from "@playwright/test";
-import { backendUrl, e2eSecret, frontendUrl } from "./testEnv";
+import {
+  backendBaseUrl,
+  e2eSecret,
+  frontendBaseUrl,
+} from "../constants";
 
 async function createSession(
   socialId: number,
   username: string,
 ): Promise<StorageState> {
-  const api = await playwrightRequest.newContext({ baseURL: backendUrl });
+  const api = await playwrightRequest.newContext({ baseURL: backendBaseUrl });
 
   const response = await api.post("/auth/test-login", {
     headers: {
@@ -38,7 +42,7 @@ async function createGuestbookEntry(
   username: string,
   content: string,
 ): Promise<void> {
-  const api = await playwrightRequest.newContext({ baseURL: backendUrl });
+  const api = await playwrightRequest.newContext({ baseURL: backendBaseUrl });
 
   const loginResponse = await api.post("/auth/test-login", {
     headers: {
@@ -73,7 +77,7 @@ async function openAuthenticatedPage(
   });
   const page = await context.newPage();
 
-  await page.goto(frontendUrl, { waitUntil: "networkidle" });
+  await page.goto(frontendBaseUrl, { waitUntil: "networkidle" });
   await expect(page.locator("#guestbook-button")).toBeVisible();
 
   return { context, page };
@@ -109,7 +113,7 @@ test("same-account unread state is shared across multiple browser sessions", asy
   await Promise.all([
     firstReader.page.waitForResponse(
       (response) =>
-        response.url() === `${backendUrl}/api/guestbooks/read` &&
+        response.url() === `${backendBaseUrl}/api/guestbooks/read` &&
         response.request().method() === "POST" &&
         response.status() === 200,
       {
