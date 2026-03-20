@@ -56,14 +56,24 @@ export class NoticeService {
 
     const skip = (page - 1) * limit;
 
-    const [items, totalCount] = await this.noticeRepository
-      .createQueryBuilder('notice')
-      .leftJoin('notice.author', 'author')
-      .addSelect(['author.id', 'author.nickname'])
-      .orderBy('notice.id', 'DESC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    const [items, totalCount] = await this.noticeRepository.findAndCount({
+      relations: ['author'],
+      select: {
+        id: true,
+        titleKo: true,
+        contentKo: true,
+        titleEn: true,
+        contentEn: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          nickname: true,
+        },
+      },
+      order: { id: 'DESC' },
+      skip,
+      take: limit,
+    });
 
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -79,6 +89,18 @@ export class NoticeService {
     const notice = await this.noticeRepository.findOne({
       where: { id },
       relations: ['author'],
+      select: {
+        id: true,
+        titleKo: true,
+        contentKo: true,
+        titleEn: true,
+        contentEn: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          nickname: true,
+        },
+      },
     });
     if (!notice) {
       throw new NotFoundException(`Notice with ID ${id} not found`);
@@ -130,6 +152,19 @@ export class NoticeService {
   async getLatestUnreadNotice(playerId: number): Promise<Notice | null> {
     const latestNotice = await this.noticeRepository.findOne({
       order: { createdAt: 'DESC' },
+      relations: ['author'],
+      select: {
+        id: true,
+        titleKo: true,
+        contentKo: true,
+        titleEn: true,
+        contentEn: true,
+        createdAt: true,
+        updatedAt: true,
+        author: {
+          nickname: true,
+        },
+      },
     });
 
     if (!latestNotice) {
