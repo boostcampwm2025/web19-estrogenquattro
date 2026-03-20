@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import type { GuestbookReadStateRes } from "@/lib/api/guestbook";
 
 type GuestbookEntry = {
   id: number;
@@ -12,16 +13,40 @@ type GuestbookEntry = {
 
 let nextGuestbookId = 1;
 let guestbookEntries: GuestbookEntry[] = [];
+let guestbookReadState: GuestbookReadStateRes = {
+  latestEntryId: null,
+  lastReadEntryId: 0,
+  hasUnread: false,
+};
+let failMarkAsReadOnce = false;
 
 export const resetGuestbookStore = () => {
   nextGuestbookId = 1;
   guestbookEntries = [];
+  guestbookReadState = {
+    latestEntryId: null,
+    lastReadEntryId: 0,
+    hasUnread: false,
+  };
+  failMarkAsReadOnce = false;
 };
 
 export const seedGuestbookEntries = (entries: GuestbookEntry[]) => {
   guestbookEntries = [...entries];
   nextGuestbookId =
     entries.reduce((max, entry) => Math.max(max, entry.id), 0) + 1;
+  guestbookReadState.latestEntryId = entries.reduce(
+    (max, entry) => Math.max(max, entry.id),
+    0,
+  );
+};
+
+export const setGuestbookReadState = (state: GuestbookReadStateRes) => {
+  guestbookReadState = { ...state };
+};
+
+export const failNextMarkAsRead = () => {
+  failMarkAsReadOnce = true;
 };
 
 export const guestbookHandlers = [
@@ -60,7 +85,41 @@ export const guestbookHandlers = [
       player: { id: 1, nickname: "테스트유저" },
     };
     guestbookEntries.unshift(entry);
+    guestbookReadState = {
+      latestEntryId: entry.id,
+      lastReadEntryId: guestbookReadState.lastReadEntryId,
+      hasUnread:
+        guestbookReadState.lastReadEntryId === 0 ||
+        guestbookReadState.lastReadEntryId < entry.id,
+    };
     return HttpResponse.json(entry, { status: 201 });
+  }),
+
+  http.get("*/api/guestbooks/read-state", () =>
+    HttpResponse.json(guestbookReadState, { status: 200 }),
+  ),
+
+  http.post("*/api/guestbooks/read", () => {
+    if (failMarkAsReadOnce) {
+      failMarkAsReadOnce = false;
+      return HttpResponse.json(
+        { message: "markAsRead failed" },
+        { status: 500 },
+      );
+    }
+
+    const latestEntryId = guestbookEntries.reduce(
+      (max, entry) => Math.max(max, entry.id),
+      0,
+    );
+
+    guestbookReadState = {
+      latestEntryId: latestEntryId || null,
+      lastReadEntryId: latestEntryId,
+      hasUnread: false,
+    };
+
+    return HttpResponse.json(guestbookReadState, { status: 200 });
   }),
 
   http.delete("*/api/guestbooks/:id", ({ params }) => {
