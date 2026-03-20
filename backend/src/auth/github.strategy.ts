@@ -32,6 +32,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     const player = await this.playerService.findOrCreateBySocialId(
       Number(profile.id),
       username,
+      username,
     );
 
     const user = this.userStore.findOrCreate({

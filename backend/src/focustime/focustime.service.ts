@@ -13,6 +13,7 @@ const MAX_STALE_SETTLE_SECONDS = 10 * 60; // 10분
 export interface FocusRank {
   playerId: number;
   nickname: string;
+  githubUsername: string | null;
   count: number;
   rank: number;
 }
@@ -467,6 +468,7 @@ export class FocusTimeService {
       .createQueryBuilder('ft')
       .select('ft.player_id', 'playerId')
       .addSelect('player.nickname', 'nickname')
+      .addSelect('player.githubUsername', 'githubUsername')
       .addSelect('SUM(ft.total_focus_seconds)', 'count')
       .innerJoin('ft.player', 'player')
       .where('ft.createdAt >= :startAt AND ft.createdAt < :endAt', {
@@ -483,7 +485,15 @@ export class FocusTimeService {
     let previousCount: number | null = null;
 
     return results.map(
-      (row: { playerId: number; nickname: string; count: string }, index) => {
+      (
+        row: {
+          playerId: number;
+          nickname: string;
+          githubUsername: string | null;
+          count: string;
+        },
+        index,
+      ) => {
         const count = Number(row.count);
 
         if (previousCount !== null && count < previousCount) {
@@ -494,6 +504,7 @@ export class FocusTimeService {
         return {
           playerId: row.playerId,
           nickname: row.nickname,
+          githubUsername: row.githubUsername,
           count,
           rank: currentRank,
         };

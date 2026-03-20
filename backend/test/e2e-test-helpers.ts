@@ -273,6 +273,7 @@ export interface SeedAuthenticatedPlayerOptions {
   socialId: number;
   username: string;
   nickname?: string;
+  githubUsername?: string;
   totalPoint?: number;
   isNewbie?: boolean;
   avatarUrl?: string;
@@ -295,6 +296,7 @@ export async function seedAuthenticatedPlayer(
   const player = await playerRepository.save({
     socialId: options.socialId,
     nickname: options.nickname ?? options.username,
+    githubUsername: options.githubUsername ?? options.username,
     totalPoint: options.totalPoint,
     isNewbie: options.isNewbie,
   });

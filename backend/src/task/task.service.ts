@@ -184,6 +184,7 @@ export class TaskService {
       .createQueryBuilder('task')
       .select('task.player_id', 'playerId')
       .addSelect('player.nickname', 'nickname')
+      .addSelect('player.githubUsername', 'githubUsername')
       .addSelect('COUNT(*)', 'count')
       .innerJoin('task.player', 'player')
       .where('task.completedAt >= :startAt AND task.completedAt < :endAt', {
@@ -199,7 +200,15 @@ export class TaskService {
     let previousCount: number | null = null;
 
     return results.map(
-      (row: { playerId: number; nickname: string; count: string }, index) => {
+      (
+        row: {
+          playerId: number;
+          nickname: string;
+          githubUsername: string | null;
+          count: string;
+        },
+        index,
+      ) => {
         const count = Number(row.count);
 
         if (previousCount !== null && count < previousCount) {
@@ -210,6 +219,7 @@ export class TaskService {
         return {
           playerId: row.playerId,
           nickname: row.nickname,
+          githubUsername: row.githubUsername,
           count,
           rank: currentRank,
         };

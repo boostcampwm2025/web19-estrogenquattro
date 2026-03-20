@@ -75,6 +75,7 @@ export class AuthSessionService {
     const player = await this.playerService.findOrCreateBySocialId(
       socialId,
       nickname,
+      username,
     );
     const user = this.userStore.findOrCreate({
       githubId: String(socialId),

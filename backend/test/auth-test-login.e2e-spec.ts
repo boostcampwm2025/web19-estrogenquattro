@@ -68,6 +68,7 @@ describe('Auth Test Login E2E', () => {
 
     const player = await playerRepository.findOneBy({ socialId: 56401 });
     expect(player?.nickname).toBe('Playwright User');
+    expect(player?.githubUsername).toBe('playwright-user');
 
     const accessTokenCookie = extractAccessTokenCookie(
       response.headers['set-cookie'] as string[] | undefined,

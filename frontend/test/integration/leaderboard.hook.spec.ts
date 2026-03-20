@@ -37,7 +37,13 @@ describe("useLeaderboard 통합", () => {
       http.get("*/api/points/ranks", () => {
         getRanksSpy();
         return HttpResponse.json([
-          { playerId: 1, nickname: "alice", totalPoints: 20, rank: 1 },
+          {
+            playerId: 1,
+            nickname: "alice",
+            githubUsername: "alice",
+            totalPoints: 20,
+            rank: 1,
+          },
         ]);
       }),
     );
@@ -62,7 +68,13 @@ describe("useLeaderboard 통합", () => {
       http.get("*/api/history-ranks", () => {
         getHistoryRanksSpy();
         return HttpResponse.json([
-          { playerId: 2, nickname: "bob", count: 3, rank: 1 },
+          {
+            playerId: 2,
+            nickname: "bob",
+            githubUsername: "bob",
+            count: 3,
+            rank: 1,
+          },
         ]);
       }),
     );

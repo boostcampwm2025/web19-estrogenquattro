@@ -18,9 +18,9 @@ export default function PlayerRow({
 }: PlayerRowProps) {
   const rankTextColor = getRankTextColor(player.rank);
   const rankDisplay = getRankDisplay(player.rank);
-  const trimmedUsername = player.username.trim();
-  const githubProfileUrl = trimmedUsername
-    ? getGithubProfileUrl(trimmedUsername)
+  const trimmedGithubUsername = player.githubUsername?.trim() ?? "";
+  const githubProfileUrl = trimmedGithubUsername
+    ? getGithubProfileUrl(trimmedGithubUsername)
     : null;
 
   // 집중 시간 탭일 때는 시간 형식으로 표시
@@ -65,7 +65,7 @@ export default function PlayerRow({
           rel="noopener noreferrer"
           className="block text-center font-medium text-amber-900 underline-offset-2 transition-colors hover:text-amber-700 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
-          {trimmedUsername}
+          {player.username}
         </a>
       ) : (
         <span className="text-center font-medium text-amber-900">

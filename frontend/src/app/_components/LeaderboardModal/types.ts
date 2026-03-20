@@ -2,6 +2,7 @@ export interface LeaderboardPlayer {
   playerId: number;
   rank: number;
   username: string;
+  githubUsername: string | null;
   profileImage: string | null;
   points: number;
 }

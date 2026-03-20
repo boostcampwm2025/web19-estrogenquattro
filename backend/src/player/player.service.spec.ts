@@ -47,6 +47,7 @@ describe('PlayerService', () => {
       const player = playerRepository.create({
         socialId: 12345,
         nickname: 'TestPlayer',
+        githubUsername: 'testplayer',
         totalPoint: 100,
       });
       const saved = await playerRepository.save(player);
@@ -59,6 +60,7 @@ describe('PlayerService', () => {
       expect(result.id).toBe(saved.id);
       expect(result.socialId).toBe(12345);
       expect(result.nickname).toBe('TestPlayer');
+      expect(result.githubUsername).toBe('testplayer');
       expect(result.totalPoint).toBe(100);
     });
 
@@ -82,6 +84,7 @@ describe('PlayerService', () => {
       const player = playerRepository.create({
         socialId: 67890,
         nickname: 'SocialPlayer',
+        githubUsername: 'socialplayer',
         totalPoint: 50,
       });
       await playerRepository.save(player);
@@ -93,6 +96,7 @@ describe('PlayerService', () => {
       expect(result).toBeDefined();
       expect(result!.socialId).toBe(67890);
       expect(result!.nickname).toBe('SocialPlayer');
+      expect(result!.githubUsername).toBe('socialplayer');
     });
 
     it('존재하지 않는 socialId로 조회하면 null을 반환한다', async () => {
@@ -108,41 +112,54 @@ describe('PlayerService', () => {
   });
 
   describe('findOrCreateBySocialId', () => {
-    it('기존 플레이어가 있으면 닉네임을 최신값으로 갱신해 반환한다', async () => {
+    it('기존 플레이어가 있으면 닉네임과 GitHub username을 최신값으로 갱신해 반환한다', async () => {
       // Given
       const existingPlayer = playerRepository.create({
         socialId: 11111,
         nickname: 'ExistingPlayer',
+        githubUsername: 'existing-player',
         totalPoint: 200,
       });
       await playerRepository.save(existingPlayer);
 
       // When
-      const result = await service.findOrCreateBySocialId(11111, 'NewNickname');
+      const result = await service.findOrCreateBySocialId(
+        11111,
+        'NewNickname',
+        'new-github-user',
+      );
 
       // Then
       expect(result.id).toBe(existingPlayer.id);
       expect(result.nickname).toBe('NewNickname');
+      expect(result.githubUsername).toBe('new-github-user');
       expect(result.totalPoint).toBe(200);
 
       const updated = await playerRepository.findOne({
         where: { socialId: 11111 },
       });
       expect(updated?.nickname).toBe('NewNickname');
+      expect(updated?.githubUsername).toBe('new-github-user');
     });
 
     it('기존 플레이어가 없으면 새 플레이어를 생성한다', async () => {
       // Given
       const socialId = 22222;
       const nickname = 'NewPlayer';
+      const githubUsername = 'new-player';
 
       // When
-      const result = await service.findOrCreateBySocialId(socialId, nickname);
+      const result = await service.findOrCreateBySocialId(
+        socialId,
+        nickname,
+        githubUsername,
+      );
 
       // Then
       expect(result).toBeDefined();
       expect(result.socialId).toBe(socialId);
       expect(result.nickname).toBe(nickname);
+      expect(result.githubUsername).toBe(githubUsername);
 
       // DB에 저장되었는지 확인
       const found = await playerRepository.findOne({
@@ -158,7 +175,11 @@ describe('PlayerService', () => {
       const nickname = 'DefaultPointPlayer';
 
       // When
-      const result = await service.findOrCreateBySocialId(socialId, nickname);
+      const result = await service.findOrCreateBySocialId(
+        socialId,
+        nickname,
+        'default-point-player',
+      );
 
       // Then
       expect(result.totalPoint).toBe(100);
@@ -169,9 +190,9 @@ describe('PlayerService', () => {
       const socialId = 44444;
 
       // When
-      await service.findOrCreateBySocialId(socialId, 'First');
-      await service.findOrCreateBySocialId(socialId, 'Second');
-      await service.findOrCreateBySocialId(socialId, 'Third');
+      await service.findOrCreateBySocialId(socialId, 'First', 'first-user');
+      await service.findOrCreateBySocialId(socialId, 'Second', 'second-user');
+      await service.findOrCreateBySocialId(socialId, 'Third', 'third-user');
 
       // Then
       const count = await playerRepository.count({ where: { socialId } });
@@ -179,6 +200,7 @@ describe('PlayerService', () => {
 
       const player = await playerRepository.findOne({ where: { socialId } });
       expect(player?.nickname).toBe('Third');
+      expect(player?.githubUsername).toBe('third-user');
     });
 
     it('새 플레이어 생성 시 isNewbie는 true이다', async () => {
@@ -187,7 +209,11 @@ describe('PlayerService', () => {
       const nickname = 'NewbiePlayer';
 
       // When
-      const result = await service.findOrCreateBySocialId(socialId, nickname);
+      const result = await service.findOrCreateBySocialId(
+        socialId,
+        nickname,
+        'newbie-player',
+      );
 
       // Then
       expect(result.isNewbie).toBe(true);
