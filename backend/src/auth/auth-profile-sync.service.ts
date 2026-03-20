@@ -37,6 +37,7 @@ export class AuthProfileSyncService {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      // Keep the existing session profile if the live GitHub sync fails.
       this.logger.warn(
         'Failed to sync latest GitHub profile, using cached user',
         {
