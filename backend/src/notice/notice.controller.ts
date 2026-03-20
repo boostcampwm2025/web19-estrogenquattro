@@ -28,10 +28,7 @@ export class NoticeController {
 
   @Post()
   @UseGuards(AdminGuard)
-  async create(
-    @PlayerId() authorId: number,
-    @Body() dto: CreateNoticeDto,
-  ) {
+  async create(@PlayerId() authorId: number, @Body() dto: CreateNoticeDto) {
     const notice = await this.noticeService.create(authorId, dto);
     this.noticeGateway.broadcastNotice(notice);
     return notice;

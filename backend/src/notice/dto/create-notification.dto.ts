@@ -12,4 +12,3 @@ export class CreateNoticeDto {
   ko: KoreanNotice;
   en: EnglishNotice;
 }
-

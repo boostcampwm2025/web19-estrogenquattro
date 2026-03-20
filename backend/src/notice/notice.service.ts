@@ -19,7 +19,6 @@ export class NoticeService {
 
   constructor(
     @InjectRepository(Notice)
-    
     private readonly noticeRepository: Repository<Notice>,
     @InjectRepository(NoticeRead)
     private readonly noticeReadRepository: Repository<NoticeRead>,
@@ -152,7 +151,7 @@ export class NoticeService {
 
       await this.noticeReadRepository.save(record);
     });
-      
+
     this.logger.log('Notice Read Marked', { noticeId, playerId });
   }
 

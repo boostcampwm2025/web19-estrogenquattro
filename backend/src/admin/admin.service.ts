@@ -11,6 +11,7 @@ import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
 import { CreateBanDto } from './dto/create-ban.dto';
 import { Player } from '../player/entites/player.entity';
+import { BanCacheService } from './ban-cache.service';
 
 @Injectable()
 export class AdminService {
@@ -21,6 +22,7 @@ export class AdminService {
     private readonly adminRepository: Repository<Admin>,
     @InjectRepository(Ban)
     private readonly banRepository: Repository<Ban>,
+    private readonly banCacheService: BanCacheService,
   ) {}
 
   async validateAdmin(playerId: number): Promise<void> {
@@ -52,7 +54,11 @@ export class AdminService {
       targetPlayerId: dto.targetPlayerId,
       bannedBy: adminId,
     });
-    return this.banRepository.save(ban);
+
+    const savedBan = await this.banRepository.save(ban);
+    this.banCacheService.addBan(dto.targetPlayerId); // 캐시 업데이트
+
+    return savedBan;
   }
 
   async isBanned(playerId: number): Promise<boolean> {
@@ -71,6 +77,7 @@ export class AdminService {
       throw new NotFoundException(`Player with ID ${playerId} is not banned`);
     }
 
+    this.banCacheService.removeBan(playerId); // 캐시 업데이트
     this.logger.log('User unbanned', { playerId });
   }
 }

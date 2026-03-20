@@ -11,8 +11,7 @@ import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
-import { io, Socket } from 'socket.io-client';
-import { EntityTarget, Repository } from 'typeorm';
+import { EntityTarget, Repository, ObjectLiteral } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
 import { GithubGuard } from '../src/auth/github.guard';
@@ -200,11 +199,12 @@ export async function createTestApp(
   };
 }
 
-export function getRepository<T>(
+export function getRepository<T extends ObjectLiteral>(
   context: TestAppContext,
   entity: EntityTarget<T>,
 ): Repository<T> {
   return context.moduleRef.get<Repository<T>>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     getRepositoryToken(entity as any),
   );
 }

@@ -32,7 +32,9 @@ export class AuthController {
 
     const isBanned = await this.adminService.isBanned(user.playerId);
     if (isBanned) {
-      this.logger.warn('Banned user attempted login', { playerId: user.playerId });
+      this.logger.warn('Banned user attempted login', {
+        playerId: user.playerId,
+      });
       res.clearCookie('access_token');
       const frontendUrls = getFrontendUrls(this.configService);
       return res.redirect(`${frontendUrls[0]}`);
