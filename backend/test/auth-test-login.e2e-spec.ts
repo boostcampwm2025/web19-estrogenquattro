@@ -169,4 +169,39 @@ describe('Auth Test Login E2E', () => {
       await restartedContext.app.close();
     }
   });
+
+  it('같은 socialId로 다시 로그인하면 nickname과 githubUsername이 최신값으로 갱신된다', async () => {
+    context = await createPlaywrightContext();
+    const playerRepository: Repository<Player> = getRepository(context, Player);
+
+    await request(context.app.getHttpServer())
+      .post('/auth/test-login')
+      .set('x-e2e-secret', E2E_SECRET)
+      .send({
+        socialId: 56405,
+        username: 'playwright-user-old',
+        nickname: 'Old Nickname',
+      })
+      .expect(200);
+
+    const updatedResponse = await request(context.app.getHttpServer())
+      .post('/auth/test-login')
+      .set('x-e2e-secret', E2E_SECRET)
+      .send({
+        socialId: 56405,
+        username: 'playwright-user-new',
+        nickname: 'New Nickname',
+      })
+      .expect(200);
+
+    expect(updatedResponse.body).toMatchObject({
+      githubId: '56405',
+      username: 'playwright-user-new',
+      avatarUrl: 'https://github.com/playwright-user-new.png',
+    });
+
+    const player = await playerRepository.findOneBy({ socialId: 56405 });
+    expect(player?.nickname).toBe('New Nickname');
+    expect(player?.githubUsername).toBe('playwright-user-new');
+  });
 });

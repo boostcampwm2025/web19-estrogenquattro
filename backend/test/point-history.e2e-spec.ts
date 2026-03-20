@@ -7,6 +7,7 @@ import {
   PointHistory,
   PointType,
 } from '../src/pointhistory/entities/point-history.entity';
+import { Task } from '../src/task/entites/task.entity';
 import {
   TestAppContext,
   createTestApp,
@@ -20,12 +21,14 @@ type PointResponse = {
 
 type PointRankResponse = {
   playerId: number;
+  githubUsername?: string | null;
   totalPoints: number;
   rank: number;
 };
 
 type HistoryRankResponse = {
   playerId: number;
+  githubUsername?: string | null;
   count: number;
   rank: number;
 };
@@ -39,6 +42,7 @@ describe('Point/History API E2E', () => {
   let playerRepository: Repository<Player>;
   let dailyPointRepository: Repository<DailyPoint>;
   let pointHistoryRepository: Repository<PointHistory>;
+  let taskRepository: Repository<Task>;
 
   const getHttpServer = (): Parameters<typeof request>[0] =>
     context.app.getHttpServer() as Parameters<typeof request>[0];
@@ -51,6 +55,7 @@ describe('Point/History API E2E', () => {
     playerRepository = getRepository(context, Player);
     dailyPointRepository = getRepository(context, DailyPoint);
     pointHistoryRepository = getRepository(context, PointHistory);
+    taskRepository = getRepository(context, Task);
   });
 
   afterAll(async () => {
@@ -58,6 +63,7 @@ describe('Point/History API E2E', () => {
   });
 
   beforeEach(async () => {
+    await taskRepository.clear();
     await pointHistoryRepository.clear();
     await dailyPointRepository.clear();
     await playerRepository.clear();
@@ -193,13 +199,79 @@ describe('Point/History API E2E', () => {
     // Then
     expect(pointRanksBody[0]).toMatchObject({
       playerId: first.player.id,
+      githubUsername: 'rank-first',
       totalPoints: 20,
       rank: 1,
     });
     expect(historyRanksBody[0]).toMatchObject({
       playerId: first.player.id,
+      githubUsername: 'rank-first',
       count: 2,
       rank: 1,
+    });
+  });
+
+  it('TASK_COMPLETED 랭킹은 githubUsername 기준 식별자를 함께 반환한다', async () => {
+    const viewer = await seedAuthenticatedPlayer(context, {
+      socialId: 32010,
+      username: 'task-rank-viewer',
+    });
+    const first = await seedAuthenticatedPlayer(context, {
+      socialId: 32011,
+      username: 'task-rank-first',
+      nickname: 'Task First',
+    });
+    const second = await seedAuthenticatedPlayer(context, {
+      socialId: 32012,
+      username: 'task-rank-second',
+      nickname: 'Task Second',
+    });
+
+    await taskRepository.save([
+      {
+        player: first.player,
+        description: 'done-1',
+        isCompleted: true,
+        completedAt: new Date('2026-03-11T10:00:00.000Z'),
+        createdAt: new Date('2026-03-11T09:00:00.000Z'),
+      },
+      {
+        player: first.player,
+        description: 'done-2',
+        isCompleted: true,
+        completedAt: new Date('2026-03-12T10:00:00.000Z'),
+        createdAt: new Date('2026-03-12T09:00:00.000Z'),
+      },
+      {
+        player: second.player,
+        description: 'done-3',
+        isCompleted: true,
+        completedAt: new Date('2026-03-13T10:00:00.000Z'),
+        createdAt: new Date('2026-03-13T09:00:00.000Z'),
+      },
+    ]);
+
+    const response = await request(getHttpServer())
+      .get(
+        `/api/history-ranks?weekendStartAt=${encodeURIComponent(
+          '2026-03-10T00:00:00.000Z',
+        )}&type=TASK_COMPLETED`,
+      )
+      .set('Cookie', viewer.cookie)
+      .expect(200);
+    const body = response.body as HistoryRankResponse[];
+
+    expect(body[0]).toMatchObject({
+      playerId: first.player.id,
+      githubUsername: 'task-rank-first',
+      count: 2,
+      rank: 1,
+    });
+    expect(body[1]).toMatchObject({
+      playerId: second.player.id,
+      githubUsername: 'task-rank-second',
+      count: 1,
+      rank: 2,
     });
   });
 

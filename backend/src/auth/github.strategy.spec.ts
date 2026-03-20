@@ -1,16 +1,20 @@
 import { ConfigService } from '@nestjs/config';
 import { GithubStrategy } from './github.strategy';
 import { UserStore } from './user.store';
+import { User } from './user.interface';
 import { PlayerService } from '../player/player.service';
 
 describe('GithubStrategy', () => {
+  const findOrCreateUserMock = jest.fn();
+  const saveUserMock = jest.fn((user: User) => user);
   const userStore = {
-    findOrCreate: jest.fn(),
-    save: jest.fn(),
+    findOrCreate: findOrCreateUserMock,
+    save: saveUserMock,
   } as unknown as UserStore;
 
+  const findOrCreatePlayerMock = jest.fn();
   const playerService = {
-    findOrCreateBySocialId: jest.fn(),
+    findOrCreateBySocialId: findOrCreatePlayerMock,
   } as unknown as PlayerService;
 
   const configService = {
@@ -41,26 +45,32 @@ describe('GithubStrategy', () => {
       photos: [{ value: 'https://github.com/octocat.png' }],
     };
 
-    (playerService.findOrCreateBySocialId as jest.Mock).mockResolvedValue({
+    findOrCreatePlayerMock.mockResolvedValue({
       id: 7,
     });
-    (userStore.findOrCreate as jest.Mock).mockReturnValue({
+    findOrCreateUserMock.mockReturnValue({
       githubId: '12345',
       username: 'octocat',
       avatarUrl: 'https://github.com/octocat.png',
       accessToken: 'token',
       playerId: 7,
     });
-    (userStore.save as jest.Mock).mockImplementation((user) => user);
 
     const saved = await strategy.validate('token', 'refresh-token', profile);
 
-    expect(playerService.findOrCreateBySocialId).toHaveBeenCalledWith(
+    expect(findOrCreatePlayerMock).toHaveBeenCalledWith(
       12345,
       'octocat',
       'octocat',
     );
-    expect(userStore.findOrCreate).toHaveBeenCalledWith({
+    expect(findOrCreateUserMock).toHaveBeenCalledWith({
+      githubId: '12345',
+      username: 'octocat',
+      avatarUrl: 'https://github.com/octocat.png',
+      accessToken: 'token',
+      playerId: 7,
+    });
+    expect(saveUserMock).toHaveBeenCalledWith({
       githubId: '12345',
       username: 'octocat',
       avatarUrl: 'https://github.com/octocat.png',
