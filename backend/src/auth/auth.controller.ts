@@ -30,7 +30,9 @@ export class AuthController {
     const user = req.user as User;
 
     const isBanned = await this.adminService.isBanned(user.playerId);
-    const reason = isBanned ? (await this.adminService.getBan(user.playerId)).reason : null;
+    const reason = isBanned
+      ? (await this.adminService.getBan(user.playerId)).reason
+      : null;
     if (isBanned) {
       this.logger.warn('Banned user attempted login', {
         playerId: user.playerId,

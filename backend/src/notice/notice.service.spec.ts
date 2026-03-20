@@ -94,7 +94,10 @@ describe('NoticeService', () => {
 
   describe('findByPage', () => {
     it('should return paginated notices with default page and limit', async () => {
-      mockNoticeRepository.findAndCount.mockResolvedValue([[{ id: 2 }, { id: 1 }], 5]);
+      mockNoticeRepository.findAndCount.mockResolvedValue([
+        [{ id: 2 }, { id: 1 }],
+        5,
+      ]);
 
       const result = await service.findByPage(undefined, undefined);
 
@@ -126,10 +129,12 @@ describe('NoticeService', () => {
 
       const result = await service.findByPage('2', '2'); // page 2, limit 2
 
-      expect(mockNoticeRepository.findAndCount).toHaveBeenCalledWith(expect.objectContaining({
-        skip: 2,
-        take: 2,
-      }));
+      expect(mockNoticeRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 2,
+          take: 2,
+        }),
+      );
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(10);
       expect(result.currentPage).toBe(2);
