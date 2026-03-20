@@ -18,6 +18,8 @@ export function useGuestbookEntries(enabled: boolean) {
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
