@@ -44,10 +44,11 @@ import { PetController } from '../src/userpet/pet.controller';
 import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
 import { UserPetCodex } from '../src/userpet/entities/user-pet-codex.entity';
+import { PetService } from '../src/userpet/pet.service';
 import { AdminService } from '../src/admin/admin.service';
 import { Admin } from '../src/admin/entities/admin.entity';
+import { BanCacheService } from '../src/admin/ban-cache.service';
 import { Ban } from '../src/admin/entities/ban.entity';
-import { PetService } from '../src/userpet/pet.service';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
 export const SOCKET_EVENT_TIMEOUT_MS = 5000;
@@ -108,6 +109,7 @@ export async function createTestApp(
     PetService,
     WriteLockService,
     AdminService,
+    BanCacheService,
     {
       provide: GithubPollService,
       useValue: githubPollServiceMock,

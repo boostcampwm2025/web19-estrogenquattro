@@ -4,6 +4,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
+import { BanCacheService } from './ban-cache.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -21,6 +22,12 @@ describe('AdminService', () => {
     delete: jest.fn(),
   };
 
+  const mockBanCacheService = {
+    addBan: jest.fn(),
+    removeBan: jest.fn(),
+    isBanned: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -32,6 +39,10 @@ describe('AdminService', () => {
         {
           provide: getRepositoryToken(Ban),
           useValue: mockBanRepository,
+        },
+        {
+          provide: BanCacheService,
+          useValue: mockBanCacheService,
         },
       ],
     }).compile();
