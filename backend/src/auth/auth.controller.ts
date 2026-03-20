@@ -30,9 +30,10 @@ export class AuthController {
   async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
 
-    // 밴 여부 확인
     const isBanned = await this.adminService.isBanned(user.playerId);
     if (isBanned) {
+      this.logger.warn('Banned user attempted login', { playerId: user.playerId });
+      res.clearCookie('access_token');
       const frontendUrls = getFrontendUrls(this.configService);
       return res.redirect(`${frontendUrls[0]}`);
     }

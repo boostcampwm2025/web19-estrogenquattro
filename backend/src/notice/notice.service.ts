@@ -11,6 +11,7 @@ import { UpdateNoticeDto } from './dto/update-notification.dto';
 import { Player } from '../player/entites/player.entity';
 import { Notice } from './entities/notice.entity';
 import { NoticeRead } from './entities/notice-read.entity';
+import { WriteLockService } from '../database/write-lock.service';
 
 @Injectable()
 export class NoticeService {
@@ -22,6 +23,7 @@ export class NoticeService {
     private readonly noticeRepository: Repository<Notice>,
     @InjectRepository(NoticeRead)
     private readonly noticeReadRepository: Repository<NoticeRead>,
+    private readonly writeLockService: WriteLockService,
   ) {}
 
   async create(authorId: number, dto: CreateNoticeDto): Promise<Notice> {
@@ -131,22 +133,27 @@ export class NoticeService {
   }
 
   async markAsRead(noticeId: number, playerId: number): Promise<void> {
-    const exists = await this.noticeReadRepository.findOne({
-      where: {
-        notice: { id: noticeId },
-        player: { id: playerId },
-      },
+    await this.findOne(noticeId);
+
+    await this.writeLockService.runExclusive(async () => {
+      const exists = await this.noticeReadRepository.findOne({
+        where: {
+          notice: { id: noticeId },
+          player: { id: playerId },
+        },
+      });
+
+      if (exists) return;
+
+      const record = this.noticeReadRepository.create({
+        notice: { id: noticeId } as Notice,
+        player: { id: playerId } as Player,
+      });
+
+      await this.noticeReadRepository.save(record);
     });
-
-    if (exists) return;
-
-    const record = this.noticeReadRepository.create({
-      notice: { id: noticeId } as Notice,
-      player: { id: playerId } as Player,
-    });
-
-    await this.noticeReadRepository.save(record);
-    this.logger.log('Notice Readed', { noticeId, playerId });
+      
+    this.logger.log('Notice Read Marked', { noticeId, playerId });
   }
 
   async getLatestUnreadNotice(playerId: number): Promise<Notice | null> {
