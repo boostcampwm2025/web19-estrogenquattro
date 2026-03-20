@@ -87,10 +87,8 @@ export const guestbookHandlers = [
     guestbookEntries.unshift(entry);
     guestbookReadState = {
       latestEntryId: entry.id,
-      lastReadEntryId: guestbookReadState.lastReadEntryId,
-      hasUnread:
-        guestbookReadState.lastReadEntryId === 0 ||
-        guestbookReadState.lastReadEntryId < entry.id,
+      lastReadEntryId: entry.id,
+      hasUnread: false,
     };
     return HttpResponse.json(entry, { status: 201 });
   }),

@@ -49,6 +49,16 @@ export class GuestbookService {
 
     try {
       const saved = await this.guestbookRepository.save(guestbook);
+      const currentLastReadEntryId = player.lastReadGuestbookEntryId ?? 0;
+      const nextLastReadEntryId = Math.max(currentLastReadEntryId, saved.id);
+
+      if (currentLastReadEntryId !== nextLastReadEntryId) {
+        await this.playerRepository.update(
+          { id: playerId },
+          { lastReadGuestbookEntryId: nextLastReadEntryId },
+        );
+      }
+
       return {
         ...saved,
         player: { id: player.id, nickname: player.nickname },

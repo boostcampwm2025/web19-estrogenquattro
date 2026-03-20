@@ -83,6 +83,31 @@ describe('Guestbook E2E', () => {
     );
   });
 
+  it('작성자는 방금 작성한 방명록을 읽은 상태로 유지한다', async () => {
+    const seeded = await seedAuthenticatedPlayer(context, {
+      socialId: 31008,
+      username: 'guestbook-author',
+    });
+
+    const created = await request(getHttpServer())
+      .post('/api/guestbooks')
+      .set('Cookie', seeded.cookie)
+      .send({ content: '내가 쓴 최신 방명록' })
+      .expect(201);
+
+    const readState = await request(getHttpServer())
+      .get('/api/guestbooks/read-state')
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+
+    expect(created.body.id).toBeGreaterThan(0);
+    expect(readState.body).toEqual({
+      latestEntryId: created.body.id,
+      lastReadEntryId: created.body.id,
+      hasUnread: false,
+    });
+  });
+
   it('cursor와 order를 사용해 방명록을 페이지네이션 조회한다', async () => {
     // Given
     const viewer = await seedAuthenticatedPlayer(context, {

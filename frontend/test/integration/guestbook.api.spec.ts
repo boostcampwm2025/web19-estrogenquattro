@@ -123,6 +123,18 @@ describe("Guestbook API 통합", () => {
     );
   });
 
+  it("작성 직후 read-state는 방금 작성한 entry를 읽은 상태로 유지한다", async () => {
+    const created = await guestbookApi.createEntry("작성한 최신 방명록");
+    const readState = await guestbookApi.getReadState();
+
+    expect(created.id).toBe(3);
+    expect(readState).toEqual({
+      latestEntryId: 3,
+      lastReadEntryId: 3,
+      hasUnread: false,
+    });
+  });
+
   it("read-state query와 markAsRead mutation은 읽음 상태를 갱신한다", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
