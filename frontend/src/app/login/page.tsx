@@ -13,7 +13,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 const subscribe = () => () => {};
 const useMounted = () =>
-  useSyncExternalStore(subscribe, () => true, () => false);
+  useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
 
 function LoginContent() {
   const searchParams = useSearchParams();
