@@ -11,10 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import {
-  getNotices,
-  type NoticeItem,
-} from "@/lib/api/notice";
+import { getNotices, type NoticeItem } from "@/lib/api/notice";
 import MarkdownRenderer from "@/app/_components/MarkdownRenderer";
 import { useTranslation } from "react-i18next";
 import { useInView } from "react-intersection-observer";
@@ -58,11 +55,13 @@ export default function NoticeModal() {
       if (pageNum === 1) {
         setNotices(data.items);
         if (data.items.length > 0) {
-          setExpandedId((prev) => prev !== null ? prev : data.items[0].id);
+          setExpandedId((prev) => (prev !== null ? prev : data.items[0].id));
         }
       } else {
         setNotices((prev) => {
-          const newItems = data.items.filter((item) => !prev.some((p) => p.id === item.id));
+          const newItems = data.items.filter(
+            (item) => !prev.some((p) => p.id === item.id),
+          );
           return [...prev, ...newItems];
         });
       }
@@ -212,7 +211,11 @@ export default function NoticeModal() {
                       {/* 공지 내용 (펼침) */}
                       {expandedId === notice.id && (
                         <div className="mt-1 mb-1 rounded bg-amber-50/80 px-3 py-2">
-                          <MarkdownRenderer content={isEnglish ? notice.contentEn : notice.contentKo} />
+                          <MarkdownRenderer
+                            content={
+                              isEnglish ? notice.contentEn : notice.contentKo
+                            }
+                          />
                         </div>
                       )}
                     </div>

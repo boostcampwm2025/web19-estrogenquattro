@@ -21,6 +21,11 @@ export interface NoticePaginationResponse {
   totalPages: number;
 }
 
-export async function getNotices(page: number = 1, limit: number = 10): Promise<NoticePaginationResponse> {
-  return fetchApi<NoticePaginationResponse>(`/api/notices?page=${page}&limit=${limit}`);
+export async function getNotices(
+  page: number = 1,
+  limit: number = 10,
+): Promise<NoticePaginationResponse> {
+  return fetchApi<NoticePaginationResponse>(
+    `/api/notices?page=${page}&limit=${limit}`,
+  );
 }
