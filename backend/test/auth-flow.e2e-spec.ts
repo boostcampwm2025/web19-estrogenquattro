@@ -2,6 +2,7 @@
 
 import request from 'supertest';
 import { Repository } from 'typeorm';
+import { Octokit } from 'octokit';
 
 import { User } from '../src/auth/user.interface';
 import { Player } from '../src/player/entites/player.entity';
@@ -16,6 +17,7 @@ describe('Auth Flow E2E', () => {
   let playerRepository: Repository<Player>;
   let guardUser: User;
   let authCookie: string;
+  let getAuthenticatedMock: jest.Mock;
 
   beforeAll(async () => {
     guardUser = {
@@ -35,6 +37,15 @@ describe('Auth Flow E2E', () => {
   });
 
   beforeEach(async () => {
+    getAuthenticatedMock = jest
+      .fn()
+      .mockRejectedValue(new Error('not configured'));
+    (
+      Octokit as typeof Octokit & {
+        getAuthenticatedMock: typeof getAuthenticatedMock;
+      }
+    ).getAuthenticatedMock = getAuthenticatedMock;
+
     await playerRepository.clear();
 
     const player = await playerRepository.save({
@@ -50,6 +61,10 @@ describe('Auth Flow E2E', () => {
       username: guardUser.username,
       playerId: guardUser.playerId,
     })}`;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('GitHub 콜백이 성공하면 JWT 쿠키를 발급하고 콜백 페이지로 리다이렉트한다', async () => {
@@ -161,6 +176,42 @@ describe('Auth Flow E2E', () => {
     } finally {
       Object.assign(guardUser, original);
     }
+  });
+
+  it('auth/me 호출 시 GitHub 최신 username으로 프로필과 player nickname을 동기화한다', async () => {
+    // Given: JWT에는 기존 username이 들어있고 UserStore/Player도 stale 상태
+    getAuthenticatedMock.mockResolvedValue({
+      data: {
+        login: 'auth-user-renamed',
+        avatar_url: 'https://github.com/auth-user-renamed.png',
+      },
+    });
+
+    // When: auth/me를 호출하면
+    const response = await request(context.app.getHttpServer())
+      .get('/auth/me')
+      .set('Cookie', authCookie)
+      .expect(200);
+
+    // Then: 최신 GitHub 프로필이 응답 및 저장소에 반영된다
+    expect(response.body).toMatchObject({
+      githubId: guardUser.githubId,
+      username: 'auth-user-renamed',
+      avatarUrl: 'https://github.com/auth-user-renamed.png',
+      playerId: guardUser.playerId,
+    });
+
+    expect(context.userStore.findByGithubId(guardUser.githubId)).toMatchObject({
+      githubId: guardUser.githubId,
+      username: 'auth-user-renamed',
+      avatarUrl: 'https://github.com/auth-user-renamed.png',
+      playerId: guardUser.playerId,
+    });
+
+    const player = await playerRepository.findOneByOrFail({
+      id: guardUser.playerId,
+    });
+    expect(player.nickname).toBe('auth-user-renamed');
   });
 
   it('로그아웃을 호출하면 인증 쿠키를 제거하고 프론트로 리다이렉트한다', async () => {

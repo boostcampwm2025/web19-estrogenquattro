@@ -5832,9 +5832,44 @@
          "visible":true,
          "x":0,
          "y":0
+                }, 
+        {
+         "draworder":"topdown",
+         "id":4,
+         "name":"Lights",
+         "objects":[
+                {
+                 "height":0,
+                 "id":1161,
+                 "name":"",
+                 "point":true,
+                 "rotation":0,
+                 "type":"candle",
+                 "visible":true,
+                 "width":0,
+                 "x":2231.33333333333,
+                 "y":2555.33333333333
+                }, 
+                {
+                 "height":0,
+                 "id":1162,
+                 "name":"",
+                 "point":true,
+                 "rotation":0,
+                 "type":"candle",
+                 "visible":true,
+                 "width":0,
+                 "x":664,
+                 "y":2194
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":4,
- "nextobjectid":1161,
+ "nextlayerid":5,
+ "nextobjectid":1163,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
