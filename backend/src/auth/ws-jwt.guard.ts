@@ -60,9 +60,6 @@ export class WsJwtGuard implements CanActivate {
         return false;
       }
 
-      // Socket에 사용자 정보 저장
-      client.data = { user };
-
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
