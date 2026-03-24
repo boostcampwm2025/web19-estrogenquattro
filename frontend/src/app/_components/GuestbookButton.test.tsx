@@ -11,10 +11,11 @@ vi.mock("@/hooks/useGuestbookUnreadStatus");
 
 describe("GuestbookButton", () => {
   const mockToggleModal = vi.fn();
-  const mockMarkAsRead = vi.fn();
+  const mockMarkAsRead = vi.fn<() => Promise<void>>();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMarkAsRead.mockResolvedValue(undefined);
 
     vi.mocked(modalStoreModule.useModalStore).mockImplementation((selector) =>
       selector({
@@ -55,6 +56,19 @@ describe("GuestbookButton", () => {
     expect(screen.getByTestId("guestbook-unread-badge")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "방명록 열기" }));
+
+    expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
+    expect(mockToggleModal).toHaveBeenCalledWith(MODAL_TYPES.GUESTBOOK);
+  });
+
+  it("읽음 처리 요청이 실패해도 모달을 열고 rejection을 방치하지 않는다", async () => {
+    const user = userEvent.setup();
+    mockMarkAsRead.mockRejectedValueOnce(new Error("network"));
+
+    render(<GuestbookButton />);
+
+    await user.click(screen.getByRole("button", { name: "방명록 열기" }));
+    await Promise.resolve();
 
     expect(mockMarkAsRead).toHaveBeenCalledTimes(1);
     expect(mockToggleModal).toHaveBeenCalledWith(MODAL_TYPES.GUESTBOOK);
