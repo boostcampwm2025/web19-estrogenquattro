@@ -319,6 +319,7 @@
     "closeModal": "Close",
     "empty": "No registered notices.",
     "button": "Notice",
-    "scrollToTop": "Scroll to top"
+    "scrollToTop": "Scroll to top",
+    "loading": "Loading..."
   }
 }

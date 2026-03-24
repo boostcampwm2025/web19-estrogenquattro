@@ -106,7 +106,9 @@ export default function GuestbookModal() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    e.stopPropagation();
+    if (e.key !== "Escape") {
+      e.stopPropagation();
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSubmit();
@@ -114,7 +116,9 @@ export default function GuestbookModal() {
   };
 
   const stopPropagation = (e: React.KeyboardEvent) => {
-    e.stopPropagation();
+    if (e.key !== "Escape") {
+      e.stopPropagation();
+    }
   };
 
   const handleScroll = () => {

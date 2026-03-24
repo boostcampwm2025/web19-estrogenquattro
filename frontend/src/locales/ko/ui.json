@@ -319,6 +319,7 @@
     "closeModal": "닫기",
     "empty": "등록된 공지사항이 없습니다.",
     "button": "공지사항",
-    "scrollToTop": "맨 위로 이동"
+    "scrollToTop": "맨 위로 이동",
+    "loading": "로딩 중..."
   }
 }

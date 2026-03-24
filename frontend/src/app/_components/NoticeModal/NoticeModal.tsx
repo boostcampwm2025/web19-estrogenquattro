@@ -126,7 +126,9 @@ export default function NoticeModal() {
   };
 
   const stopPropagation = (e: React.KeyboardEvent) => {
-    e.stopPropagation();
+    if (e.key !== "Escape") {
+      e.stopPropagation();
+    }
   };
 
   return (
@@ -224,7 +226,7 @@ export default function NoticeModal() {
                 {hasNextPage && !isLoading && (
                   <div ref={bottomRef} className="py-2 text-center">
                     {isLoadingMore ? (
-                      <span className="text-xs text-amber-500">로딩 중...</span>
+                      <span className="text-xs text-amber-500">{t(($) => $.notice.loading)}</span>
                     ) : (
                       <span className="text-xs text-amber-500">...</span>
                     )}
