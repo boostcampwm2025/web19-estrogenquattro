@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { UserStore } from './user.store';
+import { BanCacheService } from '../admin/ban-cache.service';
 
 export interface JwtPayload {
   sub: string; // githubId
@@ -16,6 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   constructor(
     private userStore: UserStore,
+    private banCacheService: BanCacheService,
     configService: ConfigService,
   ) {
     super({
@@ -36,6 +38,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     this.logger.debug(`Validating payload for user: ${payload.username}`);
     const user = this.userStore.findByGithubId(payload.sub);
     this.logger.debug(`User found: ${user ? 'yes' : 'no'}`);
-    return user || false;
+
+    if (!user) return false;
+
+    const isBanned = this.banCacheService.isBanned(user.playerId);
+    if (isBanned) {
+      this.logger.warn(`Banned user blocked from API: ${user.username}`);
+      return false;
+    }
+
+    return user;
   }
 }

@@ -8,7 +8,7 @@ export class EnglishNotice {
   content: string;
 }
 
-export class CreateNotificationDto {
+export class CreateNoticeDto {
   ko: KoreanNotice;
   en: EnglishNotice;
 }

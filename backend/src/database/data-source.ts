@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+import { loadEnvFilesOnce } from '../config/env-files';
+
+loadEnvFilesOnce();
 
 const AppDataSource = new DataSource({
   type: 'sqlite',
-  database: 'data/jandi.sqlite',
+  database: process.env.DB_PATH ?? 'data/jandi.sqlite',
   synchronize:
     process.env.DB_SYNCHRONIZE === 'true' &&
     process.env.NODE_ENV !== 'production',

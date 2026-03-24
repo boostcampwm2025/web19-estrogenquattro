@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import HeroSection from "./_components/HeroSection";
 import EvolutionSection from "./_components/EvolutionSection";
@@ -14,9 +14,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 function LoginContent() {
   const searchParams = useSearchParams();
   const isBanned = searchParams.get("banned") === "true";
-  const [banInfo, setBanInfo] = useState<{ reason: string | null } | null>(
-    isBanned ? { reason: searchParams.get("reason") } : null,
-  );
+  const reason = searchParams.get("reason");
+  const [dismissed, setDismissed] = useState(false);
+  const banInfo = !dismissed && isBanned ? { reason } : null;
 
   const handleGitHubLogin = () => {
     Analytics.loginClick();
@@ -30,22 +30,19 @@ function LoginContent() {
       <EvolutionSection />
       <DemoSection />
       {banInfo && (
-        <BannedModal reason={banInfo.reason} onClose={() => setBanInfo(null)} />
+        <BannedModal
+          reason={banInfo.reason}
+          onClose={() => setDismissed(true)}
+        />
       )}
     </div>
   );
 }
 
 export default function LoginPage() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    <Suspense fallback={null}>
-      {mounted ? <LoginContent /> : null}
+    <Suspense>
+      <LoginContent />
     </Suspense>
   );
 }

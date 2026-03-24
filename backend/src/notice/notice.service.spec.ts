@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { NoticeService } from './notice.service';
+import { WriteLockService } from '../database/write-lock.service';
 import { Notice } from './entities/notice.entity';
 import { NoticeRead } from './entities/notice-read.entity';
 
@@ -15,12 +16,19 @@ describe('NoticeService', () => {
     findOne: jest.fn(),
     delete: jest.fn(),
     createQueryBuilder: jest.fn(),
+    findAndCount: jest.fn(),
   };
 
   const mockNoticeReadRepository = {
     create: jest.fn(),
     save: jest.fn(),
     findOne: jest.fn(),
+  };
+
+  const mockWriteLockService = {
+    runExclusive: jest
+      .fn()
+      .mockImplementation((cb: () => Promise<any>) => cb()),
   };
 
   beforeEach(async () => {
@@ -34,6 +42,10 @@ describe('NoticeService', () => {
         {
           provide: getRepositoryToken(NoticeRead),
           useValue: mockNoticeReadRepository,
+        },
+        {
+          provide: WriteLockService,
+          useValue: mockWriteLockService,
         },
       ],
     }).compile();
@@ -84,25 +96,29 @@ describe('NoticeService', () => {
 
   describe('findByPage', () => {
     it('should return paginated notices with default page and limit', async () => {
-      const mockQueryBuilder = {
-        leftJoin: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest
-          .fn()
-          .mockResolvedValue([[{ id: 2 }, { id: 1 }], 5]),
-      };
-      mockNoticeRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockNoticeRepository.findAndCount.mockResolvedValue([
+        [{ id: 2 }, { id: 1 }],
+        5,
+      ]);
 
       const result = await service.findByPage(undefined, undefined);
 
-      expect(mockNoticeRepository.createQueryBuilder).toHaveBeenCalledWith(
-        'notice',
-      );
-      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
-      expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
+      expect(mockNoticeRepository.findAndCount).toHaveBeenCalledWith({
+        relations: ['author'],
+        select: {
+          id: true,
+          titleKo: true,
+          contentKo: true,
+          titleEn: true,
+          contentEn: true,
+          createdAt: true,
+          updatedAt: true,
+          author: { nickname: true },
+        },
+        order: { id: 'DESC' },
+        skip: 0,
+        take: 20,
+      });
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(5);
       expect(result.currentPage).toBe(1);
@@ -111,20 +127,16 @@ describe('NoticeService', () => {
 
     it('should correctly calculate skip, totalPages and limit from provided strings', async () => {
       const mockNotices = [{ id: 4 }, { id: 3 }];
-      const mockQueryBuilder = {
-        leftJoin: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([mockNotices, 10]),
-      };
-      mockNoticeRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockNoticeRepository.findAndCount.mockResolvedValue([mockNotices, 10]);
 
       const result = await service.findByPage('2', '2'); // page 2, limit 2
 
-      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(2); // (2-1) * 2
-      expect(mockQueryBuilder.take).toHaveBeenCalledWith(2);
+      expect(mockNoticeRepository.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 2,
+          take: 2,
+        }),
+      );
       expect(result.items).toHaveLength(2);
       expect(result.totalCount).toBe(10);
       expect(result.currentPage).toBe(2);
@@ -163,6 +175,16 @@ describe('NoticeService', () => {
       expect(mockNoticeRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
         relations: ['author'],
+        select: {
+          id: true,
+          titleKo: true,
+          contentKo: true,
+          titleEn: true,
+          contentEn: true,
+          createdAt: true,
+          updatedAt: true,
+          author: { nickname: true },
+        },
       });
     });
 
@@ -174,6 +196,7 @@ describe('NoticeService', () => {
 
   describe('markAsRead', () => {
     it('should save a read record if not exists', async () => {
+      mockNoticeRepository.findOne.mockResolvedValue({ id: 1 });
       mockNoticeReadRepository.findOne.mockResolvedValue(null);
       mockNoticeReadRepository.create.mockReturnValue({
         notice: { id: 1 },
@@ -193,6 +216,7 @@ describe('NoticeService', () => {
     });
 
     it('should not save if read record already exists', async () => {
+      mockNoticeRepository.findOne.mockResolvedValue({ id: 1 });
       mockNoticeReadRepository.findOne.mockResolvedValue({ id: 1 });
 
       await service.markAsRead(1, 2);

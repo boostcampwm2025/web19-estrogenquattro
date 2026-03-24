@@ -28,6 +28,12 @@ export default function BannedModal({ reason, onClose }: BannedModalProps) {
         isVisible ? "bg-black/50" : "bg-black/0"
       }`}
       onClick={handleClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") handleClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="banned-modal-title"
     >
       <div
         className={`w-80 ${PIXEL_BORDER} bg-red-100 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] transition-all duration-300 ${
@@ -37,7 +43,10 @@ export default function BannedModal({ reason, onClose }: BannedModalProps) {
       >
         <div className="mb-3 flex items-center gap-3">
           <ShieldBan className="h-6 w-6 text-red-600" />
-          <h2 className="text-lg font-bold tracking-wide text-red-900">
+          <h2
+            id="banned-modal-title"
+            className="text-lg font-bold tracking-wide text-red-900"
+          >
             계정이 정지되었습니다
           </h2>
         </div>
@@ -52,6 +61,7 @@ export default function BannedModal({ reason, onClose }: BannedModalProps) {
         <div className="flex justify-end">
           <button
             onClick={handleClose}
+            autoFocus
             className={`cursor-pointer ${PIXEL_BORDER} bg-[#ffecb3] px-5 py-2 font-bold tracking-wide text-amber-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-all hover:brightness-95 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none`}
           >
             확인

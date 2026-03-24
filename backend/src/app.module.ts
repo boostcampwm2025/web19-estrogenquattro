@@ -9,6 +9,7 @@ import { PlayerModule } from './player/player.module';
 import { GithubModule } from './github/github.module';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
+import { ENV_FILE_PATHS } from './config/env-files';
 import { WinstonModule } from 'nest-winston';
 import { createWinstonConfig } from './config/logger.winston';
 import { ConfigService } from '@nestjs/config';
@@ -32,12 +33,7 @@ import { NoticeModule } from './notice/notice.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        '.env.production',
-        '.env.development',
-        '.env.local',
-        '.env',
-      ],
+      envFilePath: [...ENV_FILE_PATHS],
       validationSchema: envValidationSchema,
     }),
     WinstonModule.forRootAsync({

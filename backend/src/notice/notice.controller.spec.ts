@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NoticeController } from './notice.controller';
 import { NoticeService } from './notice.service';
 import { NoticeGateway } from './notice.gateway';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { CreateNoticeDto } from './dto/create-notification.dto';
+import { UpdateNoticeDto } from './dto/update-notification.dto';
 import { JwtGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../admin/admin.guard';
 
@@ -51,7 +51,7 @@ describe('NoticeController', () => {
 
   describe('create', () => {
     it('should create and broadcast a notice', async () => {
-      const dto: CreateNotificationDto = {
+      const dto: CreateNoticeDto = {
         ko: { title: '테스트', content: '내용' },
         en: { title: 'Test', content: 'Content' },
       };
@@ -135,7 +135,10 @@ describe('NoticeController', () => {
 
   describe('update', () => {
     it('should call service.update', async () => {
-      const dto: UpdateNotificationDto = { ko: { title: '수정됨' } };
+      const dto: UpdateNoticeDto = {
+        ko: { title: '수정됨' },
+        en: { title: 'Updated' },
+      };
       await controller.update(1, dto);
       expect(mockNoticeService.update).toHaveBeenCalledWith(1, dto);
     });

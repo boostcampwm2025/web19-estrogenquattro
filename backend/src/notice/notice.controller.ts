@@ -10,8 +10,8 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { CreateNoticeDto } from './dto/create-notification.dto';
+import { UpdateNoticeDto } from './dto/update-notification.dto';
 import { JwtGuard } from '../auth/jwt.guard';
 import { AdminGuard } from '../admin/admin.guard';
 import { PlayerId } from '../auth/player-id.decorator';
@@ -28,10 +28,7 @@ export class NoticeController {
 
   @Post()
   @UseGuards(AdminGuard)
-  async create(
-    @PlayerId() authorId: number,
-    @Body() dto: CreateNotificationDto,
-  ) {
+  async create(@PlayerId() authorId: number, @Body() dto: CreateNoticeDto) {
     const notice = await this.noticeService.create(authorId, dto);
     this.noticeGateway.broadcastNotice(notice);
     return notice;
@@ -65,7 +62,7 @@ export class NoticeController {
   @UseGuards(AdminGuard)
   update(
     @Param('id', ParseIntPipe) noticeId: number,
-    @Body() dto: UpdateNotificationDto,
+    @Body() dto: UpdateNoticeDto,
   ) {
     return this.noticeService.update(noticeId, dto);
   }

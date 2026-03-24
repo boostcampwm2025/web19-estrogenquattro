@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -10,6 +11,7 @@ import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
 import { CreateBanDto } from './dto/create-ban.dto';
 import { Player } from '../player/entites/player.entity';
+import { BanCacheService } from './ban-cache.service';
 import { Like } from 'typeorm';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class AdminService {
     private readonly adminRepository: Repository<Admin>,
     @InjectRepository(Ban)
     private readonly banRepository: Repository<Ban>,
+    private readonly banCacheService: BanCacheService,
     @InjectRepository(Player)
     private readonly playerRepository: Repository<Player>,
   ) {}
@@ -39,7 +42,7 @@ export class AdminService {
   }
 
   async getPlayers(search?: string) {
-    const where = search ? { nickname: Like(`%${search}%`) } : {};
+    const where = search ? { nickname: Like(`${search}%`) } : {};
     const players = await this.playerRepository.find({
       where,
       select: ['id', 'nickname', 'socialId'],
@@ -60,6 +63,11 @@ export class AdminService {
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
+    const existingBan = this.isBanned(dto.targetPlayerId);
+    if (existingBan) {
+      throw new ConflictException('이미 밴된 사용자입니다');
+    }
+
     const ban = this.banRepository.create({
       ...dto,
       targetPlayer: { id: dto.targetPlayerId } as unknown as Player,
@@ -70,7 +78,11 @@ export class AdminService {
       targetPlayerId: dto.targetPlayerId,
       bannedBy: adminId,
     });
-    return this.banRepository.save(ban);
+
+    const savedBan = await this.banRepository.save(ban);
+    this.banCacheService.addBan(dto.targetPlayerId); // 캐시 업데이트
+
+    return savedBan;
   }
 
   async getBan(
@@ -82,6 +94,10 @@ export class AdminService {
     return { isBanned: !!ban, reason: ban?.reason ?? null };
   }
 
+  isBanned(playerId: number): boolean {
+    return this.banCacheService.isBanned(playerId);
+  }
+
   async unban(playerId: number): Promise<void> {
     const result = await this.banRepository.delete({
       targetPlayer: { id: playerId } as unknown as Player,
@@ -91,6 +107,7 @@ export class AdminService {
       throw new NotFoundException(`Player with ID ${playerId} is not banned`);
     }
 
+    this.banCacheService.removeBan(playerId); // 캐시 업데이트
     this.logger.log('User unbanned', { playerId });
   }
 }
