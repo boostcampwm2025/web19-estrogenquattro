@@ -51,8 +51,6 @@ export default function LoginPage() {
   const mounted = useMounted();
 
   return (
-    <Suspense fallback={null}>
-      {mounted ? <LoginContent /> : null}
-    </Suspense>
+    <Suspense fallback={null}>{mounted ? <LoginContent /> : null}</Suspense>
   );
 }
