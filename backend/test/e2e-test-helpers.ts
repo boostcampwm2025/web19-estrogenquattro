@@ -139,7 +139,6 @@ export async function createTestApp(
     PetService,
     AdminService,
     WriteLockService,
-    AdminService,
     BanCacheService,
     {
       provide: GithubPollService,

@@ -31,3 +31,15 @@ export async function getNotices(
     { signal },
   );
 }
+
+export async function getNewNotice(): Promise<NoticeItem | null> {
+  const data = await fetchApi<NoticeItem | Record<string, never>>(
+    "/api/notices/new",
+  );
+  if ("id" in data) return data as NoticeItem;
+  return null;
+}
+
+export async function markNoticeAsRead(id: number): Promise<void> {
+  await fetchApi(`/api/notices/${id}/marking`, { method: "POST" });
+}
