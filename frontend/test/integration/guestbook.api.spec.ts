@@ -10,9 +10,16 @@ import {
   useCreateGuestbook,
   useDeleteGuestbook,
   useGuestbookEntries,
+  useGuestbookReadState,
+  useMarkGuestbookAsRead,
 } from "@/lib/api/hooks/useGuestbook";
 import { queryKeys } from "@/lib/api/hooks/queryKeys";
-import { resetGuestbookStore, seedGuestbookEntries } from "@test/mocks/handlers/guestbook";
+import {
+  failNextMarkAsRead,
+  resetGuestbookStore,
+  seedGuestbookEntries,
+  setGuestbookReadState,
+} from "@test/mocks/handlers/guestbook";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -44,6 +51,11 @@ describe("Guestbook API 통합", () => {
         player: { id: 2, nickname: "bob" },
       },
     ]);
+    setGuestbookReadState({
+      latestEntryId: 2,
+      lastReadEntryId: 0,
+      hasUnread: true,
+    });
   });
 
   it("guestbookApi.getEntries는 cursor와 limit을 적용한다", async () => {
@@ -62,6 +74,55 @@ describe("Guestbook API 통합", () => {
     });
 
     expect(result.current.data?.pages[0].items).toHaveLength(2);
+  });
+
+  it("useGuestbookEntries는 같은 QueryClient 재마운트 시 최신 목록을 다시 조회한다", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const firstMount = renderHook(() => useGuestbookEntries(true), { wrapper });
+
+    await waitFor(() => {
+      expect(firstMount.result.current.isSuccess).toBe(true);
+    });
+    expect(firstMount.result.current.data?.pages[0].items[0].id).toBe(2);
+
+    seedGuestbookEntries([
+      {
+        id: 1,
+        content: "첫 방명록",
+        createdAt: "2026-03-17T00:00:00.000Z",
+        player: { id: 1, nickname: "alice" },
+      },
+      {
+        id: 2,
+        content: "두 번째 방명록",
+        createdAt: "2026-03-16T00:00:00.000Z",
+        player: { id: 2, nickname: "bob" },
+      },
+      {
+        id: 3,
+        content: "최신 방명록",
+        createdAt: "2026-03-18T00:00:00.000Z",
+        player: { id: 3, nickname: "carol" },
+      },
+    ]);
+
+    firstMount.unmount();
+
+    const secondMount = renderHook(() => useGuestbookEntries(true), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(secondMount.result.current.data?.pages[0].items[0].id).toBe(3);
+    });
   });
 
   it("생성/삭제 mutation은 guestbook 목록을 invalidate한다", async () => {
@@ -109,5 +170,90 @@ describe("Guestbook API 통합", () => {
     expect(deletedList.items.some((item) => item.content === "새 방명록")).toBe(
       false,
     );
+  });
+
+  it("작성 직후 read-state는 방금 작성한 entry를 읽은 상태로 유지한다", async () => {
+    const created = await guestbookApi.createEntry("작성한 최신 방명록");
+    const readState = await guestbookApi.getReadState();
+
+    expect(created.id).toBe(3);
+    expect(readState).toEqual({
+      latestEntryId: 3,
+      lastReadEntryId: 3,
+      hasUnread: false,
+    });
+  });
+
+  it("read-state query와 markAsRead mutation은 읽음 상태를 갱신한다", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const readStateHook = renderHook(() => useGuestbookReadState(true), {
+      wrapper,
+    });
+    const markAsReadHook = renderHook(() => useMarkGuestbookAsRead(), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(readStateHook.result.current.isSuccess).toBe(true);
+    });
+
+    expect(readStateHook.result.current.data).toEqual({
+      latestEntryId: 2,
+      lastReadEntryId: 0,
+      hasUnread: true,
+    });
+
+    await act(async () => {
+      await markAsReadHook.result.current.mutateAsync();
+    });
+
+    expect(
+      queryClient.getQueryData(queryKeys.guestbook.readState()),
+    ).toEqual({
+      latestEntryId: 2,
+      lastReadEntryId: 2,
+      hasUnread: false,
+    });
+  });
+
+  it("markAsRead 실패 시 이전 read-state로 롤백한다", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+    queryClient.setQueryData(queryKeys.guestbook.readState(), {
+      latestEntryId: 2,
+      lastReadEntryId: 0,
+      hasUnread: true,
+    });
+    failNextMarkAsRead();
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+    const markAsReadHook = renderHook(() => useMarkGuestbookAsRead(), {
+      wrapper,
+    });
+
+    await expect(
+      markAsReadHook.result.current.mutateAsync(),
+    ).rejects.toThrow();
+
+    expect(
+      queryClient.getQueryData(queryKeys.guestbook.readState()),
+    ).toEqual({
+      latestEntryId: 2,
+      lastReadEntryId: 0,
+      hasUnread: true,
+    });
   });
 });

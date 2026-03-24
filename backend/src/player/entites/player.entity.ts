@@ -29,6 +29,13 @@ export class Player {
   @Column({ type: 'boolean', name: 'is_newbie', default: true })
   isNewbie: boolean;
 
+  @Column({
+    type: 'int',
+    name: 'last_read_guestbook_entry_id',
+    nullable: true,
+  })
+  lastReadGuestbookEntryId: number | null;
+
   /**
    * 현재 집중 중인 Task ID (nullable, FK 아님 - 애플리케이션 레벨 검증)
    * null이면 글로벌 타이머 또는 휴식 상태

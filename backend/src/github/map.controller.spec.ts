@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MapController } from './map.controller';
 import { ProgressGateway } from './progress.gateway';
+import type { Response } from 'express';
 
 describe('MapController', () => {
   let controller: MapController;
@@ -70,6 +71,22 @@ describe('MapController', () => {
       // 2026-02-20 KST → week 8 → 8 % 3 = 2 → underwater_city
       mockDateNow('2026-02-20T08:29:56Z'); // 2026-02-20 17:29:56 KST
       expect(getMapTheme()).toBe('underwater_city');
+    });
+  });
+
+  describe('getMap', () => {
+    it('sendFile 호출 시 dotfiles allow 옵션을 사용한다', () => {
+      const sendFile = jest.fn();
+      const res = {
+        sendFile,
+      } as unknown as Response;
+
+      controller.getMap(0, res);
+
+      expect(sendFile).toHaveBeenCalledWith(
+        expect.stringContaining('stage1.webp'),
+        expect.objectContaining({ dotfiles: 'allow' }),
+      );
     });
   });
 });

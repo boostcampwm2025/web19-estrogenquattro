@@ -3,9 +3,10 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { guestbookApi } from "../guestbook";
+import { guestbookApi, type GuestbookReadStateRes } from "../guestbook";
 import { queryKeys } from "./queryKeys";
 
 const PAGE_SIZE = 20;
@@ -17,6 +18,60 @@ export function useGuestbookEntries(enabled: boolean) {
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+}
+
+export function useGuestbookReadState(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.guestbook.readState(),
+    queryFn: () => guestbookApi.getReadState(),
+    enabled,
+    staleTime: 5 * 1000,
+    refetchInterval: 10 * 1000,
+  });
+}
+
+export function useMarkGuestbookAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => guestbookApi.markAsRead(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.guestbook.readState(),
+      });
+
+      const previousState = queryClient.getQueryData<GuestbookReadStateRes>(
+        queryKeys.guestbook.readState(),
+      );
+      const latestEntryId = previousState?.latestEntryId ?? null;
+
+      if (latestEntryId !== null) {
+        queryClient.setQueryData<GuestbookReadStateRes>(
+          queryKeys.guestbook.readState(),
+          {
+            latestEntryId,
+            lastReadEntryId: latestEntryId,
+            hasUnread: false,
+          },
+        );
+      }
+
+      return { previousState };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousState) {
+        queryClient.setQueryData(
+          queryKeys.guestbook.readState(),
+          context.previousState,
+        );
+      }
+    },
+    onSuccess: (state) => {
+      queryClient.setQueryData(queryKeys.guestbook.readState(), state);
+    },
   });
 }
 

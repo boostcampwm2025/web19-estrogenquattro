@@ -17,6 +17,12 @@ export interface GuestbookListRes {
   nextCursor: number | null;
 }
 
+export interface GuestbookReadStateRes {
+  latestEntryId: number | null;
+  lastReadEntryId: number;
+  hasUnread: boolean;
+}
+
 export const guestbookApi = {
   getEntries: (cursor?: number, limit: number = 20) => {
     const params = new URLSearchParams();
@@ -26,6 +32,14 @@ export const guestbookApi = {
     const query = params.toString();
     return fetchApi<GuestbookListRes>(`/api/guestbooks?${query}`);
   },
+
+  getReadState: () =>
+    fetchApi<GuestbookReadStateRes>("/api/guestbooks/read-state"),
+
+  markAsRead: () =>
+    fetchApi<GuestbookReadStateRes>("/api/guestbooks/read", {
+      method: "POST",
+    }),
 
   createEntry: (content: string) =>
     fetchApi<GuestbookEntryRes>("/api/guestbooks", {

@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpCode,
+  HttpStatus,
   Controller,
   Get,
   Post,
@@ -23,6 +25,17 @@ export class GuestbookController {
   @Post()
   async create(@PlayerId() playerId: number, @Body() dto: CreateGuestbookDto) {
     return this.guestbookService.create(playerId, dto.content);
+  }
+
+  @Post('read')
+  @HttpCode(HttpStatus.OK)
+  async markAsRead(@PlayerId() playerId: number) {
+    return this.guestbookService.markAsRead(playerId);
+  }
+
+  @Get('read-state')
+  async getReadState(@PlayerId() playerId: number) {
+    return this.guestbookService.getReadState(playerId);
   }
 
   @Get()
