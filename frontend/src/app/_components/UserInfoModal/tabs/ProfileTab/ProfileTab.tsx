@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { getGithubProfileUrl } from "@/utils/github";
 
 export default function ProfileTab() {
+  const defaultAvatarUrl = "https://avatars.githubusercontent.com/u/0?v=4";
   const { t } = useTranslation("ui");
   const { targetUsername, targetPlayerId } = useModalStore(
     useShallow((state) => ({
@@ -31,20 +32,42 @@ export default function ProfileTab() {
     ? (user?.username ?? targetUsername ?? "")
     : (targetUsername ?? "");
 
-  const { user: githubUser } = useGithubUser(username);
+  const {
+    user: githubUser,
+    isLoading: isLoadingGithubUser,
+    error: githubUserError,
+  } = useGithubUser(username);
   const { isFollowing, isLoading: isLoadingFollowStatus } = useFollowStatus(
     !isOwnProfile ? username : "",
   );
   const { handleFollowToggle, isSubmitting } = useFollowMutation(username);
 
+  const isOtherProfileLoading =
+    !isOwnProfile && isLoadingGithubUser && !githubUser;
+
+  if (isOtherProfileLoading) {
+    return (
+      <div className="space-y-6 px-4 pt-20 pb-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-24 w-24 animate-pulse rounded-full bg-amber-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)]" />
+          <div className="h-6 w-40 animate-pulse bg-amber-200" />
+          <div className="text-sm font-bold text-amber-700">
+            {t(($) => $.userInfoModal.loading)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const profileData = {
-    avatarUrl:
-      githubUser?.avatar_url ??
-      user?.avatarUrl ??
-      "https://avatars.githubusercontent.com/u/0?v=4",
-    githubUsername: githubUser?.login ?? username ?? "Unknown",
-    followers: githubUser?.followers ?? 0,
-    following: githubUser?.following ?? 0,
+    avatarUrl: isOwnProfile
+      ? (githubUser?.avatar_url ?? user?.avatarUrl ?? defaultAvatarUrl)
+      : (githubUser?.avatar_url ?? defaultAvatarUrl),
+    githubUsername:
+      githubUser?.login ?? username ?? targetUsername ?? "Unknown",
+    followers: githubUser?.followers ?? (isOwnProfile ? 0 : "--"),
+    following: githubUser?.following ?? (isOwnProfile ? 0 : "--"),
+    isUnavailable: !isOwnProfile && !githubUser && !!githubUserError,
   };
 
   return (
@@ -66,7 +89,11 @@ export default function ProfileTab() {
             href={getGithubProfileUrl(profileData.githubUsername)}
             target="_blank"
             rel="noopener noreferrer"
-            className="relative cursor-pointer text-lg font-bold text-amber-900 transition-colors hover:text-amber-700"
+            className={`relative text-lg font-bold text-amber-900 transition-colors ${
+              profileData.isUnavailable
+                ? "cursor-default opacity-70"
+                : "cursor-pointer hover:text-amber-700"
+            }`}
           >
             {profileData.githubUsername}
             <span className="absolute top-1/2 right-0 translate-x-[calc(100%+8px)] -translate-y-1/2">
@@ -102,7 +129,9 @@ export default function ProfileTab() {
         <div className="flex justify-center">
           <Button
             onClick={() => handleFollowToggle(isFollowing)}
-            disabled={isLoadingFollowStatus || isSubmitting}
+            disabled={
+              isLoadingFollowStatus || isSubmitting || profileData.isUnavailable
+            }
             className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-none border-2 py-2 font-bold transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 ${
               isFollowing
                 ? "border-red-700 bg-red-600 text-white shadow-[4px_4px_0px_0px_#7f1d1d] hover:bg-red-700"
