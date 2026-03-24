@@ -7,6 +7,17 @@ export interface AdminPlayer {
   banReason: string | null;
 }
 
+export interface AdminNotification {
+  id: number;
+  titleKo: string;
+  contentKo: string;
+  titleEn: string;
+  contentEn: string;
+  createdAt: string;
+  updatedAt: string;
+  author: { id: number; nickname: string };
+}
+
 export async function verifyAdmin(): Promise<{ isAdmin: boolean }> {
   return fetchApi<{ isAdmin: boolean }>("/api/admin/verification");
 }
@@ -28,6 +39,62 @@ export async function banPlayer(
 
 export async function unbanPlayer(playerId: number): Promise<void> {
   await fetchApi(`/api/admin/ban/${playerId}`, {
+    method: "DELETE",
+  });
+}
+
+export interface AdminNotificationPaginationResponse {
+  items: AdminNotification[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+// Notification CRUD (admin-only)
+export async function getNotifications(
+  page: number = 1,
+  limit: number = 10,
+  signal?: AbortSignal,
+): Promise<AdminNotificationPaginationResponse> {
+  return fetchApi<AdminNotificationPaginationResponse>(
+    `/api/notices?page=${page}&limit=${limit}`,
+    { signal },
+  );
+}
+
+export async function createNotification(
+  titleKo: string,
+  contentKo: string,
+  titleEn: string,
+  contentEn: string,
+): Promise<AdminNotification> {
+  return fetchApi<AdminNotification>("/api/notices", {
+    method: "POST",
+    body: JSON.stringify({
+      ko: { title: titleKo, content: contentKo },
+      en: { title: titleEn, content: contentEn },
+    }),
+  });
+}
+
+export async function updateNotification(
+  id: number,
+  titleKo: string,
+  contentKo: string,
+  titleEn: string,
+  contentEn: string,
+): Promise<AdminNotification> {
+  return fetchApi<AdminNotification>(`/api/notices/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      ko: { title: titleKo, content: contentKo },
+      en: { title: titleEn, content: contentEn },
+    }),
+  });
+}
+
+export async function deleteNotification(id: number): Promise<void> {
+  await fetchApi(`/api/notices/${id}`, {
     method: "DELETE",
   });
 }

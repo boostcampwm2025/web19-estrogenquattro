@@ -8,6 +8,7 @@ import { GithubStrategy } from './github.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
+import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { AdminModule } from '../admin/admin.module';
 import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { AuthSessionService } from './auth-session.service';
