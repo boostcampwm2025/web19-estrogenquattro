@@ -8,6 +8,7 @@ import { useGithubUser, useFollowStatus } from "@/lib/api/hooks/useGithub";
 import { useFollowMutation } from "@/lib/api/hooks/useFollowMutation";
 import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
+import { getGithubProfileUrl } from "@/utils/github";
 
 export default function ProfileTab() {
   const { t } = useTranslation("ui");
@@ -62,7 +63,7 @@ export default function ProfileTab() {
 
         <div className="flex items-center justify-center">
           <a
-            href={`https://github.com/${profileData.githubUsername}`}
+            href={getGithubProfileUrl(profileData.githubUsername)}
             target="_blank"
             rel="noopener noreferrer"
             className="relative cursor-pointer text-lg font-bold text-amber-900 transition-colors hover:text-amber-700"

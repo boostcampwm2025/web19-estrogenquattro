@@ -10,7 +10,6 @@ import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
 import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { AdminModule } from '../admin/admin.module';
-import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { AuthSessionService } from './auth-session.service';
 import { PlaywrightAuthController } from './playwright-auth.controller';
 import { loadEnvFilesOnce } from '../config/env-files';

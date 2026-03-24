@@ -113,7 +113,7 @@ describe("utils", () => {
       const rank = {
         playerId: 1,
         rank: 2,
-        nickname: "testuser",
+        nickname: "표시용 닉네임",
         totalPoints: 100,
       };
 
@@ -122,8 +122,8 @@ describe("utils", () => {
       expect(result).toEqual({
         playerId: 1,
         rank: 2,
-        username: "testuser",
-        profileImage: expect.stringContaining("testuser"),
+        username: "표시용 닉네임",
+        profileImage: expect.stringContaining("표시용 닉네임"),
         points: 100,
       });
     });
@@ -134,7 +134,7 @@ describe("utils", () => {
       const rank = {
         playerId: 1,
         rank: 3,
-        nickname: "devuser",
+        nickname: "개발자",
         count: 42,
       };
 
@@ -143,8 +143,8 @@ describe("utils", () => {
       expect(result).toEqual({
         playerId: 1,
         rank: 3,
-        username: "devuser",
-        profileImage: expect.stringContaining("devuser"),
+        username: "개발자",
+        profileImage: expect.stringContaining("개발자"),
         points: 42,
       });
     });
@@ -152,8 +152,18 @@ describe("utils", () => {
 
   describe("toMyRankPlayerFromTotal", () => {
     const ranks = [
-      { playerId: 1, rank: 1, nickname: "user1", totalPoints: 200 },
-      { playerId: 2, rank: 2, nickname: "user2", totalPoints: 100 },
+      {
+        playerId: 1,
+        rank: 1,
+        nickname: "user1",
+        totalPoints: 200,
+      },
+      {
+        playerId: 2,
+        rank: 2,
+        nickname: "user2",
+        totalPoints: 100,
+      },
     ];
 
     it("내 playerId가 랭킹에 있으면 해당 데이터를 반환한다", () => {
@@ -177,8 +187,18 @@ describe("utils", () => {
 
   describe("toMyRankPlayerFromActivity", () => {
     const ranks = [
-      { playerId: 1, rank: 1, nickname: "user1", count: 50 },
-      { playerId: 2, rank: 2, nickname: "user2", count: 30 },
+      {
+        playerId: 1,
+        rank: 1,
+        nickname: "user1",
+        count: 50,
+      },
+      {
+        playerId: 2,
+        rank: 2,
+        nickname: "user2",
+        count: 30,
+      },
     ];
 
     it("내 playerId가 랭킹에 있으면 해당 데이터를 반환한다", () => {

@@ -122,6 +122,7 @@ export async function createTestApp(
 
   const providers: Array<any> = [
     UserStore,
+    AuthProfileSyncService,
     AuthSessionService,
     AuthProfileSyncService,
     JwtStrategy,
