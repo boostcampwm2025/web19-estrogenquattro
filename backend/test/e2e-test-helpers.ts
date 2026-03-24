@@ -12,7 +12,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
 import { io, Socket } from 'socket.io-client';
-import { DataSource, EntityTarget, Repository } from 'typeorm';
+import { DataSource, EntityTarget, Repository, ObjectLiteral } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthProfileSyncService } from '../src/auth/auth-profile-sync.service';
@@ -57,6 +57,10 @@ import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
 import { UserPetCodex } from '../src/userpet/entities/user-pet-codex.entity';
 import { PetService } from '../src/userpet/pet.service';
+import { AdminService } from '../src/admin/admin.service';
+import { Admin } from '../src/admin/entities/admin.entity';
+import { BanCacheService } from '../src/admin/ban-cache.service';
+import { Ban } from '../src/admin/entities/ban.entity';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
 export const SOCKET_EVENT_TIMEOUT_MS = 5000;
@@ -132,7 +136,10 @@ export async function createTestApp(
     FocusTimeGateway,
     ChatGateway,
     PetService,
+    AdminService,
     WriteLockService,
+    AdminService,
+    BanCacheService,
     {
       provide: GithubPollService,
       useValue: githubPollServiceMock,
@@ -198,6 +205,8 @@ export async function createTestApp(
         UserPet,
         UserPetCodex,
         GlobalState,
+        Admin,
+        Ban,
         Guestbook,
         BugReport,
       ]),
@@ -264,11 +273,14 @@ export async function createTestApp(
   };
 }
 
-export function getRepository<T>(
+export function getRepository<T extends ObjectLiteral>(
   context: TestAppContext,
   entity: EntityTarget<T>,
 ): Repository<T> {
-  return context.moduleRef.get<Repository<T>>(getRepositoryToken(entity));
+  return context.moduleRef.get<Repository<T>>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    getRepositoryToken(entity as any),
+  );
 }
 
 export interface SeedAuthenticatedPlayerOptions {

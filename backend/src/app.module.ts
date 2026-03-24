@@ -26,6 +26,8 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { DatabaseModule } from './database/database.module';
 import { GuestbookModule } from './guestbook/guestbook.module';
 import { BugReportModule } from './bugreport/bug-report.module';
+import { AdminModule } from './admin/admin.module';
+import { NoticeModule } from './notice/notice.module';
 
 @Module({
   imports: [
@@ -100,6 +102,8 @@ import { BugReportModule } from './bugreport/bug-report.module';
     SchedulerModule,
     GuestbookModule,
     BugReportModule,
+    AdminModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

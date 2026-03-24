@@ -9,6 +9,7 @@ import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { UserStore } from './user.store';
 import { JwtPayload } from './jwt.strategy';
+import { BanCacheService } from '../admin/ban-cache.service';
 
 @Injectable()
 export class WsJwtGuard implements CanActivate {
@@ -17,6 +18,7 @@ export class WsJwtGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private userStore: UserStore,
+    private banCacheService: BanCacheService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -47,6 +49,14 @@ export class WsJwtGuard implements CanActivate {
       const user = this.userStore.findByGithubId(payload.sub);
 
       if (!user) {
+        return false;
+      }
+
+      const isBanned = this.banCacheService.isBanned(user.playerId);
+      if (isBanned) {
+        this.logger.warn(
+          `Banned user blocked from WebSocket: ${user.username}`,
+        );
         return false;
       }
 
