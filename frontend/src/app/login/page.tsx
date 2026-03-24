@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState, Suspense, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import HeroSection from "./_components/HeroSection";
 import EvolutionSection from "./_components/EvolutionSection";
@@ -10,6 +10,10 @@ import BannedModal from "./_components/BannedModal";
 import { Analytics } from "@/lib/analytics";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+const subscribe = () => () => {};
+const useMounted = () =>
+  useSyncExternalStore(subscribe, () => true, () => false);
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -40,9 +44,11 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
+  const mounted = useMounted();
+
   return (
-    <Suspense>
-      <LoginContent />
+    <Suspense fallback={null}>
+      {mounted ? <LoginContent /> : null}
     </Suspense>
   );
 }
