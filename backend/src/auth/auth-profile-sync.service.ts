@@ -26,7 +26,6 @@ export class AuthProfileSyncService {
       const player = await this.playerService.findOrCreateBySocialId(
         Number(user.githubId),
         username,
-        username,
       );
 
       return this.userStore.findOrCreate({

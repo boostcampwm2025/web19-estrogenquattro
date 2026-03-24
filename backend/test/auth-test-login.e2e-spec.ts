@@ -53,7 +53,6 @@ describe('Auth Test Login E2E', () => {
       .send({
         socialId: 56401,
         username: 'playwright-user',
-        nickname: 'Playwright User',
       })
       .expect(200);
 
@@ -67,8 +66,7 @@ describe('Auth Test Login E2E', () => {
     );
 
     const player = await playerRepository.findOneBy({ socialId: 56401 });
-    expect(player?.nickname).toBe('Playwright User');
-    expect(player?.githubUsername).toBe('playwright-user');
+    expect(player?.nickname).toBe('playwright-user');
 
     const accessTokenCookie = extractAccessTokenCookie(
       response.headers['set-cookie'] as string[] | undefined,
@@ -122,7 +120,6 @@ describe('Auth Test Login E2E', () => {
     const seedRequest = {
       socialId: 56404,
       username: 'playwright-restart-user',
-      nickname: 'Restart User',
     };
 
     context = await createPlaywrightContext();
@@ -170,7 +167,7 @@ describe('Auth Test Login E2E', () => {
     }
   });
 
-  it('같은 socialId로 다시 로그인하면 nickname과 githubUsername이 최신값으로 갱신된다', async () => {
+  it('같은 socialId로 다시 로그인하면 nickname이 최신 username으로 갱신된다', async () => {
     context = await createPlaywrightContext();
     const playerRepository: Repository<Player> = getRepository(context, Player);
 
@@ -180,7 +177,6 @@ describe('Auth Test Login E2E', () => {
       .send({
         socialId: 56405,
         username: 'playwright-user-old',
-        nickname: 'Old Nickname',
       })
       .expect(200);
 
@@ -190,7 +186,6 @@ describe('Auth Test Login E2E', () => {
       .send({
         socialId: 56405,
         username: 'playwright-user-new',
-        nickname: 'New Nickname',
       })
       .expect(200);
 
@@ -201,7 +196,6 @@ describe('Auth Test Login E2E', () => {
     });
 
     const player = await playerRepository.findOneBy({ socialId: 56405 });
-    expect(player?.nickname).toBe('New Nickname');
-    expect(player?.githubUsername).toBe('playwright-user-new');
+    expect(player?.nickname).toBe('playwright-user-new');
   });
 });

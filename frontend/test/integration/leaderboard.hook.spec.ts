@@ -40,7 +40,6 @@ describe("useLeaderboard 통합", () => {
           {
             playerId: 1,
             nickname: "alice",
-            githubUsername: "alice",
             totalPoints: 20,
             rank: 1,
           },
@@ -71,7 +70,6 @@ describe("useLeaderboard 통합", () => {
           {
             playerId: 2,
             nickname: "bob",
-            githubUsername: "bob",
             count: 3,
             rank: 1,
           },

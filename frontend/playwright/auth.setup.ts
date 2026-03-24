@@ -17,7 +17,6 @@ setup("seed authenticated playwright session", async () => {
     data: {
       socialId: 56401,
       username: "playwright-user",
-      nickname: "Playwright User",
     },
   });
   expect(loginResponse.ok()).toBeTruthy();

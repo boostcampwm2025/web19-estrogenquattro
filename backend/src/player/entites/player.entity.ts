@@ -20,14 +20,6 @@ export class Player {
   @Column({ type: 'varchar', length: 20, nullable: false })
   nickname: string;
 
-  @Column({
-    type: 'varchar',
-    name: 'github_username',
-    length: 39,
-    nullable: true,
-  })
-  githubUsername: string | null;
-
   @Column({ type: 'int', name: 'equipped_pet_id', nullable: true })
   equippedPetId: number;
 

@@ -9,7 +9,6 @@ const mockPlayer: LeaderboardPlayer = {
   playerId: 1,
   rank: 1,
   username: "testuser",
-  githubUsername: "testuser",
   profileImage: "https://example.com/avatar.png",
   points: 100,
 };
@@ -37,15 +36,10 @@ describe("PlayerRow", () => {
     expect(screen.getByText("100").closest("a")).toBeNull();
   });
 
-  it("GitHub username이 비어 있으면 링크 없이 텍스트만 렌더링된다", () => {
-    render(
-      <PlayerRow
-        player={{ ...mockPlayer, username: "표시 이름", githubUsername: "   " }}
-      />,
-    );
+  it("username이 비어 있으면 링크 없이 텍스트만 렌더링된다", () => {
+    render(<PlayerRow player={{ ...mockPlayer, username: "   " }} />);
 
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.getByText("표시 이름")).toBeInTheDocument();
   });
 
   it("1~3등은 No.N 형식으로 표시한다", () => {

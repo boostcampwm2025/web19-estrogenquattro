@@ -114,7 +114,6 @@ describe("utils", () => {
         playerId: 1,
         rank: 2,
         nickname: "표시용 닉네임",
-        githubUsername: "testuser",
         totalPoints: 100,
       };
 
@@ -124,8 +123,7 @@ describe("utils", () => {
         playerId: 1,
         rank: 2,
         username: "표시용 닉네임",
-        githubUsername: "testuser",
-        profileImage: expect.stringContaining("testuser"),
+        profileImage: expect.stringContaining("표시용 닉네임"),
         points: 100,
       });
     });
@@ -137,7 +135,6 @@ describe("utils", () => {
         playerId: 1,
         rank: 3,
         nickname: "개발자",
-        githubUsername: "devuser",
         count: 42,
       };
 
@@ -147,8 +144,7 @@ describe("utils", () => {
         playerId: 1,
         rank: 3,
         username: "개발자",
-        githubUsername: "devuser",
-        profileImage: expect.stringContaining("devuser"),
+        profileImage: expect.stringContaining("개발자"),
         points: 42,
       });
     });
@@ -160,14 +156,12 @@ describe("utils", () => {
         playerId: 1,
         rank: 1,
         nickname: "user1",
-        githubUsername: "user1",
         totalPoints: 200,
       },
       {
         playerId: 2,
         rank: 2,
         nickname: "user2",
-        githubUsername: "user2",
         totalPoints: 100,
       },
     ];
@@ -188,7 +182,6 @@ describe("utils", () => {
       const result = toMyRankPlayerFromTotal(ranks, undefined, undefined);
       expect(result.playerId).toBe(0);
       expect(result.username).toBe("Unknown");
-      expect(result.githubUsername).toBeNull();
     });
   });
 
@@ -198,14 +191,12 @@ describe("utils", () => {
         playerId: 1,
         rank: 1,
         nickname: "user1",
-        githubUsername: "user1",
         count: 50,
       },
       {
         playerId: 2,
         rank: 2,
         nickname: "user2",
-        githubUsername: "user2",
         count: 30,
       },
     ];

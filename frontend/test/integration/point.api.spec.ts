@@ -72,14 +72,13 @@ describe("pointApi 통합", () => {
     expect(result[0]).toMatchObject({ description: "commit-a" });
   });
 
-  it("getRanks와 getHistoryRanks는 githubUsername을 포함한 랭킹 응답을 반환한다", async () => {
+  it("getRanks와 getHistoryRanks는 nickname을 포함한 랭킹 응답을 반환한다", async () => {
     server.use(
       http.get("*/api/points/ranks", () =>
         HttpResponse.json([
           {
             playerId: 1,
-            nickname: "Display Name",
-            githubUsername: "octocat",
+            nickname: "octocat",
             totalPoints: 20,
             rank: 1,
           },
@@ -89,8 +88,7 @@ describe("pointApi 통합", () => {
         HttpResponse.json([
           {
             playerId: 1,
-            nickname: "Display Name",
-            githubUsername: "octocat",
+            nickname: "octocat",
             count: 5,
             rank: 1,
           },
@@ -103,7 +101,7 @@ describe("pointApi 통합", () => {
       pointApi.getHistoryRanks("2026-03-10T00:00:00.000Z", "COMMITTED"),
     ]);
 
-    expect(totalRanks[0]).toMatchObject({ githubUsername: "octocat" });
-    expect(historyRanks[0]).toMatchObject({ githubUsername: "octocat" });
+    expect(totalRanks[0]).toMatchObject({ nickname: "octocat" });
+    expect(historyRanks[0]).toMatchObject({ nickname: "octocat" });
   });
 });

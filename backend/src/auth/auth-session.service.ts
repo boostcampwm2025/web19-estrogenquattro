@@ -15,7 +15,6 @@ import { UserStore } from './user.store';
 export interface PlaywrightTestLoginBody {
   socialId: number | string;
   username: string;
-  nickname?: string;
   avatarUrl?: string;
 }
 
@@ -67,14 +66,12 @@ export class AuthSessionService {
 
     const socialId = this.parseSocialId(body.socialId);
     const username = this.requireNonBlank(body.username, 'username');
-    const nickname = this.normalizeOptional(body.nickname) ?? username;
     const avatarUrl =
       this.normalizeOptional(body.avatarUrl) ??
       `https://github.com/${username}.png`;
 
     const player = await this.playerService.findOrCreateBySocialId(
       socialId,
-      nickname,
       username,
     );
     const user = this.userStore.findOrCreate({

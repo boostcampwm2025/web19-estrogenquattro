@@ -21,14 +21,14 @@ type PointResponse = {
 
 type PointRankResponse = {
   playerId: number;
-  githubUsername?: string | null;
+  nickname: string;
   totalPoints: number;
   rank: number;
 };
 
 type HistoryRankResponse = {
   playerId: number;
-  githubUsername?: string | null;
+  nickname: string;
   count: number;
   rank: number;
 };
@@ -199,19 +199,19 @@ describe('Point/History API E2E', () => {
     // Then
     expect(pointRanksBody[0]).toMatchObject({
       playerId: first.player.id,
-      githubUsername: 'rank-first',
+      nickname: 'rank-first',
       totalPoints: 20,
       rank: 1,
     });
     expect(historyRanksBody[0]).toMatchObject({
       playerId: first.player.id,
-      githubUsername: 'rank-first',
+      nickname: 'rank-first',
       count: 2,
       rank: 1,
     });
   });
 
-  it('TASK_COMPLETED 랭킹은 githubUsername 기준 식별자를 함께 반환한다', async () => {
+  it('TASK_COMPLETED 랭킹은 nickname 기준 식별자를 함께 반환한다', async () => {
     const viewer = await seedAuthenticatedPlayer(context, {
       socialId: 32010,
       username: 'task-rank-viewer',
@@ -219,12 +219,10 @@ describe('Point/History API E2E', () => {
     const first = await seedAuthenticatedPlayer(context, {
       socialId: 32011,
       username: 'task-rank-first',
-      nickname: 'Task First',
     });
     const second = await seedAuthenticatedPlayer(context, {
       socialId: 32012,
       username: 'task-rank-second',
-      nickname: 'Task Second',
     });
 
     await taskRepository.save([
@@ -263,13 +261,13 @@ describe('Point/History API E2E', () => {
 
     expect(body[0]).toMatchObject({
       playerId: first.player.id,
-      githubUsername: 'task-rank-first',
+      nickname: 'task-rank-first',
       count: 2,
       rank: 1,
     });
     expect(body[1]).toMatchObject({
       playerId: second.player.id,
-      githubUsername: 'task-rank-second',
+      nickname: 'task-rank-second',
       count: 1,
       rank: 2,
     });

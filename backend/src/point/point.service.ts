@@ -11,7 +11,6 @@ import { WriteLockService } from '../database/write-lock.service';
 export interface PlayerRank {
   playerId: number;
   nickname: string;
-  githubUsername: string | null;
   totalPoints: number;
   rank: number;
 }
@@ -179,7 +178,6 @@ export class PointService {
       .createQueryBuilder('ph')
       .select('ph.player_id', 'playerId')
       .addSelect('player.nickname', 'nickname')
-      .addSelect('player.githubUsername', 'githubUsername')
       .addSelect('SUM(ph.amount)', 'totalPoints')
       .innerJoin('ph.player', 'player')
       .where('ph.createdAt >= :startAt', { startAt: weekendStartAt })
@@ -193,12 +191,7 @@ export class PointService {
 
     return results.map(
       (
-        row: {
-          playerId: number;
-          nickname: string;
-          githubUsername: string | null;
-          totalPoints: string;
-        },
+        row: { playerId: number; nickname: string; totalPoints: string },
         index,
       ) => {
         const totalPoints = Number(row.totalPoints);
@@ -211,7 +204,6 @@ export class PointService {
         return {
           playerId: row.playerId,
           nickname: row.nickname,
-          githubUsername: row.githubUsername,
           totalPoints,
           rank: currentRank,
         };

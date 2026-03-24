@@ -28,17 +28,11 @@ export class PlayerService {
   async findOrCreateBySocialId(
     socialId: number,
     nickname: string,
-    githubUsername: string | null,
   ): Promise<Player> {
     const existing = await this.findBySocialId(socialId);
     if (existing) {
-      const hasChanges =
-        existing.nickname !== nickname ||
-        existing.githubUsername !== githubUsername;
-
-      if (hasChanges) {
+      if (existing.nickname !== nickname) {
         existing.nickname = nickname;
-        existing.githubUsername = githubUsername;
         return this.playerRepository.save(existing);
       }
       return existing;
@@ -47,7 +41,6 @@ export class PlayerService {
     const player = this.playerRepository.create({
       socialId,
       nickname,
-      githubUsername,
     });
     return this.playerRepository.save(player);
   }

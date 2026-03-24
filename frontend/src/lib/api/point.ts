@@ -11,7 +11,6 @@ export interface DailyPointRes {
 export interface TotalRankRes {
   playerId: number;
   nickname: string;
-  githubUsername: string | null;
   totalPoints: number;
   rank: number;
 }
@@ -19,7 +18,6 @@ export interface TotalRankRes {
 export interface ActivityRankRes {
   playerId: number;
   nickname: string;
-  githubUsername: string | null;
   count: number;
   rank: number;
 }

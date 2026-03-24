@@ -33,7 +33,7 @@ describe('GithubStrategy', () => {
     jest.clearAllMocks();
   });
 
-  it('GitHub username을 player와 user store 양쪽에 동일하게 반영한다', async () => {
+  it('GitHub username을 player nickname과 user store 양쪽에 동일하게 반영한다', async () => {
     const strategy = new GithubStrategy(
       userStore,
       playerService,
@@ -58,11 +58,7 @@ describe('GithubStrategy', () => {
 
     const saved = await strategy.validate('token', 'refresh-token', profile);
 
-    expect(findOrCreatePlayerMock).toHaveBeenCalledWith(
-      12345,
-      'octocat',
-      'octocat',
-    );
+    expect(findOrCreatePlayerMock).toHaveBeenCalledWith(12345, 'octocat');
     expect(findOrCreateUserMock).toHaveBeenCalledWith({
       githubId: '12345',
       username: 'octocat',

@@ -9,7 +9,6 @@ import { TaskService } from '../task/task.service';
 export interface HistoryRank {
   playerId: number;
   nickname: string;
-  githubUsername: string | null;
   count: number;
   rank: number;
 }
@@ -92,7 +91,6 @@ export class PointHistoryService {
       .createQueryBuilder('ph')
       .select('ph.player_id', 'playerId')
       .addSelect('player.nickname', 'nickname')
-      .addSelect('player.githubUsername', 'githubUsername')
       .addSelect('COUNT(*)', 'count')
       .innerJoin('ph.player', 'player')
       .where('ph.type = :type', { type })
@@ -109,15 +107,7 @@ export class PointHistoryService {
     let previousCount: number | null = null;
 
     return results.map(
-      (
-        row: {
-          playerId: number;
-          nickname: string;
-          githubUsername: string | null;
-          count: string;
-        },
-        index,
-      ) => {
+      (row: { playerId: number; nickname: string; count: string }, index) => {
         const count = Number(row.count);
 
         if (previousCount !== null && count < previousCount) {
@@ -128,7 +118,6 @@ export class PointHistoryService {
         return {
           playerId: row.playerId,
           nickname: row.nickname,
-          githubUsername: row.githubUsername,
           count,
           rank: currentRank,
         };

@@ -55,10 +55,7 @@ export function toLeaderboardPlayerFromTotal(
     playerId: rank.playerId,
     rank: rank.rank,
     username: rank.nickname,
-    githubUsername: rank.githubUsername,
-    profileImage: rank.githubUsername
-      ? getGithubAvatarUrl(rank.githubUsername)
-      : null,
+    profileImage: getGithubAvatarUrl(rank.nickname),
     points: rank.totalPoints,
   };
 }
@@ -71,10 +68,7 @@ export function toLeaderboardPlayerFromActivity(
     playerId: rank.playerId,
     rank: rank.rank,
     username: rank.nickname,
-    githubUsername: rank.githubUsername,
-    profileImage: rank.githubUsername
-      ? getGithubAvatarUrl(rank.githubUsername)
-      : null,
+    profileImage: getGithubAvatarUrl(rank.nickname),
     points: rank.count,
   };
 }
@@ -95,7 +89,6 @@ export function toMyRankPlayerFromTotal(
     playerId: playerId || 0,
     rank: ranks.length + 1,
     username: username || "Unknown",
-    githubUsername: username ?? null,
     profileImage: username ? getGithubAvatarUrl(username) : null,
     points: 0,
   };
@@ -117,7 +110,6 @@ export function toMyRankPlayerFromActivity(
     playerId: playerId || 0,
     rank: ranks.length + 1,
     username: username || "Unknown",
-    githubUsername: username ?? null,
     profileImage: username ? getGithubAvatarUrl(username) : null,
     points: 0,
   };
