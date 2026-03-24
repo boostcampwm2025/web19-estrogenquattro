@@ -6,6 +6,7 @@ import { JwtGuard } from './jwt.guard';
 import { User } from './user.interface';
 import { AuthProfileSyncService } from './auth-profile-sync.service';
 import { getFrontendUrls } from '../config/frontend-urls';
+import { AdminService } from '../admin/admin.service';
 import { AuthSessionService } from './auth-session.service';
 
 @Controller('auth')
@@ -14,6 +15,7 @@ export class AuthController {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly adminService: AdminService,
     private readonly authSessionService: AuthSessionService,
     private readonly authProfileSyncService: AuthProfileSyncService,
   ) {}
@@ -26,8 +28,24 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(GithubGuard)
-  githubCallback(@Req() req: Request, @Res() res: Response) {
+  async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
+
+    const isBanned = this.adminService.isBanned(user.playerId);
+    const reason = isBanned
+      ? (await this.adminService.getBan(user.playerId)).reason
+      : null;
+    if (isBanned) {
+      this.logger.warn('Banned user attempted login', {
+        playerId: user.playerId,
+      });
+      res.clearCookie('access_token');
+      const frontendUrls = getFrontendUrls(this.configService);
+      const params = new URLSearchParams({ banned: 'true' });
+      if (reason) params.set('reason', reason);
+      return res.redirect(`${frontendUrls[0]}/login?${params.toString()}`);
+    }
+
     this.logger.log('GitHub callback', {
       method: 'githubCallback',
       username: user.username,

@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { WsJwtGuard } from './ws-jwt.guard';
 import { AuthController } from './auth.controller';
 import { AuthProfileSyncService } from './auth-profile-sync.service';
+import { AdminModule } from '../admin/admin.module';
 import { AuthSessionService } from './auth-session.service';
 import { PlaywrightAuthController } from './playwright-auth.controller';
 import { loadEnvFilesOnce } from '../config/env-files';
@@ -30,6 +31,7 @@ const isPlaywrightAuthControllerEnabled =
       inject: [ConfigService],
     }),
     forwardRef(() => PlayerModule),
+    forwardRef(() => AdminModule),
   ],
   controllers: isPlaywrightAuthControllerEnabled
     ? [AuthController, PlaywrightAuthController]

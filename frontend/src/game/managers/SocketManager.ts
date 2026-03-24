@@ -259,6 +259,15 @@ export default class SocketManager {
       callbacks.showSessionEndedOverlay();
     });
 
+    socket.on("banned", (data: { reason: string | null }) => {
+      this.isSessionReplaced = true;
+      this.clearMapSwitchTimeout();
+      socket.disconnect();
+      const params = new URLSearchParams({ banned: "true" });
+      if (data.reason) params.set("reason", data.reason);
+      window.location.href = `/login?${params.toString()}`;
+    });
+
     // 백그라운드 탭 복귀 시 연결이 끊겨있으면 재연결
     if (typeof document !== "undefined") {
       this.visibilityHandler = () => {

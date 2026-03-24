@@ -251,3 +251,99 @@ body {
     height: 500px;
   }
 }
+
+/* Tiptap WYSIWYG Editor */
+.tiptap-editor .tiptap {
+  outline: none;
+  min-height: 180px;
+  font-size: 0.875rem;
+  color: var(--retro-text-primary);
+}
+
+.tiptap-editor .tiptap h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: var(--retro-text-primary);
+}
+
+.tiptap-editor .tiptap h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--retro-text-primary);
+}
+
+.tiptap-editor .tiptap h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--retro-text-primary);
+}
+
+.tiptap-editor .tiptap p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.tiptap-editor .tiptap p:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-editor .tiptap strong {
+  font-weight: 700;
+}
+
+.tiptap-editor .tiptap em {
+  font-style: italic;
+}
+
+.tiptap-editor .tiptap s {
+  text-decoration: line-through;
+}
+
+.tiptap-editor .tiptap ul {
+  list-style-type: disc;
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .tiptap ol {
+  list-style-type: decimal;
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .tiptap li {
+  margin-bottom: 0.125rem;
+}
+
+.tiptap-editor .tiptap blockquote {
+  border-left: 3px solid var(--retro-border-dark);
+  padding-left: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+  color: var(--retro-text-secondary);
+}
+
+.tiptap-editor .tiptap code {
+  background: #f5deb3;
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+.tiptap-editor .tiptap hr {
+  border: none;
+  border-top: 2px solid var(--retro-border-light);
+  margin: 0.75rem 0;
+}
+
+.tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--retro-text-tertiary);
+  pointer-events: none;
+  height: 0;
+}
