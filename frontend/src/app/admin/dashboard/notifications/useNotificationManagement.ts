@@ -58,6 +58,9 @@ export function useNotificationManagement() {
       if (controller.signal.aborted) return;
       setNotifications(data.items);
       setTotalPagesState(data.totalPages);
+      if (page > data.totalPages && data.totalPages > 0) {
+        setCurrentPage(data.totalPages);
+      }
     } catch (error) {
       if (controller.signal.aborted) return;
       setToast({
@@ -76,6 +79,7 @@ export function useNotificationManagement() {
     return () => {
       abortRef.current?.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   const handleCreate = async () => {
