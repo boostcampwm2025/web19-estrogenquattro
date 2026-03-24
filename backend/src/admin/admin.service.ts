@@ -79,6 +79,16 @@ export class AdminService {
   }
 
   async ban(adminId: number, dto: CreateBanDto): Promise<Ban> {
+    const player = await this.playerRepository.findOne({
+      where: { id: dto.targetPlayerId },
+    });
+
+    if (!player) {
+      throw new NotFoundException(
+        `Player with ID ${dto.targetPlayerId} not found`,
+      );
+    }
+
     const existingBan = this.isBanned(dto.targetPlayerId);
     if (existingBan) {
       throw new ConflictException('이미 밴된 사용자입니다');
