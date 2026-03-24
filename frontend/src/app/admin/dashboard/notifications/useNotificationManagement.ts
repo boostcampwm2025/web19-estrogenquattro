@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getNotifications,
   createNotification,
@@ -42,24 +42,40 @@ export function useNotificationManagement() {
     variant: "success" | "error";
   } | null>(null);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchNotifications = async (page: number = currentPage) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsLoading(true);
     try {
-      const data = await getNotifications(page, ITEMS_PER_PAGE);
+      const data = await getNotifications(
+        page,
+        ITEMS_PER_PAGE,
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
       setNotifications(data.items);
       setTotalPagesState(data.totalPages);
-    } catch {
+    } catch (error) {
+      if (controller.signal.aborted) return;
       setToast({
         message: "공지사항을 불러올 수 없습니다.",
         variant: "error",
       });
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchNotifications(currentPage);
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [currentPage]);
 
   const handleCreate = async () => {

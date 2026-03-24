@@ -47,49 +47,62 @@ export default function NoticeModal() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchNotices = useCallback(async (pageNum: number = 1) => {
-    if (pageNum === 1) setIsLoading(true);
-    else setIsLoadingMore(true);
-    try {
-      const data = await getNotices(pageNum, 10);
-      if (pageNum === 1) {
-        setNotices(data.items);
-        if (data.items.length > 0) {
-          setExpandedId((prev) => (prev !== null ? prev : data.items[0].id));
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchNotices = useCallback(
+    async (pageNum: number, signal?: AbortSignal) => {
+      if (pageNum === 1) setIsLoading(true);
+      else setIsLoadingMore(true);
+      try {
+        const data = await getNotices(pageNum, 10, signal);
+        if (signal?.aborted) return;
+        if (pageNum === 1) {
+          setNotices(data.items);
+          if (data.items.length > 0) {
+            setExpandedId((prev) => (prev !== null ? prev : data.items[0].id));
+          }
+        } else {
+          setNotices((prev) => {
+            const newItems = data.items.filter(
+              (item) => !prev.some((p) => p.id === item.id),
+            );
+            return [...prev, ...newItems];
+          });
+          setPage(pageNum);
         }
-      } else {
-        setNotices((prev) => {
-          const newItems = data.items.filter(
-            (item) => !prev.some((p) => p.id === item.id),
-          );
-          return [...prev, ...newItems];
-        });
+        setHasNextPage(data.currentPage < data.totalPages);
+      } catch (error) {
+        if (signal?.aborted) return;
+        console.error("Failed to fetch notices:", error);
+      } finally {
+        if (!signal?.aborted) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
-      setHasNextPage(data.currentPage < data.totalPages);
-    } catch (error) {
-      console.error("Failed to fetch notices:", error);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (isOpen) {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
       setPage(1);
-      fetchNotices(1);
+      fetchNotices(1, controller.signal);
       setExpandedId(null);
       setShowScrollTop(false);
     }
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [isOpen, fetchNotices]);
 
   const handleLoadMore = () => {
     if (!isLoadingMore && hasNextPage) {
-      setPage((prev) => {
-        const nextPage = prev + 1;
-        fetchNotices(nextPage);
-        return nextPage;
-      });
+      const nextPage = page + 1;
+      fetchNotices(nextPage, abortRef.current?.signal);
     }
   };
 
@@ -226,7 +239,9 @@ export default function NoticeModal() {
                 {hasNextPage && !isLoading && (
                   <div ref={bottomRef} className="py-2 text-center">
                     {isLoadingMore ? (
-                      <span className="text-xs text-amber-500">{t(($) => $.notice.loading)}</span>
+                      <span className="text-xs text-amber-500">
+                        {t(($) => $.notice.loading)}
+                      </span>
                     ) : (
                       <span className="text-xs text-amber-500">...</span>
                     )}

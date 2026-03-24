@@ -24,8 +24,10 @@ export interface NoticePaginationResponse {
 export async function getNotices(
   page: number = 1,
   limit: number = 10,
+  signal?: AbortSignal,
 ): Promise<NoticePaginationResponse> {
   return fetchApi<NoticePaginationResponse>(
     `/api/notices?page=${page}&limit=${limit}`,
+    { signal },
   );
 }

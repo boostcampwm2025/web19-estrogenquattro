@@ -54,9 +54,11 @@ export interface AdminNotificationPaginationResponse {
 export async function getNotifications(
   page: number = 1,
   limit: number = 10,
+  signal?: AbortSignal,
 ): Promise<AdminNotificationPaginationResponse> {
   return fetchApi<AdminNotificationPaginationResponse>(
     `/api/notices?page=${page}&limit=${limit}`,
+    { signal },
   );
 }
 
