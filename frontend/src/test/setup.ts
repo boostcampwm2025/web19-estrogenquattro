@@ -12,6 +12,66 @@ import enCommon from "../locales/en/common.json";
 import enUi from "../locales/en/ui.json";
 import enGame from "../locales/en/game.json";
 
+function createStorageMock() {
+  const store = new Map<string, string>();
+
+  return {
+    getItem(key: string) {
+      return store.has(key) ? store.get(key)! : null;
+    },
+    setItem(key: string, value: string) {
+      store.set(key, String(value));
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    clear() {
+      store.clear();
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null;
+    },
+    get length() {
+      return store.size;
+    },
+  };
+}
+
+function resolveStorage() {
+  if (typeof window === "undefined") {
+    return createStorageMock();
+  }
+
+  try {
+    const candidate = window.localStorage;
+    if (
+      typeof candidate?.getItem === "function" &&
+      typeof candidate?.setItem === "function" &&
+      typeof candidate?.clear === "function"
+    ) {
+      return candidate;
+    }
+  } catch {
+    return createStorageMock();
+  }
+
+  return createStorageMock();
+}
+
+const storage = resolveStorage();
+
+Object.defineProperty(globalThis, "localStorage", {
+  configurable: true,
+  value: storage,
+});
+
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: storage,
+  });
+}
+
 // 테스트 환경에서 i18n 초기화 (한국어 기본)
 i18n.use(initReactI18next).init({
   resources: {
@@ -35,5 +95,6 @@ i18n.use(initReactI18next).init({
 });
 
 afterEach(() => {
+  storage.clear();
   cleanup();
 });
