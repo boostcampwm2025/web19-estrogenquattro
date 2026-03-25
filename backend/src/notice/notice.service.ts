@@ -157,6 +157,7 @@ export class NoticeService {
 
   async getLatestUnreadNotice(playerId: number): Promise<Notice | null> {
     const latestNotice = await this.noticeRepository.findOne({
+      where: {},
       order: { createdAt: 'DESC' },
       relations: ['author'],
       select: {
