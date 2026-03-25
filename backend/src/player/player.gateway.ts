@@ -145,14 +145,17 @@ export class PlayerGateway
     });
   }
 
-  disconnectPlayer(playerId: number, reason: string | null): void {
-    const socketId = this.playerSockets.get(playerId);
-    if (!socketId) return;
-    const socket = this.server.sockets.sockets.get(socketId);
-    if (socket) {
-      socket.emit('banned', { reason });
-      socket.disconnect(true);
+  disconnectPlayer(playerId: number, reason: string | null): boolean {
+    let found = false;
+    for (const [, socket] of this.server.sockets.sockets) {
+      const userData = socket.data as { user?: User };
+      if (userData.user?.playerId === playerId) {
+        socket.emit('banned', { reason });
+        socket.disconnect(true);
+        found = true;
+      }
     }
+    return found;
   }
 
   @SubscribeMessage('joining')
@@ -162,7 +165,13 @@ export class PlayerGateway
     @ConnectedSocket() client: Socket,
   ) {
     // client.data에서 OAuth 인증된 사용자 정보 추출
-    const userData = client.data as { user: User };
+    const userData = client.data as { user?: User };
+    if (!userData.user) {
+      this.logger.warn('User data not set, rejecting join', {
+        clientId: client.id,
+      });
+      return;
+    }
     const { githubId, username, accessToken, playerId } = userData.user;
 
     let roomId: string;

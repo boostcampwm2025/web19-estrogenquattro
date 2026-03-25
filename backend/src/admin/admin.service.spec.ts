@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { Admin } from './entities/admin.entity';
 import { Ban } from './entities/ban.entity';
@@ -25,7 +29,9 @@ describe('AdminService', () => {
   };
 
   const mockPlayerRepository = {
+    createQueryBuilder: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockBanCacheService = {
@@ -93,6 +99,8 @@ describe('AdminService', () => {
         targetPlayer: { id: 2 },
       };
 
+      mockPlayerRepository.findOne.mockResolvedValue({ id: 2 });
+      mockBanRepository.findOne.mockResolvedValue(null);
       mockBanRepository.create.mockReturnValue(createdBan);
       mockBanRepository.save.mockResolvedValue(createdBan);
 
@@ -100,6 +108,17 @@ describe('AdminService', () => {
       expect(mockBanRepository.create).toHaveBeenCalled();
       expect(mockBanRepository.save).toHaveBeenCalled();
       expect(result).toEqual(createdBan);
+    });
+
+    it('should throw ConflictException if player is already banned', async () => {
+      const mockBanDto = { targetPlayerId: 2, reason: 'test', duration: null };
+      mockPlayerRepository.findOne.mockResolvedValue({ id: 2 });
+      mockBanCacheService.isBanned.mockReturnValue(true);
+
+      await expect(service.ban(1, mockBanDto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockBanRepository.save).not.toHaveBeenCalled();
     });
   });
 

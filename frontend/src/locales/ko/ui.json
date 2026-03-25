@@ -321,5 +321,8 @@
     "button": "공지사항",
     "scrollToTop": "맨 위로 이동",
     "loading": "로딩 중..."
+  },
+  "noticePopup": {
+    "dismiss": "확인"
   }
 }

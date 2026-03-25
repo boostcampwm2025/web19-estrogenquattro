@@ -321,5 +321,8 @@
     "button": "Notice",
     "scrollToTop": "Scroll to top",
     "loading": "Loading..."
+  },
+  "noticePopup": {
+    "dismiss": "OK"
   }
 }
