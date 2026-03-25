@@ -7,6 +7,7 @@ import {
 import { QueryFailedError, Repository } from 'typeorm';
 import { GuestbookService } from './guestbook.service';
 import { Guestbook } from './entities/guestbook.entity';
+import { Player } from '../player/entites/player.entity';
 import { PlayerService } from '../player/player.service';
 
 describe('GuestbookService', () => {
@@ -18,13 +19,22 @@ describe('GuestbookService', () => {
       remove: jest.fn(),
       createQueryBuilder: jest.fn(),
     } as unknown as Repository<Guestbook>;
+    const playerRepository = {
+      findOne: jest.fn(),
+      update: jest.fn(),
+    } as unknown as Repository<Player>;
     const playerService = {
       findOneById: jest.fn(),
     } as unknown as PlayerService;
 
     return {
-      service: new GuestbookService(guestbookRepository, playerService),
+      service: new GuestbookService(
+        guestbookRepository,
+        playerRepository,
+        playerService,
+      ),
       guestbookRepository,
+      playerRepository,
       playerService,
     };
   };
