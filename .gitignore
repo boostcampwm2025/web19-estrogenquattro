@@ -1,6 +1,5 @@
 # Claude
 CLAUDE.md
-AGENTS.md
 .claude/*
 !.claude/commands/
 .agent/
