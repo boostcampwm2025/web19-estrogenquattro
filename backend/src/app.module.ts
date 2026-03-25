@@ -9,6 +9,7 @@ import { PlayerModule } from './player/player.module';
 import { GithubModule } from './github/github.module';
 import { AuthModule } from './auth/auth.module';
 import { envValidationSchema } from './config/env.validation';
+import { ENV_FILE_PATHS } from './config/env-files';
 import { WinstonModule } from 'nest-winston';
 import { createWinstonConfig } from './config/logger.winston';
 import { ConfigService } from '@nestjs/config';
@@ -25,17 +26,14 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { DatabaseModule } from './database/database.module';
 import { GuestbookModule } from './guestbook/guestbook.module';
 import { BugReportModule } from './bugreport/bug-report.module';
+import { AdminModule } from './admin/admin.module';
+import { NoticeModule } from './notice/notice.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        '.env.production',
-        '.env.development',
-        '.env.local',
-        '.env',
-      ],
+      envFilePath: [...ENV_FILE_PATHS],
       validationSchema: envValidationSchema,
     }),
     WinstonModule.forRootAsync({
@@ -104,6 +102,8 @@ import { BugReportModule } from './bugreport/bug-report.module';
     SchedulerModule,
     GuestbookModule,
     BugReportModule,
+    AdminModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,24 +8,26 @@
 
 ## 필수 환경변수
 
-| 변수명 | 설명 | 예시 |
-|--------|------|------|
-| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID | `Ov23lijBULRQ7BXNW0W3` |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret | `your_secret_here` |
-| `JWT_SECRET` | JWT 서명 키 (최소 32자) | `your_jwt_secret_key_must_be_at_least_32_characters` |
+| 변수명                 | 설명                           | 예시                                                 |
+| ---------------------- | ------------------------------ | ---------------------------------------------------- |
+| `GITHUB_CLIENT_ID`     | GitHub OAuth App Client ID     | `Ov23lijBULRQ7BXNW0W3`                               |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret | `your_secret_here`                                   |
+| `JWT_SECRET`           | JWT 서명 키 (최소 32자)        | `your_jwt_secret_key_must_be_at_least_32_characters` |
 
 ---
 
 ## 선택 환경변수 (기본값 있음)
 
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `PORT` | `8080` | 서버 포트 |
-| `FRONTEND_URL` | `http://localhost:8080` | 프론트엔드 URL (리다이렉트용) |
-| `GITHUB_CALLBACK_URL` | `http://localhost:8080/auth/github/callback` | OAuth 콜백 URL |
-| `ASSETS_PATH` | `__dirname` 기반 | 맵 에셋 경로 (미설정 시 `backend/assets/`) |
-| `MAP_THEME` | `desert` | 맵 테마 (`desert`, `city`, `underwater_city`) |
-| `LOG_LEVEL` | `debug(dev) / info(prod)` | Winston 로그 레벨 |
+| 변수명                  | 기본값                                       | 설명                                                            |
+| ----------------------- | -------------------------------------------- | --------------------------------------------------------------- |
+| `PORT`                  | `8080`                                       | 서버 포트                                                       |
+| `FRONTEND_URL`          | `http://localhost:8080`                      | 프론트엔드 URL (리다이렉트용)                                   |
+| `GITHUB_CALLBACK_URL`   | `http://localhost:8080/auth/github/callback` | OAuth 콜백 URL                                                  |
+| `PLAYWRIGHT_TEST_MODE`  | `false`                                      | Playwright 테스트 전용 인증 시드 엔드포인트 활성화 여부         |
+| `PLAYWRIGHT_E2E_SECRET` | 없음                                         | `PLAYWRIGHT_TEST_MODE=true` 일 때 필요한 `x-e2e-secret` 검증 값 |
+| `ASSETS_PATH`           | `__dirname` 기반                             | 맵 에셋 경로 (미설정 시 `backend/assets/`)                      |
+| `MAP_THEME`             | `desert`                                     | 맵 테마 (`desert`, `city`, `underwater_city`)                   |
+| `LOG_LEVEL`             | `debug(dev) / info(prod)`                    | Winston 로그 레벨                                               |
 
 ### Axiom 로깅
 
@@ -50,6 +52,7 @@ JWT_SECRET=your_jwt_secret_key_must_be_at_least_32_characters_long
 PORT=8080
 FRONTEND_URL=http://localhost:3000
 GITHUB_CALLBACK_URL=http://localhost:8080/auth/github/callback
+PLAYWRIGHT_TEST_MODE=false
 MAP_THEME=desert
 LOG_LEVEL=debug
 
@@ -65,7 +68,7 @@ AXIOM_DATASET=your_dataset_name
 **backend/src/config/env.validation.ts:**
 
 ```typescript
-import * as Joi from 'joi';
+import * as Joi from "joi";
 
 export const envValidationSchema = Joi.object({
   // 필수
@@ -77,21 +80,27 @@ export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(8080),
   FRONTEND_URL: Joi.string()
     .pattern(/^[^,]+$/)
-    .default('http://localhost:8080'),
+    .default("http://localhost:8080"),
   GITHUB_CALLBACK_URL: Joi.string().default(
-    'http://localhost:8080/auth/github/callback',
+    "http://localhost:8080/auth/github/callback",
   ),
-  ASSETS_PATH: Joi.string().optional(),
-  LOG_LEVEL: Joi.string()
-    .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
-    .optional(),
-  AXIOM_TOKEN: Joi.string().when('NODE_ENV', {
-    is: 'production',
+  PLAYWRIGHT_TEST_MODE: Joi.string().valid("true", "false").default("false"),
+  PLAYWRIGHT_E2E_SECRET: Joi.string().when("PLAYWRIGHT_TEST_MODE", {
+    is: "true",
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
-  AXIOM_DATASET: Joi.string().when('NODE_ENV', {
-    is: 'production',
+  ASSETS_PATH: Joi.string().optional(),
+  LOG_LEVEL: Joi.string()
+    .valid("error", "warn", "info", "http", "verbose", "debug", "silly")
+    .optional(),
+  AXIOM_TOKEN: Joi.string().when("NODE_ENV", {
+    is: "production",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  AXIOM_DATASET: Joi.string().when("NODE_ENV", {
+    is: "production",
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
@@ -124,6 +133,8 @@ export const envValidationSchema = Joi.object({
 ```env
 FRONTEND_URL=http://localhost:3000
 GITHUB_CALLBACK_URL=http://localhost:8080/auth/github/callback
+PLAYWRIGHT_TEST_MODE=true
+PLAYWRIGHT_E2E_SECRET=replace-with-long-random-secret
 ```
 
 ### 프로덕션 환경
@@ -134,6 +145,19 @@ GITHUB_CALLBACK_URL=https://your-domain.com/auth/github/callback
 ```
 
 > **Note:** 프로덕션에서는 HTTPS 사용 권장. 쿠키 설정의 `secure: true`도 함께 변경 필요.
+> `PLAYWRIGHT_TEST_MODE` 는 프로덕션에서 활성화하지 않는 것을 기본값으로 유지
+
+### Playwright hostname 규칙
+
+Playwright E2E에서는 아래 조합으로 hostname을 고정:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
+- `NEXT_PUBLIC_API_URL=http://localhost:8080`
+- `NEXT_PUBLIC_SOCKET_URL=http://localhost:8080`
+- `FRONTEND_URL=http://localhost:3000`
+
+`127.0.0.1` 와 `localhost` 를 혼용하면 쿠키/리다이렉트/소켓 인증이 어긋날 수 있음
 
 ---
 

@@ -12,6 +12,8 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage --coverage.reporter=html",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "test:unit": "vitest run --config vitest.unit.config.mts",
     "test:unit:watch": "vitest --config vitest.unit.config.mts --watch",
     "test:unit:coverage": "vitest run --config vitest.unit.config.mts --coverage",
@@ -21,6 +23,11 @@
   "dependencies": {
     "@next/third-parties": "^16.1.6",
     "@tanstack/react-query": "^5.90.12",
+    "@tiptap/core": "^2.27.2",
+    "@tiptap/extension-placeholder": "^2.27.2",
+    "@tiptap/pm": "^2.27.2",
+    "@tiptap/react": "^2.27.2",
+    "@tiptap/starter-kit": "^2.27.2",
     "clsx": "^2.1.1",
     "i18next": "^25.8.4",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -37,9 +44,11 @@
     "socket.io-client": "^4.8.1",
     "socket.io-msgpack-parser": "^3.0.2",
     "tailwind-merge": "^3.4.0",
+    "tiptap-markdown": "^0.8.10",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

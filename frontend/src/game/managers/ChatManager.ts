@@ -37,18 +37,22 @@ export default class ChatManager {
     document.body.appendChild(input);
     this.input = input;
 
-    this.scene.input.keyboard?.on("keydown-ENTER", () => {
+    this.scene.input.keyboard?.on("keydown-ENTER", (event: KeyboardEvent) => {
       if (document.activeElement === input) return;
 
       const active = document.activeElement;
       if (
-        active instanceof HTMLButtonElement ||
         active instanceof HTMLInputElement ||
         active instanceof HTMLTextAreaElement ||
-        active instanceof HTMLSelectElement ||
-        active instanceof HTMLAnchorElement
+        active instanceof HTMLSelectElement
       ) {
         return;
+      }
+
+      event.preventDefault();
+
+      if (active instanceof HTMLElement) {
+        active.blur();
       }
 
       input.style.display = "block";

@@ -1,6 +1,5 @@
 # Claude
 CLAUDE.md
-AGENTS.md
 .claude/*
 !.claude/commands/
 .agent/
@@ -10,6 +9,18 @@ AGENTS.md
 
 # Database
 backend/data/.DS_Store
+backend/data/*.playwright.sqlite
+
+# Playwright
+frontend/playwright/.auth/
+frontend/playwright-report/
+frontend/test-results/
+
+# Coverage artifacts
+backend/coverage/
+backend/test/coverage/
+frontend/coverage/
+.artifacts/
 
 # Test outputs
 frontend/coverage/

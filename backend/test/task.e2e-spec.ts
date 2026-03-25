@@ -13,6 +13,11 @@ import {
 interface TaskBody {
   id: number;
   description: string;
+  isCompleted?: boolean;
+}
+
+interface TaskListBody {
+  tasks: TaskBody[];
 }
 
 interface ErrorBody {
@@ -107,5 +112,81 @@ describe('Task E2E', () => {
 
     // Then: TASK_TOO_LONG 반환
     expect(tooLongBody.code).toBe('TASK_TOO_LONG');
+  });
+
+  it('태스크 조회, 완료, 미완료, 삭제 흐름이 정상 동작한다', async () => {
+    const seeded = await seedAuthenticatedPlayer(context, {
+      socialId: 23003,
+      username: 'task-flow-user',
+    });
+    const now = new Date();
+    const startAt = new Date(now);
+    startAt.setHours(0, 0, 0, 0);
+    const endAt = new Date(now);
+    endAt.setHours(23, 59, 59, 999);
+    const todayStart = startAt.toISOString();
+    const todayEnd = endAt.toISOString();
+
+    const created = await request(getHttpServer())
+      .post('/api/tasks')
+      .set('Cookie', seeded.cookie)
+      .send({ description: 'Task Flow' })
+      .expect(201);
+    const createdBody = created.body as TaskBody;
+
+    const todayTasks = await request(getHttpServer())
+      .get(`/api/tasks/${seeded.player.id}`)
+      .query({
+        isToday: true,
+        startAt: todayStart,
+        endAt: todayEnd,
+      })
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+    const todayTasksBody = todayTasks.body as TaskListBody;
+
+    expect(todayTasksBody.tasks).toHaveLength(1);
+    expect(todayTasksBody.tasks[0]).toMatchObject({
+      id: createdBody.id,
+      description: 'Task Flow',
+      isCompleted: false,
+    });
+
+    const completed = await request(getHttpServer())
+      .patch(`/api/tasks/completion/${createdBody.id}`)
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+    const completedBody = completed.body as TaskBody;
+    expect(completedBody.isCompleted).toBe(true);
+
+    const historyTasks = await request(getHttpServer())
+      .get(`/api/tasks/${seeded.player.id}`)
+      .query({
+        isToday: false,
+        startAt: todayStart,
+        endAt: todayEnd,
+      })
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+    const historyTasksBody = historyTasks.body as TaskListBody;
+    expect(historyTasksBody.tasks).toHaveLength(1);
+    expect(historyTasksBody.tasks[0].id).toBe(createdBody.id);
+
+    const uncompleted = await request(getHttpServer())
+      .patch(`/api/tasks/uncompletion/${createdBody.id}`)
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+    const uncompletedBody = uncompleted.body as TaskBody;
+    expect(uncompletedBody.isCompleted).toBe(false);
+
+    await request(getHttpServer())
+      .delete(`/api/tasks/${createdBody.id}`)
+      .set('Cookie', seeded.cookie)
+      .expect(200);
+
+    const remainingTasks = await taskRepository.find({
+      where: { player: { id: seeded.player.id } },
+    });
+    expect(remainingTasks).toHaveLength(0);
   });
 });

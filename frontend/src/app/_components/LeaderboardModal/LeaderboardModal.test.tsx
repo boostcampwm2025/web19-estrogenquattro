@@ -37,14 +37,39 @@ const mockUser = {
 };
 
 const mockTotalRanks: TotalRankRes[] = [
-  { playerId: 1, rank: 1, nickname: "player1", totalPoints: 100 },
-  { playerId: 2, rank: 2, nickname: "player2", totalPoints: 80 },
-  { playerId: 3, rank: 3, nickname: "player3", totalPoints: 60 },
+  {
+    playerId: 1,
+    rank: 1,
+    nickname: "player1",
+    totalPoints: 100,
+  },
+  {
+    playerId: 2,
+    rank: 2,
+    nickname: "player2",
+    totalPoints: 80,
+  },
+  {
+    playerId: 3,
+    rank: 3,
+    nickname: "player3",
+    totalPoints: 60,
+  },
 ];
 
 const mockActivityRanks: ActivityRankRes[] = [
-  { playerId: 1, rank: 1, nickname: "player1", count: 3600 },
-  { playerId: 2, rank: 2, nickname: "player2", count: 1800 },
+  {
+    playerId: 1,
+    rank: 1,
+    nickname: "player1",
+    count: 3600,
+  },
+  {
+    playerId: 2,
+    rank: 2,
+    nickname: "player2",
+    count: 1800,
+  },
 ];
 
 describe("LeaderboardModal", () => {

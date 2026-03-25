@@ -1,7 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "@/utils/timeFormat";
-import { getGithubAvatarUrl } from "@/utils/github";
+import { getGithubAvatarUrl, getGithubProfileUrl } from "@/utils/github";
 import type { GuestbookEntry } from "./types";
 
 interface GuestbookEntryCardProps {
@@ -29,7 +29,7 @@ export default function GuestbookEntryCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <a
-              href={`https://github.com/${nickname}`}
+              href={getGithubProfileUrl(nickname)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-base font-bold text-amber-900 transition-colors hover:text-amber-700"

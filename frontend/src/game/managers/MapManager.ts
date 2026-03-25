@@ -96,6 +96,7 @@ export default class MapManager {
     // tilemap이 있는 경우에만 충돌 처리
     if (currentMap.tilemap) {
       const map = this.scene.make.tilemap({ key: currentMap.tilemap });
+      this.scene.events.emit("map_setup", currentMap.tilemap);
 
       const collisionLayer = map.getObjectLayer("Collisions");
       if (collisionLayer) {

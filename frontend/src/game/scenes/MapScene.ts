@@ -11,6 +11,7 @@ import ChatManager from "../managers/ChatManager";
 import CameraController from "../controllers/CameraController";
 import { API_URL } from "@/lib/api/client";
 import IrisTransition from "../effects/IrisTransition";
+import LightEffect from "../effects/LightEffect";
 
 export class MapScene extends Phaser.Scene {
   private player?: Player;
@@ -30,6 +31,7 @@ export class MapScene extends Phaser.Scene {
   private chatManager!: ChatManager;
   private cameraController!: CameraController;
   private irisTransition!: IrisTransition;
+  private lightEffect!: LightEffect;
   private themeChangeTimer?: number;
   private currentTheme: string = MapScene.getMapThemeByKstWeek();
 
@@ -215,8 +217,10 @@ export class MapScene extends Phaser.Scene {
     );
     this.chatManager.setup();
 
-    // 6. Iris Transition Setup
+    // 6. Effects Setup
     this.irisTransition = new IrisTransition(this);
+
+    this.lightEffect = new LightEffect(this, this.mapManager.getWorldScale());
 
     // 7. 테마 자동 전환 타이머 (다음 월요일 KST 00:00에 테마 리로드)
     this.scheduleThemeChange();
@@ -441,6 +445,17 @@ export class MapScene extends Phaser.Scene {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
+
+      // 탭 전환 등 창이 포커스를 잃을 때 키 입력이 눌린 상태로 유지되는 버그 방지
+      const handleBlur = () => {
+        if (this.input.keyboard) {
+          this.input.keyboard.resetKeys();
+        }
+      };
+      window.addEventListener("blur", handleBlur);
+      this.events.once("destroy", () => {
+        window.removeEventListener("blur", handleBlur);
+      });
     }
   }
 

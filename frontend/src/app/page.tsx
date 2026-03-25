@@ -7,6 +7,9 @@ import LeaderboardModal from "./_components/LeaderboardModal";
 import ChannelSelectModal from "./_components/ChannelSelectModal";
 import BugReportModal from "./_components/BugReportModal";
 import BugReportButton from "./_components/BugReportButton";
+import NoticeModal from "./_components/NoticeModal";
+import NoticeButton from "./_components/NoticeButton";
+import NoticePopup from "./_components/NoticePopup";
 import GuestbookModal from "./_components/GuestbookModal/GuestbookModal";
 import LeaderboardButton from "./_components/LeaderboardButton";
 import ChannelSelectButton from "./_components/ChannelSelectButton";
@@ -27,7 +30,9 @@ export default function Home() {
           <LeaderboardModal />
           <ChannelSelectModal />
           <BugReportModal />
+          <NoticeModal />
           <GuestbookModal />
+          <NoticePopup />
           <OnboardingTour />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
@@ -40,7 +45,8 @@ export default function Home() {
             <ChannelSelectButton />
             <GuestbookButton />
           </div>
-          <div>
+          <div className="flex flex-col gap-2">
+            <NoticeButton />
             <BugReportButton />
           </div>
         </div>

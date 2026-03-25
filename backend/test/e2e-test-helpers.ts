@@ -12,23 +12,35 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 import type { Request } from 'express';
 import { io, Socket } from 'socket.io-client';
-import { EntityTarget, Repository } from 'typeorm';
+import { DataSource, EntityTarget, Repository, ObjectLiteral } from 'typeorm';
 
 import { AuthController } from '../src/auth/auth.controller';
+import { AuthProfileSyncService } from '../src/auth/auth-profile-sync.service';
+import { AuthSessionService } from '../src/auth/auth-session.service';
 import { GithubGuard } from '../src/auth/github.guard';
 import { JwtGuard } from '../src/auth/jwt.guard';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
+import { PlaywrightAuthController } from '../src/auth/playwright-auth.controller';
 import { User } from '../src/auth/user.interface';
 import { UserStore } from '../src/auth/user.store';
 import { WsJwtGuard } from '../src/auth/ws-jwt.guard';
+import { BugReportController } from '../src/bugreport/bug-report.controller';
+import { BugReportService } from '../src/bugreport/bug-report.service';
+import { BugReport } from '../src/bugreport/entities/bug-report.entity';
 import { ChatGateway } from '../src/chat/chat.gateway';
 import { WriteLockService } from '../src/database/write-lock.service';
 import { FocusTimeGateway } from '../src/focustime/focustime.gateway';
 import { FocusTimeService } from '../src/focustime/focustime.service';
 import { DailyFocusTime } from '../src/focustime/entites/daily-focus-time.entity';
+import { GuestbookController } from '../src/guestbook/guestbook.controller';
+import { GuestbookService } from '../src/guestbook/guestbook.service';
+import { Guestbook } from '../src/guestbook/entities/guestbook.entity';
 import { GlobalState } from '../src/github/entities/global-state.entity';
 import { GithubPollService } from '../src/github/github.poll-service';
 import { ProgressGateway } from '../src/github/progress.gateway';
+import { DailyPoint } from '../src/point/entities/daily-point.entity';
+import { PointController } from '../src/point/point.controller';
+import { PointService } from '../src/point/point.service';
 import { PointHistoryController } from '../src/pointhistory/point-history.controller';
 import { PointHistoryService } from '../src/pointhistory/point-history.service';
 import { PointHistory } from '../src/pointhistory/entities/point-history.entity';
@@ -45,6 +57,10 @@ import { Pet } from '../src/userpet/entities/pet.entity';
 import { UserPet } from '../src/userpet/entities/user-pet.entity';
 import { UserPetCodex } from '../src/userpet/entities/user-pet-codex.entity';
 import { PetService } from '../src/userpet/pet.service';
+import { AdminService } from '../src/admin/admin.service';
+import { Admin } from '../src/admin/entities/admin.entity';
+import { BanCacheService } from '../src/admin/ban-cache.service';
+import { Ban } from '../src/admin/entities/ban.entity';
 
 export const TEST_JWT_SECRET = 'test-jwt-secret-for-e2e-testing-32chars';
 export const SOCKET_EVENT_TIMEOUT_MS = 5000;
@@ -56,6 +72,10 @@ export interface CreateTestAppOptions {
   includeFocusTimeGateway?: boolean;
   includeTaskController?: boolean;
   includePointHistoryController?: boolean;
+  configOverrides?: Record<string, string | number | boolean>;
+  includePointController?: boolean;
+  includeGuestbookController?: boolean;
+  includeBugReportController?: boolean;
 }
 
 export interface TestAppContext {
@@ -71,6 +91,7 @@ export async function createTestApp(
 ): Promise<TestAppContext> {
   const database = options.database ?? ':memory:';
   const dropSchema = options.dropSchema ?? true;
+  const configOverrides = options.configOverrides ?? {};
 
   const githubPollServiceMock = {
     subscribeGithubEvent: jest.fn(),
@@ -79,6 +100,7 @@ export async function createTestApp(
 
   const controllers: Array<any> = [
     AuthController,
+    PlaywrightAuthController,
     PlayerController,
     PetController,
   ];
@@ -88,9 +110,21 @@ export async function createTestApp(
   if (options.includePointHistoryController) {
     controllers.push(PointHistoryController);
   }
+  if (options.includePointController) {
+    controllers.push(PointController);
+  }
+  if (options.includeGuestbookController) {
+    controllers.push(GuestbookController);
+  }
+  if (options.includeBugReportController) {
+    controllers.push(BugReportController);
+  }
 
   const providers: Array<any> = [
     UserStore,
+    AuthProfileSyncService,
+    AuthSessionService,
+    AuthProfileSyncService,
     JwtStrategy,
     JwtGuard,
     GithubGuard,
@@ -103,18 +137,37 @@ export async function createTestApp(
     FocusTimeGateway,
     ChatGateway,
     PetService,
+    AdminService,
     WriteLockService,
+    BanCacheService,
     {
       provide: GithubPollService,
       useValue: githubPollServiceMock,
     },
   ];
 
+  const pushProviderOnce = (...tokens: Array<any>) => {
+    for (const token of tokens) {
+      if (!providers.includes(token)) {
+        providers.push(token);
+      }
+    }
+  };
+
   if (options.includeTaskController || options.includePointHistoryController) {
-    providers.push(TaskService);
+    pushProviderOnce(TaskService);
   }
   if (options.includePointHistoryController) {
-    providers.push(PointHistoryService);
+    pushProviderOnce(PointHistoryService);
+  }
+  if (options.includePointController) {
+    pushProviderOnce(PointHistoryService, PointService, TaskService);
+  }
+  if (options.includeGuestbookController) {
+    pushProviderOnce(GuestbookService);
+  }
+  if (options.includeBugReportController) {
+    pushProviderOnce(BugReportService);
   }
 
   const builder: TestingModuleBuilder = Test.createTestingModule({
@@ -129,6 +182,9 @@ export async function createTestApp(
             GITHUB_CLIENT_SECRET: 'test-client-secret',
             GITHUB_CALLBACK_URL: 'http://localhost:8080/auth/github/callback',
             FRONTEND_URL: 'http://localhost:3000',
+            PLAYWRIGHT_TEST_MODE: 'false',
+            PLAYWRIGHT_E2E_SECRET: 'playwright-e2e-secret',
+            ...configOverrides,
           }),
         ],
       }),
@@ -144,10 +200,15 @@ export async function createTestApp(
         Task,
         DailyFocusTime,
         PointHistory,
+        DailyPoint,
         Pet,
         UserPet,
         UserPetCodex,
         GlobalState,
+        Admin,
+        Ban,
+        Guestbook,
+        BugReport,
       ]),
       PassportModule,
       JwtModule.register({
@@ -175,12 +236,30 @@ export async function createTestApp(
 
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
+  const dataSource = moduleRef.get(DataSource);
 
   app.use(cookieParser());
   app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.init();
   await app.listen(0);
+
+  const originalClose = app.close.bind(app) as () => Promise<void>;
+  let closed = false;
+  app.close = async () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+
+    await originalClose();
+
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
+
+    await moduleRef.close();
+  };
 
   const httpServer = app.getHttpServer() as { address(): { port: number } };
   const baseUrl = `http://127.0.0.1:${httpServer.address().port}`;
@@ -194,11 +273,14 @@ export async function createTestApp(
   };
 }
 
-export function getRepository<T>(
+export function getRepository<T extends ObjectLiteral>(
   context: TestAppContext,
   entity: EntityTarget<T>,
 ): Repository<T> {
-  return context.moduleRef.get<Repository<T>>(getRepositoryToken(entity));
+  return context.moduleRef.get<Repository<T>>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    getRepositoryToken(entity as any),
+  );
 }
 
 export interface SeedAuthenticatedPlayerOptions {
