@@ -29,18 +29,15 @@ describe('AdminService', () => {
   };
 
   const mockPlayerRepository = {
+    createQueryBuilder: jest.fn(),
     find: jest.fn(),
+    findOne: jest.fn(),
   };
 
   const mockBanCacheService = {
     addBan: jest.fn(),
     removeBan: jest.fn(),
     isBanned: jest.fn(),
-  };
-
-  const mockPlayerRepository = {
-    createQueryBuilder: jest.fn(),
-    find: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -102,6 +99,7 @@ describe('AdminService', () => {
         targetPlayer: { id: 2 },
       };
 
+      mockPlayerRepository.findOne.mockResolvedValue({ id: 2 });
       mockBanRepository.findOne.mockResolvedValue(null);
       mockBanRepository.create.mockReturnValue(createdBan);
       mockBanRepository.save.mockResolvedValue(createdBan);
@@ -114,7 +112,8 @@ describe('AdminService', () => {
 
     it('should throw ConflictException if player is already banned', async () => {
       const mockBanDto = { targetPlayerId: 2, reason: 'test', duration: null };
-      mockBanRepository.findOne.mockResolvedValue({ id: 1 });
+      mockPlayerRepository.findOne.mockResolvedValue({ id: 2 });
+      mockBanCacheService.isBanned.mockReturnValue(true);
 
       await expect(service.ban(1, mockBanDto)).rejects.toThrow(
         ConflictException,
