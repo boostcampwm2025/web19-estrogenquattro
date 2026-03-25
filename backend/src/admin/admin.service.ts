@@ -47,13 +47,11 @@ export class AdminService {
   async getPlayers(search?: string) {
     const query = this.playerRepository
       .createQueryBuilder('player')
-      .select([
-        'player.id',
-        'player.nickname',
-        'player.socialId',
-        'ban.target_player_id',
-        'ban.reason',
-      ])
+      .select('player.id', 'player_id')
+      .addSelect('player.nickname', 'player_nickname')
+      .addSelect('player.socialId', 'player_socialId')
+      .addSelect('ban.target_player_id', 'ban_target_player_id')
+      .addSelect('ban.reason', 'ban_reason')
       .leftJoin('bans', 'ban', 'ban.target_player_id = player.id')
       .orderBy('player.id', 'ASC');
 
