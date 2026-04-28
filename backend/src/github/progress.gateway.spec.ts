@@ -309,7 +309,9 @@ describe('ProgressGateway', () => {
           },
           {
             provide: WriteLockService,
-            useValue: { runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()) },
+            useValue: {
+              runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+            },
           },
         ],
       }).compile();
