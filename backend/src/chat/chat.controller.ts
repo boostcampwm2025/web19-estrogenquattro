@@ -33,9 +33,6 @@ export class ChatController {
       throw new BadRequestException('cursor는 정수여야 합니다');
     }
 
-    return this.chatHistoryService.findByRoomId(
-      normalizedRoomId,
-      parsedCursor,
-    );
+    return this.chatHistoryService.findByRoomId(normalizedRoomId, parsedCursor);
   }
 }

@@ -6,7 +6,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Player } from './entites/player.entity';
-import { PointHistory, PointType } from '../pointhistory/entities/point-history.entity';
+import {
+  PointHistory,
+  PointType,
+} from '../pointhistory/entities/point-history.entity';
 import { WriteLockService } from '../database/write-lock.service';
 
 export type ItemType = 'effect' | 'lang';

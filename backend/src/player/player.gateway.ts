@@ -83,9 +83,22 @@ export class PlayerGateway
   ]);
 
   private static readonly ALLOWED_LANGS = new Set([
-    'js', 'ts', 'rust', 'java', 'python', 'kotlin',
-    'C', 'Cp', 'go', 'haskell', 'nest', 'pytorch',
-    'react', 'spring', 'tensor', 'swift',
+    'js',
+    'ts',
+    'rust',
+    'java',
+    'python',
+    'kotlin',
+    'C',
+    'Cp',
+    'go',
+    'haskell',
+    'nest',
+    'pytorch',
+    'react',
+    'spring',
+    'tensor',
+    'swift',
   ]);
 
   // githubId -> socketId 매핑 (중복 접속 방지용)
@@ -541,7 +554,7 @@ export class PlayerGateway
   }
 
   @SubscribeMessage('effect_equipping')
-  async handleEffectEquip(
+  handleEffectEquip(
     @MessageBody() data: { effectId: string | null },
     @ConnectedSocket() client: Socket,
   ) {
@@ -574,7 +587,7 @@ export class PlayerGateway
   }
 
   @SubscribeMessage('lang_equipping')
-  async handleLangEquip(
+  handleLangEquip(
     @MessageBody() data: { langKey: string | null },
     @ConnectedSocket() client: Socket,
   ) {
