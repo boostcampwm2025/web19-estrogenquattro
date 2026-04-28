@@ -23,26 +23,36 @@ export default function StoreTab({ availablePoints }: Props) {
   const queryClient = useQueryClient();
   const playerId = useModalStore((s) => s.userInfoPayload?.playerId ?? 0);
 
-  const { purchased, equipped, equip, purchasedLangs, equippedLang, equipLang, markPurchased, markLangPurchased } =
-    useEffectStore(
-      useShallow((s) => ({
-        purchased: s.purchased,
-        equipped: s.equipped,
-        equip: s.equip,
-        purchasedLangs: s.purchasedLangs,
-        equippedLang: s.equippedLang,
-        equipLang: s.equipLang,
-        markPurchased: s.markPurchased,
-        markLangPurchased: s.markLangPurchased,
-      })),
-    );
+  const {
+    purchased,
+    equipped,
+    equip,
+    purchasedLangs,
+    equippedLang,
+    equipLang,
+    markPurchased,
+    markLangPurchased,
+  } = useEffectStore(
+    useShallow((s) => ({
+      purchased: s.purchased,
+      equipped: s.equipped,
+      equip: s.equip,
+      purchasedLangs: s.purchasedLangs,
+      equippedLang: s.equippedLang,
+      equipLang: s.equipLang,
+      markPurchased: s.markPurchased,
+      markLangPurchased: s.markLangPurchased,
+    })),
+  );
 
   const purchaseMutation = useMutation({
     mutationFn: (itemId: string) => petApi.purchaseItem(itemId),
     onSuccess: (data, itemId) => {
       // 서버에서 받은 차감된 포인트로 캐시 업데이트
-      queryClient.setQueryData(queryKeys.player.info(playerId), (old: { totalPoint: number } | undefined) =>
-        old ? { ...old, totalPoint: data.totalPoint } : old,
+      queryClient.setQueryData(
+        queryKeys.player.info(playerId),
+        (old: { totalPoint: number } | undefined) =>
+          old ? { ...old, totalPoint: data.totalPoint } : old,
       );
       // 구매 완료 → 로컬 purchased 목록에 추가
       const effectItem = EFFECT_CATALOG.find((e) => e.id === itemId);
@@ -105,7 +115,9 @@ export default function StoreTab({ availablePoints }: Props) {
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs text-amber-700">{item.description}</p>
+                <p className="mt-0.5 text-xs text-amber-700">
+                  {item.description}
+                </p>
                 {!isPurchased && (
                   <p className="mt-1 text-xs font-bold text-amber-600">
                     {item.cost.toLocaleString()} P
@@ -169,7 +181,7 @@ export default function StoreTab({ availablePoints }: Props) {
                     className="object-contain"
                   />
                 </div>
-                <span className="text-center text-[10px] font-bold leading-tight text-amber-900">
+                <span className="text-center text-[10px] leading-tight font-bold text-amber-900">
                   {item.name}
                 </span>
                 {isEquipped && (

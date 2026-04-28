@@ -521,19 +521,29 @@ export default class SocketManager {
     });
 
     // 다른 플레이어 언어 장착 변경
-    socket.on("lang_equipped", (data: { userId: string; langKey: string | null }) => {
-      const remotePlayer = this.otherPlayers.get(data.userId);
-      if (remotePlayer) {
-        remotePlayer.setEquippedLang(data.langKey);
-      }
-    });
+    socket.on(
+      "lang_equipped",
+      (data: { userId: string; langKey: string | null }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setEquippedLang(data.langKey);
+        }
+      },
+    );
 
-    socket.on("macbook_thrown", (data: { userId: string; direction: Direction; langKey?: string | null }) => {
-      const remotePlayer = this.otherPlayers.get(data.userId);
-      if (remotePlayer) {
-        remotePlayer.throwMacbook(data.direction, data.langKey);
-      }
-    });
+    socket.on(
+      "macbook_thrown",
+      (data: {
+        userId: string;
+        direction: Direction;
+        langKey?: string | null;
+      }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.throwMacbook(data.direction, data.langKey);
+        }
+      },
+    );
   }
 
   private addRemotePlayer(data: PlayerData): void {

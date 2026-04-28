@@ -379,10 +379,7 @@ export default function ChatHistoryWindow() {
           <div className="text-amber-700/90">아직 채팅 기록이 없습니다.</div>
         ) : (
           messages.map((m) => (
-            <div
-              key={m.id}
-              className="break-words"
-            >
+            <div key={m.id} className="break-words">
               <span className="text-amber-700/90">[{m.channel}채널]</span>
               <span
                 className={`ml-1 font-bold ${m.isMine ? "text-[#9a5f2d]" : "text-[#6a3f2a]"}`}
@@ -390,9 +387,7 @@ export default function ChatHistoryWindow() {
                 {m.username}
               </span>
               <span>: </span>
-              <span
-                className={m.isMine ? "text-[#8b4f1f]" : "text-[#5f3828]"}
-              >
+              <span className={m.isMine ? "text-[#8b4f1f]" : "text-[#5f3828]"}>
                 {m.message}
               </span>
             </div>

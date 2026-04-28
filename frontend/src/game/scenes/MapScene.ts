@@ -113,8 +113,22 @@ export class MapScene extends Phaser.Scene {
 
     // Lang SVGs (X키 던지기용)
     [
-      "js", "ts", "rust", "java", "python", "kotlin", "C", "Cp", "go",
-      "haskell", "nest", "pytorch", "react", "spring", "tensor", "swift",
+      "js",
+      "ts",
+      "rust",
+      "java",
+      "python",
+      "kotlin",
+      "C",
+      "Cp",
+      "go",
+      "haskell",
+      "nest",
+      "pytorch",
+      "react",
+      "spring",
+      "tensor",
+      "swift",
     ].forEach((lang) => {
       this.load.svg(`lang-${lang}`, `/assets/lang/${lang}.svg`, {
         width: 64,
@@ -230,7 +244,10 @@ export class MapScene extends Phaser.Scene {
     this.events.once("destroy", () => {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
       window.removeEventListener("local_music_update", handleLocalMusicUpdate);
-      window.removeEventListener("local_effect_update", handleLocalEffectUpdate);
+      window.removeEventListener(
+        "local_effect_update",
+        handleLocalEffectUpdate,
+      );
       window.removeEventListener("local_lang_update", handleLocalLangUpdate);
     });
 

@@ -54,7 +54,9 @@ describe('ProgressGateway integration branches', () => {
         },
         {
           provide: WriteLockService,
-          useValue: { runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()) },
+          useValue: {
+            runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+          },
         },
       ],
     }).compile();
@@ -117,7 +119,9 @@ describe('ProgressGateway integration branches', () => {
         },
         {
           provide: WriteLockService,
-          useValue: { runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()) },
+          useValue: {
+            runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+          },
         },
       ],
     }).compile();

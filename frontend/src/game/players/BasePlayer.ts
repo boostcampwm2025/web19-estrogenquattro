@@ -16,7 +16,6 @@ export interface TaskBubbleState {
   taskName?: string;
 }
 
-
 export default class BasePlayer {
   protected scene: Phaser.Scene;
   protected container: Phaser.GameObjects.Container;
@@ -283,7 +282,10 @@ export default class BasePlayer {
     return this.facingDirection;
   }
 
-  throwMacbook(direction: Direction = this.facingDirection, langKeyOverride?: string | null): void {
+  throwMacbook(
+    direction: Direction = this.facingDirection,
+    langKeyOverride?: string | null,
+  ): void {
     if (this.isDestroyed) return;
 
     const normalizedDirection =
@@ -292,8 +294,13 @@ export default class BasePlayer {
     const startX = this.container.x + dx * 12;
     const startY = this.container.y - 4 + dy * 8;
 
-    const resolvedLangKey = langKeyOverride !== undefined ? langKeyOverride : this.equippedLangKey;
-    if (!resolvedLangKey || !this.scene.textures.exists(`lang-${resolvedLangKey}`)) return;
+    const resolvedLangKey =
+      langKeyOverride !== undefined ? langKeyOverride : this.equippedLangKey;
+    if (
+      !resolvedLangKey ||
+      !this.scene.textures.exists(`lang-${resolvedLangKey}`)
+    )
+      return;
     const textureKey = `lang-${resolvedLangKey}`;
 
     const macbook = this.scene.add.image(startX, startY, textureKey);

@@ -79,13 +79,19 @@ export const useEffectStore = create<EffectStore>()(
       purchasedLangs: [],
       equippedLang: null,
       markPurchased: (id) => {
-        set((s) => ({ purchased: s.purchased.includes(id) ? s.purchased : [...s.purchased, id] }));
+        set((s) => ({
+          purchased: s.purchased.includes(id)
+            ? s.purchased
+            : [...s.purchased, id],
+        }));
       },
       equip: (id) => {
         set({ equipped: id });
         if (typeof window !== "undefined") {
           window.dispatchEvent(
-            new CustomEvent("local_effect_update", { detail: { effectId: id } }),
+            new CustomEvent("local_effect_update", {
+              detail: { effectId: id },
+            }),
           );
         }
       },

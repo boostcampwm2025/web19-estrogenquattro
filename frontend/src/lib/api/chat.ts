@@ -20,8 +20,11 @@ export const chatApi = {
       params.set("cursor", String(cursor));
     }
 
-    return fetchApi<ChatMessagePage>(`/api/chat-messages?${params.toString()}`, {
-      signal,
-    });
+    return fetchApi<ChatMessagePage>(
+      `/api/chat-messages?${params.toString()}`,
+      {
+        signal,
+      },
+    );
   },
 };
