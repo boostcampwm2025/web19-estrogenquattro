@@ -499,13 +499,14 @@ export class MapScene extends Phaser.Scene {
       const raw = localStorage.getItem("effect-store");
       if (raw) {
         const stored = JSON.parse(raw) as {
-          state?: { equipped?: string; equippedLang?: string };
+          equipped?: string;
+          equippedLang?: string;
         };
-        const equippedEffect = stored?.state?.equipped ?? null;
+        const equippedEffect = stored?.equipped ?? null;
         if (equippedEffect) {
           this.player.setEffect(equippedEffect);
         }
-        const equippedLang = stored?.state?.equippedLang ?? null;
+        const equippedLang = stored?.equippedLang ?? null;
         if (equippedLang) {
           this.player.setEquippedLang(equippedLang);
         }

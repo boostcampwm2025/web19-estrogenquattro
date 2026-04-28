@@ -274,7 +274,7 @@ export default function ChatHistoryWindow() {
 
   const onHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
     dragStart.current = {
       pointerX: e.clientX,
       pointerY: e.clientY,
@@ -298,14 +298,14 @@ export default function ChatHistoryWindow() {
   };
 
   const onHeaderPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.target as Element).releasePointerCapture?.(e.pointerId);
+    e.currentTarget.releasePointerCapture(e.pointerId);
     dragStart.current = null;
   };
 
   const onResizePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     e.stopPropagation();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
     resizeStart.current = {
       pointerY: e.clientY,
       origH: state.height,
@@ -327,7 +327,7 @@ export default function ChatHistoryWindow() {
   };
 
   const onResizePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.target as Element).releasePointerCapture?.(e.pointerId);
+    e.currentTarget.releasePointerCapture(e.pointerId);
     resizeStart.current = null;
   };
 

@@ -95,14 +95,18 @@ export class PlayerService {
     playerId: number,
     effectId: string | null,
   ): Promise<void> {
-    await this.playerRepository.update(playerId, { equippedEffect: effectId });
+    await this.writeLock.runExclusive(() =>
+      this.playerRepository.update(playerId, { equippedEffect: effectId }),
+    );
   }
 
   async updateEquippedLang(
     playerId: number,
     langKey: string | null,
   ): Promise<void> {
-    await this.playerRepository.update(playerId, { equippedLang: langKey });
+    await this.writeLock.runExclusive(() =>
+      this.playerRepository.update(playerId, { equippedLang: langKey }),
+    );
   }
 
   async purchaseItem(
