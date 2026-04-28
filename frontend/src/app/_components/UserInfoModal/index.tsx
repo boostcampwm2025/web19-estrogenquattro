@@ -11,7 +11,6 @@ import ProfileTab from "./tabs/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
 import StoreTab from "./tabs/StoreTab";
-import { useEffectStore } from "@/stores/useEffectStore";
 
 // Pixel Art Style Constants
 const PIXEL_BORDER = "border-3 border-amber-900";
@@ -38,9 +37,7 @@ export default function UserInfoModal() {
   const { player } = usePetSystem(userInfoPayload?.playerId ?? 0);
 
   const isOwner = currentUser?.playerId === userInfoPayload?.playerId;
-  const localSpentPoints = useEffectStore((s) => s.localSpentPoints);
-  const serverPoints = player?.totalPoint ?? 0;
-  const points = Math.max(0, serverPoints - localSpentPoints);
+  const points = player?.totalPoint ?? 0;
 
   const onClose = useCallback(() => {
     closeModal();
@@ -106,7 +103,7 @@ export default function UserInfoModal() {
           />
           {isOwner && (
             <TabButton
-              label="스토어"
+              label="이펙트"
               isActive={activeTab === "store"}
               onClick={() => setActiveTab("store")}
             />

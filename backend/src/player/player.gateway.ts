@@ -72,6 +72,7 @@ export class PlayerGateway
       petImage: string | null;
       isListening?: boolean;
       equippedEffect: string | null;
+      equippedLang: string | null;
     }
   > = new Map();
 
@@ -79,6 +80,12 @@ export class PlayerGateway
     'sparkle',
     'electric',
     'fire',
+  ]);
+
+  private static readonly ALLOWED_LANGS = new Set([
+    'js', 'ts', 'rust', 'java', 'python', 'kotlin',
+    'C', 'Cp', 'go', 'haskell', 'nest', 'pytorch',
+    'react', 'spring', 'tensor', 'swift',
   ]);
 
   // githubId -> socketId 매핑 (중복 접속 방지용)
@@ -250,6 +257,7 @@ export class PlayerGateway
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
     const equippedEffect = player.equippedEffect ?? null;
+    const equippedLang = player.equippedLang ?? null;
 
     // 유예 기간 내 재연결이면 세션 유지, 아니면 stale 정산
     const wasInGracePeriod = this.focusTimeGateway.cancelGracePeriod(playerId);
@@ -269,6 +277,7 @@ export class PlayerGateway
       petImage: petImage,
       isListening: false,
       equippedEffect: equippedEffect,
+      equippedLang: equippedLang,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
@@ -334,6 +343,7 @@ export class PlayerGateway
           currentSessionSeconds: focusStatus.currentSessionSeconds,
           taskName: status?.isFocusing ? status?.taskName : null,
           equippedEffect: p.equippedEffect,
+          equippedLang: p.equippedLang,
         };
       }),
     );
@@ -370,6 +380,7 @@ export class PlayerGateway
       isListening: false,
       taskName: myFocusStatus.isFocusing ? myTaskName : null,
       equippedEffect: equippedEffect,
+      equippedLang: equippedLang,
     });
 
     const connectedAt = new Date();
@@ -525,6 +536,7 @@ export class PlayerGateway
     client.to(player.roomId).emit('macbook_thrown', {
       userId: client.id,
       direction: data.direction,
+      langKey: player.equippedLang ?? null,
     });
   }
 
@@ -558,6 +570,36 @@ export class PlayerGateway
     client.to(player.roomId).emit('effect_equipped', {
       userId: client.id,
       effectId: effectId,
+    });
+  }
+
+  @SubscribeMessage('lang_equipping')
+  async handleLangEquip(
+    @MessageBody() data: { langKey: string | null },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    const langKey = data?.langKey ?? null;
+    if (langKey !== null && !PlayerGateway.ALLOWED_LANGS.has(langKey)) {
+      this.logger.warn('Invalid langKey', { clientId: client.id, langKey });
+      return;
+    }
+
+    player.equippedLang = langKey;
+
+    void this.playerService
+      .updateEquippedLang(player.playerId, langKey)
+      .catch((err: unknown) =>
+        this.logger.error('Failed to save equippedLang', { err }),
+      );
+
+    client.to(player.roomId).emit('lang_equipped', {
+      userId: client.id,
+      langKey: langKey,
     });
   }
 }

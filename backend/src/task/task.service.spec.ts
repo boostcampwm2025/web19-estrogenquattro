@@ -15,6 +15,8 @@ import { PlayerService } from '../player/player.service';
 import { Player } from '../player/entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
+import { PointHistory } from '../pointhistory/entities/point-history.entity';
+import { DatabaseModule } from '../database/database.module';
 import { getTodayKstRangeUtc } from '../util/date.util';
 
 describe('TaskService', () => {
@@ -32,10 +34,11 @@ describe('TaskService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Task, Player, UserPet, Pet],
+          entities: [Task, Player, UserPet, Pet, PointHistory],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Task, Player]),
+        DatabaseModule,
       ],
       providers: [TaskService, PlayerService],
     }).compile();

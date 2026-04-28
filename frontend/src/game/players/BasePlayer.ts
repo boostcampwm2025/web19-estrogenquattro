@@ -16,24 +16,6 @@ export interface TaskBubbleState {
   taskName?: string;
 }
 
-const LANG_TEXTURE_KEYS = [
-  "lang-js",
-  "lang-ts",
-  "lang-rust",
-  "lang-java",
-  "lang-python",
-  "lang-kotlin",
-  "lang-C",
-  "lang-Cp",
-  "lang-go",
-  "lang-haskell",
-  "lang-nest",
-  "lang-pytorch",
-  "lang-react",
-  "lang-spring",
-  "lang-tensor",
-  "lang-swift",
-] as const;
 
 export default class BasePlayer {
   protected scene: Phaser.Scene;
@@ -63,6 +45,7 @@ export default class BasePlayer {
 
   // destroy 체크 + 리스너 정리
   private isDestroyed: boolean = false;
+  private equippedLangKey: string | null = null;
   private pendingLoaderListeners: Array<{
     event: string;
     callback: (file?: Phaser.Loader.File) => void;
@@ -300,7 +283,7 @@ export default class BasePlayer {
     return this.facingDirection;
   }
 
-  throwMacbook(direction: Direction = this.facingDirection): void {
+  throwMacbook(direction: Direction = this.facingDirection, langKeyOverride?: string | null): void {
     if (this.isDestroyed) return;
 
     const normalizedDirection =
@@ -309,13 +292,9 @@ export default class BasePlayer {
     const startX = this.container.x + dx * 12;
     const startY = this.container.y - 4 + dy * 8;
 
-    const availableKeys = LANG_TEXTURE_KEYS.filter((key) =>
-      this.scene.textures.exists(key),
-    );
-    const textureKey =
-      availableKeys.length > 0
-        ? availableKeys[Math.floor(Math.random() * availableKeys.length)]
-        : "__DEFAULT";
+    const resolvedLangKey = langKeyOverride !== undefined ? langKeyOverride : this.equippedLangKey;
+    if (!resolvedLangKey || !this.scene.textures.exists(`lang-${resolvedLangKey}`)) return;
+    const textureKey = `lang-${resolvedLangKey}`;
 
     const macbook = this.scene.add.image(startX, startY, textureKey);
 
@@ -813,6 +792,10 @@ export default class BasePlayer {
     this.electricGraphics = undefined;
     this.electricTimer?.destroy();
     this.electricTimer = undefined;
+  }
+
+  setEquippedLang(key: string | null): void {
+    this.equippedLangKey = key;
   }
 
   setEffect(effectId: string | null): void {

@@ -212,11 +212,26 @@ export class MapScene extends Phaser.Scene {
     };
     window.addEventListener("local_effect_update", handleLocalEffectUpdate);
 
+    // React(Hooks)에서 보낸 언어 변경 처리
+    const handleLocalLangUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const langKey: string | null = customEvent.detail?.langKey ?? null;
+      if (this.player) {
+        this.player.setEquippedLang(langKey);
+      }
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("lang_equipping", { langKey });
+      }
+    };
+    window.addEventListener("local_lang_update", handleLocalLangUpdate);
+
     // 씬 종료 시 이벤트 리스너 제거
     this.events.once("destroy", () => {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
       window.removeEventListener("local_music_update", handleLocalMusicUpdate);
       window.removeEventListener("local_effect_update", handleLocalEffectUpdate);
+      window.removeEventListener("local_lang_update", handleLocalLangUpdate);
     });
 
     // 2. Animations Setup (맵 독립적)
@@ -462,14 +477,20 @@ export class MapScene extends Phaser.Scene {
       this.player.setPet(this.petImage);
     }
 
-    // 이전에 장착한 이펙트 복원
+    // 이전에 장착한 이펙트/언어 복원
     try {
       const raw = localStorage.getItem("effect-store");
       if (raw) {
-        const stored = JSON.parse(raw) as { state?: { equipped?: string } };
+        const stored = JSON.parse(raw) as {
+          state?: { equipped?: string; equippedLang?: string };
+        };
         const equippedEffect = stored?.state?.equipped ?? null;
         if (equippedEffect) {
           this.player.setEffect(equippedEffect);
+        }
+        const equippedLang = stored?.state?.equippedLang ?? null;
+        if (equippedLang) {
+          this.player.setEquippedLang(equippedLang);
         }
       }
     } catch {

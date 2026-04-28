@@ -17,6 +17,7 @@ export enum PointType {
   COMMITTED = 'COMMITTED',
   TASK_COMPLETED = 'TASK_COMPLETED',
   FOCUSED = 'FOCUSED',
+  PURCHASE = 'PURCHASE',
 }
 
 @Entity('point_history')

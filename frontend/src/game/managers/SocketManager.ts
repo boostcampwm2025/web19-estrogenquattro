@@ -32,6 +32,7 @@ interface PlayerData {
   petImage?: string | null;
   isListening?: boolean;
   equippedEffect?: string | null;
+  equippedLang?: string | null;
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -519,10 +520,18 @@ export default class SocketManager {
       }
     });
 
-    socket.on("macbook_thrown", (data: { userId: string; direction: Direction }) => {
+    // 다른 플레이어 언어 장착 변경
+    socket.on("lang_equipped", (data: { userId: string; langKey: string | null }) => {
       const remotePlayer = this.otherPlayers.get(data.userId);
       if (remotePlayer) {
-        remotePlayer.throwMacbook(data.direction);
+        remotePlayer.setEquippedLang(data.langKey);
+      }
+    });
+
+    socket.on("macbook_thrown", (data: { userId: string; direction: Direction; langKey?: string | null }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.throwMacbook(data.direction, data.langKey);
       }
     });
   }
@@ -565,6 +574,11 @@ export default class SocketManager {
     // 이펙트가 있으면 설정
     if (data.equippedEffect) {
       remotePlayer.setEffect(data.equippedEffect);
+    }
+
+    // 장착된 언어가 있으면 설정
+    if (data.equippedLang) {
+      remotePlayer.setEquippedLang(data.equippedLang);
     }
 
     if (this.walls) {

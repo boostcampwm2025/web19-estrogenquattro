@@ -11,12 +11,11 @@ describe('ChatGateway', () => {
   let mockRoomService: jest.Mocked<Pick<RoomService, 'getRoomIdBySocketId'>>;
   let mockWsJwtGuard: jest.Mocked<Pick<WsJwtGuard, 'verifyAndDisconnect'>>;
   let mockChatHistoryService: jest.Mocked<Pick<ChatHistoryService, 'create'>>;
-  let mockSocket: jest.Mocked<
-    Pick<Socket, 'id' | 'to' | 'data'> & {
-      to: jest.Mock<{ emit: jest.Mock }>;
-      data: { user?: { playerId: number } };
-    }
-  >;
+  let mockSocket: {
+    id: string;
+    data: { user?: { playerId: number } };
+    nsp: { to: jest.Mock<{ emit: jest.Mock }> };
+  };
   let mockEmit: jest.Mock;
 
   beforeEach(async () => {
@@ -28,8 +27,10 @@ describe('ChatGateway', () => {
           playerId: 7,
         },
       },
-      to: jest.fn().mockReturnValue({ emit: mockEmit }),
-    } as unknown as typeof mockSocket;
+      nsp: {
+        to: jest.fn().mockReturnValue({ emit: mockEmit }),
+      },
+    };
 
     mockRoomService = {
       getRoomIdBySocketId: jest.fn().mockReturnValue('room-1'),
@@ -81,11 +82,13 @@ describe('ChatGateway', () => {
         nickname,
         message,
       );
-      expect(mockSocket.to).toHaveBeenCalledWith('room-1');
+      expect(mockSocket.nsp.to).toHaveBeenCalledWith('room-1');
       expect(mockEmit).toHaveBeenCalledWith('chatted', {
+        id: 1,
         userId: 'socket-1',
-        nickname,
+        nickname: 'alice',
         message,
+        createdAt: expect.any(Date),
       });
     });
 
@@ -115,11 +118,13 @@ describe('ChatGateway', () => {
       );
 
       // Then: chatted 이벤트 브로드캐스트
-      expect(mockSocket.to).toHaveBeenCalledWith('room-1');
+      expect(mockSocket.nsp.to).toHaveBeenCalledWith('room-1');
       expect(mockEmit).toHaveBeenCalledWith('chatted', {
+        id: 1,
         userId: 'socket-1',
         nickname: 'alice',
         message,
+        createdAt: expect.any(Date),
       });
     });
 

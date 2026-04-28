@@ -70,4 +70,10 @@ export const petApi = {
 
   getPlayer: (playerId: number) =>
     fetchApi<PlayerInfoResponse>(`/api/players/${playerId}/info`),
+
+  purchaseItem: (itemId: string) =>
+    fetchApi<{ totalPoint: number }>("/api/players/me/purchase", {
+      method: "POST",
+      body: JSON.stringify({ itemId }),
+    }),
 };
