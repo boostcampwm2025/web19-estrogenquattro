@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Socket } from 'socket.io-client';
 
 import { Player } from '../src/player/entites/player.entity';
+import { ChatHistory } from '../src/chat/entities/chat-history.entity';
 import {
   TestAppContext,
   createSocketClient,
@@ -16,11 +17,13 @@ import {
 describe('Chat E2E', () => {
   let context: TestAppContext;
   let playerRepository: Repository<Player>;
+  let chatHistoryRepository: Repository<ChatHistory>;
   let sockets: Socket[] = [];
 
   beforeAll(async () => {
     context = await createTestApp();
     playerRepository = getRepository(context, Player);
+    chatHistoryRepository = getRepository(context, ChatHistory);
   });
 
   afterAll(async () => {
@@ -28,8 +31,9 @@ describe('Chat E2E', () => {
   });
 
   beforeEach(async () => {
-    await playerRepository.clear();
     sockets = [];
+    await chatHistoryRepository.clear();
+    await playerRepository.clear();
   });
 
   afterEach(() => {
@@ -73,7 +77,10 @@ describe('Chat E2E', () => {
       userId: string;
       message: string;
     }>(receiver, 'chatted');
-    sender.emit('chatting', { message: '테스트 메시지' });
+    sender.emit('chatting', {
+      message: '테스트 메시지',
+      nickname: 'chat-sender',
+    });
 
     // Then: 같은 방의 다른 사용자가 chatted 이벤트를 수신한다
     const chatted = await chattedPromise;
@@ -92,14 +99,20 @@ describe('Chat E2E', () => {
 
     // When: 공백만 있는 메시지를 전송하면
     const noWhitespaceMessage = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: '   ' });
+    sender.emit('chatting', {
+      message: '   ',
+      nickname: 'chat-invalid-sender',
+    });
     await noWhitespaceMessage;
 
     // Then: chatted 이벤트가 수신되지 않는다
 
     // When: 90bytes를 초과한 메시지를 전송하면
     const noLongMessage = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: 'a'.repeat(91) });
+    sender.emit('chatting', {
+      message: 'a'.repeat(91),
+      nickname: 'chat-invalid-sender',
+    });
     await noLongMessage;
 
     // Then: chatted 이벤트가 수신되지 않는다
@@ -116,7 +129,10 @@ describe('Chat E2E', () => {
       receiver,
       'chatted',
     );
-    sender.emit('chatting', { message: validMessage });
+    sender.emit('chatting', {
+      message: validMessage,
+      nickname: 'chat-ko-sender',
+    });
 
     // Then: 브로드캐스트된다
     const chatted = await chattedPromise;
@@ -124,7 +140,10 @@ describe('Chat E2E', () => {
 
     // When: 한글 31자(93bytes)를 전송하면
     const noLongMessage = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: '가'.repeat(31) });
+    sender.emit('chatting', {
+      message: '가'.repeat(31),
+      nickname: 'chat-ko-sender',
+    });
     await noLongMessage;
 
     // Then: 브로드캐스트되지 않는다
@@ -145,7 +164,10 @@ describe('Chat E2E', () => {
 
     // When: room-1 사용자가 chatting을 전송하면
     const noEventPromise = waitForNoSocketEvent(receiver, 'chatted');
-    sender.emit('chatting', { message: '같은 방에서만 보여야 함' });
+    sender.emit('chatting', {
+      message: '같은 방에서만 보여야 함',
+      nickname: 'chat-isolated-sender',
+    });
 
     // Then: room-2 사용자는 chatted 이벤트를 수신하지 않는다
     await noEventPromise;

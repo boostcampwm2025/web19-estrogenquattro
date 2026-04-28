@@ -123,6 +123,8 @@ export default class Player extends BasePlayer {
       else if (vDir) currentDirection = vDir as Direction;
     }
 
+    this.setFacingDirection(currentDirection);
+
     // 애니메이션 업데이트
     if (isMoving) {
       // 대각선 이동 시 하나만 선택 (좌/우 우선)

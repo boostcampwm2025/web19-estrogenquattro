@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { ACTIVITY_POINT_MAP } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
 import { GlobalState } from './entities/global-state.entity';
+import { WriteLockService } from '../database/write-lock.service';
 
 // poll-service에서 사용하는 GitHub 이벤트 데이터
 export interface GithubEventData {
@@ -82,6 +83,7 @@ export class ProgressGateway implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(GlobalState)
     private globalStateRepository: Repository<GlobalState>,
+    private readonly writeLock: WriteLockService,
   ) {}
 
   /**
@@ -171,12 +173,14 @@ export class ProgressGateway implements OnModuleInit, OnModuleDestroy {
    */
   private async persistState() {
     try {
-      await this.globalStateRepository.save({
-        id: 1,
-        progress: this.globalState.progress,
-        contributions: JSON.stringify(this.globalState.contributions),
-        mapIndex: this.globalState.mapIndex,
-      });
+      await this.writeLock.runExclusive(() =>
+        this.globalStateRepository.save({
+          id: 1,
+          progress: this.globalState.progress,
+          contributions: JSON.stringify(this.globalState.contributions),
+          mapIndex: this.globalState.mapIndex,
+        }),
+      );
       this.logger.debug(
         `GlobalState persisted: progress=${this.globalState.progress}, mapIndex=${this.globalState.mapIndex}`,
       );

@@ -88,6 +88,7 @@ export default class RemotePlayer extends BasePlayer {
     this.prevPos = { x: this.container.x, y: this.container.y };
     this.targetPos = { x: state.x, y: state.y };
     this.lastReceivedAt = Date.now();
+    this.setFacingDirection(state.direction);
 
     // 위치 보정 (너무 멀어지면 강제 동기화)
     const dist = Phaser.Math.Distance.Between(

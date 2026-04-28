@@ -8,11 +8,13 @@ import { MapController } from './map.controller';
 import { DailyGithubActivity } from './entities/daily-github-activity.entity';
 import { GlobalState } from './entities/global-state.entity';
 import { PointModule } from '../point/point.module';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DailyGithubActivity, GlobalState]),
     PointModule,
+    DatabaseModule,
   ],
   controllers: [GithubController, MapController],
   providers: [ProgressGateway, GithubPollService, GithubService],

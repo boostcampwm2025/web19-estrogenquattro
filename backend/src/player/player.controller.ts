@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Body,
   UseGuards,
   Param,
@@ -36,5 +37,13 @@ export class PlayerController {
   async completeOnboarding(@PlayerId() playerId: number) {
     await this.playerService.completeOnboarding(playerId);
     return { success: true };
+  }
+
+  @Post('me/purchase')
+  async purchaseItem(
+    @PlayerId() playerId: number,
+    @Body() body: { itemId: string },
+  ) {
+    return this.playerService.purchaseItem(playerId, body.itemId);
   }
 }

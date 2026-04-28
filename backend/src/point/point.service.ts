@@ -23,6 +23,7 @@ export const ACTIVITY_POINT_MAP: Record<PointType, number> = {
   [PointType.ISSUE_OPEN]: 1, // 이슈 생성
   [PointType.TASK_COMPLETED]: 1, // 투두 완료
   [PointType.FOCUSED]: 1, // 집중 30분
+  [PointType.PURCHASE]: 0, // 상점 구매 (addPoint 미사용)
 };
 
 @Injectable()

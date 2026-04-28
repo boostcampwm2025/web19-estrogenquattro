@@ -5,6 +5,7 @@ import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useModalStore } from "@/stores/useModalStore";
 import MapManager, { MapConfig } from "../managers/MapManager";
 import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
@@ -110,6 +111,31 @@ export class MapScene extends Phaser.Scene {
       height: 512,
     });
 
+    // Lang SVGs (X키 던지기용)
+    [
+      "js",
+      "ts",
+      "rust",
+      "java",
+      "python",
+      "kotlin",
+      "C",
+      "Cp",
+      "go",
+      "haskell",
+      "nest",
+      "pytorch",
+      "react",
+      "spring",
+      "tensor",
+      "swift",
+    ].forEach((lang) => {
+      this.load.svg(`lang-${lang}`, `/assets/lang/${lang}.svg`, {
+        width: 64,
+        height: 64,
+      });
+    });
+
     // Music Note Particles
     for (let i = 1; i <= 4; i++) {
       this.load.image(`note${i}`, `/assets/music/note/note${i}.png`);
@@ -186,10 +212,43 @@ export class MapScene extends Phaser.Scene {
     };
     window.addEventListener("local_music_update", handleLocalMusicUpdate);
 
+    // React(Hooks)에서 보낸 이펙트 변경 처리
+    const handleLocalEffectUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const effectId: string | null = customEvent.detail?.effectId ?? null;
+      if (this.player) {
+        this.player.setEffect(effectId);
+      }
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("effect_equipping", { effectId });
+      }
+    };
+    window.addEventListener("local_effect_update", handleLocalEffectUpdate);
+
+    // React(Hooks)에서 보낸 언어 변경 처리
+    const handleLocalLangUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const langKey: string | null = customEvent.detail?.langKey ?? null;
+      if (this.player) {
+        this.player.setEquippedLang(langKey);
+      }
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("lang_equipping", { langKey });
+      }
+    };
+    window.addEventListener("local_lang_update", handleLocalLangUpdate);
+
     // 씬 종료 시 이벤트 리스너 제거
     this.events.once("destroy", () => {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
       window.removeEventListener("local_music_update", handleLocalMusicUpdate);
+      window.removeEventListener(
+        "local_effect_update",
+        handleLocalEffectUpdate,
+      );
+      window.removeEventListener("local_lang_update", handleLocalLangUpdate);
     });
 
     // 2. Animations Setup (맵 독립적)
@@ -434,6 +493,26 @@ export class MapScene extends Phaser.Scene {
     if (this.petImage) {
       this.player.setPet(this.petImage);
     }
+
+    // 이전에 장착한 이펙트/언어 복원
+    try {
+      const raw = localStorage.getItem("effect-store");
+      if (raw) {
+        const stored = JSON.parse(raw) as {
+          state?: { equipped?: string; equippedLang?: string };
+        };
+        const equippedEffect = stored?.state?.equipped ?? null;
+        if (equippedEffect) {
+          this.player.setEffect(equippedEffect);
+        }
+        const equippedLang = stored?.state?.equippedLang ?? null;
+        if (equippedLang) {
+          this.player.setEquippedLang(equippedLang);
+        }
+      }
+    } catch {
+      // localStorage 접근 불가 시 무시
+    }
   }
 
   private setupControls() {
@@ -455,6 +534,59 @@ export class MapScene extends Phaser.Scene {
       window.addEventListener("blur", handleBlur);
       this.events.once("destroy", () => {
         window.removeEventListener("blur", handleBlur);
+      });
+
+      const handleJump = (event: KeyboardEvent) => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          active instanceof HTMLSelectElement
+        ) {
+          return;
+        }
+
+        if (useModalStore.getState().activeModal !== null) {
+          return;
+        }
+
+        event.preventDefault();
+        this.player?.triggerJump();
+        getSocket().emit("jumping");
+      };
+
+      this.input.keyboard.on("keydown-SPACE", handleJump);
+      this.events.once("destroy", () => {
+        this.input.keyboard?.off("keydown-SPACE", handleJump);
+      });
+
+      const handleMacbookThrow = (event: KeyboardEvent) => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          active instanceof HTMLSelectElement
+        ) {
+          return;
+        }
+
+        if (useModalStore.getState().activeModal !== null) {
+          return;
+        }
+
+        const direction = this.player?.getFacingDirection();
+        if (!direction) {
+          return;
+        }
+
+        event.preventDefault();
+        this.player?.throwMacbook(direction);
+        getSocket().emit("throwing_macbook", { direction });
+      };
+
+      this.input.keyboard.on("keydown-X", handleMacbookThrow);
+      this.events.once("destroy", () => {
+        this.input.keyboard?.off("keydown-X", handleMacbookThrow);
       });
     }
   }
