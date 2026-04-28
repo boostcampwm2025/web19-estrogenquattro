@@ -50,4 +50,11 @@ export class PlayerService {
     player.isNewbie = false;
     await this.playerRepository.save(player);
   }
+
+  async updateEquippedEffect(
+    playerId: number,
+    effectId: string | null,
+  ): Promise<void> {
+    await this.playerRepository.update(playerId, { equippedEffect: effectId });
+  }
 }

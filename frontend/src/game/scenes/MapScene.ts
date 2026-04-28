@@ -198,10 +198,25 @@ export class MapScene extends Phaser.Scene {
     };
     window.addEventListener("local_music_update", handleLocalMusicUpdate);
 
+    // React(Hooks)에서 보낸 이펙트 변경 처리
+    const handleLocalEffectUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const effectId: string | null = customEvent.detail?.effectId ?? null;
+      if (this.player) {
+        this.player.setEffect(effectId);
+      }
+      const socket = getSocket();
+      if (socket?.connected) {
+        socket.emit("effect_equipping", { effectId });
+      }
+    };
+    window.addEventListener("local_effect_update", handleLocalEffectUpdate);
+
     // 씬 종료 시 이벤트 리스너 제거
     this.events.once("destroy", () => {
       window.removeEventListener("local_pet_update", handleLocalPetUpdate);
       window.removeEventListener("local_music_update", handleLocalMusicUpdate);
+      window.removeEventListener("local_effect_update", handleLocalEffectUpdate);
     });
 
     // 2. Animations Setup (맵 독립적)
@@ -445,6 +460,20 @@ export class MapScene extends Phaser.Scene {
     this.player.setRoomId("pending"); // 생성자에서 이미 설정하지만 명시적으로
     if (this.petImage) {
       this.player.setPet(this.petImage);
+    }
+
+    // 이전에 장착한 이펙트 복원
+    try {
+      const raw = localStorage.getItem("effect-store");
+      if (raw) {
+        const stored = JSON.parse(raw) as { state?: { equipped?: string } };
+        const equippedEffect = stored?.state?.equipped ?? null;
+        if (equippedEffect) {
+          this.player.setEffect(equippedEffect);
+        }
+      }
+    } catch {
+      // localStorage 접근 불가 시 무시
     }
   }
 

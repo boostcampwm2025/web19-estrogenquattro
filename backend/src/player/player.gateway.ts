@@ -69,10 +69,17 @@ export class PlayerGateway
       x: number;
       y: number;
       playerId: number;
-      petImage: string | null; // 펫 이미지 (nullable)
-      isListening?: boolean; // 음악 감상 중 여부
+      petImage: string | null;
+      isListening?: boolean;
+      equippedEffect: string | null;
     }
   > = new Map();
+
+  private static readonly ALLOWED_EFFECTS = new Set([
+    'sparkle',
+    'electric',
+    'fire',
+  ]);
 
   // githubId -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
@@ -242,6 +249,7 @@ export class PlayerGateway
       return;
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
+    const equippedEffect = player.equippedEffect ?? null;
 
     // 유예 기간 내 재연결이면 세션 유지, 아니면 stale 정산
     const wasInGracePeriod = this.focusTimeGateway.cancelGracePeriod(playerId);
@@ -252,7 +260,7 @@ export class PlayerGateway
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
-      userId: client.id, // 소켓 ID를 유저 ID로 사용 (임시)
+      userId: client.id,
       username: username,
       roomId: roomId,
       x: data.x,
@@ -260,6 +268,7 @@ export class PlayerGateway
       playerId: playerId,
       petImage: petImage,
       isListening: false,
+      equippedEffect: equippedEffect,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
@@ -321,10 +330,10 @@ export class PlayerGateway
             ? FocusStatus.FOCUSING
             : FocusStatus.RESTING,
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusSeconds: focusStatus.totalFocusSeconds, // 실제 값
-          currentSessionSeconds: focusStatus.currentSessionSeconds, // 클램프 적용됨
-          // FOCUSING 상태일 때만 taskName 반환
+          totalFocusSeconds: focusStatus.totalFocusSeconds,
+          currentSessionSeconds: focusStatus.currentSessionSeconds,
           taskName: status?.isFocusing ? status?.taskName : null,
+          equippedEffect: p.equippedEffect,
         };
       }),
     );
@@ -359,8 +368,8 @@ export class PlayerGateway
       playerId: playerId,
       petImage: petImage,
       isListening: false,
-      // FOCUSING 상태일 때만 taskName 반환
       taskName: myFocusStatus.isFocusing ? myTaskName : null,
+      equippedEffect: equippedEffect,
     });
 
     const connectedAt = new Date();
@@ -516,6 +525,39 @@ export class PlayerGateway
     client.to(player.roomId).emit('macbook_thrown', {
       userId: client.id,
       direction: data.direction,
+    });
+  }
+
+  @SubscribeMessage('effect_equipping')
+  async handleEffectEquip(
+    @MessageBody() data: { effectId: string | null },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    const effectId = data?.effectId ?? null;
+    if (effectId !== null && !PlayerGateway.ALLOWED_EFFECTS.has(effectId)) {
+      this.logger.warn('Invalid effectId', { clientId: client.id, effectId });
+      return;
+    }
+
+    // 인메모리 상태 업데이트
+    player.equippedEffect = effectId;
+
+    // DB 저장 (비동기, 실패해도 브로드캐스트는 진행)
+    void this.playerService
+      .updateEquippedEffect(player.playerId, effectId)
+      .catch((err: unknown) =>
+        this.logger.error('Failed to save equippedEffect', { err }),
+      );
+
+    // 같은 방 사람들에게 전파
+    client.to(player.roomId).emit('effect_equipped', {
+      userId: client.id,
+      effectId: effectId,
     });
   }
 }
