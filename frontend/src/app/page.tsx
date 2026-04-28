@@ -15,6 +15,7 @@ import LeaderboardButton from "./_components/LeaderboardButton";
 import ChannelSelectButton from "./_components/ChannelSelectButton";
 import GuestbookButton from "./_components/GuestbookButton";
 import UserInfoButton from "./_components/UserInfoButton";
+import ChatHistoryWindow from "./_components/ChatHistoryWindow";
 import ProgressBar from "@/_components/ui/ProgressBar";
 import { OnboardingTour } from "./_components/OnboardingTour";
 import ConnectionLostOverlay from "@/_components/ConnectionLostOverlay";
@@ -34,6 +35,7 @@ export default function Home() {
           <GuestbookModal />
           <NoticePopup />
           <OnboardingTour />
+          <ChatHistoryWindow />
         </ClientOnly>
         <div className="absolute top-4 right-4 z-40">
           <FocusPanel />

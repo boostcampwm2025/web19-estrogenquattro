@@ -16,6 +16,7 @@ import { getTodayStartTime } from "@/utils/timeFormat";
 import { CHAT_MAX_LENGTH, exceedsUtf8ByteLimit } from "@/utils/textBytes";
 import { useRoomStore } from "../../stores/useRoomStore";
 import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
+import { useChatHistoryStore } from "../../stores/useChatHistoryStore";
 import { decodeMoveData, encodeMoveData } from "../utils/moveProtocol";
 import { DIRECTION } from "../constants/direction";
 
@@ -119,6 +120,12 @@ export default class SocketManager {
 
   getRoomId(): string {
     return this.roomId;
+  }
+
+  private getChannelFromRoomId(): number {
+    const targetRoomId = this.roomId || useRoomStore.getState().roomId;
+    const match = targetRoomId.match(/^room-(\d+)$/);
+    return match ? Number(match[1]) : 0;
   }
 
   /**
@@ -393,12 +400,32 @@ export default class SocketManager {
       callbacks.onMapSyncRequired(data.mapIndex);
     });
 
-    socket.on("chatted", (data: { userId: string; message: string }) => {
-      const remotePlayer = this.otherPlayers.get(data.userId);
-      if (remotePlayer) {
-        remotePlayer.showChatBubble(data.message);
-      }
-    });
+    socket.on(
+      "chatted",
+      (data: {
+        id: number;
+        userId: string;
+        nickname: string;
+        message: string;
+        createdAt: string;
+      }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.showChatBubble(data.message);
+        }
+
+        const currentRoomId = this.roomId || useRoomStore.getState().roomId;
+        useChatHistoryStore.getState().addMessage({
+          id: String(data.id),
+          roomId: currentRoomId,
+          channel: this.getChannelFromRoomId(),
+          username: data.nickname,
+          message: data.message,
+          isMine: data.userId === socket.id,
+          timestamp: new Date(data.createdAt).getTime(),
+        });
+      },
+    );
 
     // 다른 플레이어 집중 시작
     socket.on(
@@ -672,7 +699,7 @@ export default class SocketManager {
 
     const socket = getSocket();
     if (socket) {
-      socket.emit("chatting", { message });
+      socket.emit("chatting", { message, nickname: this.username });
     }
   }
 

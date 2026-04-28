@@ -4,13 +4,18 @@ import { RoomService } from '../room/room.service';
 import { WsJwtGuard } from '../auth/ws-jwt.guard';
 import { Socket } from 'socket.io';
 import { CHAT_MAX_LENGTH } from './chat.constants';
+import { ChatHistoryService } from './chat-history.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
   let mockRoomService: jest.Mocked<Pick<RoomService, 'getRoomIdBySocketId'>>;
   let mockWsJwtGuard: jest.Mocked<Pick<WsJwtGuard, 'verifyAndDisconnect'>>;
+  let mockChatHistoryService: jest.Mocked<Pick<ChatHistoryService, 'create'>>;
   let mockSocket: jest.Mocked<
-    Pick<Socket, 'id' | 'to'> & { to: jest.Mock<{ emit: jest.Mock }> }
+    Pick<Socket, 'id' | 'to' | 'data'> & {
+      to: jest.Mock<{ emit: jest.Mock }>;
+      data: { user?: { playerId: number } };
+    }
   >;
   let mockEmit: jest.Mock;
 
@@ -18,6 +23,11 @@ describe('ChatGateway', () => {
     mockEmit = jest.fn();
     mockSocket = {
       id: 'socket-1',
+      data: {
+        user: {
+          playerId: 7,
+        },
+      },
       to: jest.fn().mockReturnValue({ emit: mockEmit }),
     } as unknown as typeof mockSocket;
 
@@ -29,11 +39,23 @@ describe('ChatGateway', () => {
       verifyAndDisconnect: jest.fn().mockReturnValue(true),
     };
 
+    mockChatHistoryService = {
+      create: jest.fn().mockResolvedValue({
+        id: 1,
+        roomId: 'room-1',
+        nickname: 'alice',
+        message: 'hello',
+        player: { id: 7 },
+        createdAt: new Date(),
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatGateway,
         { provide: RoomService, useValue: mockRoomService },
         { provide: WsJwtGuard, useValue: mockWsJwtGuard },
+        { provide: ChatHistoryService, useValue: mockChatHistoryService },
       ],
     }).compile();
 
@@ -41,134 +63,205 @@ describe('ChatGateway', () => {
   });
 
   describe('handleMessage', () => {
-    it('90bytes 이하 메시지는 브로드캐스트된다', () => {
+    it('90bytes 이하 메시지는 저장 후 브로드캐스트된다', async () => {
       // Given: 90bytes 이하 메시지
       const message = 'a'.repeat(CHAT_MAX_LENGTH);
+      const nickname = 'alice';
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트
+      expect(mockChatHistoryService.create).toHaveBeenCalledWith(
+        7,
+        'room-1',
+        nickname,
+        message,
+      );
       expect(mockSocket.to).toHaveBeenCalledWith('room-1');
       expect(mockEmit).toHaveBeenCalledWith('chatted', {
         userId: 'socket-1',
+        nickname,
         message,
       });
     });
 
-    it('90bytes 초과 메시지는 무시된다', () => {
+    it('90bytes 초과 메시지는 무시된다', async () => {
       // Given: 91bytes 이상 메시지
       const message = 'a'.repeat(CHAT_MAX_LENGTH + 1);
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트 안됨
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('한글 30자(90bytes) 메시지는 브로드캐스트된다', () => {
+    it('한글 30자(90bytes) 메시지는 브로드캐스트된다', async () => {
       // Given: 한글 30자 (UTF-8 90bytes)
       const message = '가'.repeat(30);
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트
       expect(mockSocket.to).toHaveBeenCalledWith('room-1');
       expect(mockEmit).toHaveBeenCalledWith('chatted', {
         userId: 'socket-1',
+        nickname: 'alice',
         message,
       });
     });
 
-    it('한글 31자(93bytes) 메시지는 무시된다', () => {
+    it('한글 31자(93bytes) 메시지는 무시된다', async () => {
       // Given: 한글 31자 (UTF-8 93bytes)
       const message = '가'.repeat(31);
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트 안됨
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('빈 메시지는 무시된다', () => {
+    it('빈 메시지는 무시된다', async () => {
       // Given: 빈 문자열 메시지
       const message = '';
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트 안됨
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('공백만 있는 메시지는 무시된다', () => {
+    it('공백만 있는 메시지는 무시된다', async () => {
       // Given: 공백 문자열 메시지 "   "
       const message = '   ';
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: chatted 이벤트 브로드캐스트 안됨
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('data가 undefined이면 무시된다', () => {
+    it('data가 undefined이면 무시된다', async () => {
       // Given: undefined payload
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage(undefined, mockSocket as unknown as Socket);
+      await gateway.handleMessage(undefined, mockSocket as unknown as Socket);
 
       // Then: 에러 없이 무시
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('data.message가 숫자이면 무시된다', () => {
+    it('data.message가 숫자이면 무시된다', async () => {
       // Given: { message: 12345 }
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage(
-        { message: 12345 },
+      await gateway.handleMessage(
+        { message: 12345, nickname: 'alice' },
         mockSocket as unknown as Socket,
       );
 
       // Then: 에러 없이 무시
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('data.message가 null이면 무시된다', () => {
+    it('data.message가 null이면 무시된다', async () => {
       // Given: { message: null }
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message: null }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message: null, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: 에러 없이 무시
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('JWT 검증 실패 시 무시된다', () => {
+    it('JWT 검증 실패 시 무시된다', async () => {
       // Given: JWT 검증 실패
       mockWsJwtGuard.verifyAndDisconnect.mockReturnValue(false);
       const message = 'hello';
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: 에러 없이 무시
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
 
-    it('방을 찾을 수 없으면 무시된다', () => {
+    it('방을 찾을 수 없으면 무시된다', async () => {
       // Given: 방 없음
       mockRoomService.getRoomIdBySocketId.mockReturnValue(undefined);
       const message = 'hello';
 
       // When: chatting 이벤트 처리
-      gateway.handleMessage({ message }, mockSocket as unknown as Socket);
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
 
       // Then: 에러 없이 무시
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
+      expect(mockEmit).not.toHaveBeenCalled();
+    });
+
+    it('소켓에 user 정보가 없으면 저장하지 않는다', async () => {
+      // Given: 인증 정보 누락
+      mockSocket.data = {};
+      const message = 'hello';
+
+      // When: chatting 이벤트 처리
+      await gateway.handleMessage(
+        { message, nickname: 'alice' },
+        mockSocket as unknown as Socket,
+      );
+
+      // Then: 저장/브로드캐스트 안됨
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
+      expect(mockEmit).not.toHaveBeenCalled();
+    });
+
+    it('닉네임이 없으면 무시된다', async () => {
+      await gateway.handleMessage(
+        { message: 'hello', nickname: '   ' },
+        mockSocket as unknown as Socket,
+      );
+
+      expect(mockChatHistoryService.create).not.toHaveBeenCalled();
       expect(mockEmit).not.toHaveBeenCalled();
     });
   });
