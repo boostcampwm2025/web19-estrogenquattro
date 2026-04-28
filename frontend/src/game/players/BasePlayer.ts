@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import i18next from "i18next";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { MODAL_TYPES, useModalStore } from "@/stores/useModalStore";
+import { DIRECTION } from "../constants/direction";
 import {
   MAX_FOCUS_TASK_NAME_LENGTH,
   exceedsUtf8ByteLimit,
@@ -21,11 +22,14 @@ export default class BasePlayer {
   protected bodySprite: Phaser.GameObjects.Sprite;
   protected faceSprite: Phaser.GameObjects.Image;
   protected maskShape: Phaser.GameObjects.Graphics;
+  protected nameTag: Phaser.GameObjects.Text;
   protected focusTimeText: Phaser.GameObjects.Text;
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
   protected bodyGlow: Phaser.FX.Glow | null = null;
   protected shadowGraphics: Phaser.GameObjects.Graphics;
+  protected jumpTween: Phaser.Tweens.Tween | null = null;
+  protected isJumping: boolean = false;
   protected taskBubbleContainer: Phaser.GameObjects.Container | null = null;
 
   // Pet
@@ -36,9 +40,11 @@ export default class BasePlayer {
   public playerId: number = 0;
 
   protected speed: number = 300;
+  protected facingDirection: Direction = DIRECTION.RIGHT;
 
   // destroy 체크 + 리스너 정리
   private isDestroyed: boolean = false;
+  private equippedLangKey: string | null = null;
   private pendingLoaderListeners: Array<{
     event: string;
     callback: (file?: Phaser.Loader.File) => void;
@@ -92,7 +98,7 @@ export default class BasePlayer {
     this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     // 5. 닉네임 표시
-    const nameTag = scene.add
+    this.nameTag = scene.add
       .text(0, 50, username, {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "15px",
@@ -129,7 +135,7 @@ export default class BasePlayer {
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
-      nameTag,
+      this.nameTag,
       this.focusTimeText,
     ];
     this.container.add(containerChildren);
@@ -205,12 +211,137 @@ export default class BasePlayer {
   // 공통 update 메서드 (마스크 위치 동기화)
   update() {
     if (this.container && this.maskShape) {
-      this.maskShape.x = this.container.x;
-      this.maskShape.y = this.container.y;
+      this.maskShape.x = this.container.x + this.faceSprite.x;
+      this.maskShape.y = this.container.y + this.faceSprite.y;
       //y 좌표가 클수록(더 아래에 있을수록) 앞에 그려지도록 depth 설정
       // 최소값을 0으로 설정하여 맵 이미지(depth: -1)보다 항상 앞에 표시
       this.container.setDepth(Math.max(0, this.container.y));
     }
+  }
+
+  triggerJump(): void {
+    if (this.isDestroyed || this.isJumping) return;
+
+    this.isJumping = true;
+    this.jumpTween?.destroy();
+
+    const originalBodyY = this.bodySprite.y;
+    const originalFaceY = this.faceSprite.y;
+    const originalBorderY = this.borderGraphics.y;
+    const originalNameY = this.nameTag.y;
+    const originalFocusY = this.focusTimeText.y;
+    const originalShadowScaleX = this.shadowGraphics.scaleX;
+    const originalShadowScaleY = this.shadowGraphics.scaleY;
+    const originalShadowAlpha = this.shadowGraphics.alpha;
+
+    this.jumpTween = this.scene.tweens.add({
+      targets: [
+        this.bodySprite,
+        this.faceSprite,
+        this.borderGraphics,
+        this.nameTag,
+        this.focusTimeText,
+      ],
+      y: "-=24",
+      duration: 220,
+      ease: "Quad.Out",
+      yoyo: true,
+      hold: 40,
+      onComplete: () => {
+        this.bodySprite.y = originalBodyY;
+        this.faceSprite.y = originalFaceY;
+        this.borderGraphics.y = originalBorderY;
+        this.nameTag.y = originalNameY;
+        this.focusTimeText.y = originalFocusY;
+        this.shadowGraphics.scaleX = originalShadowScaleX;
+        this.shadowGraphics.scaleY = originalShadowScaleY;
+        this.shadowGraphics.alpha = originalShadowAlpha;
+        this.isJumping = false;
+      },
+    });
+
+    this.scene.tweens.add({
+      targets: this.shadowGraphics,
+      scaleX: originalShadowScaleX * 0.74,
+      scaleY: originalShadowScaleY * 0.74,
+      alpha: originalShadowAlpha * 0.55,
+      duration: 220,
+      ease: "Quad.Out",
+      yoyo: true,
+      hold: 40,
+    });
+  }
+
+  setFacingDirection(direction: Direction): void {
+    if (direction !== DIRECTION.STOP) {
+      this.facingDirection = direction;
+    }
+  }
+
+  getFacingDirection(): Direction {
+    return this.facingDirection;
+  }
+
+  throwMacbook(
+    direction: Direction = this.facingDirection,
+    langKeyOverride?: string | null,
+  ): void {
+    if (this.isDestroyed) return;
+
+    const normalizedDirection =
+      direction === DIRECTION.STOP ? this.facingDirection : direction;
+    const { dx, dy, angle } = this.getThrowVector(normalizedDirection);
+    const startX = this.container.x + dx * 12;
+    const startY = this.container.y - 4 + dy * 8;
+
+    const resolvedLangKey =
+      langKeyOverride !== undefined ? langKeyOverride : this.equippedLangKey;
+    if (
+      !resolvedLangKey ||
+      !this.scene.textures.exists(`lang-${resolvedLangKey}`)
+    )
+      return;
+    const textureKey = `lang-${resolvedLangKey}`;
+
+    const macbook = this.scene.add.image(startX, startY, textureKey);
+
+    macbook.setScale(0.72);
+    macbook.setRotation(Phaser.Math.DegToRad(angle));
+    macbook.setDepth(this.container.depth + 2);
+
+    const travelDistance = 120;
+    const targetX = startX + dx * travelDistance;
+    const targetY = startY + dy * 18 - 8;
+
+    this.scene.tweens.add({
+      targets: macbook,
+      x: targetX,
+      y: targetY,
+      angle: angle + dx * 120,
+      duration: 520,
+      ease: "Cubic.Out",
+      onUpdate: (tween, target) => {
+        const image = target as Phaser.GameObjects.Image;
+        const progress = tween.progress;
+        image.y =
+          startY +
+          (targetY - startY) * progress -
+          Math.sin(progress * Math.PI) * 26;
+        image.alpha = 1 - progress * 0.08;
+      },
+      onComplete: () => {
+        this.scene.tweens.add({
+          targets: macbook,
+          alpha: 0,
+          scaleX: 0.6,
+          scaleY: 0.6,
+          duration: 140,
+          onComplete: () => {
+            macbook.destroy();
+          },
+        });
+      },
+    });
   }
 
   // 방향에 따른 펫 위치 업데이트
@@ -260,10 +391,41 @@ export default class BasePlayer {
     this.pendingLoaderListeners = [];
     this.petLoadingKeys.clear();
 
+    this.jumpTween?.destroy();
+    this.jumpTween = null;
     this.musicParticleEmitter?.destroy();
+    this.clearEffects();
     this.pet.destroy();
     this.container.destroy();
     this.maskShape.destroy();
+  }
+
+  private getThrowVector(direction: Direction): {
+    dx: number;
+    dy: number;
+    angle: number;
+  } {
+    switch (direction) {
+      case DIRECTION.LEFT:
+        return { dx: -1, dy: -0.1, angle: -24 };
+      case DIRECTION.RIGHT:
+        return { dx: 1, dy: -0.1, angle: 24 };
+      case DIRECTION.UP:
+        return { dx: 0, dy: -1, angle: -90 };
+      case DIRECTION.DOWN:
+        return { dx: 0, dy: 0.65, angle: 90 };
+      case DIRECTION.LEFT_UP:
+        return { dx: -0.75, dy: -0.55, angle: -48 };
+      case DIRECTION.LEFT_DOWN:
+        return { dx: -0.78, dy: 0.45, angle: 148 };
+      case DIRECTION.RIGHT_UP:
+        return { dx: 0.75, dy: -0.55, angle: 48 };
+      case DIRECTION.RIGHT_DOWN:
+        return { dx: 0.78, dy: 0.45, angle: 32 };
+      case DIRECTION.STOP:
+      default:
+        return { dx: 1, dy: -0.1, angle: 24 };
+    }
   }
 
   // 얼굴 텍스처 업데이트
@@ -565,6 +727,270 @@ export default class BasePlayer {
 
   // 음악 파티클 이미터
   protected musicParticleEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+
+  // 이펙트
+  private sparkleEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private fireEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private fireEmitterOuter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private electricSparkEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private electricGraphics?: Phaser.GameObjects.Graphics;
+  private electricTimer?: Phaser.Time.TimerEvent;
+
+  private ensureFlameTexture(): void {
+    const key = "fx-flame";
+    if (this.scene.textures.exists(key)) return;
+    const w = 14;
+    const h = 22;
+    const canvas = this.scene.textures.createCanvas(key, w, h);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const cx = w / 2;
+    // 불꽃 모양: 아래가 넓고 위로 갈수록 뾰족해지는 눈물 방울
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.bezierCurveTo(cx + w * 0.65, h * 0.35, cx + w * 0.5, h * 0.72, cx, h);
+    ctx.bezierCurveTo(cx - w * 0.5, h * 0.72, cx - w * 0.65, h * 0.35, cx, 0);
+    ctx.closePath();
+    // 밑(뜨거운 부분)이 밝고 끝(식는 부분)이 투명해지는 그라디언트
+    const grad = ctx.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, "rgba(255,255,200,1)");
+    grad.addColorStop(0.25, "rgba(255,200,0,1)");
+    grad.addColorStop(0.6, "rgba(255,80,0,0.9)");
+    grad.addColorStop(1, "rgba(180,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fill();
+    canvas.refresh();
+  }
+
+  private ensureStarTexture(): void {
+    const key = "fx-star";
+    if (this.scene.textures.exists(key)) return;
+    const size = 16;
+    const canvas = this.scene.textures.createCanvas(key, size, size);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const cx = size / 2;
+    const cy = size / 2;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI) / 4;
+      const r = i % 2 === 0 ? cx : cx * 0.4;
+      const x = cx + r * Math.cos(angle - Math.PI / 2);
+      const y = cy + r * Math.sin(angle - Math.PI / 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    canvas.refresh();
+  }
+
+  private clearEffects(): void {
+    this.sparkleEmitter?.destroy();
+    this.sparkleEmitter = undefined;
+    this.fireEmitter?.destroy();
+    this.fireEmitter = undefined;
+    this.fireEmitterOuter?.destroy();
+    this.fireEmitterOuter = undefined;
+    this.electricSparkEmitter?.destroy();
+    this.electricSparkEmitter = undefined;
+    this.electricGraphics?.destroy();
+    this.electricGraphics = undefined;
+    this.electricTimer?.destroy();
+    this.electricTimer = undefined;
+  }
+
+  setEquippedLang(key: string | null): void {
+    this.equippedLangKey = key;
+  }
+
+  setEffect(effectId: string | null): void {
+    if (this.isDestroyed) return;
+    this.clearEffects();
+    if (effectId === "sparkle") this.startSparkle();
+    else if (effectId === "electric") this.startElectric();
+    else if (effectId === "fire") this.startFire();
+  }
+
+  private startSparkle(): void {
+    this.ensureStarTexture();
+    if (!this.scene.textures.exists("fx-star")) return;
+    this.sparkleEmitter = this.scene.add.particles(0, 0, "fx-star", {
+      speed: { min: 15, max: 50 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: { min: 700, max: 1400 },
+      frequency: 185,
+      quantity: 1,
+      tint: [0xffd700, 0xffffff, 0xffe066, 0xaad4ff],
+      follow: this.container,
+      followOffset: { x: 0, y: -16 },
+      emitZone: {
+        type: "random" as const,
+        source: new Phaser.Geom.Circle(0, 0, 40),
+      } as Phaser.Types.GameObjects.Particles.EmitZoneData,
+    });
+    this.sparkleEmitter.setDepth(this.container.depth + 3);
+  }
+
+  private startFire(): void {
+    this.ensureFlameTexture();
+    if (!this.scene.textures.exists("fx-flame")) return;
+
+    // 좌우로 넓은 방사 존 — 캐릭터 양옆 커버
+    const makeZone = (w: number) =>
+      ({
+        type: "random" as const,
+        source: new Phaser.Geom.Ellipse(0, 0, w, 8),
+      }) as Phaser.Types.GameObjects.Particles.EmitZoneData;
+
+    // 내부 코어: 밝고 빠름, 양옆에서 수직 상승
+    this.fireEmitter = this.scene.add.particles(0, 0, "fx-flame", {
+      speed: { min: 55, max: 100 },
+      angle: { min: 255, max: 285 },
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: { min: 400, max: 650 },
+      frequency: 65,
+      quantity: 1,
+      rotate: { min: -25, max: 25 },
+      follow: this.container,
+      followOffset: { x: 0, y: 8 },
+      emitZone: makeZone(56),
+    });
+    this.fireEmitter.setDepth(this.container.depth - 1);
+
+    // 외부 오라: 더 넓고 느리며 붉은 색조
+    this.fireEmitterOuter = this.scene.add.particles(0, 0, "fx-flame", {
+      speed: { min: 30, max: 60 },
+      angle: { min: 248, max: 292 },
+      scale: { start: 1.2, end: 0 },
+      alpha: { start: 0.55, end: 0 },
+      lifespan: { min: 600, max: 950 },
+      frequency: 100,
+      quantity: 1,
+      tint: [0xff3300, 0xff5500, 0xcc2200],
+      rotate: { min: -35, max: 35 },
+      follow: this.container,
+      followOffset: { x: 0, y: 12 },
+      emitZone: makeZone(70),
+    });
+    this.fireEmitterOuter.setDepth(this.container.depth - 2);
+  }
+
+  private ensureSparkTexture(): void {
+    const key = "fx-spark";
+    if (this.scene.textures.exists(key)) return;
+    const canvas = this.scene.textures.createCanvas(key, 6, 6);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(2, 0, 2, 6);
+    ctx.fillRect(0, 2, 6, 2);
+    canvas.refresh();
+  }
+
+  private drawZigzag(
+    g: Phaser.GameObjects.Graphics,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ): void {
+    const segments = 5;
+    const pts: { x: number; y: number }[] = [{ x: x1, y: y1 }];
+    for (let i = 1; i < segments; i++) {
+      const t = i / segments;
+      const jitter = (Math.random() - 0.5) * 18;
+      pts.push({
+        x: x1 + (x2 - x1) * t + jitter,
+        y: y1 + (y2 - y1) * t + jitter,
+      });
+    }
+    pts.push({ x: x2, y: y2 });
+    // 글로우
+    g.lineStyle(4, 0x4488ff, 0.25);
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    pts.slice(1).forEach((p) => g.lineTo(p.x, p.y));
+    g.strokePath();
+    // 코어
+    g.lineStyle(1.5, 0xcceeff, 0.95);
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    pts.slice(1).forEach((p) => g.lineTo(p.x, p.y));
+    g.strokePath();
+  }
+
+  private startElectric(): void {
+    this.ensureSparkTexture();
+
+    // 주변 튀는 전기 스파크 파티클
+    if (this.scene.textures.exists("fx-spark")) {
+      this.electricSparkEmitter = this.scene.add.particles(0, 0, "fx-spark", {
+        speed: { min: 50, max: 120 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.9, end: 0 },
+        alpha: { start: 1, end: 0 },
+        lifespan: { min: 80, max: 220 },
+        frequency: 115,
+        quantity: 1,
+        tint: [0xffffff, 0x88ccff, 0xaaddff, 0xffff99],
+        follow: this.container,
+        emitZone: {
+          type: "random" as const,
+          source: new Phaser.Geom.Circle(0, 0, 32),
+        } as Phaser.Types.GameObjects.Particles.EmitZoneData,
+      });
+      this.electricSparkEmitter.setDepth(this.container.depth + 3);
+    }
+
+    // 번개 아크 그래픽
+    this.electricGraphics = this.scene.add.graphics();
+    this.electricGraphics.setDepth(this.container.depth + 2);
+
+    // 불규칙한 타이밍으로 번개 아크 그리기
+    const scheduleNext = () => {
+      if (this.isDestroyed || !this.electricTimer) return;
+      const delay = Phaser.Math.Between(170, 460);
+      this.electricTimer = this.scene.time.delayedCall(delay, () => {
+        if (this.isDestroyed || !this.electricGraphics) return;
+        const g = this.electricGraphics;
+        const cx = this.container.x;
+        const cy = this.container.y;
+        const radius = 36;
+        g.clear();
+        g.setAlpha(1);
+        const boltCount = Phaser.Math.Between(1, 3);
+        for (let i = 0; i < boltCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          this.drawZigzag(
+            g,
+            cx,
+            cy,
+            cx + Math.cos(angle) * radius,
+            cy + Math.sin(angle) * radius,
+          );
+        }
+        this.scene.tweens.add({
+          targets: g,
+          alpha: 0,
+          duration: 90,
+          onComplete: () => {
+            if (!this.isDestroyed && this.electricGraphics) {
+              this.electricGraphics.clear();
+              this.electricGraphics.setAlpha(1);
+            }
+          },
+        });
+        scheduleNext();
+      });
+    };
+
+    this.electricTimer = this.scene.time.delayedCall(0, scheduleNext);
+  }
 
   // 음악 재생 상태 설정
   setMusicStatus(isListening: boolean) {

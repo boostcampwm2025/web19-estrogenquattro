@@ -8,6 +8,7 @@ import {
   ProgressSource,
 } from '../src/github/progress.gateway';
 import { GlobalState } from '../src/github/entities/global-state.entity';
+import { WriteLockService } from '../src/database/write-lock.service';
 
 type PersistedGlobalState = {
   id: number;
@@ -50,6 +51,12 @@ describe('ProgressGateway integration branches', () => {
         {
           provide: getRepositoryToken(GlobalState),
           useValue: mockRepository,
+        },
+        {
+          provide: WriteLockService,
+          useValue: {
+            runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+          },
         },
       ],
     }).compile();
@@ -109,6 +116,12 @@ describe('ProgressGateway integration branches', () => {
         {
           provide: getRepositoryToken(GlobalState),
           useValue: mockRepository,
+        },
+        {
+          provide: WriteLockService,
+          useValue: {
+            runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+          },
         },
       ],
     }).compile();

@@ -7,6 +7,8 @@ import { PlayerService } from './player.service';
 import { Player } from './entites/player.entity';
 import { UserPet } from '../userpet/entities/user-pet.entity';
 import { Pet } from '../userpet/entities/pet.entity';
+import { PointHistory } from '../pointhistory/entities/point-history.entity';
+import { DatabaseModule } from '../database/database.module';
 
 describe('PlayerService', () => {
   let service: PlayerService;
@@ -19,10 +21,11 @@ describe('PlayerService', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Player, UserPet, Pet],
+          entities: [Player, UserPet, Pet, PointHistory],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Player]),
+        DatabaseModule,
       ],
       providers: [PlayerService],
     }).compile();

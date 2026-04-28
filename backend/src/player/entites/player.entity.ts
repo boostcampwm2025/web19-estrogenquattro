@@ -43,6 +43,12 @@ export class Player {
   @Column({ type: 'int', name: 'focusing_task_id', nullable: true })
   focusingTaskId: number | null;
 
+  @Column({ type: 'varchar', name: 'equipped_effect', nullable: true })
+  equippedEffect: string | null;
+
+  @Column({ type: 'varchar', name: 'equipped_lang', nullable: true })
+  equippedLang: string | null;
+
   /**
    * 마지막 집중 시작 시간 (nullable)
    * null이면 휴식 상태, 값이 있으면 집중 상태

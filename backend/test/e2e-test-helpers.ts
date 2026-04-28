@@ -28,6 +28,8 @@ import { BugReportController } from '../src/bugreport/bug-report.controller';
 import { BugReportService } from '../src/bugreport/bug-report.service';
 import { BugReport } from '../src/bugreport/entities/bug-report.entity';
 import { ChatGateway } from '../src/chat/chat.gateway';
+import { ChatHistoryService } from '../src/chat/chat-history.service';
+import { ChatHistory } from '../src/chat/entities/chat-history.entity';
 import { WriteLockService } from '../src/database/write-lock.service';
 import { FocusTimeGateway } from '../src/focustime/focustime.gateway';
 import { FocusTimeService } from '../src/focustime/focustime.service';
@@ -136,6 +138,7 @@ export async function createTestApp(
     PlayerGateway,
     FocusTimeGateway,
     ChatGateway,
+    ChatHistoryService,
     PetService,
     AdminService,
     WriteLockService,
@@ -209,6 +212,7 @@ export async function createTestApp(
         Ban,
         Guestbook,
         BugReport,
+        ChatHistory,
       ]),
       PassportModule,
       JwtModule.register({

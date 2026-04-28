@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import ProfileTab from "./tabs/ProfileTab";
 import ActivityTab from "./tabs/ActivityTab";
 import PetTab from "./tabs/PetTab/PetTab";
+import StoreTab from "./tabs/StoreTab";
 
 // Pixel Art Style Constants
 const PIXEL_BORDER = "border-3 border-amber-900";
@@ -17,7 +18,7 @@ const PIXEL_BG = "bg-[#ffecb3]";
 const PIXEL_BTN_ACTIVE = "bg-amber-600 text-white";
 const PIXEL_BTN_INACTIVE = "bg-amber-200 text-amber-900 hover:bg-amber-300";
 
-type TabType = "profile" | "activity" | "pet";
+type TabType = "profile" | "activity" | "pet" | "store";
 
 export default function UserInfoModal() {
   const { t } = useTranslation("ui");
@@ -100,6 +101,13 @@ export default function UserInfoModal() {
             isActive={activeTab === "profile"}
             onClick={() => setActiveTab("profile")}
           />
+          {isOwner && (
+            <TabButton
+              label="이펙트"
+              isActive={activeTab === "store"}
+              onClick={() => setActiveTab("store")}
+            />
+          )}
         </div>
 
         <div
@@ -108,6 +116,7 @@ export default function UserInfoModal() {
           {activeTab === "profile" && <ProfileTab />}
           {activeTab === "activity" && <ActivityTab />}
           {activeTab === "pet" && <PetTab />}
+          {activeTab === "store" && <StoreTab availablePoints={points} />}
         </div>
       </div>
     </div>

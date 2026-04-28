@@ -25,6 +25,18 @@ import { Task } from '../task/entites/task.entity';
 import { MAX_FOCUS_TASK_NAME_LENGTH } from '../focustime/focustime.constants';
 import { truncateToUtf8Bytes } from '../util/text-byte.util';
 
+const ALLOWED_DIRECTIONS = new Set([
+  'up',
+  'down',
+  'left',
+  'right',
+  'left-up',
+  'left-down',
+  'right-up',
+  'right-down',
+  'stop',
+]);
+
 @WebSocketGateway()
 export class PlayerGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
@@ -57,10 +69,37 @@ export class PlayerGateway
       x: number;
       y: number;
       playerId: number;
-      petImage: string | null; // 펫 이미지 (nullable)
-      isListening?: boolean; // 음악 감상 중 여부
+      petImage: string | null;
+      isListening?: boolean;
+      equippedEffect: string | null;
+      equippedLang: string | null;
     }
   > = new Map();
+
+  private static readonly ALLOWED_EFFECTS = new Set([
+    'sparkle',
+    'electric',
+    'fire',
+  ]);
+
+  private static readonly ALLOWED_LANGS = new Set([
+    'js',
+    'ts',
+    'rust',
+    'java',
+    'python',
+    'kotlin',
+    'C',
+    'Cp',
+    'go',
+    'haskell',
+    'nest',
+    'pytorch',
+    'react',
+    'spring',
+    'tensor',
+    'swift',
+  ]);
 
   // githubId -> socketId 매핑 (중복 접속 방지용)
   private userSockets: Map<string, string> = new Map();
@@ -230,6 +269,8 @@ export class PlayerGateway
       return;
     }
     const petImage = player.equippedPet?.actualImgUrl ?? null;
+    const equippedEffect = player.equippedEffect ?? null;
+    const equippedLang = player.equippedLang ?? null;
 
     // 유예 기간 내 재연결이면 세션 유지, 아니면 stale 정산
     const wasInGracePeriod = this.focusTimeGateway.cancelGracePeriod(playerId);
@@ -240,7 +281,7 @@ export class PlayerGateway
     // 1. 새로운 플레이어 정보 저장
     this.players.set(client.id, {
       socketId: client.id,
-      userId: client.id, // 소켓 ID를 유저 ID로 사용 (임시)
+      userId: client.id,
       username: username,
       roomId: roomId,
       x: data.x,
@@ -248,6 +289,8 @@ export class PlayerGateway
       playerId: playerId,
       petImage: petImage,
       isListening: false,
+      equippedEffect: equippedEffect,
+      equippedLang: equippedLang,
     });
 
     // 2. 방에 있는 플레이어들의 Focus 상태 감지 (player 테이블에서 조회)
@@ -309,10 +352,11 @@ export class PlayerGateway
             ? FocusStatus.FOCUSING
             : FocusStatus.RESTING,
           lastFocusStartTime: status?.lastFocusStartTime?.toISOString() ?? null,
-          totalFocusSeconds: focusStatus.totalFocusSeconds, // 실제 값
-          currentSessionSeconds: focusStatus.currentSessionSeconds, // 클램프 적용됨
-          // FOCUSING 상태일 때만 taskName 반환
+          totalFocusSeconds: focusStatus.totalFocusSeconds,
+          currentSessionSeconds: focusStatus.currentSessionSeconds,
           taskName: status?.isFocusing ? status?.taskName : null,
+          equippedEffect: p.equippedEffect,
+          equippedLang: p.equippedLang,
         };
       }),
     );
@@ -347,8 +391,9 @@ export class PlayerGateway
       playerId: playerId,
       petImage: petImage,
       isListening: false,
-      // FOCUSING 상태일 때만 taskName 반환
       taskName: myFocusStatus.isFocusing ? myTaskName : null,
+      equippedEffect: equippedEffect,
+      equippedLang: equippedLang,
     });
 
     const connectedAt = new Date();
@@ -469,5 +514,105 @@ export class PlayerGateway
         isListening: data.isListening,
       });
     }
+  }
+
+  @SubscribeMessage('jumping')
+  handleJump(@ConnectedSocket() client: Socket) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    client.to(player.roomId).emit('jumped', {
+      userId: client.id,
+    });
+  }
+
+  @SubscribeMessage('throwing_macbook')
+  handleMacbookThrow(
+    @MessageBody() data: { direction?: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    if (!data?.direction || !ALLOWED_DIRECTIONS.has(data.direction)) {
+      this.logger.warn('Invalid macbook throw direction', {
+        clientId: client.id,
+        direction: data?.direction,
+      });
+      return;
+    }
+
+    client.to(player.roomId).emit('macbook_thrown', {
+      userId: client.id,
+      direction: data.direction,
+      langKey: player.equippedLang ?? null,
+    });
+  }
+
+  @SubscribeMessage('effect_equipping')
+  handleEffectEquip(
+    @MessageBody() data: { effectId: string | null },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    const effectId = data?.effectId ?? null;
+    if (effectId !== null && !PlayerGateway.ALLOWED_EFFECTS.has(effectId)) {
+      this.logger.warn('Invalid effectId', { clientId: client.id, effectId });
+      return;
+    }
+
+    // 인메모리 상태 업데이트
+    player.equippedEffect = effectId;
+
+    // DB 저장 (비동기, 실패해도 브로드캐스트는 진행)
+    void this.playerService
+      .updateEquippedEffect(player.playerId, effectId)
+      .catch((err: unknown) =>
+        this.logger.error('Failed to save equippedEffect', { err }),
+      );
+
+    // 같은 방 사람들에게 전파
+    client.to(player.roomId).emit('effect_equipped', {
+      userId: client.id,
+      effectId: effectId,
+    });
+  }
+
+  @SubscribeMessage('lang_equipping')
+  handleLangEquip(
+    @MessageBody() data: { langKey: string | null },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    const langKey = data?.langKey ?? null;
+    if (langKey !== null && !PlayerGateway.ALLOWED_LANGS.has(langKey)) {
+      this.logger.warn('Invalid langKey', { clientId: client.id, langKey });
+      return;
+    }
+
+    player.equippedLang = langKey;
+
+    void this.playerService
+      .updateEquippedLang(player.playerId, langKey)
+      .catch((err: unknown) =>
+        this.logger.error('Failed to save equippedLang', { err }),
+      );
+
+    client.to(player.roomId).emit('lang_equipped', {
+      userId: client.id,
+      langKey: langKey,
+    });
   }
 }

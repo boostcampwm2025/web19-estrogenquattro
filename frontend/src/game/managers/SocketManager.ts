@@ -16,6 +16,7 @@ import { getTodayStartTime } from "@/utils/timeFormat";
 import { CHAT_MAX_LENGTH, exceedsUtf8ByteLimit } from "@/utils/textBytes";
 import { useRoomStore } from "../../stores/useRoomStore";
 import { MODAL_TYPES, useModalStore } from "../../stores/useModalStore";
+import { useChatHistoryStore } from "../../stores/useChatHistoryStore";
 import { decodeMoveData, encodeMoveData } from "../utils/moveProtocol";
 import { DIRECTION } from "../constants/direction";
 
@@ -28,8 +29,10 @@ interface PlayerData {
   direction?: Direction;
   timestamp?: number;
   playerId?: number;
-  petImage?: string | null; // 펫 이미지 URL 추가
-  isListening?: boolean; // 음악 감상 중 여부
+  petImage?: string | null;
+  isListening?: boolean;
+  equippedEffect?: string | null;
+  equippedLang?: string | null;
   // FocusTime 관련 필드 (players_synced에서 수신)
   status?: FocusStatus;
   lastFocusStartTime?: string | null;
@@ -119,6 +122,12 @@ export default class SocketManager {
 
   getRoomId(): string {
     return this.roomId;
+  }
+
+  private getChannelFromRoomId(): number {
+    const targetRoomId = this.roomId || useRoomStore.getState().roomId;
+    const match = targetRoomId.match(/^room-(\d+)$/);
+    return match ? Number(match[1]) : 0;
   }
 
   /**
@@ -393,12 +402,32 @@ export default class SocketManager {
       callbacks.onMapSyncRequired(data.mapIndex);
     });
 
-    socket.on("chatted", (data: { userId: string; message: string }) => {
-      const remotePlayer = this.otherPlayers.get(data.userId);
-      if (remotePlayer) {
-        remotePlayer.showChatBubble(data.message);
-      }
-    });
+    socket.on(
+      "chatted",
+      (data: {
+        id: number;
+        userId: string;
+        nickname: string;
+        message: string;
+        createdAt: string;
+      }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.showChatBubble(data.message);
+        }
+
+        const currentRoomId = this.roomId || useRoomStore.getState().roomId;
+        useChatHistoryStore.getState().addMessage({
+          id: String(data.id),
+          roomId: currentRoomId,
+          channel: this.getChannelFromRoomId(),
+          username: data.nickname,
+          message: data.message,
+          isMine: data.userId === socket.id,
+          timestamp: new Date(data.createdAt).getTime(),
+        });
+      },
+    );
 
     // 다른 플레이어 집중 시작
     socket.on(
@@ -462,6 +491,17 @@ export default class SocketManager {
       }
     });
 
+    // 다른 플레이어 이펙트 변경
+    socket.on(
+      "effect_equipped",
+      (data: { userId: string; effectId: string | null }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setEffect(data.effectId);
+        }
+      },
+    );
+
     // 다른 플레이어 음악 상태 변경
     socket.on(
       "player_music_status",
@@ -469,6 +509,38 @@ export default class SocketManager {
         const remotePlayer = this.otherPlayers.get(data.userId);
         if (remotePlayer) {
           remotePlayer.setMusicStatus(data.isListening);
+        }
+      },
+    );
+
+    socket.on("jumped", (data: { userId: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.triggerJump();
+      }
+    });
+
+    // 다른 플레이어 언어 장착 변경
+    socket.on(
+      "lang_equipped",
+      (data: { userId: string; langKey: string | null }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.setEquippedLang(data.langKey);
+        }
+      },
+    );
+
+    socket.on(
+      "macbook_thrown",
+      (data: {
+        userId: string;
+        direction: Direction;
+        langKey?: string | null;
+      }) => {
+        const remotePlayer = this.otherPlayers.get(data.userId);
+        if (remotePlayer) {
+          remotePlayer.throwMacbook(data.direction, data.langKey);
         }
       },
     );
@@ -507,6 +579,16 @@ export default class SocketManager {
     // 음악 상태가 있으면 설정
     if (data.isListening !== undefined) {
       remotePlayer.setMusicStatus(data.isListening);
+    }
+
+    // 이펙트가 있으면 설정
+    if (data.equippedEffect) {
+      remotePlayer.setEffect(data.equippedEffect);
+    }
+
+    // 장착된 언어가 있으면 설정
+    if (data.equippedLang) {
+      remotePlayer.setEquippedLang(data.equippedLang);
     }
 
     if (this.walls) {
@@ -672,7 +754,7 @@ export default class SocketManager {
 
     const socket = getSocket();
     if (socket) {
-      socket.emit("chatting", { message });
+      socket.emit("chatting", { message, nickname: this.username });
     }
   }
 

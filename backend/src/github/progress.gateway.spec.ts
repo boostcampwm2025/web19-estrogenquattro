@@ -9,6 +9,7 @@ import {
 import { GlobalState } from './entities/global-state.entity';
 import { ACTIVITY_POINT_MAP } from '../point/point.service';
 import { PointType } from '../pointhistory/entities/point-history.entity';
+import { WriteLockService } from '../database/write-lock.service';
 
 describe('ProgressGateway', () => {
   let gateway: ProgressGateway;
@@ -34,12 +35,20 @@ describe('ProgressGateway', () => {
     });
     mockGlobalStateRepository.save.mockResolvedValue({});
 
+    const mockWriteLockService = {
+      runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProgressGateway,
         {
           provide: getRepositoryToken(GlobalState),
           useValue: mockGlobalStateRepository,
+        },
+        {
+          provide: WriteLockService,
+          useValue: mockWriteLockService,
         },
       ],
     }).compile();
@@ -297,6 +306,12 @@ describe('ProgressGateway', () => {
           {
             provide: getRepositoryToken(GlobalState),
             useValue: mockGlobalStateRepository,
+          },
+          {
+            provide: WriteLockService,
+            useValue: {
+              runExclusive: jest.fn((fn: () => Promise<unknown>) => fn()),
+            },
           },
         ],
       }).compile();
