@@ -332,11 +332,11 @@ export default function ChatHistoryWindow() {
   };
 
   const textShadow =
-    "0 0 3px rgba(60,30,0,0.95), 1px 1px 2px rgba(60,30,0,0.9), -1px -1px 2px rgba(60,30,0,0.9)";
+    "0 0 2px rgba(255,248,220,0.35), 1px 1px 1px rgba(120,53,15,0.18)";
 
   return (
     <div
-      className="pointer-events-auto fixed z-[900] flex flex-col overflow-hidden border-2 border-amber-900/80 bg-amber-900/15 shadow-[4px_4px_0_0_rgba(0,0,0,0.4)] backdrop-blur-[2px]"
+      className="pointer-events-auto fixed z-[900] flex flex-col overflow-hidden border-2 border-amber-900/58 bg-[#f2dfb7]/78 shadow-[3px_3px_0_0_rgba(0,0,0,0.18)] backdrop-blur-[4px]"
       style={{
         left: state.x,
         top: state.y,
@@ -347,14 +347,14 @@ export default function ChatHistoryWindow() {
       aria-label="채팅 기록"
     >
       <div
-        className="flex h-7 shrink-0 cursor-move items-center border-b border-amber-900/60 bg-amber-900/35 px-2 select-none"
+        className="flex h-7 shrink-0 cursor-move items-center border-b border-amber-900/26 bg-[#f8ebcf]/78 px-2 select-none"
         onPointerDown={onHeaderPointerDown}
         onPointerMove={onHeaderPointerMove}
         onPointerUp={onHeaderPointerUp}
         onPointerCancel={onHeaderPointerUp}
       >
         <span
-          className="font-['NeoDunggeunmo',_Arial,_sans-serif] text-sm text-white"
+          className="font-['NeoDunggeunmo',_Arial,_sans-serif] text-sm text-amber-900"
           style={{ textShadow }}
         >
           채팅 기록
@@ -363,44 +363,52 @@ export default function ChatHistoryWindow() {
 
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto px-2 py-1.5 font-['NeoDunggeunmo',_Arial,_sans-serif] text-[13px] leading-relaxed"
+        className="flex-1 overflow-y-auto px-2 py-1.5 font-['NeoDunggeunmo',_Arial,_sans-serif] text-[15px] leading-relaxed"
         style={{ textShadow }}
         onScroll={onListScroll}
       >
         {isLoadingMore ? (
-          <div className="pb-1 text-center text-[11px] text-amber-100/90">
+          <div className="pb-1 text-center text-[11px] text-amber-700/90">
             이전 채팅 불러오는 중...
           </div>
         ) : null}
 
         {isLoadingInitial ? (
-          <div className="text-white/80">채팅 기록 불러오는 중...</div>
+          <div className="text-amber-700/90">채팅 기록 불러오는 중...</div>
         ) : messages.length === 0 ? (
-          <div className="text-white/80">아직 채팅 기록이 없습니다.</div>
+          <div className="text-amber-700/90">아직 채팅 기록이 없습니다.</div>
         ) : (
           messages.map((m) => (
             <div
               key={m.id}
-              className={`break-words ${m.isMine ? "text-amber-200" : "text-white"}`}
+              className="break-words"
             >
-              <span>[{m.channel}채널]</span>
-              <span>{m.username}</span>
+              <span className="text-amber-700/90">[{m.channel}채널]</span>
+              <span
+                className={`ml-1 font-bold ${m.isMine ? "text-[#9a5f2d]" : "text-[#6a3f2a]"}`}
+              >
+                {m.username}
+              </span>
               <span>: </span>
-              <span>{m.message}</span>
+              <span
+                className={m.isMine ? "text-[#8b4f1f]" : "text-[#5f3828]"}
+              >
+                {m.message}
+              </span>
             </div>
           ))
         )}
       </div>
 
       <div
-        className="absolute right-0 bottom-0 left-0 flex h-2.5 cursor-ns-resize items-center justify-center bg-amber-900/35 hover:bg-amber-900/55"
+        className="absolute right-0 bottom-0 left-0 flex h-2.5 cursor-ns-resize items-center justify-center bg-[#f5e7c7]/72 hover:bg-[#efddb5]/82"
         onPointerDown={onResizePointerDown}
         onPointerMove={onResizePointerMove}
         onPointerUp={onResizePointerUp}
         onPointerCancel={onResizePointerUp}
         aria-label="높이 조정"
       >
-        <div className="h-0.5 w-8 rounded-full bg-amber-100/70" />
+        <div className="h-0.5 w-8 rounded-full bg-amber-900/24" />
       </div>
     </div>
   );
