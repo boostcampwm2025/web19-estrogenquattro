@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import i18next from "i18next";
 import { formatFocusTime } from "@/utils/timeFormat";
 import { MODAL_TYPES, useModalStore } from "@/stores/useModalStore";
+import { DIRECTION } from "../constants/direction";
 import {
   MAX_FOCUS_TASK_NAME_LENGTH,
   exceedsUtf8ByteLimit,
@@ -15,17 +16,39 @@ export interface TaskBubbleState {
   taskName?: string;
 }
 
+const LANG_TEXTURE_KEYS = [
+  "lang-js",
+  "lang-ts",
+  "lang-rust",
+  "lang-java",
+  "lang-python",
+  "lang-kotlin",
+  "lang-C",
+  "lang-Cp",
+  "lang-go",
+  "lang-haskell",
+  "lang-nest",
+  "lang-pytorch",
+  "lang-react",
+  "lang-spring",
+  "lang-tensor",
+  "lang-swift",
+] as const;
+
 export default class BasePlayer {
   protected scene: Phaser.Scene;
   protected container: Phaser.GameObjects.Container;
   protected bodySprite: Phaser.GameObjects.Sprite;
   protected faceSprite: Phaser.GameObjects.Image;
   protected maskShape: Phaser.GameObjects.Graphics;
+  protected nameTag: Phaser.GameObjects.Text;
   protected focusTimeText: Phaser.GameObjects.Text;
   protected borderGraphics: Phaser.GameObjects.Graphics;
   protected body: Phaser.Physics.Arcade.Body;
   protected bodyGlow: Phaser.FX.Glow | null = null;
   protected shadowGraphics: Phaser.GameObjects.Graphics;
+  protected jumpTween: Phaser.Tweens.Tween | null = null;
+  protected isJumping: boolean = false;
   protected taskBubbleContainer: Phaser.GameObjects.Container | null = null;
 
   // Pet
@@ -36,6 +59,7 @@ export default class BasePlayer {
   public playerId: number = 0;
 
   protected speed: number = 300;
+  protected facingDirection: Direction = DIRECTION.RIGHT;
 
   // destroy 체크 + 리스너 정리
   private isDestroyed: boolean = false;
@@ -92,7 +116,7 @@ export default class BasePlayer {
     this.borderGraphics.strokeCircle(0, FACE_Y_OFFSET, FACE_RADIUS);
 
     // 5. 닉네임 표시
-    const nameTag = scene.add
+    this.nameTag = scene.add
       .text(0, 50, username, {
         fontFamily: "NeoDunggeunmo, Arial, sans-serif",
         fontSize: "15px",
@@ -129,7 +153,7 @@ export default class BasePlayer {
       this.bodySprite,
       this.faceSprite,
       this.borderGraphics,
-      nameTag,
+      this.nameTag,
       this.focusTimeText,
     ];
     this.container.add(containerChildren);
@@ -205,12 +229,133 @@ export default class BasePlayer {
   // 공통 update 메서드 (마스크 위치 동기화)
   update() {
     if (this.container && this.maskShape) {
-      this.maskShape.x = this.container.x;
-      this.maskShape.y = this.container.y;
+      this.maskShape.x = this.container.x + this.faceSprite.x;
+      this.maskShape.y = this.container.y + this.faceSprite.y;
       //y 좌표가 클수록(더 아래에 있을수록) 앞에 그려지도록 depth 설정
       // 최소값을 0으로 설정하여 맵 이미지(depth: -1)보다 항상 앞에 표시
       this.container.setDepth(Math.max(0, this.container.y));
     }
+  }
+
+  triggerJump(): void {
+    if (this.isDestroyed || this.isJumping) return;
+
+    this.isJumping = true;
+    this.jumpTween?.destroy();
+
+    const originalBodyY = this.bodySprite.y;
+    const originalFaceY = this.faceSprite.y;
+    const originalBorderY = this.borderGraphics.y;
+    const originalNameY = this.nameTag.y;
+    const originalFocusY = this.focusTimeText.y;
+    const originalShadowScaleX = this.shadowGraphics.scaleX;
+    const originalShadowScaleY = this.shadowGraphics.scaleY;
+    const originalShadowAlpha = this.shadowGraphics.alpha;
+
+    this.jumpTween = this.scene.tweens.add({
+      targets: [
+        this.bodySprite,
+        this.faceSprite,
+        this.borderGraphics,
+        this.nameTag,
+        this.focusTimeText,
+      ],
+      y: "-=24",
+      duration: 220,
+      ease: "Quad.Out",
+      yoyo: true,
+      hold: 40,
+      onComplete: () => {
+        this.bodySprite.y = originalBodyY;
+        this.faceSprite.y = originalFaceY;
+        this.borderGraphics.y = originalBorderY;
+        this.nameTag.y = originalNameY;
+        this.focusTimeText.y = originalFocusY;
+        this.shadowGraphics.scaleX = originalShadowScaleX;
+        this.shadowGraphics.scaleY = originalShadowScaleY;
+        this.shadowGraphics.alpha = originalShadowAlpha;
+        this.isJumping = false;
+      },
+    });
+
+    this.scene.tweens.add({
+      targets: this.shadowGraphics,
+      scaleX: originalShadowScaleX * 0.74,
+      scaleY: originalShadowScaleY * 0.74,
+      alpha: originalShadowAlpha * 0.55,
+      duration: 220,
+      ease: "Quad.Out",
+      yoyo: true,
+      hold: 40,
+    });
+  }
+
+  setFacingDirection(direction: Direction): void {
+    if (direction !== DIRECTION.STOP) {
+      this.facingDirection = direction;
+    }
+  }
+
+  getFacingDirection(): Direction {
+    return this.facingDirection;
+  }
+
+  throwMacbook(direction: Direction = this.facingDirection): void {
+    if (this.isDestroyed) return;
+
+    const normalizedDirection =
+      direction === DIRECTION.STOP ? this.facingDirection : direction;
+    const { dx, dy, angle } = this.getThrowVector(normalizedDirection);
+    const startX = this.container.x + dx * 12;
+    const startY = this.container.y - 4 + dy * 8;
+
+    const availableKeys = LANG_TEXTURE_KEYS.filter((key) =>
+      this.scene.textures.exists(key),
+    );
+    const textureKey =
+      availableKeys.length > 0
+        ? availableKeys[Math.floor(Math.random() * availableKeys.length)]
+        : "__DEFAULT";
+
+    const macbook = this.scene.add.image(startX, startY, textureKey);
+
+    macbook.setScale(0.72);
+    macbook.setRotation(Phaser.Math.DegToRad(angle));
+    macbook.setDepth(this.container.depth + 2);
+
+    const travelDistance = 120;
+    const targetX = startX + dx * travelDistance;
+    const targetY = startY + dy * 18 - 8;
+
+    this.scene.tweens.add({
+      targets: macbook,
+      x: targetX,
+      y: targetY,
+      angle: angle + dx * 120,
+      duration: 520,
+      ease: "Cubic.Out",
+      onUpdate: (tween, target) => {
+        const image = target as Phaser.GameObjects.Image;
+        const progress = tween.progress;
+        image.y =
+          startY +
+          (targetY - startY) * progress -
+          Math.sin(progress * Math.PI) * 26;
+        image.alpha = 1 - progress * 0.08;
+      },
+      onComplete: () => {
+        this.scene.tweens.add({
+          targets: macbook,
+          alpha: 0,
+          scaleX: 0.6,
+          scaleY: 0.6,
+          duration: 140,
+          onComplete: () => {
+            macbook.destroy();
+          },
+        });
+      },
+    });
   }
 
   // 방향에 따른 펫 위치 업데이트
@@ -260,10 +405,40 @@ export default class BasePlayer {
     this.pendingLoaderListeners = [];
     this.petLoadingKeys.clear();
 
+    this.jumpTween?.destroy();
+    this.jumpTween = null;
     this.musicParticleEmitter?.destroy();
     this.pet.destroy();
     this.container.destroy();
     this.maskShape.destroy();
+  }
+
+  private getThrowVector(direction: Direction): {
+    dx: number;
+    dy: number;
+    angle: number;
+  } {
+    switch (direction) {
+      case DIRECTION.LEFT:
+        return { dx: -1, dy: -0.1, angle: -24 };
+      case DIRECTION.RIGHT:
+        return { dx: 1, dy: -0.1, angle: 24 };
+      case DIRECTION.UP:
+        return { dx: 0, dy: -1, angle: -90 };
+      case DIRECTION.DOWN:
+        return { dx: 0, dy: 0.65, angle: 90 };
+      case DIRECTION.LEFT_UP:
+        return { dx: -0.75, dy: -0.55, angle: -48 };
+      case DIRECTION.LEFT_DOWN:
+        return { dx: -0.78, dy: 0.45, angle: 148 };
+      case DIRECTION.RIGHT_UP:
+        return { dx: 0.75, dy: -0.55, angle: 48 };
+      case DIRECTION.RIGHT_DOWN:
+        return { dx: 0.78, dy: 0.45, angle: 32 };
+      case DIRECTION.STOP:
+      default:
+        return { dx: 1, dy: -0.1, angle: 24 };
+    }
   }
 
   // 얼굴 텍스처 업데이트

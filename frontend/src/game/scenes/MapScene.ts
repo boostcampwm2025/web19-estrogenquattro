@@ -5,6 +5,7 @@ import { getSocket } from "../../lib/socket";
 import { useFocusTimeStore } from "@/stores/useFocusTimeStore";
 import { useTasksStore } from "@/stores/useTasksStore";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useModalStore } from "@/stores/useModalStore";
 import MapManager, { MapConfig } from "../managers/MapManager";
 import SocketManager from "../managers/SocketManager";
 import ChatManager from "../managers/ChatManager";
@@ -108,6 +109,17 @@ export class MapScene extends Phaser.Scene {
     this.load.svg("pet", "/assets/mascot/gopher_stage1.svg", {
       width: 512,
       height: 512,
+    });
+
+    // Lang SVGs (X키 던지기용)
+    [
+      "js", "ts", "rust", "java", "python", "kotlin", "C", "Cp", "go",
+      "haskell", "nest", "pytorch", "react", "spring", "tensor", "swift",
+    ].forEach((lang) => {
+      this.load.svg(`lang-${lang}`, `/assets/lang/${lang}.svg`, {
+        width: 64,
+        height: 64,
+      });
     });
 
     // Music Note Particles
@@ -455,6 +467,59 @@ export class MapScene extends Phaser.Scene {
       window.addEventListener("blur", handleBlur);
       this.events.once("destroy", () => {
         window.removeEventListener("blur", handleBlur);
+      });
+
+      const handleJump = (event: KeyboardEvent) => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          active instanceof HTMLSelectElement
+        ) {
+          return;
+        }
+
+        if (useModalStore.getState().activeModal !== null) {
+          return;
+        }
+
+        event.preventDefault();
+        this.player?.triggerJump();
+        getSocket().emit("jumping");
+      };
+
+      this.input.keyboard.on("keydown-SPACE", handleJump);
+      this.events.once("destroy", () => {
+        this.input.keyboard?.off("keydown-SPACE", handleJump);
+      });
+
+      const handleMacbookThrow = (event: KeyboardEvent) => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          active instanceof HTMLSelectElement
+        ) {
+          return;
+        }
+
+        if (useModalStore.getState().activeModal !== null) {
+          return;
+        }
+
+        const direction = this.player?.getFacingDirection();
+        if (!direction) {
+          return;
+        }
+
+        event.preventDefault();
+        this.player?.throwMacbook(direction);
+        getSocket().emit("throwing_macbook", { direction });
+      };
+
+      this.input.keyboard.on("keydown-X", handleMacbookThrow);
+      this.events.once("destroy", () => {
+        this.input.keyboard?.off("keydown-X", handleMacbookThrow);
       });
     }
   }

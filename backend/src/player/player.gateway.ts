@@ -25,6 +25,18 @@ import { Task } from '../task/entites/task.entity';
 import { MAX_FOCUS_TASK_NAME_LENGTH } from '../focustime/focustime.constants';
 import { truncateToUtf8Bytes } from '../util/text-byte.util';
 
+const ALLOWED_DIRECTIONS = new Set([
+  'up',
+  'down',
+  'left',
+  'right',
+  'left-up',
+  'left-down',
+  'right-up',
+  'right-down',
+  'stop',
+]);
+
 @WebSocketGateway()
 export class PlayerGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy
@@ -469,5 +481,41 @@ export class PlayerGateway
         isListening: data.isListening,
       });
     }
+  }
+
+  @SubscribeMessage('jumping')
+  handleJump(@ConnectedSocket() client: Socket) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    client.to(player.roomId).emit('jumped', {
+      userId: client.id,
+    });
+  }
+
+  @SubscribeMessage('throwing_macbook')
+  handleMacbookThrow(
+    @MessageBody() data: { direction?: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!this.wsJwtGuard.verifyAndDisconnect(client, this.logger)) return;
+
+    const player = this.players.get(client.id);
+    if (!player) return;
+
+    if (!data?.direction || !ALLOWED_DIRECTIONS.has(data.direction)) {
+      this.logger.warn('Invalid macbook throw direction', {
+        clientId: client.id,
+        direction: data?.direction,
+      });
+      return;
+    }
+
+    client.to(player.roomId).emit('macbook_thrown', {
+      userId: client.id,
+      direction: data.direction,
+    });
   }
 }

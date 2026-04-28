@@ -499,6 +499,20 @@ export default class SocketManager {
         }
       },
     );
+
+    socket.on("jumped", (data: { userId: string }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.triggerJump();
+      }
+    });
+
+    socket.on("macbook_thrown", (data: { userId: string; direction: Direction }) => {
+      const remotePlayer = this.otherPlayers.get(data.userId);
+      if (remotePlayer) {
+        remotePlayer.throwMacbook(data.direction);
+      }
+    });
   }
 
   private addRemotePlayer(data: PlayerData): void {
