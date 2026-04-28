@@ -12,9 +12,9 @@ jobs:
     - name: Deploy to Server via SSH
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.ORACLE_HOST }}
-        username: ${{ secrets.ORACLE_USERNAME }}
-        key: ${{ secrets.ORACLE_KEY }}
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
         port: 22
         script: |
           set -e
