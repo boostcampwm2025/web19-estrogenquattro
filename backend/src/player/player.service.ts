@@ -23,6 +23,7 @@ const ITEM_CATALOG: Record<string, CatalogItem> = {
   sparkle: { cost: 200, type: 'effect' },
   electric: { cost: 200, type: 'effect' },
   fire: { cost: 200, type: 'effect' },
+  matrix: { cost: 200, type: 'effect' },
   js: { cost: 100, type: 'lang' },
   ts: { cost: 100, type: 'lang' },
   rust: { cost: 100, type: 'lang' },
@@ -39,6 +40,7 @@ const ITEM_CATALOG: Record<string, CatalogItem> = {
   spring: { cost: 100, type: 'lang' },
   tensor: { cost: 100, type: 'lang' },
   swift: { cost: 100, type: 'lang' },
+  hf: { cost: 100, type: 'lang' },
 };
 
 @Injectable()
@@ -46,6 +48,8 @@ export class PlayerService {
   constructor(
     @InjectRepository(Player)
     private readonly playerRepository: Repository<Player>,
+    @InjectRepository(PointHistory)
+    private readonly pointHistoryRepository: Repository<PointHistory>,
     private readonly dataSource: DataSource,
     private readonly writeLock: WriteLockService,
   ) {}
@@ -146,5 +150,16 @@ export class PlayerService {
         return { totalPoint: player.totalPoint };
       }),
     );
+  }
+
+  async hasItem(playerId: number, itemId: string): Promise<boolean> {
+    const count = await this.pointHistoryRepository.count({
+      where: {
+        player: { id: playerId },
+        type: PointType.PURCHASE,
+        description: itemId,
+      },
+    });
+    return count > 0;
   }
 }

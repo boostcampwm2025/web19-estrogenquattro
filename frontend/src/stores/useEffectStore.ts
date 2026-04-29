@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type EffectId = "sparkle" | "electric" | "fire";
+export type EffectId = "sparkle" | "electric" | "fire" | "matrix";
 
 export interface EffectItem {
   id: EffectId;
@@ -33,6 +33,13 @@ export const EFFECT_CATALOG: EffectItem[] = [
     cost: 200,
     emoji: "🔥",
   },
+  {
+    id: "matrix",
+    name: "매트릭스",
+    description: "캐릭터 주위에 녹색 코드 비가 내립니다",
+    cost: 200,
+    emoji: "💻",
+  },
 ];
 
 export interface LangItem {
@@ -58,6 +65,7 @@ export const LANG_CATALOG: LangItem[] = [
   { key: "spring", name: "Spring", cost: 100 },
   { key: "tensor", name: "TensorFlow", cost: 100 },
   { key: "swift", name: "Swift", cost: 100 },
+  { key: "hf", name: "HuggingFace", cost: 100 },
 ];
 
 interface EffectStore {

@@ -80,6 +80,7 @@ export class PlayerGateway
     'sparkle',
     'electric',
     'fire',
+    'matrix',
   ]);
 
   private static readonly ALLOWED_LANGS = new Set([
@@ -99,6 +100,7 @@ export class PlayerGateway
     'spring',
     'tensor',
     'swift',
+    'hf',
   ]);
 
   // githubId -> socketId 매핑 (중복 접속 방지용)
@@ -554,7 +556,7 @@ export class PlayerGateway
   }
 
   @SubscribeMessage('effect_equipping')
-  handleEffectEquip(
+  async handleEffectEquip(
     @MessageBody() data: { effectId: string | null },
     @ConnectedSocket() client: Socket,
   ) {
@@ -567,6 +569,17 @@ export class PlayerGateway
     if (effectId !== null && !PlayerGateway.ALLOWED_EFFECTS.has(effectId)) {
       this.logger.warn('Invalid effectId', { clientId: client.id, effectId });
       return;
+    }
+
+    if (effectId !== null) {
+      const owned = await this.playerService.hasItem(player.playerId, effectId);
+      if (!owned) {
+        this.logger.warn('Effect not purchased', {
+          clientId: client.id,
+          effectId,
+        });
+        return;
+      }
     }
 
     // 인메모리 상태 업데이트
@@ -587,7 +600,7 @@ export class PlayerGateway
   }
 
   @SubscribeMessage('lang_equipping')
-  handleLangEquip(
+  async handleLangEquip(
     @MessageBody() data: { langKey: string | null },
     @ConnectedSocket() client: Socket,
   ) {
@@ -600,6 +613,17 @@ export class PlayerGateway
     if (langKey !== null && !PlayerGateway.ALLOWED_LANGS.has(langKey)) {
       this.logger.warn('Invalid langKey', { clientId: client.id, langKey });
       return;
+    }
+
+    if (langKey !== null) {
+      const owned = await this.playerService.hasItem(player.playerId, langKey);
+      if (!owned) {
+        this.logger.warn('Lang not purchased', {
+          clientId: client.id,
+          langKey,
+        });
+        return;
+      }
     }
 
     player.equippedLang = langKey;
