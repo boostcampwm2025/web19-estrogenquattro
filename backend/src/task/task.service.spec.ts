@@ -37,7 +37,7 @@ describe('TaskService', () => {
           entities: [Task, Player, UserPet, Pet, PointHistory],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Task, Player]),
+        TypeOrmModule.forFeature([Task, Player, PointHistory]),
         DatabaseModule,
       ],
       providers: [TaskService, PlayerService],
