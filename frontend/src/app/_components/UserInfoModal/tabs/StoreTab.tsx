@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useShallow } from "zustand/react/shallow";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   useEffectStore,
   EFFECT_CATALOG,
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function StoreTab({ availablePoints }: Props) {
+  const { t } = useTranslation("ui");
   const queryClient = useQueryClient();
   const playerId = useModalStore((s) => s.userInfoPayload?.playerId ?? 0);
 
@@ -81,12 +83,31 @@ export default function StoreTab({ availablePoints }: Props) {
 
   const isPending = purchaseMutation.isPending;
 
+  const effectName = (id: EffectId) => {
+    if (id === "sparkle") return t(($) => $.store.effects.sparkle.name);
+    if (id === "electric") return t(($) => $.store.effects.electric.name);
+    if (id === "fire") return t(($) => $.store.effects.fire.name);
+    return t(($) => $.store.effects.matrix.name);
+  };
+
+  const effectDescription = (id: EffectId) => {
+    if (id === "sparkle") return t(($) => $.store.effects.sparkle.description);
+    if (id === "electric")
+      return t(($) => $.store.effects.electric.description);
+    if (id === "fire") return t(($) => $.store.effects.fire.description);
+    return t(($) => $.store.effects.matrix.description);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-amber-900">캐릭터 이펙트</h3>
+        <h3 className="font-bold text-amber-900">
+          {t(($) => $.store.characterEffect)}
+        </h3>
         <span className="rounded border-2 border-amber-900/20 bg-amber-100 px-3 py-0.5 text-sm font-bold text-amber-800">
-          보유 포인트: {availablePoints.toLocaleString()} P
+          {t(($) => $.store.ownedPoints, {
+            points: availablePoints.toLocaleString(),
+          })}
         </span>
       </div>
 
@@ -108,15 +129,17 @@ export default function StoreTab({ availablePoints }: Props) {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-amber-900">{item.name}</span>
+                  <span className="font-bold text-amber-900">
+                    {effectName(item.id)}
+                  </span>
                   {isEquipped && (
                     <span className="rounded bg-amber-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      장착중
+                      {t(($) => $.store.equipped)}
                     </span>
                   )}
                 </div>
                 <p className="mt-0.5 text-xs text-amber-700">
-                  {item.description}
+                  {effectDescription(item.id)}
                 </p>
                 {!isPurchased && (
                   <p className="mt-1 text-xs font-bold text-amber-600">
@@ -135,7 +158,9 @@ export default function StoreTab({ availablePoints }: Props) {
                         : "bg-amber-200 text-amber-900 hover:bg-amber-300"
                     }`}
                   >
-                    {isEquipped ? "해제" : "장착"}
+                    {isEquipped
+                      ? t(($) => $.store.unequip)
+                      : t(($) => $.store.equip)}
                   </button>
                 ) : (
                   <button
@@ -147,7 +172,7 @@ export default function StoreTab({ availablePoints }: Props) {
                         : "cursor-not-allowed bg-gray-300 text-gray-500 opacity-60"
                     }`}
                   >
-                    구매
+                    {t(($) => $.store.buy)}
                   </button>
                 )}
               </div>
@@ -158,9 +183,11 @@ export default function StoreTab({ availablePoints }: Props) {
 
       {/* 던지기 이펙트 섹션 */}
       <div>
-        <h3 className="mb-3 font-bold text-amber-900">던지기 이펙트</h3>
+        <h3 className="mb-3 font-bold text-amber-900">
+          {t(($) => $.store.throwEffect)}
+        </h3>
         <p className="mb-3 text-xs text-amber-700">
-          구매 후 장착하면 X키를 눌렀을 때 해당 언어가 날아갑니다
+          {t(($) => $.store.throwEffectHint)}
         </p>
         <div className="grid grid-cols-4 gap-2">
           {LANG_CATALOG.map((item) => {
@@ -186,7 +213,7 @@ export default function StoreTab({ availablePoints }: Props) {
                 </span>
                 {isEquipped && (
                   <span className="rounded bg-amber-600 px-1 py-0.5 text-[9px] font-bold text-white">
-                    장착중
+                    {t(($) => $.store.equipped)}
                   </span>
                 )}
                 {isPurchased ? (
@@ -198,7 +225,9 @@ export default function StoreTab({ availablePoints }: Props) {
                         : "bg-amber-200 text-amber-900 hover:bg-amber-300"
                     }`}
                   >
-                    {isEquipped ? "해제" : "장착"}
+                    {isEquipped
+                      ? t(($) => $.store.unequip)
+                      : t(($) => $.store.equip)}
                   </button>
                 ) : (
                   <button
@@ -222,15 +251,16 @@ export default function StoreTab({ availablePoints }: Props) {
       {purchaseMutation.isError && (
         <p className="text-center text-xs font-bold text-red-600">
           {purchaseMutation.error instanceof Error
-            ? purchaseMutation.error.message.includes("포인트")
-              ? "포인트가 부족합니다"
-              : "구매에 실패했습니다"
-            : "구매에 실패했습니다"}
+            ? purchaseMutation.error.message.includes("포인트") ||
+              purchaseMutation.error.message.includes("points")
+              ? t(($) => $.store.notEnoughPoints)
+              : t(($) => $.store.buyFailed)
+            : t(($) => $.store.buyFailed)}
         </p>
       )}
 
       <p className="text-center text-xs text-amber-600/70">
-        * 구매한 이펙트는 본인 캐릭터에만 적용됩니다
+        {t(($) => $.store.notice)}
       </p>
     </div>
   );

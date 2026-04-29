@@ -46,7 +46,8 @@
     "tabs": {
       "activity": "Activity",
       "pet": "Pet",
-      "profile": "Profile"
+      "profile": "Profile",
+      "store": "Effects"
     },
     "loading": "Loading profile...",
     "activity": {
@@ -324,5 +325,45 @@
   },
   "noticePopup": {
     "dismiss": "OK"
+  },
+  "store": {
+    "ownedPoints": "Points: {{points}} P",
+    "equipped": "Equipped",
+    "equip": "Equip",
+    "unequip": "Unequip",
+    "buy": "Buy",
+    "notEnoughPoints": "Not enough points",
+    "buyFailed": "Purchase failed",
+    "notice": "* Purchased effects apply only to your own character",
+    "characterEffect": "Character Effects",
+    "throwEffect": "Throw Effects",
+    "throwEffectHint": "Equip after purchase — press X to throw the language icon",
+    "effects": {
+      "sparkle": {
+        "name": "Sparkle",
+        "description": "Stars twinkle around your character"
+      },
+      "electric": {
+        "name": "Electric",
+        "description": "Electricity crackles around your character"
+      },
+      "fire": {
+        "name": "Fire",
+        "description": "Flames blaze behind your character"
+      },
+      "matrix": {
+        "name": "Matrix",
+        "description": "Green code rain falls around your character"
+      }
+    }
+  },
+  "chat": {
+    "title": "Chat History",
+    "loading": "Loading chat history...",
+    "loadingMore": "Loading older messages...",
+    "empty": "No chat history yet.",
+    "resizeLabel": "Adjust height",
+    "regionLabel": "Chat history",
+    "channel": "ch.{{channel}}"
   }
 }

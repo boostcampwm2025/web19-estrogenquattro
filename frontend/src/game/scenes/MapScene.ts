@@ -129,6 +129,7 @@ export class MapScene extends Phaser.Scene {
       "spring",
       "tensor",
       "swift",
+      "hf",
     ].forEach((lang) => {
       this.load.svg(`lang-${lang}`, `/assets/lang/${lang}.svg`, {
         width: 64,

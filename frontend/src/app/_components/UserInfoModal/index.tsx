@@ -103,7 +103,7 @@ export default function UserInfoModal() {
           />
           {isOwner && (
             <TabButton
-              label="이펙트"
+              label={t(($) => $.userInfoModal.tabs.store)}
               isActive={activeTab === "store"}
               onClick={() => setActiveTab("store")}
             />

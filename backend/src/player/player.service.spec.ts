@@ -24,7 +24,7 @@ describe('PlayerService', () => {
           entities: [Player, UserPet, Pet, PointHistory],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([Player]),
+        TypeOrmModule.forFeature([Player, PointHistory]),
         DatabaseModule,
       ],
       providers: [PlayerService],

@@ -735,6 +735,7 @@ export default class BasePlayer {
   private electricSparkEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
   private electricGraphics?: Phaser.GameObjects.Graphics;
   private electricTimer?: Phaser.Time.TimerEvent;
+  private matrixEmitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
 
   private ensureFlameTexture(): void {
     const key = "fx-flame";
@@ -799,6 +800,8 @@ export default class BasePlayer {
     this.electricGraphics = undefined;
     this.electricTimer?.destroy();
     this.electricTimer = undefined;
+    this.matrixEmitters.forEach((e) => e.destroy());
+    this.matrixEmitters = [];
   }
 
   setEquippedLang(key: string | null): void {
@@ -811,6 +814,7 @@ export default class BasePlayer {
     if (effectId === "sparkle") this.startSparkle();
     else if (effectId === "electric") this.startElectric();
     else if (effectId === "fire") this.startFire();
+    else if (effectId === "matrix") this.startMatrix();
   }
 
   private startSparkle(): void {
@@ -990,6 +994,51 @@ export default class BasePlayer {
     };
 
     this.electricTimer = this.scene.time.delayedCall(0, scheduleNext);
+  }
+
+  private ensureMatrixTextures(): void {
+    const chars = ["0", "1"];
+    chars.forEach((char, idx) => {
+      const key = `fx-matrix-${idx}`;
+      if (this.scene.textures.exists(key)) return;
+      const canvas = this.scene.textures.createCanvas(key, 10, 14);
+      if (!canvas) return;
+      const ctx = canvas.getContext();
+      ctx.fillStyle = "#00ff41";
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(char, 5, 7);
+      canvas.refresh();
+    });
+  }
+
+  private startMatrix(): void {
+    this.ensureMatrixTextures();
+    const texKeys = Array.from(
+      { length: 2 },
+      (_, i) => `fx-matrix-${i}`,
+    ).filter((k) => this.scene.textures.exists(k));
+    if (texKeys.length === 0) return;
+
+    // 5개 열 스트림: 캐릭터 위에서 아래로 흘러내림
+    for (let col = -2; col <= 2; col++) {
+      const key = texKeys[(col + 2) % texKeys.length];
+      const emitter = this.scene.add.particles(0, 0, key, {
+        speed: { min: 55, max: 100 },
+        angle: 90,
+        scale: { start: 1.0, end: 0.3 },
+        alpha: { start: 0.95, end: 0 },
+        lifespan: { min: 500, max: 1000 },
+        frequency: 90 + Math.abs(col) * 35,
+        quantity: 1,
+        tint: [0x00ff41, 0x00cc33, 0x39ff14, 0x00ff66],
+        follow: this.container,
+        followOffset: { x: col * 16, y: -30 },
+      });
+      emitter.setDepth(this.container.depth + 3);
+      this.matrixEmitters.push(emitter);
+    }
   }
 
   // 음악 재생 상태 설정

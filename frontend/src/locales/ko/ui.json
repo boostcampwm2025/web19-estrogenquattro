@@ -46,7 +46,8 @@
     "tabs": {
       "activity": "활동",
       "pet": "펫",
-      "profile": "프로필"
+      "profile": "프로필",
+      "store": "이펙트"
     },
     "loading": "프로필 로딩 중...",
     "activity": {
@@ -324,5 +325,45 @@
   },
   "noticePopup": {
     "dismiss": "확인"
+  },
+  "store": {
+    "ownedPoints": "보유 포인트: {{points}} P",
+    "equipped": "장착중",
+    "equip": "장착",
+    "unequip": "해제",
+    "buy": "구매",
+    "notEnoughPoints": "포인트가 부족합니다",
+    "buyFailed": "구매에 실패했습니다",
+    "notice": "* 구매한 이펙트는 본인 캐릭터에만 적용됩니다",
+    "characterEffect": "캐릭터 이펙트",
+    "throwEffect": "던지기 이펙트",
+    "throwEffectHint": "구매 후 장착하면 X키를 눌렀을 때 해당 언어가 날아갑니다",
+    "effects": {
+      "sparkle": {
+        "name": "별빛",
+        "description": "캐릭터 주위에 별이 반짝반짝 빛납니다"
+      },
+      "electric": {
+        "name": "번개",
+        "description": "캐릭터 주위에 전기가 지지직 튑니다"
+      },
+      "fire": {
+        "name": "화염",
+        "description": "캐릭터 뒤에서 불꽃이 이글이글 타오릅니다"
+      },
+      "matrix": {
+        "name": "매트릭스",
+        "description": "캐릭터 주위에 녹색 코드 비가 내립니다"
+      }
+    }
+  },
+  "chat": {
+    "title": "채팅 기록",
+    "loading": "채팅 기록 불러오는 중...",
+    "loadingMore": "이전 채팅 불러오는 중...",
+    "empty": "아직 채팅 기록이 없습니다.",
+    "resizeLabel": "높이 조정",
+    "regionLabel": "채팅 기록",
+    "channel": "{{channel}}채널"
   }
 }

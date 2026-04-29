@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { useTranslation } from "react-i18next";
 import { chatApi, type ChatMessageItem } from "@/lib/api/chat";
 import { useRoomStore } from "@/stores/useRoomStore";
 import {
@@ -73,6 +74,7 @@ function toChatHistoryEntry(
 }
 
 export default function ChatHistoryWindow() {
+  const { t } = useTranslation("ui");
   const roomId = useRoomStore((state) => state.roomId);
   const currentUsername = useAuthStore((state) => state.user?.username);
   const { messages, upsertMessages, clear } = useChatHistoryStore(
@@ -344,7 +346,7 @@ export default function ChatHistoryWindow() {
         height: state.height,
       }}
       role="region"
-      aria-label="채팅 기록"
+      aria-label={t(($) => $.chat.regionLabel)}
     >
       <div
         className="flex h-7 shrink-0 cursor-move items-center border-b border-amber-900/26 bg-[#f8ebcf]/78 px-2 select-none"
@@ -357,7 +359,7 @@ export default function ChatHistoryWindow() {
           className="font-['NeoDunggeunmo',_Arial,_sans-serif] text-sm text-amber-900"
           style={{ textShadow }}
         >
-          채팅 기록
+          {t(($) => $.chat.title)}
         </span>
       </div>
 
@@ -369,18 +371,20 @@ export default function ChatHistoryWindow() {
       >
         {isLoadingMore ? (
           <div className="pb-1 text-center text-[11px] text-amber-700/90">
-            이전 채팅 불러오는 중...
+            {t(($) => $.chat.loadingMore)}
           </div>
         ) : null}
 
         {isLoadingInitial ? (
-          <div className="text-amber-700/90">채팅 기록 불러오는 중...</div>
+          <div className="text-amber-700/90">{t(($) => $.chat.loading)}</div>
         ) : messages.length === 0 ? (
-          <div className="text-amber-700/90">아직 채팅 기록이 없습니다.</div>
+          <div className="text-amber-700/90">{t(($) => $.chat.empty)}</div>
         ) : (
           messages.map((m) => (
             <div key={m.id} className="break-words">
-              <span className="text-amber-700/90">[{m.channel}채널]</span>
+              <span className="text-amber-700/90">
+                [{t(($) => $.chat.channel, { channel: m.channel })}]
+              </span>
               <span
                 className={`ml-1 font-bold ${m.isMine ? "text-[#9a5f2d]" : "text-[#6a3f2a]"}`}
               >
@@ -401,7 +405,7 @@ export default function ChatHistoryWindow() {
         onPointerMove={onResizePointerMove}
         onPointerUp={onResizePointerUp}
         onPointerCancel={onResizePointerUp}
-        aria-label="높이 조정"
+        aria-label={t(($) => $.chat.resizeLabel)}
       >
         <div className="h-0.5 w-8 rounded-full bg-amber-900/24" />
       </div>
