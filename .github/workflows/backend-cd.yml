@@ -70,4 +70,4 @@ jobs:
             pnpm install --prod
 
             cd ..
-            pnpm run deploy:reload
+            pnpm run deploy:prod
