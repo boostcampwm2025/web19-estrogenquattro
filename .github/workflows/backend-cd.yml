@@ -33,7 +33,7 @@ jobs:
         working-directory: ./frontend
         run: |
           pnpm install
-          NODE_ENV=production NEXT_PUBLIC_API_URL=http://${{ secrets.ORACLE_HOST }} NEXT_PUBLIC_SOCKET_URL=http://${{ secrets.ORACLE_HOST }} pnpm run build
+          NODE_ENV=production NEXT_PUBLIC_API_URL=https://commitplease.com NEXT_PUBLIC_SOCKET_URL=https://commitplease.com pnpm run build
 
       - name: Copy build artifacts to Dev Server
         uses: appleboy/scp-action@master
