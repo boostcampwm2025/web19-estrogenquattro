@@ -4,7 +4,7 @@ import { Analytics } from "@/lib/analytics";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-interface User {
+export interface User {
   githubId: string;
   username: string;
   avatarUrl: string;
